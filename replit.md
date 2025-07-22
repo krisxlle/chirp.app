@@ -128,8 +128,10 @@ The application follows a full-stack architecture with clear separation between 
 - **Database**: Neon PostgreSQL development instance
 
 ### Production
-- **Build Process**: Vite builds client, esbuild bundles server
-- **Static Assets**: Served from dist/public directory
+- **Build Process**: Expo export builds web assets for deployment
+- **Build Script**: `npm run build` exports Expo web app to dist directory
+- **Static Assets**: Served from dist directory with proper index.html structure
+- **Deployment**: Uses build script for Cloud Run deployment with autoscale
 - **Environment Variables**: DATABASE_URL, OPENAI_API_KEY, etc.
 
 ### Configuration
@@ -163,6 +165,12 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Added invitation system**: Users can send email invitations to friends to unlock custom handles
 - **Built Settings page**: Comprehensive UI for handle management, VIP codes, and invitations
 - **Database schema updates**: Added handle, custom_handle, invites_sent, vip_code_used fields
+
+### July 22, 2025
+- **Fixed deployment configuration**: Added missing 'build' script to package.json for Cloud Run deployment
+- **Build process resolved**: Now uses `expo export --platform web` to create production assets in dist directory
+- **Production server updated**: Updated start script to use simple-server.js for serving static files
+- **Deployment ready**: Application now successfully builds and exports all static routes and assets
 - **API routes**: Added endpoints for handle checking, VIP codes, and invitation management
 - **Enhanced AI profile generation**: Complete AI-powered profile creation with fallback SVG graphics
 - **AI bio generation**: Smart bio creation based on user interests and activity
