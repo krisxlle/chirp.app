@@ -8,7 +8,7 @@ import Stripe from "stripe";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
+  apiVersion: "2025-06-30.basil",
 });
 import { insertChirpSchema, insertReactionSchema, insertFollowSchema, insertFeedbackSchema } from "@shared/schema";
 import { generateWeeklySummary, generateUserAvatar, generateUserBanner, generateUserBio, generateUserInterests, generatePersonalizedProfile } from "./openai";
@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Weekly analytics test completed - check console and email" });
     } catch (error) {
       console.error("Error in weekly analytics test:", error);
-      res.status(500).json({ message: "Failed to test weekly analytics", error: error.message });
+      res.status(500).json({ message: "Failed to test weekly analytics", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (usePersonalized) {
         // Use the recommendation engine for personalized feed
         const { recommendationEngine } = await import('./recommendationEngine');
-        chirps = await recommendationEngine.getPersonalizedFeed(userId, limit, blockedUserIds);
+        chirps = await recommendationEngine.getPersonalizedFeed(userId, limit);
       } else if (useTrending) {
         // Get trending chirps (most reactions in last 24 hours)
         chirps = await storage.getTrendingChirps(userId, limit, blockedUserIds);
@@ -759,7 +759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(users);
     } catch (error) {
       console.error("Error searching users:", error);
-      res.status(500).json({ message: "Failed to search users", error: error.message });
+      res.status(500).json({ message: "Failed to search users", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -779,7 +779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(chirps);
     } catch (error) {
       console.error("Error searching chirps:", error);
-      res.status(500).json({ message: "Failed to search chirps", error: error.message });
+      res.status(500).json({ message: "Failed to search chirps", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -815,16 +815,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate summary data
       const chirpCount = userChirps.length;
-      const topChirp = userChirps.reduce((top, current) => {
-        const topTotal = Object.values(top.reactionCounts).reduce((sum, count) => sum + count, 0);
-        const currentTotal = Object.values(current.reactionCounts).reduce((sum, count) => sum + count, 0);
+      const topChirp = userChirps.length > 0 ? userChirps.reduce((top, current) => {
+        const topTotal = Object.values(top.reactionCounts || {}).reduce((sum: number, count: unknown) => sum + (typeof count === 'number' ? count : 0), 0);
+        const currentTotal = Object.values(current.reactionCounts || {}).reduce((sum: number, count: unknown) => sum + (typeof count === 'number' ? count : 0), 0);
         return currentTotal > topTotal ? current : top;
-      }, userChirps[0])?.content || "No chirps this week";
+      })?.content || "No chirps this week" : "No chirps this week";
 
       const allReactions: Record<string, number> = {};
       userChirps.forEach(chirp => {
         Object.entries(chirp.reactionCounts).forEach(([emoji, count]) => {
-          allReactions[emoji] = (allReactions[emoji] || 0) + count;
+          allReactions[emoji] = (allReactions[emoji] || 0) + (count as number);
         });
       });
 
@@ -841,7 +841,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         weeklyVibes: "positive",
         commonWords: ["chirp", "awesome", "great"]
       };
-      const summary = await generateWeeklySummary(userId, summaryData.chirpCount, summaryData.topChirp, summaryData.topReactions, summaryData.totalReactions, summaryData.weeklyVibes);
+      const summary = await generateWeeklySummary(
+        userId,
+        summaryData.chirpCount,
+        summaryData.topChirp,
+        summaryData.topReactions,
+        summaryData.commonWords,
+        summaryData.weeklyVibes
+      );
       
       // Create AI chirp
       const aiChirp = await storage.createChirp({
@@ -1118,8 +1125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate all profile elements with premium status
       const [avatarUrl, bannerUrl, interests, bio] = await Promise.all([
-        generateUserAvatar(userId, name, user?.isChirpPlus),
-        generateUserBanner(userId, user?.isChirpPlus),
+        generateUserAvatar(userId, name, user?.isChirpPlus?.toString()),
+        generateUserBanner(userId, user?.isChirpPlus?.toString()),
         generateUserInterests(userId, recentChirps),
         generateUserInterests(userId, recentChirps).then(interests => 
           generateUserBio(userId, handle || 'user', interests)
@@ -1158,7 +1165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Custom handle claimed successfully" });
     } catch (error) {
       console.error("Error claiming custom handle:", error);
-      res.status(400).json({ message: error.message || "Failed to claim custom handle" });
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to claim custom handle" });
     }
   });
 
@@ -1275,7 +1282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let userId = null;
       if (req.isAuthenticated?.()) {
-        userId = req.user?.claims?.sub;
+        userId = (req.user as any)?.claims?.sub;
       }
       
       // Clean up empty email field to pass validation
@@ -1294,7 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send email notification to you
       try {
         const { sendFeedbackNotification } = await import('./emailService');
-        await sendFeedbackNotification(newFeedback, req.user?.claims || null);
+        await sendFeedbackNotification(newFeedback, (req.user as any)?.claims || null);
       } catch (emailError) {
         console.error("Failed to send feedback email:", emailError);
         // Don't fail the request if email fails
@@ -1469,7 +1476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error creating share link:", error);
-      res.status(500).json({ message: "Failed to create share link", error: error.message });
+      res.status(500).json({ message: "Failed to create share link", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -1563,7 +1570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error sending contact invitation:", error);
-      res.status(500).json({ message: "Failed to send contact invitation", error: error.message });
+      res.status(500).json({ message: "Failed to send contact invitation", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -1867,7 +1874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         id: subscription.id,
         status: subscription.status,
-        currentPeriodEnd: subscription.current_period_end,
+        currentPeriodEnd: (subscription as any).current_period_end,
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
       });
     } catch (error) {
@@ -1895,7 +1902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscription: {
           id: subscription.id,
           cancelAtPeriodEnd: subscription.cancel_at_period_end,
-          currentPeriodEnd: subscription.current_period_end,
+          currentPeriodEnd: (subscription as any).current_period_end,
         },
       });
     } catch (error) {
@@ -1997,14 +2004,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       switch (event.type) {
         case 'invoice.payment_succeeded':
           const invoice = event.data.object as Stripe.Invoice;
-          if (invoice.subscription) {
-            const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+          if ((invoice as any).subscription) {
+            const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
             const customerId = subscription.customer as string;
             
             // Find user by customer ID and activate Chirp+
             const user = await storage.getUserByStripeCustomerId(customerId);
             if (user) {
-              const expiresAt = new Date(subscription.current_period_end * 1000);
+              const expiresAt = new Date((subscription as any).current_period_end * 1000);
               await storage.updateUserChirpPlus(user.id, true, expiresAt);
             }
           }

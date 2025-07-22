@@ -28,7 +28,7 @@ async function startServer() {
     
     app.listen(port, () => {
       console.log(`✓ Original web client is running on port ${port}`);
-      console.log('✓ Using client/src/App.tsx instead of Expo app/(tabs)`);
+      console.log('✓ Using client/src/App.tsx instead of Expo app/(tabs)');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
