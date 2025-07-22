@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import UserAvatar from './UserAvatar';
+import ReplyIcon from './icons/ReplyIcon';
+import RepostIcon from './icons/RepostIcon';
+import ShareIcon from './icons/ShareIcon';
 
 interface User {
   id: string;
@@ -71,14 +74,14 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         <View style={styles.headerContent}>
           <View style={styles.nameRow}>
             <Text style={styles.username}>{displayName}</Text>
-            <Text style={styles.crownIcon}>👑</Text>
+
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>
           
           {chirp.isWeeklySummary && (
             <View style={styles.weeklySummaryRow}>
               <View style={styles.weeklySummaryBadge}>
-                <Text style={styles.summaryBadgeText}>✨ Weekly Summary</Text>
+                <Text style={styles.summaryBadgeText}>Weekly Summary</Text>
               </View>
               <Text style={styles.summaryDate}>3 days ago</Text>
             </View>
@@ -92,7 +95,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
       {chirp.isWeeklySummary && (
         <Text style={styles.weeklySummaryTitle}>
-          📊 Weekly Summary (2025-07-13 - 2025-07-19)
+          Weekly Summary (2025-07-13 - 2025-07-19)
         </Text>
       )}
 
@@ -100,13 +103,13 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton} onPress={handleReply}>
-          <Text style={styles.actionIcon}>💬</Text>
-          <Text style={styles.actionText}>Reply</Text>
+          <ReplyIcon size={18} color="#657786" />
+          <Text style={styles.actionText}>{replies}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleRepost}>
-          <Text style={styles.actionIcon}>🔁</Text>
-          <Text style={styles.actionText}>Repost</Text>
+          <RepostIcon size={18} color="#657786" />
+          <Text style={styles.actionText}>{reposts}</Text>
         </TouchableOpacity>
 
         <View style={styles.reactionsContainer}>
@@ -132,7 +135,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         </View>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <Text style={styles.actionIcon}>📤</Text>
+          <ShareIcon size={18} color="#657786" />
         </TouchableOpacity>
       </View>
     </View>

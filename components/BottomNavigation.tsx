@@ -1,5 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import HomeIcon from './icons/HomeIcon';
+import SearchIcon from './icons/SearchIcon';
+import NotificationIcon from './icons/NotificationIcon';
+import ProfileIcon from './icons/ProfileIcon';
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -10,29 +14,25 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ activeTab, onTabChange, unreadCount }: BottomNavigationProps) {
   const navItems = [
     {
-      icon: "🏠",
-      label: "Home", 
       key: "home",
       isActive: activeTab === "home",
+      component: HomeIcon,
     },
     {
-      icon: "🔍",
-      label: "Search",
       key: "search",
-      isActive: activeTab === "search", 
+      isActive: activeTab === "search",
+      component: SearchIcon,
     },
     {
-      icon: "🔔",
-      label: "Notifications",
       key: "notifications",
       isActive: activeTab === "notifications",
       badge: unreadCount && unreadCount > 0 ? unreadCount : null,
+      component: NotificationIcon,
     },
     {
-      icon: "👤", 
-      label: "Profile",
       key: "profile",
       isActive: activeTab === "profile",
+      component: ProfileIcon,
     },
   ];
 
@@ -50,12 +50,10 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
             activeOpacity={0.7}
           >
             <View style={styles.iconContainer}>
-              <Text style={[
-                styles.navIcon,
-                item.isActive && styles.activeNavIcon
-              ]}>
-                {item.icon}
-              </Text>
+              <item.component
+                size={24}
+                color={item.isActive ? '#ffffff' : '#6b7280'}
+              />
               
               {/* Notification badge */}
               {item.badge && (
@@ -66,13 +64,6 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
                 </View>
               )}
             </View>
-            
-            <Text style={[
-              styles.navLabel,
-              item.isActive && styles.activeNavLabel
-            ]}>
-              {item.label}
-            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -101,11 +92,10 @@ const styles = StyleSheet.create({
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderRadius: 12,
-    minWidth: 70,
-    transition: 'all 0.2s ease',
+    minWidth: 60,
   },
   activeNavItem: {
     backgroundColor: '#7c3aed',

@@ -4,6 +4,7 @@ import { getChirpsFromDB } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
 import ComposeChirp from './ComposeChirp';
 import ChirpCard from './ChirpCard';
+import ChirpLogo from './icons/ChirpLogo';
 
 // Convert mobile chirps to ChirpCard format
 const convertToChirpCard = (chirp: MobileChirp) => ({
@@ -80,11 +81,7 @@ export default function HomePage() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
-            <Image 
-              source={{ uri: '/logo.jpg' }}
-              style={styles.logoImage}
-              onError={() => {}}
-            />
+            <ChirpLogo size={32} color="#7c3aed" />
             <Text style={styles.logoText}>Chirp</Text>
           </View>
           
@@ -94,7 +91,6 @@ export default function HomePage() {
               style={[styles.feedButton, feedType === 'personalized' && styles.activeFeedButton]}
               onPress={() => setFeedType('personalized')}
             >
-              <Text style={styles.feedButtonIcon}>✨</Text>
               <Text style={[styles.feedButtonText, feedType === 'personalized' && styles.activeFeedButtonText]}>
                 For You
               </Text>
@@ -104,7 +100,6 @@ export default function HomePage() {
               style={[styles.feedButton, feedType === 'chronological' && styles.activeFeedButton]}
               onPress={() => setFeedType('chronological')}
             >
-              <Text style={styles.feedButtonIcon}>🕐</Text>
               <Text style={[styles.feedButtonText, feedType === 'chronological' && styles.activeFeedButtonText]}>
                 Latest
               </Text>
@@ -114,7 +109,6 @@ export default function HomePage() {
               style={[styles.feedButton, feedType === 'trending' && styles.activeFeedButton]}
               onPress={() => setFeedType('trending')}
             >
-              <Text style={styles.feedButtonIcon}>📈</Text>
               <Text style={[styles.feedButtonText, feedType === 'trending' && styles.activeFeedButtonText]}>
                 Trending
               </Text>
@@ -134,7 +128,7 @@ export default function HomePage() {
         
         {chirps.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🐦</Text>
+            <ChirpLogo size={48} color="#9ca3af" />
             <Text style={styles.emptyTitle}>No chirps yet</Text>
             <Text style={styles.emptySubtext}>Start by posting your first chirp above!</Text>
           </View>
