@@ -59,7 +59,9 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
   ];
 
   const colorIndex = user.id ? parseInt(user.id.replace(/\D/g, '')) % colors.length : 0;
-  const [startColor, endColor] = colors[colorIndex];
+  const selectedColors = colors[colorIndex];
+  const startColor = selectedColors[0];
+  const endColor = selectedColors[1];
 
   const imageUrl = user.profileImageUrl || user.avatarUrl;
   const displayName = user.firstName && user.lastName 
