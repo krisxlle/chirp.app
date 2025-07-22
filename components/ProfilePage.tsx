@@ -64,8 +64,8 @@ export default function ProfilePage() {
       customHandle: '@Chirp',
       bio: 'Welcome to Chirp | @kriselle',
       joinedAt: '5 days ago',
-      profileImageUrl: null,
-      bannerImageUrl: null
+      profileImageUrl: undefined,
+      bannerImageUrl: undefined
     });
     
     fetchUserChirps();
@@ -141,7 +141,7 @@ export default function ProfilePage() {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={() => Alert.alert('Navigate', 'Go back to previous screen')}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -167,12 +167,11 @@ export default function ProfilePage() {
         
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.aiProfileButton} onPress={handleAIProfile}>
-            <Text style={styles.aiProfileIcon}>✨</Text>
-            <Text style={styles.aiProfileText}>AI Profile</Text>
+          <TouchableOpacity style={styles.generateProfileButton} onPress={handleAIProfile}>
+            <Text style={styles.generateProfileButtonText}>Generate Profile</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+          <TouchableOpacity style={styles.settingsButtonRounded} onPress={handleSettings}>
             <Text style={styles.settingsIcon}>⚙️</Text>
             <Text style={styles.settingsText}>Settings</Text>
           </TouchableOpacity>
@@ -926,5 +925,32 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#657786',
     fontWeight: '600',
+  },
+  generateProfileButton: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    // Purple-pink gradient background will be added via LinearGradient component
+  },
+  generateProfileButtonText: {
+    color: '#7c3aed',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  settingsButtonRounded: {
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    marginLeft: 8,
   },
 });

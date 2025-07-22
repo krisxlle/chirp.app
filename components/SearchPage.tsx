@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { getTrendingHashtags, searchChirps, searchUsers } from '../mobile-db';
 import ChirpCard from './ChirpCard';
+import UserAvatar from './UserAvatar';
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -54,6 +55,10 @@ export default function SearchPage() {
     
     return () => clearTimeout(timeoutId);
   }, [query, activeTab]);
+
+  const handleUserPress = (user: any) => {
+    Alert.alert('Profile', `Navigate to ${user.firstName} ${user.lastName}'s profile`);
+  };
 
   return (
     <View style={styles.container}>
@@ -132,10 +137,15 @@ export default function SearchPage() {
             )}
             {searchResults.length > 0 ? (
               searchResults.map((user) => (
-                <TouchableOpacity key={user.id} style={styles.userItem}>
+                <TouchableOpacity 
+                  key={user.id} 
+                  style={styles.userItem}
+                  onPress={() => handleUserPress(user)}
+                >
+                  <UserAvatar user={user} size="md" />
                   <View style={styles.userInfo}>
-                    <Text style={styles.userName}>{user.display_name}</Text>
-                    <Text style={styles.userHandle}>@{user.username}</Text>
+                    <Text style={styles.userName}>{user.firstName} {user.lastName}</Text>
+                    <Text style={styles.userHandle}>@{user.customHandle || user.handle}</Text>
                     {user.bio && <Text style={styles.userBio}>{user.bio}</Text>}
                   </View>
                 </TouchableOpacity>

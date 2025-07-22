@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
 import UserAvatar from './UserAvatar';
 import ReplyIcon from './icons/ReplyIcon';
 import RepostIcon from './icons/RepostIcon';
@@ -44,12 +44,20 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   
   const reactionEmojis = ['😀', '😍', '🤔', '😢', '😡', '👏', '🔥', '❤️', '💯', '✨'];
 
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
+
   const handleReply = () => {
-    // Navigate to reply compose screen
-    Alert.alert('Reply', `Replying to ${displayName}'s chirp`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reply', onPress: () => setReplies(prev => prev + 1) }
-    ]);
+    setShowReplyInput(true);
+  };
+
+  const submitReply = () => {
+    if (replyText.trim()) {
+      setReplies(prev => prev + 1);
+      setReplyText('');
+      setShowReplyInput(false);
+      Alert.alert('Reply Posted', 'Your reply has been posted!');
+    }
   };
 
   const handleRepost = () => {
@@ -62,7 +70,33 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   const handleReactionPress = (emoji: string) => {
     setReactions(prev => prev + 1);
     setShowReactionPicker(false);
-    // Add reaction to database
+    // TODO: Add reaction to database
+    Alert.alert('Reaction Added', `You reacted with ${emoji}`);
+  };
+
+  const handleMoreOptions = () => {
+    const isOwnChirp = chirp.author.id === 'current_user_id'; // TODO: Get actual current user ID
+    
+    if (isOwnChirp) {
+      Alert.alert('Chirp Options', 'Choose an action', [
+        { text: 'Delete Chirp', style: 'destructive', onPress: () => handleDeleteChirp() },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+    } else {
+      Alert.alert('User Options', 'Choose an action', [
+        { text: 'Unfollow', onPress: () => Alert.alert('Unfollowed', `You unfollowed ${displayName}`) },
+        { text: 'Block User', style: 'destructive', onPress: () => Alert.alert('Blocked', `You blocked ${displayName}`) },
+        { text: 'Turn on Notifications', onPress: () => Alert.alert('Notifications', `Turned on notifications for ${displayName}`) },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+    }
+  };
+
+  const handleDeleteChirp = () => {
+    Alert.alert('Delete Chirp', 'Are you sure you want to delete this chirp?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Deleted', 'Chirp has been deleted') }
+    ]);
   };
 
   const handleShare = () => {
@@ -79,6 +113,11 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         { text: 'Copy Link', onPress: () => Alert.alert('Copied!') }
       ]);
     }
+  };
+
+  const handleAvatarPress = () => {
+    // Navigate to user profile
+    Alert.alert('Profile', `Navigate to ${displayName}'s profile`);
   };
 
   const formatDate = (dateString: string) => {
@@ -101,11 +140,14 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   return (
     <View style={[styles.container, chirp.isWeeklySummary && styles.weeklySummaryContainer]}>
       <View style={styles.header}>
-        <UserAvatar user={chirp.author} size="md" />
+        <TouchableOpacity onPress={handleAvatarPress}>
+          <UserAvatar user={chirp.author} size="md" />
+        </TouchableOpacity>
         <View style={styles.headerContent}>
           <View style={styles.nameRow}>
-            <Text style={styles.username}>{displayName}</Text>
-
+            <TouchableOpacity onPress={handleAvatarPress}>
+              <Text style={styles.username}>{displayName}</Text>
+            </TouchableOpacity>
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>
           
@@ -119,7 +161,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           )}
         </View>
         
-        <TouchableOpacity style={styles.moreButton}>
+        <TouchableOpacity style={styles.moreButton} onPress={() => handleMoreOptions()}>
           <Text style={styles.moreText}>⋯</Text>
         </TouchableOpacity>
       </View>
@@ -183,6 +225,35 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           <ShareIcon size={18} color="#657786" />
         </TouchableOpacity>
       </View>
+      
+      {/* Reply Input */}
+      {showReplyInput && (
+        <View style={styles.replyContainer}>
+          <TextInput
+            style={styles.replyInput}
+            placeholder={`Reply to ${displayName}...`}
+            value={replyText}
+            onChangeText={setReplyText}
+            multiline
+            maxLength={280}
+          />
+          <View style={styles.replyButtons}>
+            <TouchableOpacity 
+              style={styles.cancelButton}
+              onPress={() => setShowReplyInput(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.submitButton, !replyText.trim() && styles.submitButtonDisabled]}
+              onPress={submitReply}
+              disabled={!replyText.trim()}
+            >
+              <Text style={styles.submitButtonText}>Reply</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -344,5 +415,53 @@ const styles = StyleSheet.create({
   },
   reactionEmoji: {
     fontSize: 20,
+  },
+  replyContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e1e8ed',
+    backgroundColor: '#f8f9fa',
+  },
+  replyInput: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    color: '#14171a',
+    minHeight: 60,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  replyButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+    gap: 8,
+  },
+  cancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  cancelButtonText: {
+    color: '#657786',
+    fontWeight: '600',
+  },
+  submitButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#7c3aed',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#e1e8ed',
+  },
+  submitButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
   },
 });

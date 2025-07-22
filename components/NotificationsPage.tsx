@@ -124,6 +124,14 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleNotificationPress = (notification: any) => {
+    if (notification.type === 'mention' || notification.type === 'reply') {
+      Alert.alert('Navigate to Chirp', `Go to chirp: "${notification.content}"`);
+    } else {
+      Alert.alert('Navigate to Profile', `Go to ${notification.user.name}'s profile`);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -137,7 +145,11 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {notifications.map((notification) => (
-          <TouchableOpacity key={notification.id} style={styles.notificationItem}>
+          <TouchableOpacity 
+            key={notification.id} 
+            style={styles.notificationItem}
+            onPress={() => handleNotificationPress(notification)}
+          >
             <View style={styles.notificationContent}>
               {/* User Avatar */}
               <View style={styles.avatarContainer}>
@@ -170,6 +182,11 @@ export default function NotificationsPage() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      
+      {/* Feedback Button */}
+      <TouchableOpacity style={styles.feedbackButton}>
+        <Text style={styles.feedbackButtonText}>Feedback</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -264,5 +281,24 @@ const styles = StyleSheet.create({
   actionIcon: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  feedbackButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  feedbackButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
