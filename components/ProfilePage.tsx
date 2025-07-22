@@ -34,6 +34,7 @@ interface ProfileStats {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<'chirps' | 'replies' | 'reactions'>('chirps');
   const [stats, setStats] = useState<ProfileStats>({
     following: 1,
     followers: 1,
@@ -168,6 +169,48 @@ export default function ProfilePage() {
         <Text style={styles.weeklySummaryContent}>
           This week you posted 5 times and honestly? Peak tech anxiety energy ⚡ That chirp about AI stealing jobs hit different - giving main character meets existential crisis vibes 🦋 Plus all those notification tests? You're basically running QA for the whole platform ⭐ Tech-savvy chaos but make it relatable
         </Text>
+      </View>
+
+      {/* Profile Tabs */}
+      <View style={styles.tabsContainer}>
+        {(['chirps', 'replies', 'reactions'] as const).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+              {tab === 'chirps' ? 'Chirps' : tab === 'replies' ? 'Replies' : 'Reactions'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Tab Content */}
+      <View style={styles.tabContent}>
+        {activeTab === 'chirps' && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>💬</Text>
+            <Text style={styles.emptyTitle}>No chirps yet</Text>
+            <Text style={styles.emptySubtext}>Your chirps will appear here</Text>
+          </View>
+        )}
+        
+        {activeTab === 'replies' && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>↩️</Text>
+            <Text style={styles.emptyTitle}>No replies yet</Text>
+            <Text style={styles.emptySubtext}>Your replies will appear here</Text>
+          </View>
+        )}
+        
+        {activeTab === 'reactions' && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>❤️</Text>
+            <Text style={styles.emptyTitle}>No reactions yet</Text>
+            <Text style={styles.emptySubtext}>Posts you've reacted to will appear here</Text>
+          </View>
+        )}
       </View>
 
       {/* Stats Cards */}
@@ -537,5 +580,54 @@ const styles = StyleSheet.create({
   feedNoticeText: {
     fontSize: 14,
     color: '#657786',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
+    paddingHorizontal: 16,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#d946ef',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#657786',
+  },
+  activeTabText: {
+    color: '#d946ef',
+    fontWeight: '600',
+  },
+  tabContent: {
+    minHeight: 200,
+    backgroundColor: '#ffffff',
+  },
+  emptyState: {
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#14171a',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: '#657786',
+    textAlign: 'center',
   },
 });

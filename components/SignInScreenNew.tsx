@@ -24,7 +24,7 @@ export default function SignInScreenNew() {
         {/* Logo and Header */}
         <View style={styles.logoContainer}>
           <View style={styles.logoBackground}>
-            <ChirpLogoGradient size={80} />
+            <ChirpLogoGradient size={120} />
           </View>
           <Text style={styles.title}>Welcome to Chirp</Text>
           <Text style={styles.subtitle}>

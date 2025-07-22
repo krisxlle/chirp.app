@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<'chirps' | 'users' | 'trending'>('chirps');
+  const [activeTab, setActiveTab] = useState<'trending' | 'chirps' | 'users'>('trending');
 
   const trendingTopics = [
     { hashtag: '#technology', count: '12 chirps' },
@@ -31,14 +31,14 @@ export default function SearchPage() {
 
       {/* Tabs - like original */}
       <View style={styles.tabsContainer}>
-        {(['chirps', 'users', 'trending'] as const).map((tab) => (
+        {(['trending', 'chirps', 'users'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab === 'chirps' ? 'Chirps' : tab === 'users' ? 'Users' : 'Trending'}
+              {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
             </Text>
           </TouchableOpacity>
         ))}
