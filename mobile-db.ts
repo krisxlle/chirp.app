@@ -35,12 +35,12 @@ export async function getChirpsFromDB(): Promise<MobileChirp[]> {
         c.id::text,
         c.content,
         c.created_at as "createdAt",
-        COALESCE(u.custom_handle, u.handle, 'user') as username,
-        u.display_name,
+        COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
+        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary"
       FROM chirps c
-      LEFT JOIN users u ON c.user_id = u.id
-      WHERE c.parent_id IS NULL
+      LEFT JOIN users u ON c.author_id = u.id
+      WHERE c.reply_to_id IS NULL
       ORDER BY c.created_at DESC
       LIMIT 20
     `;
@@ -74,10 +74,10 @@ export async function getUserFromDB() {
       SELECT 
         id,
         custom_handle,
-        display_name,
+        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
         bio,
-        avatar_url,
-        banner_url,
+        profile_image_url as avatar_url,
+        banner_image_url as banner_url,
         link_in_bio
       FROM users 
       LIMIT 1
