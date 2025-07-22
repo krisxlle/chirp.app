@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useAuth } from './AuthContext';
-import SignInScreen from './SignInScreen';
+import SignInScreenNew from './SignInScreenNew';
 import HomePage from './HomePage';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
@@ -17,7 +17,7 @@ export default function ChirpApp() {
   }
 
   if (!isAuthenticated) {
-    return <SignInScreen />;
+    return <SignInScreenNew />;
   }
 
   const renderCurrentPage = () => {

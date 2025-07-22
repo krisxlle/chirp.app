@@ -10,7 +10,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  signIn: (email: string, password?: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -38,21 +38,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuthState();
   }, []);
 
-  const signIn = async (email: string, password: string): Promise<boolean> => {
+  const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
-      // Simulate authentication - in real app, this would be an API call
-      if (email && password.length >= 6) {
-        const user = {
-          id: '1',
-          email,
-          name: email.split('@')[0]
-        };
-        
-        await AsyncStorage.setItem('user', JSON.stringify(user));
-        setUser(user);
-        return true;
-      }
-      return false;
+      // Demo authentication - accept any email input
+      const user = {
+        id: '1',
+        email: email || 'demo@chirp.com',
+        name: email ? email.split('@')[0] : 'demo'
+      };
+      
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+      return true;
     } catch (error) {
       console.error('Sign in error:', error);
       return false;
