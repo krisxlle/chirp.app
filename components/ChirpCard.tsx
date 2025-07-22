@@ -31,6 +31,11 @@ interface ChirpCardProps {
 }
 
 export default function ChirpCard({ chirp }: ChirpCardProps) {
+  // Safety check for author data
+  if (!chirp || !chirp.author) {
+    return null;
+  }
+
   const [reactions, setReactions] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [reposts, setReposts] = useState(0);
@@ -62,10 +67,11 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     return date.toLocaleDateString();
   };
 
-  const displayName = chirp.author.customHandle || 
-                     (chirp.author.firstName && chirp.author.lastName 
+  const displayName = chirp.author?.customHandle || 
+                     chirp.author?.handle ||
+                     (chirp.author?.firstName && chirp.author?.lastName 
                        ? `${chirp.author.firstName} ${chirp.author.lastName}`
-                       : chirp.author.email.split('@')[0]);
+                       : chirp.author?.email?.split('@')[0] || 'Anonymous User');
 
   return (
     <View style={[styles.container, chirp.isWeeklySummary && styles.weeklySummaryContainer]}>

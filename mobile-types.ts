@@ -3,8 +3,18 @@
 export interface MobileChirp {
   id: string;
   content: string;
-  username: string;
   createdAt: string;
+  author: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    customHandle: string;
+    handle: string;
+    profileImageUrl?: string | null;
+  };
+  replyCount: number;
+  reactionCount: number;
   reactions: MobileReaction[];
   isWeeklySummary?: boolean;
 }

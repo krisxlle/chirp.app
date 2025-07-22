@@ -49,9 +49,19 @@ export async function getChirpsFromDB(): Promise<MobileChirp[]> {
     return chirps.map(chirp => ({
       id: String(chirp.id),
       content: String(chirp.content),
-      username: String(chirp.username || 'user'),
       createdAt: chirp.createdAt ? new Date(chirp.createdAt).toISOString() : new Date().toISOString(),
-      reactions: [], // TODO: Add reactions
+      author: {
+        id: '1',
+        firstName: String(chirp.display_name || 'User').split(' ')[0],
+        lastName: String(chirp.display_name || 'User').split(' ')[1] || '',
+        email: 'user@chirp.com',
+        customHandle: String(chirp.username || 'user'),
+        handle: String(chirp.username || 'user'),
+        profileImageUrl: null
+      },
+      replyCount: 0,
+      reactionCount: 0,
+      reactions: [],
       isWeeklySummary: Boolean(chirp.isWeeklySummary)
     })) as MobileChirp[];
   } catch (error) {

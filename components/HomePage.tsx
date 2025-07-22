@@ -134,14 +134,7 @@ export default function HomePage() {
           </View>
         ) : (
           chirps.map((chirp) => (
-            <ChirpCard 
-              key={chirp.id} 
-              chirp={{
-                ...chirp,
-                replyCount: chirp.replyCount || 0,
-                reactionCount: chirp.reactionCount || 0,
-              }} 
-            />
+            <ChirpCard key={chirp.id} chirp={chirp} />
           ))
         )}
       </ScrollView>
