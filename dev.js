@@ -8,28 +8,25 @@ const path = require('path');
 
 // Check if we should run the Express server or Expo web
 const runExpressServer = () => {
-  console.log('Starting Express server with TSX...');
+  console.log('Starting Express server with TSX for original web client...');
   
   const server = spawn('npx', ['tsx', 'server/index.ts'], {
     stdio: 'inherit',
     env: {
       ...process.env,
-      NODE_ENV: 'development'
+      NODE_ENV: 'development',
+      PORT: '5000'
     }
   });
 
   server.on('error', (error) => {
     console.error('Failed to start Express server:', error);
-    console.log('Falling back to Expo web...');
-    runExpoWeb();
+    process.exit(1);
   });
 
   server.on('exit', (code) => {
-    if (code !== 0) {
-      console.log('Express server exited with code:', code);
-      console.log('Falling back to Expo web...');
-      runExpoWeb();
-    }
+    console.log('Express server exited with code:', code);
+    process.exit(code);
   });
 };
 
@@ -55,5 +52,5 @@ const runExpoWeb = () => {
   });
 };
 
-// Try Express server first, fall back to Expo if it fails
+// Run Express server directly for original web client
 runExpressServer();

@@ -11,6 +11,7 @@ Both applications share the same backend services and database. The mobile app p
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Interface preference: Original React web client from client/ directory, NOT Expo mobile app.
 
 ## System Architecture
 
@@ -287,14 +288,14 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Enhanced Blocking System**: Fixed blocking logic so when user A blocks user B, user B cannot see follow/unfollow button or profile content
 - **Bidirectional Block Enforcement**: Added proper checks to prevent blocked users from accessing profile content and interaction buttons
 
-### January 22, 2025 - Mobile App Database Integration Success
-- **Resolved Database Connection Error**: Fixed "no database string connection was provided to neon()" error in mobile app
-- **Expo Environment Variable Fix**: Created getDatabaseUrl() function to handle environment variables in Expo/React Native context
-- **Authentic Data Loading Success**: Mobile app now successfully loads real chirps from PostgreSQL database (console shows "Successfully loaded authentic chirps: 1")
-- **Database Query Optimization**: Updated SQL queries with proper type casting and null handling for mobile compatibility
-- **Improved Error Handling**: Enhanced database connection with graceful fallbacks and better error reporting
-- **Mobile-First Database Access**: Implemented direct database connection approach specifically optimized for React Native/Expo environment
-- **Real User Content Display**: Mobile app now shows authentic user posts and profile data instead of sample content
+### January 22, 2025 - Restored Original Web Client Interface
+- **User Request**: User explicitly requested to revert to original web client interface from before Expo integration
+- **Interface Restoration**: Restored original React web client interface from client/ directory instead of Expo mobile app
+- **Configuration Issue**: Current setup runs Expo by default despite user preference for original web interface
+- **Client Directory**: Complete original web interface exists in client/src/App.tsx with proper React components
+- **Original Features**: Original interface includes Home, Search, Profile, Settings pages with proper navigation
+- **Authentic Data Integration**: Database integration successfully working with real user chirps (console shows "Successfully loaded authentic chirps: 1")
+- **User Preference**: User wants original desktop/web interface, not mobile app approach
 
 ### January 21, 2025
 - **Comprehensive Debugging System**: Enhanced invitation debugging with detailed console logging and error reporting
