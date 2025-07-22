@@ -1,111 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image } from 'react-native';
 import { getChirpsFromDB } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
+import ComposeChirp from './ComposeChirp';
+import ChirpCard from './ChirpCard';
 
-interface ChirpCardProps {
-  chirp: MobileChirp;
-}
-
-const ChirpCard: React.FC<ChirpCardProps> = ({ chirp }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    return `${diffDays}d`;
-  };
-
-  return (
-    <View style={[styles.chirpCard, chirp.isWeeklySummary && styles.weeklySummaryCard]}>
-      <View style={styles.chirpHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {chirp.username.substring(0, 1).toUpperCase()}
-          </Text>
-        </View>
-        <View style={styles.chirpMeta}>
-          <Text style={styles.username}>@{chirp.username}</Text>
-          <Text style={styles.timestamp}>• {formatDate(chirp.createdAt)}</Text>
-        </View>
-        {chirp.isWeeklySummary && (
-          <View style={styles.summaryBadge}>
-            <Text style={styles.summaryBadgeText}>Weekly Summary</Text>
-          </View>
-        )}
-      </View>
-      
-      <Text style={styles.chirpContent}>{chirp.content}</Text>
-      
-      <View style={styles.chirpActions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>💬 Reply</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>🔄 Repost</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>❤️ {chirp.reactions?.length || 0}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionText}>📤 Share</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
-
-const ComposeChirp: React.FC<{ onPost: () => void }> = ({ onPost }) => {
-  const [content, setContent] = useState('');
-  const maxLength = 280;
-  const remainingChars = maxLength - content.length;
-
-  const handlePost = () => {
-    if (content.trim()) {
-      Alert.alert('Success', 'Your chirp has been posted!');
-      setContent('');
-      onPost();
-    }
-  };
-
-  return (
-    <View style={styles.composeSection}>
-      <View style={styles.composeHeader}>
-        <View style={styles.composeAvatar}>
-          <Text style={styles.avatarText}>U</Text>
-        </View>
-        <View style={styles.composeContainer}>
-          <TextInput
-            style={styles.composeInput}
-            placeholder="What's on your mind?"
-            placeholderTextColor="#657786"
-            value={content}
-            onChangeText={setContent}
-            multiline
-            maxLength={maxLength}
-          />
-          <View style={styles.composeActions}>
-            <Text style={[styles.characterCount, remainingChars < 20 && styles.characterCountWarning]}>
-              {remainingChars}
-            </Text>
-            <TouchableOpacity 
-              style={[styles.postButton, !content.trim() && styles.postButtonDisabled]}
-              onPress={handlePost}
-              disabled={!content.trim()}
-            >
-              <Text style={styles.postButtonText}>Chirp</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
+// Convert mobile chirps to ChirpCard format
+const convertToChirpCard = (chirp: MobileChirp) => ({
+  id: parseInt(chirp.id),
+  content: chirp.content,
+  createdAt: chirp.createdAt,
+  isWeeklySummary: chirp.isWeeklySummary || false,
+  author: {
+    id: chirp.username || 'anonymous',
+    firstName: '',
+    lastName: '',
+    email: `${chirp.username}@example.com`,
+    handle: chirp.username,
+    customHandle: chirp.username,
+    profileImageUrl: undefined,
+  },
+  reactionCounts: chirp.reactions?.reduce((acc: any, reaction: any) => {
+    acc[reaction.emoji] = reaction.count;
+    return acc;
+  }, {}) || {},
+  replies: [],
+});
 
 export default function HomePage() {
   const [chirps, setChirps] = useState<MobileChirp[]>([]);
@@ -160,22 +80,45 @@ export default function HomePage() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logo}>Chirp</Text>
+            <Image 
+              source={{ uri: '/logo.jpg' }}
+              style={styles.logoImage}
+              onError={() => {}}
+            />
+            <Text style={styles.logoText}>Chirp</Text>
           </View>
           
-          {/* Feed Type Selector - like original */}
+          {/* Feed Type Selector - exactly like original */}
           <View style={styles.feedControls}>
-            {(['personalized', 'chronological', 'trending'] as const).map((type) => (
-              <TouchableOpacity 
-                key={type}
-                style={[styles.feedButton, feedType === type && styles.activeFeedButton]}
-                onPress={() => setFeedType(type)}
-              >
-                <Text style={[styles.feedButtonText, feedType === type && styles.activeFeedButtonText]}>
-                  {getFeedIcon(type)} {type === 'personalized' ? 'For You' : type === 'chronological' ? 'Latest' : 'Trending'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            <TouchableOpacity 
+              style={[styles.feedButton, feedType === 'personalized' && styles.activeFeedButton]}
+              onPress={() => setFeedType('personalized')}
+            >
+              <Text style={styles.feedButtonIcon}>✨</Text>
+              <Text style={[styles.feedButtonText, feedType === 'personalized' && styles.activeFeedButtonText]}>
+                For You
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.feedButton, feedType === 'chronological' && styles.activeFeedButton]}
+              onPress={() => setFeedType('chronological')}
+            >
+              <Text style={styles.feedButtonIcon}>🕐</Text>
+              <Text style={[styles.feedButtonText, feedType === 'chronological' && styles.activeFeedButtonText]}>
+                Latest
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.feedButton, feedType === 'trending' && styles.activeFeedButton]}
+              onPress={() => setFeedType('trending')}
+            >
+              <Text style={styles.feedButtonIcon}>📈</Text>
+              <Text style={[styles.feedButtonText, feedType === 'trending' && styles.activeFeedButtonText]}>
+                Trending
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -197,7 +140,7 @@ export default function HomePage() {
           </View>
         ) : (
           chirps.map((chirp) => (
-            <ChirpCard key={chirp.id} chirp={chirp} />
+            <ChirpCard key={chirp.id} chirp={convertToChirpCard(chirp)} />
           ))
         )}
       </ScrollView>
@@ -235,33 +178,43 @@ const styles = StyleSheet.create({
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 12,
   },
-  logo: {
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  logoText: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1a1a1a',
   },
   feedControls: {
     flexDirection: 'row',
-    justifyContent: 'center',
     backgroundColor: '#f7f9fa',
     borderRadius: 12,
     padding: 4,
   },
   feedButton: {
     flex: 1,
+    flexDirection: 'row',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   activeFeedButton: {
     backgroundColor: '#7c3aed',
   },
+  feedButtonIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
   feedButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: '#657786',
   },
@@ -273,145 +226,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100, // Space for bottom nav
-  },
-  composeSection: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 8,
-    borderBottomColor: '#f7f9fa',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  composeHeader: {
-    flexDirection: 'row',
-  },
-  composeAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#7c3aed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  composeContainer: {
-    flex: 1,
-  },
-  composeInput: {
-    fontSize: 18,
-    lineHeight: 24,
-    minHeight: 80,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e1e8ed',
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    textAlignVertical: 'top',
-    color: '#1a1a1a',
-  },
-  composeActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  characterCount: {
-    fontSize: 14,
-    color: '#657786',
-    fontWeight: '500',
-  },
-  characterCountWarning: {
-    color: '#f91880',
-  },
-  postButton: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  postButtonDisabled: {
-    backgroundColor: '#e1e8ed',
-  },
-  postButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  chirpCard: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-  },
-  weeklySummaryCard: {
-    backgroundColor: '#faf5ff',
-    borderLeftWidth: 4,
-    borderLeftColor: '#7c3aed',
-  },
-  chirpHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#7c3aed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  chirpMeta: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  username: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1a1a1a',
-  },
-  timestamp: {
-    fontSize: 15,
-    color: '#657786',
-    marginLeft: 4,
-  },
-  summaryBadge: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  summaryBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  chirpContent: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: '#1a1a1a',
-    marginBottom: 16,
-  },
-  chirpActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  actionButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  actionText: {
-    fontSize: 14,
-    color: '#657786',
-    fontWeight: '500',
   },
   emptyState: {
     padding: 48,
