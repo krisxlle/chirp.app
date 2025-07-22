@@ -2,7 +2,11 @@
 
 ## Overview
 
-Chirp is a Twitter-like social media platform built with React frontend and Express backend. It allows users to share short messages (chirps), follow other users, react to posts with emojis, and receive notifications. The application includes AI-powered features for generating user summaries and avatars.
+Chirp is a social media platform with dual implementations:
+1. **Web Application**: React frontend with Express backend for full-featured desktop experience
+2. **Mobile Application**: Expo/React Native application for mobile platforms
+
+Both applications share the same backend services and database. The mobile app provides a native mobile experience with tab navigation and platform-specific UI components.
 
 ## User Preferences
 
@@ -13,11 +17,19 @@ Preferred communication style: Simple, everyday language.
 The application follows a full-stack architecture with clear separation between frontend and backend:
 
 ### Frontend Architecture
+**Web Application**:
 - **Framework**: React 18 with TypeScript
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **State Management**: TanStack Query for server state
 - **Routing**: Wouter for client-side routing
 - **Build Tool**: Vite for fast development and building
+
+**Mobile Application (Expo)**:
+- **Framework**: Expo/React Native with TypeScript
+- **Navigation**: Expo Router with tab-based navigation
+- **Components**: React Native components with custom UI elements
+- **Styling**: React Native StyleSheet and themed components
+- **Platform**: Cross-platform (iOS, Android, Web)
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
@@ -73,6 +85,29 @@ The application follows a full-stack architecture with clear separation between 
 - **OpenAI API**: For generating user summaries and avatars
 - **Content Generation**: Weekly summaries and profile images
 - **Error Handling**: Graceful fallbacks for AI service failures
+
+## Recent Changes
+
+**July 22, 2025 - Expo Application Debugging and Resolution**
+- **Issue**: Expo/React Native application failed to start due to configuration conflicts and import path resolution errors
+- **Root Cause**: Mixed TypeScript configurations between Expo and Node.js environments causing module resolution failures
+- **Solution Implemented**:
+  - Fixed missing 'dev' script in package.json to properly start Expo web server on port 5000
+  - Systematically replaced all `@/` import aliases with relative paths throughout the Expo application
+  - Added explicit React imports to resolve UMD global errors in all components and pages
+  - Fixed image asset imports to use correct relative paths
+  - Updated import paths in components, hooks, and app directories for proper module resolution
+- **Result**: Application successfully loads with Metro bundler serving 967 modules, accessible via web and mobile platforms
+- **Technical Notes**: 
+  - Expo's module resolution differs from standard Node.js/Vite setups
+  - Relative paths are more reliable than aliases in Expo projects
+  - All components now properly import React to avoid UMD global issues
+
+## Project Status
+- **Web Application**: Fully functional with complete social media features
+- **Mobile Application**: Successfully restored and running via Expo
+- **Backend Services**: Operational with PostgreSQL database and Express API
+- **Development Environment**: Both applications can run simultaneously for cross-platform development
 
 ### Authentication
 - **Replit OAuth**: Integrated authentication service
