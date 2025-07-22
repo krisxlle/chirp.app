@@ -10,6 +10,8 @@ import {
   Alert 
 } from 'react-native';
 import UserAvatar from './UserAvatar';
+import ChirpCard from './ChirpCard';
+import { getChirpsFromDB } from '../mobile-db';
 
 interface User {
   id: string;
@@ -35,12 +37,22 @@ interface ProfileStats {
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'replies' | 'reactions'>('chirps');
+  const [userChirps, setUserChirps] = useState<any[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
     following: 1,
     followers: 1,
     chirps: 6,
     reactions: 3
   });
+
+  const fetchUserChirps = async () => {
+    try {
+      const chirps = await getChirpsFromDB();
+      setUserChirps(chirps);
+    } catch (error) {
+      console.error('Error fetching user chirps:', error);
+    }
+  };
 
   useEffect(() => {
     // Mock user data for now - will be replaced with real data
@@ -55,6 +67,8 @@ export default function ProfilePage() {
       profileImageUrl: null,
       bannerImageUrl: null
     });
+    
+    fetchUserChirps();
   }, []);
 
   const displayName = user?.firstName || user?.customHandle || 'User';
@@ -169,6 +183,60 @@ export default function ProfilePage() {
         <Text style={styles.weeklySummaryContent}>
           This week you posted 5 times and honestly? Peak tech anxiety energy ⚡ That chirp about AI stealing jobs hit different - giving main character meets existential crisis vibes 🦋 Plus all those notification tests? You're basically running QA for the whole platform ⭐ Tech-savvy chaos but make it relatable
         </Text>
+
+        {/* Analytics within Weekly Summary */}
+        <View style={styles.analyticsContainer}>
+          <View style={styles.analyticsRow}>
+            <View style={styles.analyticItem}>
+              <Text style={styles.analyticIcon}>📊</Text>
+              <Text style={styles.analyticValue}>5</Text>
+              <Text style={styles.analyticLabel}>Chirps Posted</Text>
+            </View>
+            
+            <View style={styles.analyticItem}>
+              <Text style={styles.analyticIcon}>✨</Text>
+              <Text style={styles.analyticLabel}>Weekly Vibe</Text>
+              <Text style={styles.analyticSubtitle}>Tech-Savvy Chaos</Text>
+            </View>
+          </View>
+
+          <View style={styles.topChirpCard}>
+            <Text style={styles.topChirpIcon}>🏆</Text>
+            <Text style={styles.topChirpTitle}>Top Chirp</Text>
+            <Text style={styles.topChirpContent}>
+              "I did not even get to chirp the first reply , Al stole this moment from me they are stealing our jobs 🤖"
+            </Text>
+          </View>
+
+          <View style={styles.reactionsAnalytics}>
+            <Text style={styles.reactionsTitle}>🔥 Top Reactions</Text>
+            <View style={styles.reactionsRow}>
+              <View style={styles.reactionItem}>
+                <Text style={styles.reactionIcon}>🔥</Text>
+                <Text style={styles.reactionCount}>1</Text>
+              </View>
+              <View style={styles.reactionItem}>
+                <Text style={styles.reactionIcon}>👏</Text>
+                <Text style={styles.reactionCount}>1</Text>
+              </View>
+              <View style={styles.reactionItem}>
+                <Text style={styles.reactionIcon}>❤️</Text>
+                <Text style={styles.reactionCount}>1</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.commonWordsCard}>
+            <Text style={styles.commonWordsTitle}>📈 Common Words</Text>
+            <View style={styles.tagsContainer}>
+              <Text style={styles.tag}>chirp</Text>
+              <Text style={styles.tag}>reply</Text>
+              <Text style={styles.tag}>AI</Text>
+              <Text style={styles.tag}>jobs</Text>
+              <Text style={styles.tag}>notifications</Text>
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Profile Tabs */}
@@ -189,10 +257,18 @@ export default function ProfilePage() {
       {/* Tab Content */}
       <View style={styles.tabContent}>
         {activeTab === 'chirps' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>💬</Text>
-            <Text style={styles.emptyTitle}>No chirps yet</Text>
-            <Text style={styles.emptySubtext}>Your chirps will appear here</Text>
+          <View style={styles.chirpsContainer}>
+            {userChirps.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>💬</Text>
+                <Text style={styles.emptyTitle}>No chirps yet</Text>
+                <Text style={styles.emptySubtext}>Your chirps will appear here</Text>
+              </View>
+            ) : (
+              userChirps.map((chirp) => (
+                <ChirpCard key={chirp.id} chirp={chirp} />
+              ))
+            )}
           </View>
         )}
         
@@ -211,65 +287,6 @@ export default function ProfilePage() {
             <Text style={styles.emptySubtext}>Posts you've reacted to will appear here</Text>
           </View>
         )}
-      </View>
-
-      {/* Stats Cards */}
-      <View style={styles.statsCards}>
-        <View style={styles.statsRow2}>
-          <View style={styles.statCard}>
-            <Text style={styles.statCardIcon}>📊</Text>
-            <Text style={styles.statCardTitle}>Chirps Posted</Text>
-            <Text style={styles.statCardValue}>5</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statCardIcon}>✨</Text>
-            <Text style={styles.statCardTitle}>Weekly Vibe</Text>
-            <Text style={styles.statCardSubtitle}>Tech-Savvy Chaos</Text>
-          </View>
-        </View>
-
-        <View style={styles.statCard}>
-          <Text style={styles.statCardIcon}>🏆</Text>
-          <Text style={styles.statCardTitle}>Top Chirp</Text>
-          <Text style={styles.statCardContent}>
-            "I did not even get to chirp the first reply , Al stole this moment from me they are stealing our jobs 🤖"
-          </Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <Text style={styles.statCardIcon}>🔥</Text>
-          <Text style={styles.statCardTitle}>Top Reactions</Text>
-          <View style={styles.reactionsRow}>
-            <View style={styles.reactionItem}>
-              <Text style={styles.reactionIcon}>🔥</Text>
-              <Text style={styles.reactionCount}>1</Text>
-            </View>
-            <View style={styles.reactionItem}>
-              <Text style={styles.reactionIcon}>👏</Text>
-              <Text style={styles.reactionCount}>1</Text>
-            </View>
-            <View style={styles.reactionItem}>
-              <Text style={styles.reactionIcon}>❤️</Text>
-              <Text style={styles.reactionCount}>1</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.statCard}>
-          <Text style={styles.statCardIcon}>📈</Text>
-          <Text style={styles.statCardTitle}>Common Words</Text>
-          <View style={styles.tagsContainer}>
-            <Text style={styles.tag}>chirp</Text>
-            <Text style={styles.tag}>reply</Text>
-            <Text style={styles.tag}>AI</Text>
-            <Text style={styles.tag}>jobs</Text>
-            <Text style={styles.tag}>notifications</Text>
-            <Text style={styles.tag}>mention</Text>
-            <Text style={styles.tag}>feature</Text>
-            <Text style={styles.tag}>cool</Text>
-          </View>
-        </View>
       </View>
 
       {/* Feed Posted Notice */}
@@ -629,5 +646,90 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#657786',
     textAlign: 'center',
+  },
+  chirpsContainer: {
+    paddingHorizontal: 16,
+  },
+  analyticsContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e1e8ed',
+  },
+  analyticsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  analyticItem: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  analyticIcon: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  analyticValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#14171a',
+    marginBottom: 2,
+  },
+  analyticLabel: {
+    fontSize: 12,
+    color: '#657786',
+    fontWeight: '500',
+  },
+  analyticSubtitle: {
+    fontSize: 12,
+    color: '#14171a',
+    fontWeight: '500',
+  },
+  topChirpCard: {
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  topChirpIcon: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  topChirpTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#657786',
+    marginBottom: 4,
+  },
+  topChirpContent: {
+    fontSize: 14,
+    color: '#14171a',
+    lineHeight: 18,
+  },
+  reactionsAnalytics: {
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  reactionsTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#657786',
+    marginBottom: 8,
+  },
+  commonWordsCard: {
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  commonWordsTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#657786',
+    marginBottom: 8,
   },
 });

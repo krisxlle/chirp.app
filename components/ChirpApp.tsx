@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { useAuth } from './AuthContext';
 import SignInScreenNew from './SignInScreenNew';
 import HomePage from './HomePage';
+import SearchPage from './SearchPage';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
 import NotificationsPage from './NotificationsPage';
@@ -25,11 +26,7 @@ export default function ChirpApp() {
       case 'home':
         return <HomePage />;
       case 'search':
-        return (
-          <View style={styles.placeholderContainer}>
-            <SettingsPage />
-          </View>
-        );
+        return <SearchPage />;
       case 'notifications':
         return <NotificationsPage />;
       case 'profile':
