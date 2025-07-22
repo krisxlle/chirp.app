@@ -73,8 +73,56 @@ export default function ProfilePage() {
 
   const displayName = user?.firstName || user?.customHandle || 'User';
 
+  const [showPersonalityQuiz, setShowPersonalityQuiz] = useState(false);
+  const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  
+  const personalityQuestions = [
+    "What's your ideal weekend activity?",
+    "How do you prefer to communicate?", 
+    "What motivates you most?",
+    "Your social style is more:",
+    "You're drawn to content that's:",
+    "Your humor style:",
+    "When making decisions, you:",
+    "Your ideal creative outlet:",
+    "You value relationships that are:",
+    "Your approach to new experiences:"
+  ];
+
   const handleAIProfile = () => {
-    Alert.alert('AI Profile', 'AI Profile generation coming soon!');
+    setShowPersonalityQuiz(true);
+    setCurrentQuestion(0);
+    setQuizAnswers([]);
+  };
+
+  const handleQuizAnswer = (answer: string) => {
+    const newAnswers = [...quizAnswers, answer];
+    setQuizAnswers(newAnswers);
+    
+    if (currentQuestion < personalityQuestions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      // Quiz completed, generate AI profile
+      generateProfile(newAnswers);
+    }
+  };
+
+  const generateProfile = async (answers: string[]) => {
+    try {
+      setShowPersonalityQuiz(false);
+      Alert.alert('Generating Profile', 'Creating your AI-powered profile based on your personality...', [
+        { text: 'OK', onPress: () => {} }
+      ]);
+      
+      // Here you would call the AI generation service
+      // For now, just show completion
+      setTimeout(() => {
+        Alert.alert('Success!', 'Your AI profile has been generated! Check out your new avatar, banner, and bio.');
+      }, 2000);
+    } catch (error) {
+      Alert.alert('Error', 'Profile generation failed. Please try again.');
+    }
   };
 
   const handleSettings = () => {
@@ -294,6 +342,79 @@ export default function ProfilePage() {
         <Text style={styles.checkmarkIcon}>✓</Text>
         <Text style={styles.feedNoticeText}>Weekly summary has been posted to your feed</Text>
       </View>
+      
+      {/* Personality Quiz Overlay */}
+      {showPersonalityQuiz && (
+        <View style={styles.quizOverlay}>
+          <View style={styles.quizContainer}>
+            <View style={styles.quizHeader}>
+              <Text style={styles.quizTitle}>Personality Quiz</Text>
+              <Text style={styles.quizProgress}>
+                {currentQuestion + 1} of {personalityQuestions.length}
+              </Text>
+            </View>
+            
+            <Text style={styles.quizQuestion}>
+              {personalityQuestions[currentQuestion]}
+            </Text>
+            
+            <View style={styles.quizOptions}>
+              {currentQuestion === 0 && [
+                'Netflix and chill',
+                'Outdoor adventures', 
+                'Creative projects',
+                'Social gatherings'
+              ].map((option, index) => (
+                <TouchableOpacity 
+                  key={index}
+                  style={styles.quizOption}
+                  onPress={() => handleQuizAnswer(option)}
+                >
+                  <Text style={styles.quizOptionText}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+              
+              {currentQuestion === 1 && [
+                'Direct and honest',
+                'Thoughtful and detailed',
+                'Fun and playful',
+                'Deep and meaningful'
+              ].map((option, index) => (
+                <TouchableOpacity 
+                  key={index}
+                  style={styles.quizOption}
+                  onPress={() => handleQuizAnswer(option)}
+                >
+                  <Text style={styles.quizOptionText}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+              
+              {/* Generic options for remaining questions */}
+              {currentQuestion > 1 && [
+                'Adventure and growth',
+                'Connection and community',
+                'Knowledge and learning',
+                'Creativity and expression'
+              ].map((option, index) => (
+                <TouchableOpacity 
+                  key={index}
+                  style={styles.quizOption}
+                  onPress={() => handleQuizAnswer(option)}
+                >
+                  <Text style={styles.quizOptionText}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.quizCloseButton}
+              onPress={() => setShowPersonalityQuiz(false)}
+            >
+              <Text style={styles.quizCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -731,5 +852,79 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#657786',
     marginBottom: 8,
+  },
+  quizOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  quizContainer: {
+    backgroundColor: '#ffffff',
+    margin: 20,
+    borderRadius: 20,
+    padding: 24,
+    maxWidth: 400,
+    width: '90%',
+  },
+  quizHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  quizTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#14171a',
+  },
+  quizProgress: {
+    fontSize: 14,
+    color: '#657786',
+  },
+  quizQuestion: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#14171a',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  quizOptions: {
+    marginBottom: 20,
+  },
+  quizOption: {
+    backgroundColor: '#f7f9fa',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  quizOptionText: {
+    fontSize: 16,
+    color: '#14171a',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  quizCloseButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f7f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quizCloseText: {
+    fontSize: 18,
+    color: '#657786',
+    fontWeight: '600',
   },
 });

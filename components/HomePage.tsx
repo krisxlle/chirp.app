@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image } from 'react-native';
-import { getChirpsFromDB } from '../mobile-db';
+import { getChirpsFromDB, getForYouChirps, getLatestChirps, getTrendingChirps } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
 import ComposeChirp from './ComposeChirp';
 import ChirpCard from './ChirpCard';
@@ -36,8 +36,20 @@ export default function HomePage() {
 
   const fetchChirps = async () => {
     try {
-      console.log('Fetching authentic user chirps from database...');
-      const data = await getChirpsFromDB();
+      console.log(`Fetching ${feedType} chirps from database...`);
+      let data;
+      switch (feedType) {
+        case 'chronological':
+          data = await getLatestChirps();
+          break;
+        case 'trending':
+          data = await getTrendingChirps();
+          break;
+        case 'personalized':
+        default:
+          data = await getForYouChirps();
+          break;
+      }
       console.log('Successfully loaded authentic chirps:', data.length);
       setChirps(data);
     } catch (error) {
@@ -51,7 +63,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchChirps();
-  }, []);
+  }, [feedType]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -64,6 +76,15 @@ export default function HomePage() {
       case 'chronological': return '🕐';
       case 'trending': return '📈';
       default: return '✨';
+    }
+  };
+
+  const getFeedTitle = (type: string) => {
+    switch (type) {
+      case 'personalized': return 'For You';
+      case 'chronological': return 'Latest';
+      case 'trending': return 'Trending';
+      default: return 'For You';
     }
   };
 

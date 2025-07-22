@@ -1,16 +1,59 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { getTrendingHashtags, searchChirps, searchUsers } from '../mobile-db';
+import ChirpCard from './ChirpCard';
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<'trending' | 'chirps' | 'users'>('trending');
+  const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const trendingTopics = [
-    { hashtag: '#technology', count: '12 chirps' },
-    { hashtag: '#socialmedia', count: '8 chirps' },
-    { hashtag: '#privacy', count: '5 chirps' },
-    { hashtag: '#mobile', count: '3 chirps' },
-  ];
+  useEffect(() => {
+    fetchTrendingHashtags();
+  }, []);
+
+  const fetchTrendingHashtags = async () => {
+    try {
+      const hashtags = await getTrendingHashtags();
+      setTrendingTopics(hashtags);
+    } catch (error) {
+      console.error('Failed to fetch trending hashtags:', error);
+    }
+  };
+
+  const performSearch = async () => {
+    if (!query.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      if (activeTab === 'chirps') {
+        const results = await searchChirps(query);
+        setSearchResults(results);
+      } else if (activeTab === 'users') {
+        const results = await searchUsers(query);
+        setSearchResults(results);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+      Alert.alert('Search Error', 'Unable to perform search. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (query.trim() && activeTab !== 'trending') {
+        performSearch();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [query, activeTab]);
 
   return (
     <View style={styles.container}>
@@ -58,21 +101,66 @@ export default function SearchPage() {
         )}
 
         {activeTab === 'chirps' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={styles.emptyTitle}>Search for chirps</Text>
-            <Text style={styles.emptySubtext}>Enter keywords to find chirps</Text>
+          <View style={styles.searchSection}>
+            {isLoading && (
+              <Text style={styles.loadingText}>Searching chirps...</Text>
+            )}
+            {searchResults.length > 0 ? (
+              searchResults.map((chirp) => (
+                <ChirpCard key={chirp.id} chirp={chirp} />
+              ))
+            ) : query.trim() && !isLoading ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>🔍</Text>
+                <Text style={styles.emptyTitle}>No chirps found</Text>
+                <Text style={styles.emptySubtext}>Try different keywords</Text>
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>🔍</Text>
+                <Text style={styles.emptyTitle}>Search for chirps</Text>
+                <Text style={styles.emptySubtext}>Enter keywords to find chirps</Text>
+              </View>
+            )}
           </View>
         )}
 
         {activeTab === 'users' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>👥</Text>
-            <Text style={styles.emptyTitle}>Search for users</Text>
-            <Text style={styles.emptySubtext}>Find people to follow</Text>
+          <View style={styles.searchSection}>
+            {isLoading && (
+              <Text style={styles.loadingText}>Searching users...</Text>
+            )}
+            {searchResults.length > 0 ? (
+              searchResults.map((user) => (
+                <TouchableOpacity key={user.id} style={styles.userItem}>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{user.display_name}</Text>
+                    <Text style={styles.userHandle}>@{user.username}</Text>
+                    {user.bio && <Text style={styles.userBio}>{user.bio}</Text>}
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : query.trim() && !isLoading ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>👥</Text>
+                <Text style={styles.emptyTitle}>No users found</Text>
+                <Text style={styles.emptySubtext}>Try different search terms</Text>
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>👥</Text>
+                <Text style={styles.emptyTitle}>Search for users</Text>
+                <Text style={styles.emptySubtext}>Find people to follow</Text>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
+      
+      {/* Feedback Button */}
+      <TouchableOpacity style={styles.feedbackButton}>
+        <Text style={styles.feedbackButtonText}>Feedback</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -179,5 +267,57 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#657786',
     textAlign: 'center',
+  },
+  searchSection: {
+    paddingHorizontal: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#657786',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  userItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#14171a',
+    marginBottom: 4,
+  },
+  userHandle: {
+    fontSize: 14,
+    color: '#d946ef',
+    marginBottom: 4,
+  },
+  userBio: {
+    fontSize: 14,
+    color: '#657786',
+    lineHeight: 18,
+  },
+  feedbackButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    backgroundColor: '#d946ef',
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  feedbackButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

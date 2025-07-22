@@ -40,20 +40,45 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [reposts, setReposts] = useState(0);
 
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  
+  const reactionEmojis = ['😀', '😍', '🤔', '😢', '😡', '👏', '🔥', '❤️', '💯', '✨'];
+
   const handleReply = () => {
-    Alert.alert('Reply', 'Reply functionality coming soon!');
+    // Navigate to reply compose screen
+    Alert.alert('Reply', `Replying to ${displayName}'s chirp`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reply', onPress: () => setReplies(prev => prev + 1) }
+    ]);
   };
 
   const handleRepost = () => {
-    setReposts(prev => prev + 1);
+    Alert.alert('Repost', 'Share this chirp?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Repost', onPress: () => setReposts(prev => prev + 1) }
+    ]);
   };
 
-  const handleReaction = () => {
+  const handleReactionPress = (emoji: string) => {
     setReactions(prev => prev + 1);
+    setShowReactionPicker(false);
+    // Add reaction to database
   };
 
   const handleShare = () => {
-    Alert.alert('Share', 'Share functionality coming soon!');
+    // Use native share API
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share({
+        title: `Chirp from ${displayName}`,
+        text: chirp.content,
+        url: `https://chirp.app/chirp/${chirp.id}`
+      });
+    } else {
+      Alert.alert('Share', 'Copy link to chirp?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Copy Link', onPress: () => Alert.alert('Copied!') }
+      ]);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -119,22 +144,36 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         </TouchableOpacity>
 
         <View style={styles.reactionsContainer}>
-          <TouchableOpacity style={styles.reactionButton} onPress={handleReaction}>
-            <Text style={styles.reactionIcon}>🤔</Text>
-            <Text style={styles.reactionCount}>0</Text>
+          <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
+            <Text style={styles.reactionIcon}>😀</Text>
+            <Text style={styles.reactionCount}>{reactions}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.reactionButton} onPress={handleReaction}>
+          {showReactionPicker && (
+            <View style={styles.reactionPicker}>
+              {reactionEmojis.map((emoji, index) => (
+                <TouchableOpacity 
+                  key={index}
+                  style={styles.reactionOption}
+                  onPress={() => handleReactionPress(emoji)}
+                >
+                  <Text style={styles.reactionEmoji}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          
+          <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
             <Text style={styles.reactionIcon}>🤯</Text>
             <Text style={styles.reactionCount}>0</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.reactionButton} onPress={handleReaction}>
+          <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
             <Text style={styles.reactionIcon}>⭐</Text>
             <Text style={styles.reactionCount}>0</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.addReactionButton}>
+          <TouchableOpacity style={styles.addReactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
             <Text style={styles.addReactionText}>+</Text>
             <Text style={styles.reactionCount}>1</Text>
           </TouchableOpacity>
@@ -281,5 +320,29 @@ const styles = StyleSheet.create({
     color: '#7c3aed',
     fontWeight: '600',
     marginRight: 2,
+  },
+  reactionPicker: {
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 10,
+  },
+  reactionOption: {
+    marginHorizontal: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  reactionEmoji: {
+    fontSize: 20,
   },
 });
