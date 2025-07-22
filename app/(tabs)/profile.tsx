@@ -29,17 +29,36 @@ export default function ProfileScreen() {
 
   const fetchProfile = async () => {
     try {
-      console.log('Fetching profile data...');
-      // Simulate API call with sample user data
-      const sampleUser: User = {
-        id: '1',
-        username: 'chirpuser',
-        displayName: 'Chirp User',
-        bio: 'Anonymous social media enthusiast 🐦 Privacy-first connections 🔐',
-        followersCount: 156,
-        followingCount: 89,
-        chirpsCount: 47,
-      };
+      console.log('Fetching authentic user profile from database...');
+      const { getUserFromDB } = require('../../mobile-db');
+      const dbUser = await getUserFromDB();
+      
+      if (dbUser) {
+        const authenticUser: User = {
+          id: dbUser.id,
+          username: dbUser.custom_handle || 'user',
+          displayName: dbUser.display_name || 'Chirp User',
+          bio: dbUser.bio || 'Welcome to Chirp! 🐤',
+          followersCount: 0, // TODO: Add follower count from database
+          followingCount: 0, // TODO: Add following count from database
+          chirpsCount: 0, // TODO: Add chirp count from database
+          avatar: dbUser.avatar_url,
+        };
+        console.log('Loaded authentic user profile:', authenticUser.username);
+        setUser(authenticUser);
+      } else {
+        // Fallback only if no user found in database
+        const fallbackUser: User = {
+          id: '1',
+          username: 'guest_user',
+          displayName: 'Guest User',
+          bio: 'Please sign in to see your profile',
+          followersCount: 0,
+          followingCount: 0,
+          chirpsCount: 0,
+        };
+        setUser(fallbackUser);
+      }
       
       const sampleChirps: Chirp[] = [
         {

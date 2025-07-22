@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Alert } from
 
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+import { getChirpsFromDB } from '../../mobile-db';
 
 interface Chirp {
   id: number;
@@ -19,45 +20,21 @@ export default function HomeScreen() {
 
   const fetchChirps = async () => {
     try {
-      // Try backend API on port 3000 first
-      let response;
-      try {
-        response = await fetch('http://localhost:3000/api/chirps', {
-          credentials: 'include'
-        });
-      } catch (backendError) {
-        // Fallback to the same port as the app
-        response = await fetch('/api/chirps', {
-          credentials: 'include'
-        });
-      }
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch chirps');
-      }
-      const data = await response.json();
-      console.log('Successfully fetched chirps from backend:', data.length);
+      console.log('Fetching authentic user chirps from database...');
+      const data = await getChirpsFromDB();
+      console.log('Successfully loaded authentic chirps:', data.length);
       setChirps(data);
     } catch (error) {
-      console.error('Failed to fetch chirps, using sample data:', error);
-      // Show sample data if backend isn't available
-      const sampleData = [
-        {
-          id: 1,
-          content: 'Welcome to your Chirp feed! This is sample data while we connect to the backend.',
-          username: 'chirpuser',
-          createdAt: new Date().toISOString(),
-          reactions: [{ emoji: '👍', count: 5 }]
-        },
-        {
-          id: 2,
-          content: 'Your actual posts and profile data will appear once the backend connection is established.',
-          username: 'systemuser',
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-          reactions: [{ emoji: '💜', count: 12 }]
-        }
-      ];
-      setChirps(sampleData);
+      console.error('Database connection failed:', error);
+      Alert.alert('Connection Error', 'Unable to load your chirps. Please check your internet connection.');
+      // Only use minimal fallback if database completely fails
+      setChirps([{
+        id: 0,
+        content: 'Unable to connect to your account. Please check your internet connection and try refreshing.',
+        username: 'system',
+        createdAt: new Date().toISOString(),
+        reactions: []
+      }]);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
