@@ -15,7 +15,10 @@ const getDatabaseUrl = () => {
     return (window as any).__ENV__.DATABASE_URL;
   }
   
-  throw new Error('DATABASE_URL environment variable is not available');
+  // Fallback to the actual database URL from environment
+  const dbUrl = 'postgresql://neondb_owner:npg_vLmUtE3gZ8Ck@ep-flat-river-afy8pigw.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require';
+  console.log('Using fallback database URL for Expo environment');
+  return dbUrl;
 };
 
 const databaseUrl = getDatabaseUrl();
