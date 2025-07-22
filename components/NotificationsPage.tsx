@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import UserAvatar from './UserAvatar';
 import HeartIcon from './icons/HeartIcon';
 import MentionIcon from './icons/MentionIcon';
@@ -184,7 +184,10 @@ export default function NotificationsPage() {
       </ScrollView>
       
       {/* Feedback Button */}
-      <TouchableOpacity style={styles.feedbackButton}>
+      <TouchableOpacity 
+        style={styles.feedbackButton}
+        onPress={() => Alert.alert('Feedback', 'Navigate to feedback submission page')}
+      >
         <Text style={styles.feedbackButtonText}>Feedback</Text>
       </TouchableOpacity>
     </View>
@@ -284,7 +287,7 @@ const styles = StyleSheet.create({
   },
   feedbackButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 100,
     right: 20,
     backgroundColor: '#7c3aed',
     paddingHorizontal: 16,

@@ -126,7 +126,7 @@ export default function ProfilePage() {
   };
 
   const handleSettings = () => {
-    Alert.alert('Settings', 'Settings page coming soon!');
+    Alert.alert('Settings', 'Navigate to settings page');
   };
 
   if (!user) {
@@ -185,7 +185,18 @@ export default function ProfilePage() {
           <Text style={styles.crownIcon}>👑</Text>
         </View>
         <Text style={styles.handle}>{user.customHandle || user.handle}</Text>
-        <Text style={styles.bio}>{user.bio}</Text>
+        <Text style={styles.bio}>
+          {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
+            if (part.startsWith('@')) {
+              return (
+                <TouchableOpacity key={index} onPress={() => Alert.alert('Profile', `Navigate to ${part}'s profile`)}>
+                  <Text style={styles.mentionText}>{part}</Text>
+                </TouchableOpacity>
+              );
+            }
+            return <Text key={index}>{part}</Text>;
+          })}
+        </Text>
         
         <View style={styles.joinedRow}>
           <Text style={styles.calendarIcon}>📅</Text>
@@ -195,12 +206,12 @@ export default function ProfilePage() {
 
       {/* Stats Row */}
       <View style={styles.statsRow}>
-        <TouchableOpacity style={styles.statItem}>
+        <TouchableOpacity style={styles.statItem} onPress={() => Alert.alert('Following', 'Show list of people you follow')}>
           <Text style={styles.statNumber}>{stats.following}</Text>
           <Text style={styles.statLabel}>Following</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.statItem}>
+        <TouchableOpacity style={styles.statItem} onPress={() => Alert.alert('Followers', 'Show list of your followers')}>
           <Text style={styles.statNumber}>{stats.followers}</Text>
           <Text style={styles.statLabel}>Followers</Text>
         </TouchableOpacity>
@@ -496,6 +507,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    opacity: 1.0,
   },
   aiProfileIcon: {
     fontSize: 14,
@@ -552,7 +564,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#14171a',
     marginTop: 12,
-    lineHeight: 20,
+    lineHeight: 24,
+  },
+  mentionText: {
+    color: '#7c3aed',
+    fontSize: 15,
   },
   joinedRow: {
     flexDirection: 'row',

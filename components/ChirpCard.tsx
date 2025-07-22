@@ -137,16 +137,27 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
                        ? `${chirp.author.firstName} ${chirp.author.lastName}`
                        : chirp.author?.email?.split('@')[0] || 'Anonymous User');
 
+  const handleChirpPress = () => {
+    Alert.alert('View Replies', `Show ${replies} replies for this chirp`);
+  };
+
   return (
-    <View style={[styles.container, chirp.isWeeklySummary && styles.weeklySummaryContainer]}>
+    <TouchableOpacity 
+      style={[styles.container, chirp.isWeeklySummary && styles.weeklySummaryContainer]}
+      onPress={handleChirpPress}
+      activeOpacity={0.95}
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={handleAvatarPress}>
           <UserAvatar user={chirp.author} size="md" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <View style={styles.nameRow}>
-            <TouchableOpacity onPress={handleAvatarPress}>
+            <TouchableOpacity onPress={handleAvatarPress} style={styles.nameContainer}>
               <Text style={styles.username}>{displayName}</Text>
+              {(chirp.author as any)?.isChirpPlus && (
+                <Text style={styles.crownBadge}>👑</Text>
+              )}
             </TouchableOpacity>
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>
@@ -176,7 +187,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton} onPress={handleReply}>
-          <ReplyIcon size={18} color="#657786" />
+          <Text style={styles.speechBubble}>💬</Text>
           <Text style={styles.actionText}>{replies}</Text>
         </TouchableOpacity>
 
@@ -221,9 +232,11 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-          <ShareIcon size={18} color="#657786" />
-        </TouchableOpacity>
+        <View style={styles.shareButtonContainer}>
+          <TouchableOpacity style={[styles.actionButton, styles.shareButton]} onPress={handleShare}>
+            <ShareIcon size={18} color="#657786" />
+          </TouchableOpacity>
+        </View>
       </View>
       
       {/* Reply Input */}
@@ -254,7 +267,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           </View>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -334,7 +347,7 @@ const styles = StyleSheet.create({
   },
   content: {
     fontSize: 15,
-    lineHeight: 20,
+    lineHeight: 24,
     color: '#14171a',
     marginLeft: 52, // Align with avatar
     marginBottom: 12,
@@ -463,5 +476,24 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#ffffff',
     fontWeight: '600',
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  crownBadge: {
+    fontSize: 16,
+    marginLeft: 4,
+    color: '#7c3aed',
+  },
+  speechBubble: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  shareButtonContainer: {
+    marginLeft: 'auto',
+  },
+  shareButton: {
+    marginLeft: 0,
   },
 });
