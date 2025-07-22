@@ -181,7 +181,7 @@ export default function SearchPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fafafa',
   },
   header: {
     backgroundColor: '#ffffff',
@@ -247,10 +247,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   trendingItem: {
-    paddingVertical: 12,
+    marginHorizontal: 12,
+    marginVertical: 4,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   hashtag: {
     fontSize: 16,
@@ -291,9 +298,16 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   userItem: {
+    marginHorizontal: 12,
+    marginVertical: 4,
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   userInfo: {
     flex: 1,

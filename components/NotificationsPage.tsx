@@ -197,7 +197,7 @@ export default function NotificationsPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fafafa',
   },
   header: {
     flexDirection: 'row',
@@ -231,10 +231,16 @@ const styles = StyleSheet.create({
   },
   notificationItem: {
     backgroundColor: '#ffffff',
+    marginHorizontal: 12,
+    marginVertical: 4,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f1f1',
+    paddingVertical: 16,
+    borderRadius: 12,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   notificationContent: {
     flexDirection: 'row',

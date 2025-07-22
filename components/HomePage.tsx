@@ -170,7 +170,7 @@ export default function HomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fafafa',
   },
   loadingContainer: {
     flex: 1,
@@ -220,13 +220,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeFeedButton: {
     backgroundColor: '#d946ef',
+    shadowColor: '#d946ef',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   feedButtonIcon: {
     fontSize: 12,
@@ -242,6 +247,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    backgroundColor: '#fafafa',
   },
   scrollContent: {
     paddingBottom: 100, // Space for bottom nav

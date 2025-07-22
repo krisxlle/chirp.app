@@ -294,13 +294,25 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
+    marginHorizontal: 12,
+    marginVertical: 6,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   weeklySummaryContainer: {
-    backgroundColor: '#f8f4ff', // Light purple background for weekly summary
+    backgroundColor: '#f8f4ff',
+    borderRadius: 16,
+    shadowColor: '#d946ef',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   header: {
     flexDirection: 'row',

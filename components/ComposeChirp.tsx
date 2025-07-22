@@ -20,7 +20,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     firstName: "Anonymous",
     lastName: "User",
     email: "user@example.com",
-    profileImageUrl: null,
+    profileImageUrl: undefined,
   };
 
   const handleSubmit = async () => {
@@ -116,10 +116,17 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
-    borderBottomWidth: 8,
-    borderBottomColor: '#f7f9fa',
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 16,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   composeArea: {
     flexDirection: 'row',
@@ -174,8 +181,15 @@ const styles = StyleSheet.create({
   postButton: {
     backgroundColor: '#7c3aed',
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   postButtonDisabled: {
     backgroundColor: '#d1d5db',
