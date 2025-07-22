@@ -5,6 +5,7 @@ import SignInScreen from './SignInScreen';
 import HomePage from './HomePage';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
+import NotificationsPage from './NotificationsPage';
 import BottomNavigation from './BottomNavigation';
 
 export default function ChirpApp() {
@@ -30,11 +31,7 @@ export default function ChirpApp() {
           </View>
         );
       case 'notifications':
-        return (
-          <View style={styles.placeholderContainer}>
-            <SettingsPage />
-          </View>
-        );
+        return <NotificationsPage />;
       case 'profile':
         return <ProfilePage />;
       default:

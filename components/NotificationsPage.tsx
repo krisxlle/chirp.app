@@ -1,100 +1,174 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import UserAvatar from './UserAvatar';
+import HeartIcon from './icons/HeartIcon';
+import MentionIcon from './icons/MentionIcon';
+import FollowIcon from './icons/FollowIcon';
 
 interface Notification {
   id: string;
-  type: 'like' | 'reply' | 'follow' | 'mention';
-  message: string;
+  type: 'reaction' | 'mention' | 'follow';
+  user: {
+    id: string;
+    name: string;
+    handle: string;
+    email: string;
+    profileImageUrl?: string;
+  };
+  content?: string;
   timestamp: string;
-  read: boolean;
+  isRead: boolean;
 }
 
 export default function NotificationsPage() {
-  const [notifications] = useState<Notification[]>([
+  // Mock notifications data matching the screenshot
+  const notifications: Notification[] = [
     {
       id: '1',
-      type: 'like',
-      message: '@user123 liked your chirp about privacy in social media',
-      timestamp: '2 hours ago',
-      read: false,
+      type: 'reaction',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      content: '"@kriselle please fix me im so buggy"',
+      timestamp: '1 day ago',
+      isRead: false
     },
     {
       id: '2',
-      type: 'reply',
-      message: '@alice replied to your chirp',
-      timestamp: '4 hours ago',
-      read: false,
+      type: 'reaction',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      content: '"@kriselle please fix me im so buggy"',
+      timestamp: '1 day ago',
+      isRead: false
     },
     {
       id: '3',
-      type: 'follow',
-      message: '@bob started following you',
+      type: 'reaction',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      content: '"@kriselle please fix me im so buggy"',
       timestamp: '1 day ago',
-      read: true,
+      isRead: false
     },
     {
       id: '4',
-      type: 'mention',
-      message: '@charlie mentioned you in a chirp',
-      timestamp: '2 days ago',
-      read: true,
+      type: 'reaction',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      content: '"@kriselle please fix me im so buggy"',
+      timestamp: '1 day ago',
+      isRead: false
     },
-  ]);
+    {
+      id: '5',
+      type: 'mention',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      timestamp: '1 day ago',
+      isRead: false
+    },
+    {
+      id: '6',
+      type: 'follow',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      timestamp: '2 days ago',
+      isRead: false
+    },
+    {
+      id: '7',
+      type: 'follow',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      timestamp: '3 days ago',
+      isRead: false
+    },
+    {
+      id: '8',
+      type: 'mention',
+      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
+      timestamp: '3 days ago',
+      isRead: false
+    },
+  ];
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationText = (notification: Notification) => {
+    switch (notification.type) {
+      case 'reaction':
+        return 'reacted to your chirp';
+      case 'mention':
+        return 'mentioned you in their bio';
+      case 'follow':
+        return 'started following you';
+      default:
+        return '';
+    }
+  };
+
+  const getNotificationIcon = (type: string, color: string) => {
     switch (type) {
-      case 'like': return '❤️';
-      case 'reply': return '💬';
-      case 'follow': return '👤';
-      case 'mention': return '📝';
-      default: return '🔔';
+      case 'reaction':
+        return <HeartIcon size={16} color={color} />;
+      case 'mention':
+        return <MentionIcon size={16} color={color} />;
+      case 'follow':
+        return <FollowIcon size={16} color={color} />;
+      default:
+        return null;
+    }
+  };
+
+  const getNotificationIconColor = (type: string) => {
+    switch (type) {
+      case 'reaction':
+        return '#ef4444'; // red
+      case 'mention':
+        return '#7c3aed'; // purple
+      case 'follow':
+        return '#3b82f6'; // blue
+      default:
+        return '#657786';
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Header - exactly like original */}
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>Notifications</Text>
-        </View>
+        <TouchableOpacity style={styles.backButton}>
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Notifications</Text>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        {notifications.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔔</Text>
-            <Text style={styles.emptyTitle}>No notifications yet</Text>
-            <Text style={styles.emptySubtext}>We'll notify you when something happens</Text>
-          </View>
-        ) : (
-          notifications.map((notification) => (
-            <TouchableOpacity
-              key={notification.id}
-              style={[
-                styles.notificationItem,
-                !notification.read && styles.unreadNotification
-              ]}
-            >
-              <View style={styles.notificationHeader}>
-                <Text style={styles.notificationIcon}>
-                  {getNotificationIcon(notification.type)}
-                </Text>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationMessage}>
-                    {notification.message}
-                  </Text>
-                  <Text style={styles.notificationTimestamp}>
-                    {notification.timestamp}
+      {/* Notifications List */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {notifications.map((notification) => (
+          <TouchableOpacity key={notification.id} style={styles.notificationItem}>
+            <View style={styles.notificationContent}>
+              {/* User Avatar */}
+              <View style={styles.avatarContainer}>
+                <UserAvatar user={notification.user} size="md" />
+              </View>
+
+              {/* Notification Text */}
+              <View style={styles.textContainer}>
+                <View style={styles.notificationTextRow}>
+                  <Text style={styles.notificationText}>
+                    <Text style={styles.userName}>{notification.user.name}</Text>
+                    <Text style={styles.actionText}> {getNotificationText(notification)}</Text>
                   </Text>
                 </View>
-                {!notification.read && (
-                  <View style={styles.unreadDot} />
+
+                {/* Content preview for reactions */}
+                {notification.content && (
+                  <Text style={styles.contentPreview}>{notification.content}</Text>
                 )}
+
+                {/* Timestamp */}
+                <Text style={styles.timestamp}>{notification.timestamp}</Text>
               </View>
-            </TouchableOpacity>
-          ))
-        )}
+
+              {/* Action Icon */}
+              <View style={styles.actionIconContainer}>
+                {getNotificationIcon(notification.type, getNotificationIconColor(notification.type))}
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </View>
   );
@@ -106,87 +180,89 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   header: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    zIndex: 50,
-  },
-  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingTop: 60, // Account for status bar
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
+    backgroundColor: '#ffffff',
   },
-  title: {
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  backIcon: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
+    color: '#14171a',
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#14171a',
   },
   content: {
     flex: 1,
   },
-  scrollContent: {
-    paddingBottom: 100, // Space for bottom nav
-  },
   notificationItem: {
     backgroundColor: '#ffffff',
-    paddingVertical: 16,
     paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
+    borderBottomColor: '#f1f1f1',
   },
-  unreadNotification: {
-    backgroundColor: '#faf5ff',
-  },
-  notificationHeader: {
+  notificationContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  notificationIcon: {
-    fontSize: 20,
+  avatarContainer: {
     marginRight: 12,
-    marginTop: 2,
   },
-  notificationContent: {
+  textContainer: {
     flex: 1,
+    marginRight: 12,
   },
-  notificationMessage: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: '#1a1a1a',
+  notificationTextRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 4,
   },
-  notificationTimestamp: {
-    fontSize: 14,
+  notificationText: {
+    fontSize: 15,
+    lineHeight: 20,
+    flex: 1,
+  },
+  userName: {
+    fontWeight: '600',
+    color: '#14171a',
+  },
+  actionText: {
+    fontWeight: '400',
+    color: '#14171a',
+  },
+  contentPreview: {
+    fontSize: 15,
+    color: '#657786',
+    marginBottom: 4,
+    fontStyle: 'italic',
+  },
+  timestamp: {
+    fontSize: 13,
     color: '#657786',
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#7c3aed',
-    marginLeft: 8,
-    marginTop: 8,
-  },
-  emptyState: {
-    padding: 48,
+  actionIconContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  emptySubtext: {
+  actionIcon: {
     fontSize: 16,
-    color: '#657786',
-    textAlign: 'center',
+    fontWeight: '600',
   },
 });
