@@ -58,11 +58,22 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
     ['#ef4444', '#ec4899'], // red to pink
   ];
 
-  const numericId = user.id ? user.id.replace(/\D/g, '') : '0';
-  const colorIndex = numericId ? parseInt(numericId) % colors.length : 0;
-  const selectedColors = colors[colorIndex] || colors[0]; // Fallback to first color
-  const startColor = selectedColors[0];
-  const endColor = selectedColors[1];
+  // Safe color calculation with proper fallbacks
+  let colorIndex = 0;
+  if (user.id) {
+    const numericId = user.id.replace(/\D/g, '');
+    if (numericId && numericId.length > 0) {
+      colorIndex = parseInt(numericId, 10) % colors.length;
+      // Handle NaN case
+      if (isNaN(colorIndex)) {
+        colorIndex = 0;
+      }
+    }
+  }
+  
+  const selectedColors = colors[colorIndex] || colors[0];
+  const startColor = selectedColors?.[0] || '#a855f7';
+  const endColor = selectedColors?.[1] || '#ec4899';
 
   // Handle backend image URLs with cache busting for OpenAI images
   const imageUrl = user.profileImageUrl || user.avatarUrl;
