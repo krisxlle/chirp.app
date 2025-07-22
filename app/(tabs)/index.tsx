@@ -1,75 +1,193 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 
-import { HelloWave } from '../../components/HelloWave';
-import ParallaxScrollView from '../../components/ParallaxScrollView';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 
+interface Chirp {
+  id: number;
+  content: string;
+  username: string;
+  createdAt: string;
+  reactions?: { emoji: string; count: number }[];
+}
+
 export default function HomeScreen() {
+  const [chirps, setChirps] = useState<Chirp[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchChirps = async () => {
+    try {
+      const response = await fetch('/api/chirps', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch chirps');
+      }
+      const data = await response.json();
+      setChirps(data);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load chirps. Please try again.');
+      console.error('Failed to fetch chirps:', error);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChirps();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchChirps();
+  };
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedView style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+          <ThemedText style={styles.loadingText}>Loading chirps...</ThemedText>
+        </ThemedView>
+      </ThemedView>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('../../assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+    <ThemedView style={styles.container}>
+      <ThemedView style={styles.header}>
+        <ThemedText type="title" style={styles.headerTitle}>Chirp</ThemedText>
+        <ThemedText style={styles.headerSubtitle}>Your social feed</ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {chirps.length === 0 ? (
+          <ThemedView style={styles.emptyContainer}>
+            <ThemedText type="subtitle" style={styles.emptyText}>No chirps yet</ThemedText>
+            <ThemedText style={styles.emptySubtext}>Pull down to refresh or start following users to see their chirps!</ThemedText>
+          </ThemedView>
+        ) : (
+          chirps.map((chirp) => (
+            <ThemedView key={chirp.id} style={styles.chirpCard}>
+              <ThemedView style={styles.chirpHeader}>
+                <ThemedText type="defaultSemiBold" style={styles.username}>@{chirp.username}</ThemedText>
+                <ThemedText style={styles.timestamp}>
+                  {new Date(chirp.createdAt).toLocaleDateString()}
+                </ThemedText>
+              </ThemedView>
+              <ThemedText style={styles.chirpContent}>{chirp.content}</ThemedText>
+              {chirp.reactions && chirp.reactions.length > 0 && (
+                <ThemedView style={styles.reactions}>
+                  {chirp.reactions.map((reaction, index) => (
+                    <ThemedView key={index} style={styles.reaction}>
+                      <ThemedText style={styles.reactionEmoji}>{reaction.emoji}</ThemedText>
+                      <ThemedText style={styles.reactionCount}>{reaction.count}</ThemedText>
+                    </ThemedView>
+                  ))}
+                </ThemedView>
+              )}
+            </ThemedView>
+          ))
+        )}
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+  },
+  header: {
+    padding: 20,
+    paddingTop: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e5e9',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    marginTop: 4,
+    opacity: 0.7,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  emptySubtext: {
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  chirpCard: {
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  chirpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  username: {
+    color: '#1da1f2',
+  },
+  timestamp: {
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  chirpContent: {
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  reactions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  reaction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 4,
+  },
+  reactionEmoji: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  reactionCount: {
+    fontSize: 12,
+    opacity: 0.7,
   },
 });
