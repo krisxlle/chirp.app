@@ -1,0 +1,101 @@
+{
+  "name": "Chirp - Personality-Based Social Network",
+  "short_name": "Chirp",
+  "description": "Connect through personality, not just appearance. Share thoughts, follow interesting people, and discover your community through AI-powered profiles.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#7c3aed",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "categories": [
+    "social",
+    "lifestyle",
+    "entertainment"
+  ],
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "../icons/icon-48.webp",
+      "type": "image/png",
+      "sizes": "48x48",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-72.webp",
+      "type": "image/png",
+      "sizes": "72x72",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-96.webp",
+      "type": "image/png",
+      "sizes": "96x96",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-128.webp",
+      "type": "image/png",
+      "sizes": "128x128",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-192.webp",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-256.webp",
+      "type": "image/png",
+      "sizes": "256x256",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-512.webp",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/mobile-profile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Compose Chirp",
+      "short_name": "Compose",
+      "description": "Create a new chirp",
+      "url": "/?action=compose",
+      "icons": [
+        {
+          "src": "/icons/compose-shortcut.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "short_name": "Notifications",
+      "description": "View your notifications",
+      "url": "/notifications",
+      "icons": [
+        {
+          "src": "/icons/notifications-shortcut.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
