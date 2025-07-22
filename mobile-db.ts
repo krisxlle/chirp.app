@@ -11,13 +11,11 @@ const getDatabaseUrl = () => {
   }
   
   // For Expo web, try global environment
-  if (typeof window !== 'undefined' && (window as any).__ENV__) {
+  if (typeof window !== 'undefined' && (window as any).__ENV__?.DATABASE_URL) {
     return (window as any).__ENV__.DATABASE_URL;
   }
   
-  // As fallback, use the actual database URL directly (not ideal for production)
-  // This is a temporary solution to get authentic data working
-  return 'postgresql://neondb_owner:d8NNQ5nW1FdO@ep-orange-queen-a5m7nfpn.us-east-2.aws.neon.tech/neondb?sslmode=require';
+  throw new Error('DATABASE_URL environment variable is not available');
 };
 
 const databaseUrl = getDatabaseUrl();
