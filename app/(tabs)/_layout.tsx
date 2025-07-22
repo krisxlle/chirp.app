@@ -8,7 +8,9 @@ import TabBarBackground from '../../components/ui/TabBarBackground';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
 
+import { Slot } from 'expo-router';
+
 export default function TabLayout() {
-  // Disable Expo tabs - we use custom navigation
-  return null;
+  // Use Slot to render child routes without tab navigation
+  return <Slot />;
 }
