@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Alert } from
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 import { getChirpsFromDB } from '../../mobile-db';
+import type { MobileChirp } from '../../mobile-types';
 
 interface Chirp {
   id: number;
@@ -14,7 +15,7 @@ interface Chirp {
 }
 
 export default function HomeScreen() {
-  const [chirps, setChirps] = useState<Chirp[]>([]);
+  const [chirps, setChirps] = useState<MobileChirp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 

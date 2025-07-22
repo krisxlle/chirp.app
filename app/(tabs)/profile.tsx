@@ -30,7 +30,7 @@ export default function ProfileScreen() {
   const fetchProfile = async () => {
     try {
       console.log('Fetching authentic user profile from database...');
-      const { getUserFromDB } = require('../../mobile-db');
+      const { getUserFromDB } = await import('../../mobile-db');
       const dbUser = await getUserFromDB();
       
       if (dbUser) {
