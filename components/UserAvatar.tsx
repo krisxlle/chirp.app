@@ -58,8 +58,9 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
     ['#ef4444', '#ec4899'], // red to pink
   ];
 
-  const colorIndex = user.id ? parseInt(user.id.replace(/\D/g, '')) % colors.length : 0;
-  const selectedColors = colors[colorIndex];
+  const numericId = user.id ? user.id.replace(/\D/g, '') : '0';
+  const colorIndex = numericId ? parseInt(numericId) % colors.length : 0;
+  const selectedColors = colors[colorIndex] || colors[0]; // Fallback to first color
   const startColor = selectedColors[0];
   const endColor = selectedColors[1];
 
