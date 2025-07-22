@@ -64,22 +64,38 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
   const startColor = selectedColors[0];
   const endColor = selectedColors[1];
 
+  // Handle backend image URLs with cache busting for OpenAI images
   const imageUrl = user.profileImageUrl || user.avatarUrl;
+  let processedImageUrl = imageUrl;
+  
+  if (imageUrl) {
+    // Add cache-busting for OpenAI generated images to ensure fresh loads
+    if (imageUrl.includes('oaidalleapiprodscus')) {
+      processedImageUrl = `${imageUrl}&cache_bust=${Date.now()}`;
+    } else if (imageUrl.startsWith('/generated-images/')) {
+      // Handle local backend storage images
+      processedImageUrl = `http://localhost:5000${imageUrl}`;
+    }
+  }
+
   const displayName = user.firstName && user.lastName 
     ? `${user.firstName} ${user.lastName}`
-    : user.email.split('@')[0];
+    : (user.email ? user.email.split('@')[0] : 'User');
   
   const initials = user.firstName && user.lastName
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     : displayName.substring(0, 2).toUpperCase();
 
-  if (imageUrl && !imageError) {
+  if (processedImageUrl && !imageError) {
     return (
       <View style={[sizeStyles[size], style]}>
         <Image
-          source={{ uri: imageUrl }}
+          source={{ uri: processedImageUrl }}
           style={[styles.avatar, sizeStyles[size]]}
-          onError={() => setImageError(true)}
+          onError={(error) => {
+            console.log('Avatar image failed to load:', processedImageUrl, error);
+            setImageError(true);
+          }}
         />
       </View>
     );

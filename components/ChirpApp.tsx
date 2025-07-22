@@ -29,7 +29,11 @@ export default function ChirpApp() {
   return (
     <View style={styles.container}>
       {renderCurrentPage()}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNavigation 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab}
+        unreadCount={0}
+      />
     </View>
   );
 }
