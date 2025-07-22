@@ -1,473 +1,276 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Share } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import UserAvatar from './UserAvatar';
 
-interface ChirpCardProps {
-  chirp: {
-    id: number;
-    content: string;
-    createdAt: string;
-    isAiGenerated?: boolean;
-    isWeeklySummary?: boolean;
-    threadId?: number;
-    threadOrder?: number;
-    isThreadStarter?: boolean;
-    author: {
-      id: string;
-      firstName?: string;
-      lastName?: string;
-      email: string;
-      handle?: string;
-      customHandle?: string;
-      profileImageUrl?: string;
-      isChirpPlus?: boolean;
-      showChirpPlusBadge?: boolean;
-    };
-    reactionCounts: Record<string, number>;
-    userReaction?: string;
-    replies?: Array<any>;
-    repostOf?: any;
-    parentChirp?: any;
-  };
-  onNavigateToProfile?: (userId: string) => void;
-  onNavigateToChirp?: (chirpId: number) => void;
+interface User {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  customHandle?: string;
+  handle?: string;
+  profileImageUrl?: string;
+  avatarUrl?: string;
 }
 
-export default function ChirpCard({ chirp, onNavigateToProfile, onNavigateToChirp }: ChirpCardProps) {
-  const [reactionCounts, setReactionCounts] = useState(chirp.reactionCounts || {});
-  const [userReaction, setUserReaction] = useState(chirp.userReaction);
-  const [isReplyMode, setIsReplyMode] = useState(false);
-  const [replyContent, setReplyContent] = useState('');
+interface Chirp {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: User;
+  replyCount: number;
+  reactionCount: number;
+  isWeeklySummary?: boolean;
+}
 
-  const formatDistanceToNow = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+interface ChirpCardProps {
+  chirp: Chirp;
+}
 
-    if (diffMins < 1) return 'now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 30) return `${diffDays}d`;
-    return date.toLocaleDateString();
-  };
+export default function ChirpCard({ chirp }: ChirpCardProps) {
+  const [reactions, setReactions] = useState(chirp.reactionCount || 0);
+  const [replies, setReplies] = useState(chirp.replyCount || 0);
+  const [reposts, setReposts] = useState(0);
 
-  const getDisplayName = (author: any) => {
-    if (author.customHandle) return author.customHandle;
-    if (author.handle) return author.handle;
-    if (author.firstName && author.lastName) return `${author.firstName} ${author.lastName}`;
-    return author.email.split('@')[0];
-  };
-
-  const handleReaction = (emoji: string) => {
-    const isCurrentReaction = userReaction === emoji;
-    const newCounts = { ...reactionCounts };
-    
-    if (isCurrentReaction) {
-      // Remove reaction
-      newCounts[emoji] = Math.max(0, (newCounts[emoji] || 0) - 1);
-      if (newCounts[emoji] === 0) delete newCounts[emoji];
-      setUserReaction(undefined);
-    } else {
-      // Add reaction
-      if (userReaction) {
-        // Remove old reaction
-        newCounts[userReaction] = Math.max(0, (newCounts[userReaction] || 0) - 1);
-        if (newCounts[userReaction] === 0) delete newCounts[userReaction];
-      }
-      newCounts[emoji] = (newCounts[emoji] || 0) + 1;
-      setUserReaction(emoji);
-    }
-    
-    setReactionCounts(newCounts);
-  };
-
-  const handleShare = async () => {
-    try {
-      const result = await Share.share({
-        message: `Check out this chirp: "${chirp.content}" - @${getDisplayName(chirp.author)}`,
-        title: 'Share Chirp',
-      });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to share chirp');
-    }
+  const handleReply = () => {
+    Alert.alert('Reply', 'Reply functionality coming soon!');
   };
 
   const handleRepost = () => {
-    Alert.alert('Repost', 'Repost functionality would be implemented here');
+    setReposts(prev => prev + 1);
   };
 
-  const topReactions = Object.entries(reactionCounts)
-    .sort(([,a], [,b]) => b - a)
-    .slice(0, 3);
+  const handleReaction = () => {
+    setReactions(prev => prev + 1);
+  };
 
-  const totalReactions = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0);
+  const handleShare = () => {
+    Alert.alert('Share', 'Share functionality coming soon!');
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays <= 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const displayName = chirp.author.customHandle || 
+                     (chirp.author.firstName && chirp.author.lastName 
+                       ? `${chirp.author.firstName} ${chirp.author.lastName}`
+                       : chirp.author.email.split('@')[0]);
 
   return (
-    <View style={[
-      styles.chirpCard,
-      chirp.isWeeklySummary && styles.weeklySummaryCard
-    ]}>
-      {/* Parent chirp preview */}
-      {chirp.parentChirp && (
-        <TouchableOpacity 
-          style={styles.parentChirp}
-          onPress={() => onNavigateToChirp?.(chirp.parentChirp.id)}
-        >
-          <View style={styles.parentHeader}>
-            <UserAvatar user={chirp.parentChirp.author} size="sm" />
-            <Text style={styles.parentAuthor}>@{getDisplayName(chirp.parentChirp.author)}</Text>
-          </View>
-          <Text style={styles.parentContent} numberOfLines={2}>
-            {chirp.parentChirp.content}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Main chirp header */}
-      <View style={styles.chirpHeader}>
-        <TouchableOpacity onPress={() => onNavigateToProfile?.(chirp.author.id)}>
-          <UserAvatar user={chirp.author} size="md" />
-        </TouchableOpacity>
-        
-        <View style={styles.chirpMeta}>
+    <View style={[styles.container, chirp.isWeeklySummary && styles.weeklySummaryContainer]}>
+      <View style={styles.header}>
+        <UserAvatar user={chirp.author} size="md" />
+        <View style={styles.headerContent}>
           <View style={styles.nameRow}>
-            <TouchableOpacity onPress={() => onNavigateToProfile?.(chirp.author.id)}>
-              <Text style={styles.displayName}>{getDisplayName(chirp.author)}</Text>
-            </TouchableOpacity>
-            {chirp.author.isChirpPlus && chirp.author.showChirpPlusBadge && (
-              <View style={styles.chirpPlusBadge}>
-                <Text style={styles.chirpPlusBadgeText}>+</Text>
-              </View>
-            )}
-            <Text style={styles.timestamp}>• {formatDistanceToNow(chirp.createdAt)}</Text>
+            <Text style={styles.username}>{displayName}</Text>
+            <Text style={styles.crownIcon}>👑</Text>
+            <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>
           
           {chirp.isWeeklySummary && (
-            <View style={styles.summaryBadge}>
-              <Text style={styles.summaryBadgeText}>✨ Weekly Summary</Text>
-            </View>
-          )}
-          
-          {chirp.isAiGenerated && !chirp.isWeeklySummary && (
-            <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeText}>🤖 AI Generated</Text>
+            <View style={styles.weeklySummaryRow}>
+              <View style={styles.weeklySummaryBadge}>
+                <Text style={styles.summaryBadgeText}>✨ Weekly Summary</Text>
+              </View>
+              <Text style={styles.summaryDate}>3 days ago</Text>
             </View>
           )}
         </View>
+        
+        <TouchableOpacity style={styles.moreButton}>
+          <Text style={styles.moreText}>⋯</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Chirp content */}
-      <TouchableOpacity onPress={() => onNavigateToChirp?.(chirp.id)}>
-        <Text style={styles.chirpContent}>{chirp.content}</Text>
-      </TouchableOpacity>
-
-      {/* Repost content */}
-      {chirp.repostOf && (
-        <View style={styles.repostContainer}>
-          <View style={styles.repostHeader}>
-            <UserAvatar user={chirp.repostOf.author} size="sm" />
-            <Text style={styles.repostAuthor}>@{getDisplayName(chirp.repostOf.author)}</Text>
-            <Text style={styles.repostTimestamp}>• {formatDistanceToNow(chirp.repostOf.createdAt)}</Text>
-          </View>
-          <Text style={styles.repostContent}>{chirp.repostOf.content}</Text>
-        </View>
+      {chirp.isWeeklySummary && (
+        <Text style={styles.weeklySummaryTitle}>
+          📊 Weekly Summary (2025-07-13 - 2025-07-19)
+        </Text>
       )}
 
-      {/* Reactions display */}
-      {totalReactions > 0 && (
-        <View style={styles.reactionSummary}>
-          {topReactions.map(([emoji, count]) => (
-            <TouchableOpacity 
-              key={emoji}
-              style={[
-                styles.reactionItem,
-                userReaction === emoji && styles.userReactionItem
-              ]}
-              onPress={() => handleReaction(emoji)}
-            >
-              <Text style={styles.reactionEmoji}>{emoji}</Text>
-              <Text style={styles.reactionCount}>{count}</Text>
-            </TouchableOpacity>
-          ))}
-          {Object.keys(reactionCounts).length > 3 && (
-            <Text style={styles.moreReactions}>+{Object.keys(reactionCounts).length - 3} more</Text>
-          )}
-        </View>
-      )}
+      <Text style={styles.content}>{chirp.content}</Text>
 
-      {/* Action buttons */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => setIsReplyMode(!isReplyMode)}
-        >
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleReply}>
           <Text style={styles.actionIcon}>💬</Text>
-          <Text style={styles.actionText}>{chirp.replies?.length || 0}</Text>
+          <Text style={styles.actionText}>Reply</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={handleRepost}
-        >
-          <Text style={styles.actionIcon}>🔄</Text>
+        <TouchableOpacity style={styles.actionButton} onPress={handleRepost}>
+          <Text style={styles.actionIcon}>🔁</Text>
           <Text style={styles.actionText}>Repost</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => handleReaction('❤️')}
-        >
-          <Text style={[
-            styles.actionIcon,
-            userReaction === '❤️' && styles.activeReaction
-          ]}>❤️</Text>
-          <Text style={styles.actionText}>{reactionCounts['❤️'] || 0}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={handleShare}
-        >
-          <Text style={styles.actionIcon}>📤</Text>
-          <Text style={styles.actionText}>Share</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick reaction bar */}
-      <View style={styles.quickReactions}>
-        {['❤️', '😂', '😮', '😢', '😡', '👍', '👎', '🔥'].map((emoji) => (
-          <TouchableOpacity
-            key={emoji}
-            style={[
-              styles.quickReactionButton,
-              userReaction === emoji && styles.activeQuickReaction
-            ]}
-            onPress={() => handleReaction(emoji)}
-          >
-            <Text style={styles.quickReactionEmoji}>{emoji}</Text>
+        <View style={styles.reactionsContainer}>
+          <TouchableOpacity style={styles.reactionButton} onPress={handleReaction}>
+            <Text style={styles.reactionIcon}>🤔</Text>
+            <Text style={styles.reactionCount}>0</Text>
           </TouchableOpacity>
-        ))}
+          
+          <TouchableOpacity style={styles.reactionButton} onPress={handleReaction}>
+            <Text style={styles.reactionIcon}>🤯</Text>
+            <Text style={styles.reactionCount}>0</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.reactionButton} onPress={handleReaction}>
+            <Text style={styles.reactionIcon}>⭐</Text>
+            <Text style={styles.reactionCount}>0</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.addReactionButton}>
+            <Text style={styles.addReactionText}>+</Text>
+            <Text style={styles.reactionCount}>1</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+          <Text style={styles.actionIcon}>📤</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  chirpCard: {
+  container: {
     backgroundColor: '#ffffff',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  weeklySummaryCard: {
-    backgroundColor: '#faf5ff',
-    borderLeftWidth: 4,
-    borderLeftColor: '#7c3aed',
+  weeklySummaryContainer: {
+    backgroundColor: '#f8f4ff', // Light purple background for weekly summary
   },
-  parentChirp: {
-    backgroundColor: '#f8fafc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderLeftWidth: 2,
-    borderLeftColor: '#e2e8f0',
-  },
-  parentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  parentAuthor: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-    marginLeft: 8,
-  },
-  parentContent: {
-    fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20,
-  },
-  chirpHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  chirpMeta: {
+  headerContent: {
     flex: 1,
     marginLeft: 12,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
   },
-  displayName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a1a',
+  username: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#14171a',
   },
-  chirpPlusBadge: {
-    backgroundColor: '#7c3aed',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 6,
-    minWidth: 20,
-    alignItems: 'center',
-  },
-  chirpPlusBadgeText: {
-    color: '#ffffff',
+  crownIcon: {
     fontSize: 12,
-    fontWeight: '700',
+    marginLeft: 4,
   },
   timestamp: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#657786',
-    marginLeft: 6,
+    marginLeft: 8,
   },
-  summaryBadge: {
+  weeklySummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  weeklySummaryBadge: {
     backgroundColor: '#7c3aed',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 2,
     borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginTop: 4,
   },
   summaryBadgeText: {
     color: '#ffffff',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  aiBadge: {
-    backgroundColor: '#10b981',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  aiBadgeText: {
-    color: '#ffffff',
+  summaryDate: {
     fontSize: 12,
-    fontWeight: '600',
-  },
-  chirpContent: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#1a1a1a',
-    marginBottom: 16,
-  },
-  repostContainer: {
-    backgroundColor: '#f8fafc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  repostHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  repostAuthor: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
+    color: '#657786',
     marginLeft: 8,
   },
-  repostTimestamp: {
-    fontSize: 14,
-    color: '#64748b',
-    marginLeft: 4,
-  },
-  repostContent: {
-    fontSize: 15,
-    color: '#1a1a1a',
-    lineHeight: 22,
-  },
-  reactionSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    flexWrap: 'wrap',
-  },
-  reactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
-    marginBottom: 4,
-  },
-  userReactionItem: {
-    backgroundColor: '#e0e7ff',
-    borderWidth: 1,
-    borderColor: '#7c3aed',
-  },
-  reactionEmoji: {
+  weeklySummaryTitle: {
     fontSize: 16,
-    marginRight: 4,
-  },
-  reactionCount: {
-    fontSize: 14,
     fontWeight: '600',
-    color: '#475569',
-  },
-  moreReactions: {
-    fontSize: 14,
-    color: '#64748b',
-    fontStyle: 'italic',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    color: '#14171a',
     marginBottom: 8,
+    marginLeft: 52, // Align with content below avatar
+  },
+  moreButton: {
+    padding: 8,
+  },
+  moreText: {
+    fontSize: 16,
+    color: '#657786',
+    transform: [{ rotate: '90deg' }],
+  },
+  content: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: '#14171a',
+    marginLeft: 52, // Align with avatar
+    marginBottom: 12,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 52, // Align with avatar
+    paddingTop: 4,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    flex: 1,
-    justifyContent: 'center',
+    marginRight: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
   },
   actionIcon: {
-    fontSize: 18,
+    fontSize: 16,
     marginRight: 4,
   },
-  activeReaction: {
-    transform: [{ scale: 1.2 }],
-  },
   actionText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#657786',
     fontWeight: '500',
   },
-  quickReactions: {
+  reactionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    alignItems: 'center',
+    marginRight: 20,
   },
-  quickReactionButton: {
-    padding: 8,
-    borderRadius: 8,
+  reactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
   },
-  activeQuickReaction: {
-    backgroundColor: '#e0e7ff',
-    transform: [{ scale: 1.1 }],
+  reactionIcon: {
+    fontSize: 16,
+    marginRight: 2,
   },
-  quickReactionEmoji: {
-    fontSize: 20,
+  reactionCount: {
+    fontSize: 13,
+    color: '#657786',
+    fontWeight: '500',
+  },
+  addReactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  addReactionText: {
+    fontSize: 14,
+    color: '#7c3aed',
+    fontWeight: '600',
+    marginRight: 2,
   },
 });
