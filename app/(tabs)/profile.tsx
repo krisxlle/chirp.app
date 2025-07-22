@@ -1,230 +1,181 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, RefreshControl } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-
-interface User {
-  id: string;
-  username: string;
-  displayName: string;
-  bio: string;
-  followersCount: number;
-  followingCount: number;
-  chirpsCount: number;
-  avatar?: string;
-}
-
-interface Chirp {
-  id: string;
-  content: string;
-  timestamp: string;
-  likes: number;
-  replies: number;
-}
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
 
 export default function ProfileScreen() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userChirps, setUserChirps] = useState<Chirp[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [user] = useState({
+    username: 'anonymous_user',
+    displayName: 'Anonymous User',
+    bio: 'Privacy-focused social media enthusiast. Building connections while staying anonymous. 🎭',
+    followersCount: 247,
+    followingCount: 183,
+    chirpsCount: 52,
+    joinedDate: 'March 2024',
+  });
 
-  const fetchProfile = async () => {
-    try {
-      console.log('Fetching authentic user profile from database...');
-      const { getUserFromDB } = await import('../../mobile-db');
-      const dbUser = await getUserFromDB();
-      
-      if (dbUser) {
-        const authenticUser: User = {
-          id: dbUser.id,
-          username: dbUser.custom_handle || 'user',
-          displayName: dbUser.display_name || 'Chirp User',
-          bio: dbUser.bio || 'Welcome to Chirp!',
-          followersCount: 0,
-          followingCount: 0,
-          chirpsCount: 0,
-          avatar: dbUser.avatar_url,
-        };
-        console.log('Loaded authentic user profile:', authenticUser.username);
-        setUser(authenticUser);
-      } else {
-        const fallbackUser: User = {
-          id: '1',
-          username: 'guest_user',
-          displayName: 'Guest User',
-          bio: 'Please sign in to see your profile',
-          followersCount: 0,
-          followingCount: 0,
-          chirpsCount: 0,
-        };
-        setUser(fallbackUser);
-      }
-      
-      const sampleChirps: Chirp[] = [
-        {
-          id: '1',
-          content: 'Just discovered some amazing privacy features in this app! The anonymous connections are game-changing.',
-          timestamp: '2 hours ago',
-          likes: 12,
-          replies: 3,
-        },
-        {
-          id: '2',
-          content: 'Privacy-first social media is the future. Finally, a platform that respects user anonymity! 🚀',
-          timestamp: '1 day ago',
-          likes: 24,
-          replies: 7,
-        },
-        {
-          id: '3',
-          content: 'The intelligent content recommendations here are incredible. AI-powered but privacy-preserving.',
-          timestamp: '2 days ago',
-          likes: 18,
-          replies: 5,
-        },
-      ];
+  const [activeTab, setActiveTab] = useState<'chirps' | 'replies' | 'media'>('chirps');
 
-      setUser(sampleUser);
-      setUserChirps(sampleChirps);
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchProfile();
-    setRefreshing(false);
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading profile...</Text>
-      </View>
-    );
-  }
-
-  if (!user) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Failed to load profile</Text>
-      </View>
-    );
-  }
+  const userChirps = [
+    {
+      id: '1',
+      content: 'Love how this platform lets me express myself freely without compromising my privacy! 🔒',
+      timestamp: '2 hours ago',
+      likes: 12,
+      replies: 3,
+    },
+    {
+      id: '2',
+      content: 'Just discovered some amazing privacy tools. Anonymous social media is the future! #privacy #tech',
+      timestamp: '1 day ago',
+      likes: 28,
+      replies: 7,
+    },
+    {
+      id: '3',
+      content: 'Morning thoughts: True freedom comes when you can be yourself without fear of judgment. 🌅',
+      timestamp: '2 days ago',
+      likes: 45,
+      replies: 12,
+    },
+  ];
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.profileInfo}>
-          <View style={styles.avatar}>
-            {user.avatar ? (
-              <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
-            ) : (
-              <MaterialIcons name="person" size={40} color="#9ca3af" />
-            )}
-          </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.displayName}>{user.displayName}</Text>
-            <Text style={styles.username}>@{user.username}</Text>
-          </View>
-        </View>
-        
-        <TouchableOpacity style={styles.editButton}>
-          <MaterialIcons name="edit" size={20} color="#9333ea" />
-          <Text style={styles.editButtonText}>Edit Profile</Text>
-        </TouchableOpacity>
-      </View>
+    <ThemedView style={styles.container}>
+      <ScrollView>
+        {/* Profile Header */}
+        <ThemedView style={styles.header}>
+          <ThemedView style={styles.avatarContainer}>
+            <ThemedView style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                {user.displayName.substring(0, 1).toUpperCase()}
+              </ThemedText>
+            </ThemedView>
+          </ThemedView>
+          
+          <ThemedView style={styles.userInfo}>
+            <ThemedText type="title" style={styles.displayName}>
+              {user.displayName}
+            </ThemedText>
+            <ThemedText style={styles.username}>@{user.username}</ThemedText>
+            <ThemedText style={styles.bio}>{user.bio}</ThemedText>
+            <ThemedText style={styles.joinedDate}>Joined {user.joinedDate}</ThemedText>
+          </ThemedView>
 
-      {/* Bio */}
-      <View style={styles.bioSection}>
-        <Text style={styles.bioText}>{user.bio}</Text>
-      </View>
+          {/* Stats */}
+          <ThemedView style={styles.stats}>
+            <ThemedView style={styles.statItem}>
+              <ThemedText type="defaultSemiBold" style={styles.statNumber}>
+                {user.chirpsCount}
+              </ThemedText>
+              <ThemedText style={styles.statLabel}>Chirps</ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.statItem}>
+              <ThemedText type="defaultSemiBold" style={styles.statNumber}>
+                {user.followingCount}
+              </ThemedText>
+              <ThemedText style={styles.statLabel}>Following</ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.statItem}>
+              <ThemedText type="defaultSemiBold" style={styles.statNumber}>
+                {user.followersCount}
+              </ThemedText>
+              <ThemedText style={styles.statLabel}>Followers</ThemedText>
+            </ThemedView>
+          </ThemedView>
 
-      {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{user.chirpsCount}</Text>
-          <Text style={styles.statLabel}>Chirps</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{user.followersCount}</Text>
-          <Text style={styles.statLabel}>Followers</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{user.followingCount}</Text>
-          <Text style={styles.statLabel}>Following</Text>
-        </View>
-      </View>
+          {/* Edit Profile Button */}
+          <TouchableOpacity style={styles.editButton}>
+            <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
 
-      {/* Chirps */}
-      <View style={styles.chirpsSection}>
-        <Text style={styles.sectionTitle}>Your Chirps</Text>
-        {userChirps.map((chirp) => (
-          <View key={chirp.id} style={styles.chirpCard}>
-            <Text style={styles.chirpContent}>{chirp.content}</Text>
-            <View style={styles.chirpFooter}>
-              <Text style={styles.chirpTimestamp}>{chirp.timestamp}</Text>
-              <View style={styles.chirpActions}>
-                <View style={styles.actionItem}>
-                  <MaterialIcons name="favorite-border" size={16} color="#9ca3af" />
-                  <Text style={styles.actionCount}>{chirp.likes}</Text>
-                </View>
-                <View style={styles.actionItem}>
-                  <MaterialIcons name="chat-bubble-outline" size={16} color="#9ca3af" />
-                  <Text style={styles.actionCount}>{chirp.replies}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+        {/* Tabs */}
+        <ThemedView style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'chirps' && styles.activeTab]}
+            onPress={() => setActiveTab('chirps')}
+          >
+            <ThemedText style={[styles.tabText, activeTab === 'chirps' && styles.activeTabText]}>
+              Chirps
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'replies' && styles.activeTab]}
+            onPress={() => setActiveTab('replies')}
+          >
+            <ThemedText style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>
+              Replies
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'media' && styles.activeTab]}
+            onPress={() => setActiveTab('media')}
+          >
+            <ThemedText style={[styles.tabText, activeTab === 'media' && styles.activeTabText]}>
+              Media
+            </ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+
+        {/* Content */}
+        <ThemedView style={styles.content}>
+          {activeTab === 'chirps' && (
+            <>
+              {userChirps.map((chirp) => (
+                <ThemedView key={chirp.id} style={styles.chirpCard}>
+                  <ThemedText style={styles.chirpContent}>{chirp.content}</ThemedText>
+                  <ThemedText style={styles.chirpTimestamp}>{chirp.timestamp}</ThemedText>
+                  
+                  <ThemedView style={styles.chirpActions}>
+                    <TouchableOpacity style={styles.actionButton}>
+                      <ThemedText>💬 {chirp.replies}</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.actionButton}>
+                      <ThemedText>❤️ {chirp.likes}</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.actionButton}>
+                      <ThemedText>🔄 Share</ThemedText>
+                    </TouchableOpacity>
+                  </ThemedView>
+                </ThemedView>
+              ))}
+            </>
+          )}
+
+          {activeTab === 'replies' && (
+            <ThemedView style={styles.emptyState}>
+              <ThemedText>No replies yet</ThemedText>
+              <ThemedText style={styles.emptySubtext}>
+                Your replies to other chirps will appear here
+              </ThemedText>
+            </ThemedView>
+          )}
+
+          {activeTab === 'media' && (
+            <ThemedView style={styles.emptyState}>
+              <ThemedText>No media yet</ThemedText>
+              <ThemedText style={styles.emptySubtext}>
+                Photos and videos you share will appear here
+              </ThemedText>
+            </ThemedView>
+          )}
+        </ThemedView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#ef4444',
-  },
-  profileHeader: {
-    backgroundColor: '#fff',
-    padding: 20,
+  header: {
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#e1e8ed',
   },
-  profileInfo: {
-    flexDirection: 'row',
+  avatarContainer: {
     alignItems: 'center',
     marginBottom: 16,
   },
@@ -232,124 +183,122 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
+    backgroundColor: '#1da1f2',
     alignItems: 'center',
-    marginRight: 16,
+    justifyContent: 'center',
   },
-  avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  avatarText: {
+    color: 'white',
+    fontSize: 32,
+    fontWeight: '600',
   },
   userInfo: {
-    flex: 1,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   displayName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: 24,
     marginBottom: 4,
   },
   username: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#9333ea',
-    alignSelf: 'flex-start',
-  },
-  editButtonText: {
-    color: '#9333ea',
     fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
+    color: '#657786',
+    marginBottom: 8,
   },
-  bioSection: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+  bio: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 18,
   },
-  bioText: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 22,
+  joinedDate: {
+    fontSize: 12,
+    color: '#657786',
   },
-  statsContainer: {
+  stats: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+    paddingVertical: 12,
   },
   statItem: {
-    flex: 1,
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontSize: 18,
+    marginBottom: 2,
   },
   statLabel: {
+    fontSize: 12,
+    color: '#657786',
+  },
+  editButton: {
+    backgroundColor: '#1da1f2',
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    alignSelf: 'center',
+  },
+  editButtonText: {
+    color: 'white',
+    fontWeight: '600',
     fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
   },
-  chirpsSection: {
-    padding: 20,
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 16,
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#1da1f2',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#657786',
+  },
+  activeTabText: {
+    color: '#1da1f2',
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
   },
   chirpCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
   },
   chirpContent: {
     fontSize: 16,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  chirpFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    lineHeight: 20,
+    marginBottom: 8,
   },
   chirpTimestamp: {
-    fontSize: 14,
-    color: '#9ca3af',
+    fontSize: 12,
+    color: '#657786',
+    marginBottom: 12,
   },
   chirpActions: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  actionButton: {
+    padding: 8,
+  },
+  emptyState: {
+    padding: 32,
     alignItems: 'center',
   },
-  actionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 16,
-  },
-  actionCount: {
-    fontSize: 14,
-    color: '#9ca3af',
-    marginLeft: 4,
+  emptySubtext: {
+    color: '#657786',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

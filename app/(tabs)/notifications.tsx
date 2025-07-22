@@ -1,189 +1,166 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { ThemedText } from '../../components/ThemedText';
+import { ThemedView } from '../../components/ThemedView';
 
 interface Notification {
-  id: number;
-  type: 'like' | 'follow' | 'mention' | 'reply';
+  id: string;
+  type: 'like' | 'reply' | 'follow' | 'mention';
   message: string;
-  time: string;
+  timestamp: string;
   read: boolean;
 }
 
 export default function NotificationsScreen() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const fetchNotifications = async () => {
-    try {
-      console.log('Fetching notifications...');
-      // Simulate API call with sample data for now
-      const sampleNotifications: Notification[] = [
-        { id: 1, type: 'like', message: 'Someone liked your chirp', time: '2 min ago', read: false },
-        { id: 2, type: 'follow', message: 'Alex started following you', time: '1 hour ago', read: false },
-        { id: 3, type: 'mention', message: 'You were mentioned in a chirp', time: '3 hours ago', read: true },
-        { id: 4, type: 'reply', message: 'New reply to your chirp', time: '1 day ago', read: true },
-      ];
-      setNotifications(sampleNotifications);
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchNotifications();
-    setRefreshing(false);
-  };
+  const [notifications] = useState<Notification[]>([
+    {
+      id: '1',
+      type: 'like',
+      message: '@user123 liked your chirp about privacy in social media',
+      timestamp: '2 hours ago',
+      read: false,
+    },
+    {
+      id: '2',
+      type: 'reply',
+      message: '@alice replied to your chirp',
+      timestamp: '4 hours ago',
+      read: false,
+    },
+    {
+      id: '3',
+      type: 'follow',
+      message: '@bob started following you',
+      timestamp: '1 day ago',
+      read: true,
+    },
+    {
+      id: '4',
+      type: 'mention',
+      message: '@charlie mentioned you in a chirp',
+      timestamp: '2 days ago',
+      read: true,
+    },
+  ]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'like': return 'favorite';
-      case 'follow': return 'person-add';
-      case 'mention': return 'alternate-email';
-      case 'reply': return 'reply';
-      default: return 'notifications';
+      case 'like': return '❤️';
+      case 'reply': return '💬';
+      case 'follow': return '👥';
+      case 'mention': return '📢';
+      default: return '🔔';
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading notifications...</Text>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>Notifications</Text>
-      </View>
-      
-      {notifications.length === 0 ? (
-        <View style={styles.emptyState}>
-          <MaterialIcons name="notifications-none" size={64} color="#ccc" />
-          <Text style={styles.emptyText}>No notifications yet</Text>
-        </View>
-      ) : (
-        <View style={styles.notificationsList}>
-          {notifications.map((notification) => (
-            <TouchableOpacity key={notification.id} style={styles.notificationItem}>
-              <View style={styles.notificationContent}>
-                <MaterialIcons 
-                  name={getNotificationIcon(notification.type)} 
-                  size={24} 
-                  color={notification.read ? '#999' : '#9333ea'} 
-                />
-                <View style={styles.notificationText}>
-                  <Text style={[
-                    styles.notificationMessage,
-                    !notification.read && styles.unreadMessage
-                  ]}>
-                    {notification.message}
-                  </Text>
-                  <Text style={styles.notificationTime}>{notification.time}</Text>
-                </View>
-                {!notification.read && <View style={styles.unreadIndicator} />}
-              </View>
+    <ThemedView style={styles.container}>
+      {/* Header */}
+      <ThemedView style={styles.header}>
+        <ThemedText type="title">🔔 Notifications</ThemedText>
+      </ThemedView>
+
+      <ScrollView style={styles.content}>
+        {notifications.length === 0 ? (
+          <ThemedView style={styles.emptyState}>
+            <ThemedText>No notifications yet</ThemedText>
+            <ThemedText style={styles.emptySubtext}>
+              When people interact with your chirps, you'll see it here
+            </ThemedText>
+          </ThemedView>
+        ) : (
+          notifications.map((notification) => (
+            <TouchableOpacity 
+              key={notification.id} 
+              style={[
+                styles.notificationItem,
+                !notification.read && styles.unreadNotification
+              ]}
+            >
+              <ThemedView style={styles.notificationIcon}>
+                <ThemedText style={styles.iconText}>
+                  {getNotificationIcon(notification.type)}
+                </ThemedText>
+              </ThemedView>
+              <ThemedView style={styles.notificationContent}>
+                <ThemedText style={styles.notificationMessage}>
+                  {notification.message}
+                </ThemedText>
+                <ThemedText style={styles.notificationTime}>
+                  {notification.timestamp}
+                </ThemedText>
+              </ThemedView>
+              {!notification.read && (
+                <ThemedView style={styles.unreadDot} />
+              )}
             </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+          ))
+        )}
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
   },
   header: {
-    padding: 20,
-    paddingBottom: 10,
-    backgroundColor: '#fff',
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#e1e8ed',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+  content: {
+    flex: 1,
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 32,
     alignItems: 'center',
-    paddingVertical: 60,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#9ca3af',
-    marginTop: 16,
-  },
-  notificationsList: {
-    paddingVertical: 10,
+  emptySubtext: {
+    color: '#657786',
+    marginTop: 8,
+    textAlign: 'center',
   },
   notificationItem: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
+    flexDirection: 'row',
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
+    alignItems: 'flex-start',
+  },
+  unreadNotification: {
+    backgroundColor: '#f0f8ff',
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f7f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  iconText: {
+    fontSize: 18,
   },
   notificationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  notificationText: {
     flex: 1,
-    marginLeft: 12,
   },
   notificationMessage: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 20,
-  },
-  unreadMessage: {
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: 14,
+    lineHeight: 18,
+    marginBottom: 4,
   },
   notificationTime: {
-    fontSize: 13,
-    color: '#9ca3af',
-    marginTop: 2,
+    fontSize: 12,
+    color: '#657786',
   },
-  unreadIndicator: {
+  unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#9333ea',
-    marginLeft: 8,
+    backgroundColor: '#1da1f2',
+    marginTop: 8,
   },
 });
