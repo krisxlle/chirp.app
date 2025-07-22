@@ -77,12 +77,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     paddingHorizontal: 4,
     paddingVertical: 4,
-    // backdropFilter: 'blur(10px)', // Not supported in React Native
   },
   navContainer: {
     flexDirection: 'row',

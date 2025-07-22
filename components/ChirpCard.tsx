@@ -4,6 +4,7 @@ import UserAvatar from './UserAvatar';
 import ReplyIcon from './icons/ReplyIcon';
 import RepostIcon from './icons/RepostIcon';
 import ShareIcon from './icons/ShareIcon';
+import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
 
 interface User {
   id: string;
@@ -116,8 +117,10 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   };
 
   const handleAvatarPress = () => {
-    // Navigate to user profile
-    Alert.alert('Profile', `Navigate to ${displayName}'s profile`);
+    if (chirp.author?.id) {
+      Alert.alert('Profile Navigation', `Navigate to profile for ${displayName} (ID: ${chirp.author.id})`);
+      // TODO: Implement actual profile navigation to ProfilePage with user ID
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -183,11 +186,28 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         </Text>
       )}
 
-      <Text style={styles.content}>{chirp.content}</Text>
+      <Text style={styles.content}>
+        {chirp.content.split(/(@\w+)/).map((part, index) => {
+          if (part.startsWith('@')) {
+            return (
+              <TouchableOpacity 
+                key={index}
+                onPress={() => {
+                  Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`);
+                  // TODO: Implement notification to mentioned user
+                }}
+              >
+                <Text style={styles.mentionText}>{part}</Text>
+              </TouchableOpacity>
+            );
+          }
+          return <Text key={index}>{part}</Text>;
+        })}
+      </Text>
 
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton} onPress={handleReply}>
-          <Text style={styles.speechBubble}>💬</Text>
+          <SpeechBubbleIcon size={18} color="#657786" />
           <Text style={styles.actionText}>{replies}</Text>
         </TouchableOpacity>
 
@@ -495,5 +515,9 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     marginLeft: 0,
+  },
+  mentionText: {
+    color: '#7c3aed',
+    fontSize: 15,
   },
 });

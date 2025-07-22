@@ -168,7 +168,10 @@ export default function SearchPage() {
       </ScrollView>
       
       {/* Feedback Button */}
-      <TouchableOpacity style={styles.feedbackButton}>
+      <TouchableOpacity 
+        style={styles.feedbackButton}
+        onPress={() => Alert.alert('Feedback', 'Navigate to feedback submission page')}
+      >
         <Text style={styles.feedbackButtonText}>Feedback</Text>
       </TouchableOpacity>
     </View>

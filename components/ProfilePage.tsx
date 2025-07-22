@@ -189,7 +189,10 @@ export default function ProfilePage() {
           {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
             if (part.startsWith('@')) {
               return (
-                <TouchableOpacity key={index} onPress={() => Alert.alert('Profile', `Navigate to ${part}'s profile`)}>
+                <TouchableOpacity 
+                  key={index} 
+                  onPress={() => Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`)}
+                >
                   <Text style={styles.mentionText}>{part}</Text>
                 </TouchableOpacity>
               );

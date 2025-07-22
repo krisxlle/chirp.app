@@ -102,7 +102,11 @@ export default function HomePage() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
-            <ChirpLogo size={32} color="#7c3aed" />
+            <Image 
+              source={require('../attached_assets/ChatGPT Image Jul 11, 2025, 11_38_45 AM_1753223521868.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.logoText}>Chirp</Text>
           </View>
           
