@@ -6,14 +6,6 @@ import { ThemedView } from '../../components/ThemedView';
 import { getChirpsFromDB } from '../../mobile-db';
 import type { MobileChirp } from '../../mobile-types';
 
-interface Chirp {
-  id: number;
-  content: string;
-  username: string;
-  createdAt: string;
-  reactions?: { emoji: string; count: number }[];
-}
-
 export default function HomeScreen() {
   const [chirps, setChirps] = useState<MobileChirp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,9 +20,8 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('Database connection failed:', error);
       Alert.alert('Connection Error', 'Unable to load your chirps. Please check your internet connection.');
-      // Only use minimal fallback if database completely fails
       setChirps([{
-        id: 0,
+        id: '0',
         content: 'Unable to connect to your account. Please check your internet connection and try refreshing.',
         username: 'system',
         createdAt: new Date().toISOString(),
@@ -54,52 +45,30 @@ export default function HomeScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedView style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-          <ThemedText style={styles.loadingText}>Loading chirps...</ThemedText>
-        </ThemedView>
+        <ActivityIndicator size="large" />
+        <ThemedText>Loading chirps...</ThemedText>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="title" style={styles.headerTitle}>Chirp</ThemedText>
-        <ThemedText style={styles.headerSubtitle}>Your social feed</ThemedText>
-      </ThemedView>
-      
       <ScrollView 
-        style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        <ThemedText type="title">Welcome to Chirp!</ThemedText>
+        <ThemedText>Your authentic social media experience</ThemedText>
+        
         {chirps.length === 0 ? (
-          <ThemedView style={styles.emptyContainer}>
-            <ThemedText type="subtitle" style={styles.emptyText}>No chirps yet</ThemedText>
-            <ThemedText style={styles.emptySubtext}>Pull down to refresh or start following users to see their chirps!</ThemedText>
-          </ThemedView>
+          <ThemedText>No chirps available. Pull down to refresh!</ThemedText>
         ) : (
           chirps.map((chirp) => (
-            <ThemedView key={chirp.id} style={styles.chirpCard}>
-              <ThemedView style={styles.chirpHeader}>
-                <ThemedText type="defaultSemiBold" style={styles.username}>@{chirp.username}</ThemedText>
-                <ThemedText style={styles.timestamp}>
-                  {new Date(chirp.createdAt).toLocaleDateString()}
-                </ThemedText>
-              </ThemedView>
-              <ThemedText style={styles.chirpContent}>{chirp.content}</ThemedText>
-              {chirp.reactions && chirp.reactions.length > 0 && (
-                <ThemedView style={styles.reactions}>
-                  {chirp.reactions.map((reaction, index) => (
-                    <ThemedView key={index} style={styles.reaction}>
-                      <ThemedText style={styles.reactionEmoji}>{reaction.emoji}</ThemedText>
-                      <ThemedText style={styles.reactionCount}>{reaction.count}</ThemedText>
-                    </ThemedView>
-                  ))}
-                </ThemedView>
-              )}
+            <ThemedView key={chirp.id} style={styles.chirp}>
+              <ThemedText type="defaultSemiBold">@{chirp.username}</ThemedText>
+              <ThemedText>{chirp.content}</ThemedText>
+              <ThemedText type="default">{new Date(chirp.createdAt).toLocaleDateString()}</ThemedText>
             </ThemedView>
           ))
         )}
@@ -111,89 +80,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-  },
-  header: {
     padding: 20,
-    paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e5e9',
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    textAlign: 'center',
-    opacity: 0.7,
-  },
-  chirpCard: {
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#f8f9fa',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  chirpHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  username: {
-    color: '#1da1f2',
-  },
-  timestamp: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
-  chirpContent: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  reactions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  reaction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 12,
-    marginTop: 4,
-  },
-  reactionEmoji: {
-    fontSize: 16,
-    marginRight: 4,
-  },
-  reactionCount: {
-    fontSize: 12,
-    opacity: 0.7,
+  chirp: {
+    marginVertical: 10,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
   },
 });

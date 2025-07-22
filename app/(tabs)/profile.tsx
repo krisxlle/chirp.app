@@ -38,16 +38,15 @@ export default function ProfileScreen() {
           id: dbUser.id,
           username: dbUser.custom_handle || 'user',
           displayName: dbUser.display_name || 'Chirp User',
-          bio: dbUser.bio || 'Welcome to Chirp! 🐤',
-          followersCount: 0, // TODO: Add follower count from database
-          followingCount: 0, // TODO: Add following count from database
-          chirpsCount: 0, // TODO: Add chirp count from database
+          bio: dbUser.bio || 'Welcome to Chirp!',
+          followersCount: 0,
+          followingCount: 0,
+          chirpsCount: 0,
           avatar: dbUser.avatar_url,
         };
         console.log('Loaded authentic user profile:', authenticUser.username);
         setUser(authenticUser);
       } else {
-        // Fallback only if no user found in database
         const fallbackUser: User = {
           id: '1',
           username: 'guest_user',
