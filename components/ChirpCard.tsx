@@ -6,7 +6,7 @@ import ReplyIcon from './icons/ReplyIcon';
 import RepostIcon from './icons/RepostIcon';
 import ShareIcon from './icons/ShareIcon';
 import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
-import UserProfileModal from './UserProfileModal';
+// Removed UserProfileModal import - using page navigation instead
 import { useAuth } from './AuthContext';
 
 interface User {
@@ -44,8 +44,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   const [reactions, setReactions] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [reposts, setReposts] = useState(0);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  // Removed modal state - using page navigation instead
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
@@ -295,9 +294,14 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
   const handleAvatarPress = () => {
     if (chirp.author?.id) {
-      console.log('Opening profile modal for user:', chirp.author.id);
-      setSelectedUserId(chirp.author.id);
-      setShowProfileModal(true);
+      console.log('Navigating to user profile page for user:', chirp.author.id);
+      try {
+        router.push(`/user-profile/${chirp.author.id}`);
+        console.log('Navigation to user profile page initiated successfully');
+      } catch (error) {
+        console.error('Navigation error:', error);
+        Alert.alert('Navigation Error', `Failed to open profile page. Error: ${error}`);
+      }
     } else {
       console.log('No author ID found for chirp:', chirp);
       Alert.alert('Error', 'Unable to open profile - no user ID found');
@@ -541,12 +545,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         </View>
       )}
 
-      {/* User Profile Modal */}
-      <UserProfileModal 
-        visible={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        userId={selectedUserId}
-      />
+      {/* Profile navigation now uses page routing */}
     </TouchableOpacity>
   );
 }

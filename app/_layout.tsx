@@ -26,6 +26,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="feedback" options={{ headerShown: false }} />
           <Stack.Screen name="profile/[userId]" options={{ headerShown: false }} />
+          <Stack.Screen name="user-profile/[userId]" options={{ headerShown: true, presentation: 'card' }} />
           <Stack.Screen name="support" options={{ headerShown: false }} />
           <Stack.Screen name="subscription" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />

@@ -215,7 +215,7 @@ export async function createChirp(content: string, authorId?: string, replyToId?
 }
 
 // Get user by ID for profile viewing
-export async function getUserById(userId: string): Promise<MobileUser | null> {
+export async function getUserById(userId: string): Promise<any | null> {
   try {
     console.log('Fetching user by ID:', userId);
     const users = await sql`
@@ -229,7 +229,7 @@ export async function getUserById(userId: string): Promise<MobileUser | null> {
         profile_image_url,
         banner_image_url,
         bio,
-        joined_at,
+        created_at,
         is_chirp_plus,
         show_chirp_plus_badge,
         stripe_customer_id,
@@ -251,7 +251,7 @@ export async function getUserById(userId: string): Promise<MobileUser | null> {
         profile_image_url: user.profile_image_url,
         banner_image_url: user.banner_image_url,
         bio: user.bio,
-        joined_at: user.joined_at,
+        created_at: user.created_at,
         is_chirp_plus: user.is_chirp_plus,
         show_chirp_plus_badge: user.show_chirp_plus_badge,
         stripe_customer_id: user.stripe_customer_id,
