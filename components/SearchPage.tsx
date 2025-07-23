@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { getTrendingHashtags, searchChirps, searchUsers } from '../mobile-db';
 import ChirpCard from './ChirpCard';
 import UserAvatar from './UserAvatar';
@@ -170,7 +171,7 @@ export default function SearchPage() {
       {/* Feedback Button */}
       <TouchableOpacity 
         style={styles.feedbackButton}
-        onPress={() => Alert.alert('Feedback', 'Navigate to feedback submission page')}
+        onPress={() => router.push('/feedback')}
       >
         <Text style={styles.feedbackButtonText}>Feedback</Text>
       </TouchableOpacity>

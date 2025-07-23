@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
 import HeartIcon from './icons/HeartIcon';
 import MentionIcon from './icons/MentionIcon';
@@ -186,7 +187,7 @@ export default function NotificationsPage() {
       {/* Feedback Button */}
       <TouchableOpacity 
         style={styles.feedbackButton}
-        onPress={() => Alert.alert('Feedback', 'Navigate to feedback submission page')}
+        onPress={() => router.push('/feedback')}
       >
         <Text style={styles.feedbackButtonText}>Feedback</Text>
       </TouchableOpacity>

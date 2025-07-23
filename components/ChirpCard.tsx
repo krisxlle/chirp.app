@@ -149,18 +149,36 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     ]);
   };
 
-  const handleShare = () => {
-    // Use native share API
+  const handleShare = async () => {
+    const chirpUrl = `https://chirp.app/chirp/${chirp.id}`;
+    
+    // Use native share API if available
     if (typeof navigator !== 'undefined' && navigator.share) {
-      navigator.share({
-        title: `Chirp from ${displayName}`,
-        text: chirp.content,
-        url: `https://chirp.app/chirp/${chirp.id}`
-      });
-    } else {
-      Alert.alert('Share', 'Copy link to chirp?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Copy Link', onPress: () => Alert.alert('Copied!') }
+      try {
+        await navigator.share({
+          title: `Chirp from ${displayName}`,
+          url: chirpUrl
+        });
+        return;
+      } catch (error) {
+        // Fall back to clipboard if share is cancelled or fails
+      }
+    }
+    
+    // Copy to clipboard
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(chirpUrl);
+        Alert.alert('Link Copied!', 'The chirp link has been copied to your clipboard.');
+      } else {
+        // Fallback for environments without clipboard API
+        Alert.alert('Share Link', chirpUrl, [
+          { text: 'OK', style: 'default' }
+        ]);
+      }
+    } catch (error) {
+      Alert.alert('Share Link', `Copy this link: ${chirpUrl}`, [
+        { text: 'OK', style: 'default' }
       ]);
     }
   };
