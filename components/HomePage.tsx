@@ -8,19 +8,21 @@ import ChirpLogo from './icons/ChirpLogo';
 
 // Convert mobile chirps to ChirpCard format
 const convertToChirpCard = (chirp: MobileChirp) => ({
-  id: parseInt(chirp.id),
+  id: chirp.id,
   content: chirp.content,
   createdAt: chirp.createdAt,
   isWeeklySummary: chirp.isWeeklySummary || false,
   author: {
-    id: chirp.username || 'anonymous',
-    firstName: '',
-    lastName: '',
-    email: `${chirp.username}@example.com`,
-    handle: chirp.username,
-    customHandle: chirp.username,
-    profileImageUrl: undefined,
+    id: chirp.author.id || 'anonymous',
+    firstName: chirp.author.firstName || '',
+    lastName: chirp.author.lastName || '',
+    email: chirp.author.email || 'anonymous@example.com',
+    handle: chirp.author.handle || 'anonymous',
+    customHandle: chirp.author.customHandle || 'anonymous',
+    profileImageUrl: chirp.author.profileImageUrl || undefined,
   },
+  replyCount: chirp.replyCount || 0,
+  reactionCount: chirp.reactionCount || 0,
   reactionCounts: chirp.reactions?.reduce((acc: any, reaction: any) => {
     acc[reaction.emoji] = reaction.count;
     return acc;
@@ -159,7 +161,7 @@ export default function HomePage() {
           </View>
         ) : (
           chirps.map((chirp) => (
-            <ChirpCard key={chirp.id} chirp={chirp} />
+            <ChirpCard key={chirp.id} chirp={convertToChirpCard(chirp)} />
           ))
         )}
       </ScrollView>
