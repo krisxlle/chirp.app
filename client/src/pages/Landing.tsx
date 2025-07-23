@@ -4,6 +4,7 @@ import { Sparkles, Heart, Bot } from "lucide-react";
 import BrandIcon from "@/components/BrandIcon";
 
 
+
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
@@ -11,7 +12,7 @@ export default function Landing() {
         <CardContent className="pt-8 pb-8 text-center">
           <div className="flex justify-center mb-6">
             <img 
-              src="/logo.jpg" 
+              src="/icon.png" 
               alt="Chirp Logo" 
               className="w-16 h-16 object-cover object-center rounded-2xl shadow-lg"
             />
