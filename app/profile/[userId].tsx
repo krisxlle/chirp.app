@@ -15,6 +15,10 @@ interface User {
   profileImageUrl?: string;
   bannerImageUrl?: string;
   joinedAt?: string;
+  // Chirp+ subscription fields
+  isChirpPlus?: boolean;
+  chirpPlusExpiresAt?: string;
+  showChirpPlusBadge?: boolean;
 }
 
 interface ProfileStats {
@@ -44,23 +48,70 @@ export default function UserProfileScreen() {
 
   const fetchUserProfile = async () => {
     try {
-      // In a real app, this would fetch the user data from your backend
+      console.log('Fetching profile for user ID:', userId);
+      
+      // Get user data from database
+      const { sql } = await import('../../mobile-db');
+      const users = await sql`
+        SELECT 
+          id::text,
+          email,
+          first_name,
+          last_name,
+          custom_handle,
+          handle,
+          COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+          bio,
+          profile_image_url,
+          banner_image_url,
+          is_chirp_plus,
+          chirp_plus_expires_at,
+          show_chirp_plus_badge,
+          created_at
+        FROM users 
+        WHERE id = ${userId}
+        LIMIT 1
+      `;
+      
+      if (users.length === 0) {
+        Alert.alert('Error', 'User not found');
+        setLoading(false);
+        return;
+      }
+      
+      const dbUser = users[0];
+      
+      // Get user stats from database
+      const [chirpsCount, followersCount, followingCount] = await Promise.all([
+        sql`SELECT COUNT(*) as count FROM chirps WHERE author_id = ${userId}`,
+        sql`SELECT COUNT(*) as count FROM follows WHERE followed_id = ${userId}`,
+        sql`SELECT COUNT(*) as count FROM follows WHERE follower_id = ${userId}`
+      ]);
+      
       setUser({
-        id: userId as string,
-        firstName: 'User',
-        lastName: 'Name',
-        email: 'user@example.com',
-        customHandle: '@user',
-        bio: 'This is a sample user profile',
-        joinedAt: '3 days ago',
+        id: dbUser.id,
+        firstName: dbUser.first_name,
+        lastName: dbUser.last_name,
+        email: dbUser.email || '',
+        customHandle: dbUser.custom_handle,
+        handle: dbUser.handle,
+        bio: dbUser.bio,
+        profileImageUrl: dbUser.profile_image_url,
+        bannerImageUrl: dbUser.banner_image_url,
+        joinedAt: dbUser.created_at ? new Date(dbUser.created_at).toLocaleDateString() : 'Recently',
+        isChirpPlus: dbUser.is_chirp_plus,
+        chirpPlusExpiresAt: dbUser.chirp_plus_expires_at,
+        showChirpPlusBadge: dbUser.show_chirp_plus_badge
       });
       
       setStats({
-        following: 42,
-        followers: 128,
-        chirps: 15,
-        reactions: 89
+        following: parseInt(followingCount[0]?.count || '0'),
+        followers: parseInt(followersCount[0]?.count || '0'),
+        chirps: parseInt(chirpsCount[0]?.count || '0'),
+        reactions: 0 // Will be calculated separately if needed
       });
+      
+      console.log('Successfully loaded user profile:', dbUser.custom_handle || dbUser.handle);
     } catch (error) {
       console.error('Error fetching user profile:', error);
       Alert.alert('Error', 'Failed to load user profile');
@@ -71,8 +122,69 @@ export default function UserProfileScreen() {
 
   const fetchUserChirps = async () => {
     try {
-      // Mock chirps for now
-      setUserChirps([]);
+      console.log('Fetching chirps for user ID:', userId);
+      
+      const { sql } = await import('../../mobile-db');
+      const chirps = await sql`
+        SELECT 
+          c.id::text,
+          c.content,
+          c.created_at as "createdAt",
+          c.is_weekly_summary,
+          c.author_id,
+          c.reply_to_id,
+          u.custom_handle,
+          u.handle,
+          u.first_name,
+          u.last_name,
+          u.profile_image_url,
+          u.is_chirp_plus,
+          u.show_chirp_plus_badge,
+          (SELECT COUNT(*) FROM chirps WHERE reply_to_id = c.id) as reply_count,
+          (SELECT COUNT(*) FROM reactions WHERE chirp_id = c.id) as reaction_count,
+          COALESCE(
+            ARRAY_AGG(
+              DISTINCT jsonb_build_object(
+                'emoji', r.emoji,
+                'count', (SELECT COUNT(*) FROM reactions r2 WHERE r2.chirp_id = c.id AND r2.emoji = r.emoji)
+              )
+            ) FILTER (WHERE r.emoji IS NOT NULL),
+            ARRAY[]::jsonb[]
+          ) as reactions
+        FROM chirps c
+        JOIN users u ON c.author_id = u.id
+        LEFT JOIN reactions r ON c.id = r.chirp_id
+        WHERE c.author_id = ${userId} 
+          AND c.reply_to_id IS NULL
+        GROUP BY c.id, c.content, c.created_at, c.is_weekly_summary, c.author_id, c.reply_to_id,
+                 u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.is_chirp_plus, u.show_chirp_plus_badge
+        ORDER BY c.created_at DESC
+        LIMIT 20
+      `;
+      
+      const formattedChirps = chirps.map(chirp => ({
+        id: chirp.id,
+        content: chirp.content,
+        createdAt: chirp.createdAt,
+        isWeeklySummary: chirp.is_weekly_summary,
+        author: {
+          id: chirp.author_id,
+          firstName: chirp.first_name,
+          lastName: chirp.last_name,
+          email: `${chirp.custom_handle || chirp.handle}@chirp.com`,
+          handle: chirp.handle,
+          customHandle: chirp.custom_handle,
+          profileImageUrl: chirp.profile_image_url,
+          isChirpPlus: chirp.is_chirp_plus,
+          showChirpPlusBadge: chirp.show_chirp_plus_badge
+        },
+        replyCount: parseInt(chirp.reply_count),
+        reactionCount: parseInt(chirp.reaction_count),
+        reactions: chirp.reactions || []
+      }));
+      
+      setUserChirps(formattedChirps);
+      console.log(`Successfully loaded ${formattedChirps.length} chirps for user`);
     } catch (error) {
       console.error('Error fetching user chirps:', error);
     }
@@ -104,7 +216,14 @@ export default function UserProfileScreen() {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => Alert.alert('Navigate', 'Go back to previous screen')}>
+        <TouchableOpacity style={styles.backButton} onPress={() => {
+          if (typeof window !== 'undefined' && window.history.length > 1) {
+            window.history.back();
+          } else {
+            // Fallback navigation
+            Alert.alert('Navigate', 'Go back to previous screen');
+          }
+        }}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -140,6 +259,9 @@ export default function UserProfileScreen() {
       <View style={styles.userInfo}>
         <View style={styles.nameRow}>
           <Text style={styles.displayName}>{displayName}</Text>
+          {user.isChirpPlus && user.showChirpPlusBadge && (
+            <Text style={styles.crownIcon}>👑</Text>
+          )}
         </View>
         <Text style={styles.handle}>{user.customHandle || user.handle}</Text>
         <Text style={styles.bio}>
@@ -340,6 +462,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#14171a',
+  },
+  crownIcon: {
+    fontSize: 16,
+    marginLeft: 8,
   },
   handle: {
     fontSize: 15,
