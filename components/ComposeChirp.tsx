@@ -146,9 +146,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     marginTop: 12,
-    marginBottom: 8,
+    marginBottom: 3,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 16,

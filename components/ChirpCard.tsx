@@ -495,8 +495,8 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
-    marginHorizontal: 12,
-    marginVertical: 6,
+    marginHorizontal: 16,
+    marginVertical: 3,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 16,
