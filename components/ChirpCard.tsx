@@ -218,7 +218,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
         <View style={styles.reactionsContainer}>
           <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
-            <Text style={styles.reactionIcon}>😀</Text>
+            <Text style={styles.reactionIcon}>🫶🏼</Text>
             <Text style={styles.reactionCount}>{reactions}</Text>
           </TouchableOpacity>
           
@@ -237,12 +237,12 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           )}
           
           <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
-            <Text style={styles.reactionIcon}>🤯</Text>
+            <Text style={styles.reactionIcon}>😭</Text>
             <Text style={styles.reactionCount}>0</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
-            <Text style={styles.reactionIcon}>⭐</Text>
+            <Text style={styles.reactionIcon}>💀</Text>
             <Text style={styles.reactionCount}>0</Text>
           </TouchableOpacity>
           
