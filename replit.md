@@ -384,6 +384,10 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Badge Database Function**: Added updateChirpPlusBadgeVisibility function to mobile-db.ts with proper error handling
 - **Real-time Badge Control**: Users can now show/hide their Chirp+ badge on profile and posts with immediate feedback
 
+### January 23, 2025 - Reply Submission Fix
+- **Fixed Reply Parameter Order**: Corrected createReply function call in ChirpCard.tsx to use proper parameter order (content, replyToId, authorId)
+- **Reply Functionality Restored**: Reply submission button now properly posts replies to the database with correct content and reply relationships
+
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection
 - **Database Connection Restored**: Fixed database queries to use correct column names (author_id, reply_to_id) and proper field mapping

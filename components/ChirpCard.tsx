@@ -68,7 +68,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       
       console.log('Creating reply to chirp:', chirp.id, 'by user:', user.id);
       
-      const newReply = await createReply(chirp.id, replyText.trim(), user.id);
+      const newReply = await createReply(replyText.trim(), chirp.id, user.id);
       
       // Update local state
       setReplies(prev => prev + 1);
