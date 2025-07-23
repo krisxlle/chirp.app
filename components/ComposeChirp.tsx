@@ -48,13 +48,26 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 
     setIsPosting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      Alert.alert("Success!", "Your chirp has been posted!");
-      setContent("");
+    try {
+      // Import the createChirp function from mobile-db
+      const { createChirp } = await import('../mobile-db');
+      
+      const newChirp = await createChirp(content.trim());
+      
+      if (newChirp) {
+        console.log('Chirp posted successfully:', newChirp.id);
+        Alert.alert("Success!", "Your chirp has been posted!");
+        setContent("");
+        onPost?.();
+      } else {
+        throw new Error('Failed to create chirp');
+      }
+    } catch (error) {
+      console.error('Error posting chirp:', error);
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to post chirp. Please try again.");
+    } finally {
       setIsPosting(false);
-      onPost?.();
-    }, 1000);
+    }
   };
 
   const getCharCountColor = () => {

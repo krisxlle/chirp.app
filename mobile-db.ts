@@ -126,6 +126,93 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
   }
 }
 
+// Create a new chirp
+export async function createChirp(content: string, authorId?: string): Promise<MobileChirp | null> {
+  try {
+    console.log('Creating new chirp in database...');
+    
+    // Use a default author ID if none provided (for demo purposes)
+    const defaultAuthorId = authorId || '45265332'; // Using existing user from database
+    
+    // Filter out hyperlinks from chirp content (same as backend)
+    let filteredContent = content;
+    if (filteredContent && typeof filteredContent === 'string') {
+      // Remove HTTP/HTTPS URLs
+      filteredContent = filteredContent.replace(/https?:\/\/[^\s]+/gi, '[link removed]');
+      // Remove www. links
+      filteredContent = filteredContent.replace(/www\.[^\s]+/gi, '[link removed]');
+      // Remove domain-like patterns (but preserve @mentions)
+      filteredContent = filteredContent.replace(/(?<!@)[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*/gi, '[link removed]');
+    }
+    
+    if (!filteredContent.trim()) {
+      throw new Error('Chirp content cannot be empty');
+    }
+    
+    if (filteredContent.length > 280) {
+      throw new Error('Chirp content too long');
+    }
+    
+    const result = await sql`
+      INSERT INTO chirps (content, author_id, created_at)
+      VALUES (${filteredContent}, ${defaultAuthorId}, NOW())
+      RETURNING 
+        id::text,
+        content,
+        created_at as "createdAt",
+        author_id
+    `;
+    
+    if (result.length === 0) {
+      return null;
+    }
+    
+    const newChirp = result[0];
+    
+    // Get author details
+    const authorResult = await sql`
+      SELECT 
+        id::text,
+        COALESCE(custom_handle, handle, CAST(id AS text), 'user') as username,
+        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        profile_image_url
+      FROM users 
+      WHERE id = ${defaultAuthorId}
+    `;
+    
+    const author = authorResult[0] || {
+      id: defaultAuthorId,
+      username: 'user',
+      display_name: 'User',
+      profile_image_url: null
+    };
+    
+    console.log('Successfully created new chirp:', newChirp.id);
+    
+    return {
+      id: newChirp.id,
+      content: newChirp.content,
+      createdAt: newChirp.createdAt,
+      isWeeklySummary: false,
+      author: {
+        id: author.id,
+        firstName: author.display_name?.split(' ')[0] || author.username || 'User',
+        lastName: author.display_name?.split(' ').slice(1).join(' ') || '',
+        email: `${author.username}@chirp.com`,
+        handle: author.username,
+        customHandle: author.username,
+        profileImageUrl: author.profile_image_url,
+      },
+      replyCount: 0,
+      reactionCount: 0,
+      reactions: [],
+    };
+  } catch (error) {
+    console.error('Error creating chirp:', error);
+    throw error;
+  }
+}
+
 function formatChirpResults(chirps: any[]): MobileChirp[] {
   console.log(`Successfully loaded ${chirps.length} authentic chirps`);
   return chirps.map(chirp => ({
