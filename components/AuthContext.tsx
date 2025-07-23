@@ -52,6 +52,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuthState();
   }, []);
 
+  // Auto-login effect after auth state is checked
+  useEffect(() => {
+    const autoLogin = async () => {
+      if (!isLoading && !user) {
+        console.log('No user found - auto-signing in to @chirp for preview...');
+        await signIn('preview@chirp.app');
+      }
+    };
+    
+    autoLogin();
+  }, [isLoading, user]);
+
   const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
       // Get actual user from database based on email

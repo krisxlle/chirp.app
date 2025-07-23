@@ -307,10 +307,41 @@ export async function getUserByEmail(email: string) {
   }
 }
 
-// Get first available user for demo mode
+// Get @chirp preview user for demo mode
 export async function getFirstUser() {
   try {
-    console.log('Getting first available user for demo mode...');
+    console.log('Getting @chirp preview user for demo mode...');
+    // First try to get the @chirp preview user
+    const chirpUser = await sql`
+      SELECT 
+        id::text,
+        email,
+        first_name,
+        last_name,
+        custom_handle,
+        handle,
+        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        bio,
+        profile_image_url,
+        banner_image_url,
+        is_chirp_plus,
+        chirp_plus_expires_at,
+        show_chirp_plus_badge,
+        stripe_customer_id,
+        stripe_subscription_id
+      FROM users 
+      WHERE custom_handle = 'chirp' OR handle = 'chirp' OR id = 'chirp-preview-001'
+      ORDER BY CASE WHEN custom_handle = 'chirp' THEN 1 ELSE 2 END
+      LIMIT 1
+    `;
+    
+    if (chirpUser.length > 0) {
+      console.log('Using @chirp preview user:', chirpUser[0].custom_handle || chirpUser[0].handle || chirpUser[0].id);
+      console.log('Chirp+ status:', chirpUser[0].is_chirp_plus ? 'Active' : 'Inactive');
+      return chirpUser[0];
+    }
+    
+    // Fallback to first available user if @chirp doesn't exist
     const users = await sql`
       SELECT 
         id::text,
@@ -334,7 +365,7 @@ export async function getFirstUser() {
     `;
     
     if (users.length > 0) {
-      console.log('Using demo user:', users[0].custom_handle || users[0].handle || users[0].id);
+      console.log('Fallback - using first user:', users[0].custom_handle || users[0].handle || users[0].id);
       console.log('Chirp+ status:', users[0].is_chirp_plus ? 'Active' : 'Inactive');
       return users[0];
     }

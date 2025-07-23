@@ -388,6 +388,12 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Fixed Reply Parameter Order**: Corrected createReply function call in ChirpCard.tsx to use proper parameter order (content, replyToId, authorId)
 - **Reply Functionality Restored**: Reply submission button now properly posts replies to the database with correct content and reply relationships
 
+### January 23, 2025 - Preview Account Setup
+- **Created @chirp Preview Account**: Added official @chirp preview account (ID: chirp-preview-001) with Chirp+ status for testing and demonstrations
+- **Auto-Login System**: Modified authentication to automatically sign into @chirp account for all preview sessions
+- **Updated Default User Logic**: Modified getFirstUser() function to prioritize @chirp preview account over other users
+- **Preview Account Features**: @chirp account has Chirp+ status, custom handle 'chirp', and appropriate bio for demonstrations
+
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection
 - **Database Connection Restored**: Fixed database queries to use correct column names (author_id, reply_to_id) and proper field mapping
