@@ -25,14 +25,14 @@ export default function Landing() {
           <div className="space-y-4">
             <Button 
               className="w-full gradient-bg hover:opacity-90 transition-opacity text-white font-semibold"
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => window.location.href = '/auth'}
             >
               Enter Chirp
             </Button>
             
             <p className="text-sm text-gray-500 dark:text-gray-400 break-words">
               <button 
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/auth'}
                 className="text-purple-500 hover:text-purple-600 underline hover:no-underline transition-colors"
               >
                 Sign in
