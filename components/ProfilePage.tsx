@@ -7,7 +7,8 @@ import {
   ScrollView, 
   Image,
   ImageBackground,
-  Alert 
+  Alert,
+  TextInput
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
@@ -80,55 +81,54 @@ export default function ProfilePage() {
 
   const displayName = user?.firstName || user?.customHandle || 'User';
 
-  const [showPersonalityQuiz, setShowPersonalityQuiz] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  
-  const personalityQuestions = [
-    "What's your ideal weekend activity?",
-    "How do you prefer to communicate?", 
-    "What motivates you most?",
-    "Your social style is more:",
-    "You're drawn to content that's:",
-    "Your humor style:",
-    "When making decisions, you:",
-    "Your ideal creative outlet:",
-    "You value relationships that are:",
-    "Your approach to new experiences:"
-  ];
+  const [showAIPrompt, setShowAIPrompt] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAIProfile = () => {
-    setShowPersonalityQuiz(true);
-    setCurrentQuestion(0);
-    setQuizAnswers([]);
+    setShowAIPrompt(true);
+    setAiPrompt('');
   };
 
-  const handleQuizAnswer = (answer: string) => {
-    const newAnswers = [...quizAnswers, answer];
-    setQuizAnswers(newAnswers);
-    
-    if (currentQuestion < personalityQuestions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      // Quiz completed, generate AI profile
-      generateProfile(newAnswers);
+  const generateProfile = async () => {
+    if (!aiPrompt.trim()) {
+      Alert.alert('Error', 'Please enter a description for your profile generation.');
+      return;
     }
-  };
 
-  const generateProfile = async (answers: string[]) => {
     try {
-      setShowPersonalityQuiz(false);
-      Alert.alert('Generating Profile', 'Creating your AI-powered profile based on your personality...', [
-        { text: 'OK', onPress: () => {} }
-      ]);
+      setIsGenerating(true);
+      console.log('Generating AI profile with prompt:', aiPrompt);
       
-      // Here you would call the AI generation service
-      // For now, just show completion
-      setTimeout(() => {
-        Alert.alert('Success!', 'Your AI profile has been generated! Check out your new avatar, banner, and bio.');
-      }, 2000);
+      // Call OpenAI API for image generation
+      const response = await fetch('http://localhost:5000/api/ai/generate-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          type: 'profile'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate profile images');
+      }
+
+      const result = await response.json();
+      
+      setShowAIPrompt(false);
+      setAiPrompt('');
+      Alert.alert('Success!', 'Your AI profile has been generated! Your new avatar and banner are being saved.');
+      
+      // Optionally refresh the profile data here
+      
     } catch (error) {
+      console.error('Error generating AI profile:', error);
       Alert.alert('Error', 'Profile generation failed. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -372,75 +372,53 @@ export default function ProfilePage() {
         <Text style={styles.feedNoticeText}>Weekly summary has been posted to your feed</Text>
       </View>
       
-      {/* Personality Quiz Overlay */}
-      {showPersonalityQuiz && (
-        <View style={styles.quizOverlay}>
-          <View style={styles.quizContainer}>
-            <View style={styles.quizHeader}>
-              <Text style={styles.quizTitle}>Personality Quiz</Text>
-              <Text style={styles.quizProgress}>
-                {currentQuestion + 1} of {personalityQuestions.length}
-              </Text>
+      {/* AI Prompt Overlay */}
+      {showAIPrompt && (
+        <View style={styles.promptOverlay}>
+          <View style={styles.promptContainer}>
+            <View style={styles.promptHeader}>
+              <Text style={styles.promptTitle}>AI Profile Generation</Text>
+              <TouchableOpacity 
+                style={styles.promptCloseButton}
+                onPress={() => setShowAIPrompt(false)}
+              >
+                <Text style={styles.promptCloseText}>✕</Text>
+              </TouchableOpacity>
             </View>
             
-            <Text style={styles.quizQuestion}>
-              {personalityQuestions[currentQuestion]}
+            <Text style={styles.promptDescription}>
+              Describe the style you want for your avatar and banner image:
             </Text>
             
-            <View style={styles.quizOptions}>
-              {currentQuestion === 0 && [
-                'Netflix and chill',
-                'Outdoor adventures', 
-                'Creative projects',
-                'Social gatherings'
-              ].map((option, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={styles.quizOption}
-                  onPress={() => handleQuizAnswer(option)}
-                >
-                  <Text style={styles.quizOptionText}>{option}</Text>
-                </TouchableOpacity>
-              ))}
-              
-              {currentQuestion === 1 && [
-                'Direct and honest',
-                'Thoughtful and detailed',
-                'Fun and playful',
-                'Deep and meaningful'
-              ].map((option, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={styles.quizOption}
-                  onPress={() => handleQuizAnswer(option)}
-                >
-                  <Text style={styles.quizOptionText}>{option}</Text>
-                </TouchableOpacity>
-              ))}
-              
-              {/* Generic options for remaining questions */}
-              {currentQuestion > 1 && [
-                'Adventure and growth',
-                'Connection and community',
-                'Knowledge and learning',
-                'Creativity and expression'
-              ].map((option, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={styles.quizOption}
-                  onPress={() => handleQuizAnswer(option)}
-                >
-                  <Text style={styles.quizOptionText}>{option}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TextInput
+              style={styles.promptInput}
+              placeholder="e.g., cartoon character with purple hair, aesthetic anime style, futuristic cyberpunk look..."
+              placeholderTextColor="#657786"
+              multiline
+              numberOfLines={4}
+              value={aiPrompt}
+              onChangeText={setAiPrompt}
+              maxLength={500}
+            />
             
-            <TouchableOpacity 
-              style={styles.quizCloseButton}
-              onPress={() => setShowPersonalityQuiz(false)}
-            >
-              <Text style={styles.quizCloseText}>✕</Text>
-            </TouchableOpacity>
+            <View style={styles.promptButtons}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => setShowAIPrompt(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
+                onPress={generateProfile}
+                disabled={isGenerating}
+              >
+                <Text style={styles.generateButtonText}>
+                  {isGenerating ? 'Generating...' : 'Generate'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -900,7 +878,7 @@ const styles = StyleSheet.create({
     color: '#657786',
     marginBottom: 8,
   },
-  quizOverlay: {
+  promptOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -911,7 +889,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1000,
   },
-  quizContainer: {
+  promptContainer: {
     backgroundColor: '#ffffff',
     margin: 20,
     borderRadius: 20,
@@ -919,60 +897,76 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     width: '90%',
   },
-  quizHeader: {
+  promptHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  quizTitle: {
+  promptTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#14171a',
   },
-  quizProgress: {
-    fontSize: 14,
-    color: '#657786',
+  promptCloseButton: {
+    padding: 8,
   },
-  quizQuestion: {
-    fontSize: 18,
-    fontWeight: '600',
+  promptCloseText: {
+    fontSize: 20,
+    color: '#657786',
+    fontWeight: 'bold',
+  },
+  promptDescription: {
+    fontSize: 16,
     color: '#14171a',
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
   },
-  quizOptions: {
-    marginBottom: 20,
-  },
-  quizOption: {
-    backgroundColor: '#f7f9fa',
+  promptInput: {
+    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    fontSize: 16,
+    color: '#14171a',
+    textAlignVertical: 'top',
+    minHeight: 100,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#e1e8ed',
   },
-  quizOptionText: {
-    fontSize: 16,
-    color: '#14171a',
-    textAlign: 'center',
-    fontWeight: '500',
+  promptButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  quizCloseButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f7f9fa',
-    justifyContent: 'center',
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
     alignItems: 'center',
   },
-  quizCloseText: {
-    fontSize: 18,
+  cancelButtonText: {
     color: '#657786',
     fontWeight: '600',
+    fontSize: 16,
+  },
+  generateButton: {
+    flex: 1,
+    backgroundColor: '#7c3aed',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  generateButtonDisabled: {
+    backgroundColor: '#b8b8b8',
+  },
+  generateButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 16,
   },
   generateProfileButton: {
     paddingHorizontal: 16,
@@ -997,5 +991,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e8ed',
     marginLeft: 8,
+  },
+  settingsIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  settingsText: {
+    fontSize: 14,
+    color: '#14171a',
+    fontWeight: '600',
   },
 });
