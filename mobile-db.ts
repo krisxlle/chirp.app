@@ -131,8 +131,9 @@ export async function createChirp(content: string, authorId?: string): Promise<M
   try {
     console.log('Creating new chirp in database...');
     
-    // Use a default author ID if none provided (for demo purposes)
-    const defaultAuthorId = authorId || '45265332'; // Using existing user from database
+    if (!authorId) {
+      throw new Error('Author ID is required to create a chirp');
+    }
     
     // Filter out hyperlinks from chirp content (same as backend)
     let filteredContent = content;
@@ -155,7 +156,7 @@ export async function createChirp(content: string, authorId?: string): Promise<M
     
     const result = await sql`
       INSERT INTO chirps (content, author_id, created_at)
-      VALUES (${filteredContent}, ${defaultAuthorId}, NOW())
+      VALUES (${filteredContent}, ${authorId}, NOW())
       RETURNING 
         id::text,
         content,
@@ -177,11 +178,11 @@ export async function createChirp(content: string, authorId?: string): Promise<M
         COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
         profile_image_url
       FROM users 
-      WHERE id = ${defaultAuthorId}
+      WHERE id = ${authorId}
     `;
     
     const author = authorResult[0] || {
-      id: defaultAuthorId,
+      id: authorId,
       username: 'user',
       display_name: 'User',
       profile_image_url: null
@@ -264,6 +265,70 @@ export async function getUserFromDB() {
     return null;
   } catch (error) {
     console.error('User fetch error:', error);
+    return null;
+  }
+}
+
+// Get user by email for authentication
+export async function getUserByEmail(email: string) {
+  try {
+    console.log('Looking up user by email:', email);
+    const users = await sql`
+      SELECT 
+        id::text,
+        email,
+        first_name,
+        last_name,
+        custom_handle,
+        handle,
+        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        bio,
+        profile_image_url,
+        banner_image_url
+      FROM users 
+      WHERE email = ${email}
+      LIMIT 1
+    `;
+    
+    if (users.length > 0) {
+      console.log('Found user:', users[0].custom_handle || users[0].handle || users[0].id);
+      return users[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('User lookup error:', error);
+    return null;
+  }
+}
+
+// Get first available user for demo mode
+export async function getFirstUser() {
+  try {
+    console.log('Getting first available user for demo mode...');
+    const users = await sql`
+      SELECT 
+        id::text,
+        email,
+        first_name,
+        last_name,
+        custom_handle,
+        handle,
+        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        bio,
+        profile_image_url,
+        banner_image_url
+      FROM users 
+      ORDER BY id
+      LIMIT 1
+    `;
+    
+    if (users.length > 0) {
+      console.log('Using demo user:', users[0].custom_handle || users[0].handle || users[0].id);
+      return users[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('Demo user fetch error:', error);
     return null;
   }
 }
@@ -363,5 +428,165 @@ export async function searchUsers(query: string) {
   } catch (error) {
     console.error('User search error:', error);
     return [];
+  }
+}
+
+// Add reaction to a chirp
+export async function addReaction(chirpId: string, emoji: string, userId: string) {
+  try {
+    console.log('Adding reaction:', emoji, 'to chirp:', chirpId, 'by user:', userId);
+    
+    // Check if reaction already exists
+    const existingReaction = await sql`
+      SELECT id FROM reactions 
+      WHERE chirp_id = ${chirpId} AND user_id = ${userId} AND emoji = ${emoji}
+      LIMIT 1
+    `;
+    
+    if (existingReaction.length > 0) {
+      // Remove existing reaction (toggle off)
+      await sql`
+        DELETE FROM reactions 
+        WHERE chirp_id = ${chirpId} AND user_id = ${userId} AND emoji = ${emoji}
+      `;
+      console.log('Removed reaction');
+      return false; // Reaction removed
+    } else {
+      // Add new reaction
+      await sql`
+        INSERT INTO reactions (chirp_id, user_id, emoji, created_at)
+        VALUES (${chirpId}, ${userId}, ${emoji}, NOW())
+      `;
+      console.log('Added reaction');
+      return true; // Reaction added
+    }
+  } catch (error) {
+    console.error('Error managing reaction:', error);
+    throw error;
+  }
+}
+
+// Create a reply to a chirp
+export async function createReply(content: string, replyToId: string, authorId: string): Promise<MobileChirp | null> {
+  try {
+    console.log('Creating reply to chirp:', replyToId, 'by user:', authorId);
+    
+    if (!authorId) {
+      throw new Error('Author ID is required to create a reply');
+    }
+    
+    // Filter content same as regular chirps
+    let filteredContent = content;
+    if (filteredContent && typeof filteredContent === 'string') {
+      filteredContent = filteredContent.replace(/https?:\/\/[^\s]+/gi, '[link removed]');
+      filteredContent = filteredContent.replace(/www\.[^\s]+/gi, '[link removed]');
+      filteredContent = filteredContent.replace(/(?<!@)[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*/gi, '[link removed]');
+    }
+    
+    if (!filteredContent.trim()) {
+      throw new Error('Reply content cannot be empty');
+    }
+    
+    if (filteredContent.length > 280) {
+      throw new Error('Reply content too long');
+    }
+    
+    const result = await sql`
+      INSERT INTO chirps (content, author_id, reply_to_id, created_at)
+      VALUES (${filteredContent}, ${authorId}, ${replyToId}, NOW())
+      RETURNING 
+        id::text,
+        content,
+        created_at as "createdAt",
+        author_id,
+        reply_to_id
+    `;
+    
+    if (result.length === 0) {
+      return null;
+    }
+    
+    const newReply = result[0];
+    
+    // Get author details
+    const authorResult = await sql`
+      SELECT 
+        id::text,
+        COALESCE(custom_handle, handle, CAST(id AS text), 'user') as username,
+        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        profile_image_url
+      FROM users 
+      WHERE id = ${authorId}
+    `;
+    
+    const author = authorResult[0] || {
+      id: authorId,
+      username: 'user',
+      display_name: 'User',
+      profile_image_url: null
+    };
+    
+    console.log('Successfully created reply:', newReply.id);
+    
+    return {
+      id: newReply.id,
+      content: newReply.content,
+      createdAt: newReply.createdAt,
+      isWeeklySummary: false,
+      author: {
+        id: author.id,
+        firstName: author.display_name?.split(' ')[0] || author.username || 'User',
+        lastName: author.display_name?.split(' ').slice(1).join(' ') || '',
+        email: `${author.username}@chirp.com`,
+        handle: author.username,
+        customHandle: author.username,
+        profileImageUrl: author.profile_image_url,
+      },
+      replyCount: 0,
+      reactionCount: 0,
+      reactions: [],
+    };
+  } catch (error) {
+    console.error('Error creating reply:', error);
+    throw error;
+  }
+}
+
+// Create a repost of a chirp
+export async function createRepost(originalChirpId: string, userId: string) {
+  try {
+    console.log('Creating repost of chirp:', originalChirpId, 'by user:', userId);
+    
+    if (!userId) {
+      throw new Error('User ID is required to create a repost');
+    }
+    
+    // Check if user already reposted this chirp
+    const existingRepost = await sql`
+      SELECT id FROM reposts 
+      WHERE chirp_id = ${originalChirpId} AND user_id = ${userId}
+      LIMIT 1
+    `;
+    
+    if (existingRepost.length > 0) {
+      // Remove existing repost (toggle off)
+      await sql`
+        DELETE FROM reposts 
+        WHERE chirp_id = ${originalChirpId} AND user_id = ${userId}
+      `;
+      console.log('Removed repost');
+      return false; // Repost removed
+    } else {
+      // Add new repost
+      await sql`
+        INSERT INTO reposts (chirp_id, user_id, created_at)
+        VALUES (${originalChirpId}, ${userId}, NOW())
+      `;
+      console.log('Added repost');
+      return true; // Repost added
+    }
+  } catch (error) {
+    console.error('Error managing repost:', error);
+    throw error;
   }
 }

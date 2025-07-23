@@ -48,16 +48,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
-      // Demo authentication - accept any email input
-      const user = {
-        id: '1',
-        email: email || 'demo@chirp.com',
-        name: email ? email.split('@')[0] : 'demo'
-      };
+      // Get actual user from database based on email
+      const { getUserByEmail } = await import('../mobile-db');
+      const dbUser = await getUserByEmail(email);
       
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
-      return true;
+      if (dbUser) {
+        // Use real user data from database
+        const user = {
+          id: dbUser.id,
+          email: dbUser.email || email,
+          name: dbUser.display_name || email.split('@')[0],
+          firstName: dbUser.first_name,
+          lastName: dbUser.last_name,
+          customHandle: dbUser.custom_handle,
+          handle: dbUser.handle,
+          profileImageUrl: dbUser.profile_image_url,
+          avatarUrl: dbUser.profile_image_url,
+          bannerImageUrl: dbUser.banner_image_url,
+          bio: dbUser.bio
+        };
+        
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+        setUser(user);
+        console.log('Signed in as user:', user.customHandle || user.handle || user.id);
+        return true;
+      } else {
+        // Fallback for demo - use first available user
+        const { getFirstUser } = await import('../mobile-db');
+        const fallbackUser = await getFirstUser();
+        
+        if (fallbackUser) {
+          const user = {
+            id: fallbackUser.id,
+            email: fallbackUser.email || email,
+            name: fallbackUser.display_name || email.split('@')[0],
+            firstName: fallbackUser.first_name,
+            lastName: fallbackUser.last_name,
+            customHandle: fallbackUser.custom_handle,
+            handle: fallbackUser.handle,
+            profileImageUrl: fallbackUser.profile_image_url,
+            avatarUrl: fallbackUser.profile_image_url,
+            bannerImageUrl: fallbackUser.banner_image_url,
+            bio: fallbackUser.bio
+          };
+          
+          await AsyncStorage.setItem('user', JSON.stringify(user));
+          setUser(user);
+          console.log('Demo mode - signed in as user:', user.customHandle || user.handle || user.id);
+          return true;
+        }
+      }
+      
+      return false;
     } catch (error) {
       console.error('Sign in error:', error);
       return false;

@@ -52,7 +52,12 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       // Import the createChirp function from mobile-db
       const { createChirp } = await import('../mobile-db');
       
-      const newChirp = await createChirp(content.trim());
+      // Get authenticated user's ID
+      if (!user?.id) {
+        throw new Error('You must be signed in to post a chirp');
+      }
+      
+      const newChirp = await createChirp(content.trim(), user.id);
       
       if (newChirp) {
         console.log('Chirp posted successfully:', newChirp.id);
