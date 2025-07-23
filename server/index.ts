@@ -74,5 +74,9 @@ app.use((req, res, next) => {
     
     // Initialize the weekly analytics scheduler
     initializeScheduler();
+    
+    // Initialize notification scheduler
+    const { initializeNotificationScheduler } = require('./scheduler');
+    initializeNotificationScheduler();
   });
 })();

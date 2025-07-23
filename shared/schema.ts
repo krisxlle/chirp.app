@@ -95,11 +95,22 @@ export const reactions = pgTable("reactions", {
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  type: varchar("type").notNull(), // 'follow', 'reaction', 'mention', 'reply', 'mention_bio'
+  type: varchar("type").notNull(), // 'follow', 'reaction', 'mention', 'reply', 'mention_bio', 'repost', 'weekly_summary'
   fromUserId: varchar("from_user_id").references(() => users.id, { onDelete: "cascade" }),
   chirpId: integer("chirp_id").references(() => chirps.id, { onDelete: "cascade" }),
   read: boolean("read").default(false),
+  pushSent: boolean("push_sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Push notification tokens for mobile devices
+export const pushTokens = pgTable("push_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token").notNull(),
+  platform: varchar("platform").notNull(), // 'ios', 'android', 'web'
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsed: timestamp("last_used").defaultNow(),
 });
 
 export const feedback = pgTable("feedback", {
@@ -291,6 +302,30 @@ export const insertFollowSchema = createInsertSchema(follows).omit({
   id: true,
   createdAt: true,
 });
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  pushSent: true,
+});
+
+export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
+  id: true,
+  createdAt: true,
+  lastUsed: true,
+});
+
+// Push token relations  
+export const pushTokensRelations = relations(pushTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [pushTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+// Types
+export type PushToken = typeof pushTokens.$inferSelect;
+export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,

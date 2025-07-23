@@ -4,6 +4,7 @@ import {
   follows,
   reactions,
   notifications,
+  pushTokens,
   vipCodes,
   linkShares,
   type User,
@@ -531,6 +532,18 @@ export class DatabaseStorage implements IStorage {
       content: "", // Reposts have empty content
       repostOfId: chirpId,
     }).returning();
+
+    // Create notification for the original chirp author
+    const originalChirp = await this.getChirpById(chirpId);
+    if (originalChirp && originalChirp.author.id !== userId) {
+      await this.createNotification({
+        userId: originalChirp.author.id,
+        type: 'repost',
+        fromUserId: userId,
+        chirpId: originalChirp.id,
+      });
+    }
+
     return repost;
   }
 
@@ -1055,15 +1068,27 @@ export class DatabaseStorage implements IStorage {
     
     const [newReaction] = await db.insert(reactions).values(reaction).returning();
     
-    // Create notification for the chirp author
+    // Create notification for the chirp author with push notification
     const [chirp] = await db.select().from(chirps).where(eq(chirps.id, reaction.chirpId));
     if (chirp && chirp.authorId !== reaction.userId) {
-      await this.createNotification({
-        userId: chirp.authorId,
-        type: 'reaction',
-        fromUserId: reaction.userId,
-        chirpId: reaction.chirpId,
-      });
+      try {
+        const { notificationService } = await import('./notificationService');
+        await notificationService.createAndSendNotification(
+          chirp.authorId,
+          'reaction',
+          reaction.userId,
+          reaction.chirpId
+        );
+      } catch (error) {
+        console.error('Error creating reaction notification:', error);
+        // Fallback to basic notification
+        await this.createNotification({
+          userId: chirp.authorId,
+          type: 'reaction',
+          fromUserId: reaction.userId,
+          chirpId: reaction.chirpId,
+        });
+      }
     }
     
     return newReaction;
@@ -1159,6 +1184,43 @@ export class DatabaseStorage implements IStorage {
       );
     
     return result.count;
+  }
+
+  async markPushNotificationSent(notificationId: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ pushSent: true })
+      .where(eq(notifications.id, notificationId));
+  }
+
+  async getUserPushTokens(userId: string): Promise<Array<{ token: string; platform: string }>> {
+    const results = await db
+      .select({ token: pushTokens.token, platform: pushTokens.platform })
+      .from(pushTokens)
+      .where(eq(pushTokens.userId, userId));
+    
+    return results;
+  }
+
+  async addPushToken(userId: string, token: string, platform: string): Promise<void> {
+    await db
+      .insert(pushTokens)
+      .values({ userId, token, platform })
+      .onConflictDoUpdate({
+        target: [pushTokens.userId, pushTokens.token],
+        set: { lastUsed: new Date() }
+      });
+  }
+
+  async removePushToken(userId: string, token: string): Promise<void> {
+    await db
+      .delete(pushTokens)
+      .where(
+        and(
+          eq(pushTokens.userId, userId),
+          eq(pushTokens.token, token)
+        )
+      );
   }
 
   // Get all users with email addresses for analytics

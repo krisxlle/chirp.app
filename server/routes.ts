@@ -164,12 +164,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (chirp.replyToId) {
         const originalChirp = await storage.getChirpById(chirp.replyToId);
         if (originalChirp && originalChirp.author.id !== userId) {
-          await storage.createNotification({
-            userId: originalChirp.author.id,
-            type: 'reply',
-            fromUserId: userId,
-            chirpId: chirp.id,
-          });
+          const { notificationService } = await import('./notificationService');
+          await notificationService.createAndSendNotification(
+            originalChirp.author.id,
+            'reply',
+            userId,
+            chirp.id
+          );
         }
       }
       
@@ -494,12 +495,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const follow = await storage.followUser(followData);
       
-      // Create notification
-      await storage.createNotification({
-        userId: followData.followingId,
-        type: 'follow',
-        fromUserId: followerId,
-      });
+      // Create notification with push notification
+      const { notificationService } = await import('./notificationService');
+      await notificationService.createAndSendNotification(
+        followData.followingId,
+        'follow',
+        followerId
+      );
 
       res.json(follow);
     } catch (error) {
@@ -644,6 +646,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting notification setting:", error);
       res.status(500).json({ message: "Failed to get notification setting" });
+    }
+  });
+
+  // Push notification token management
+  app.post('/api/push-tokens', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { token, platform } = req.body;
+      
+      if (!token || !platform) {
+        return res.status(400).json({ message: "Token and platform are required" });
+      }
+
+      await storage.addPushToken(userId, token, platform);
+      res.json({ message: "Push token registered successfully" });
+    } catch (error) {
+      console.error("Error registering push token:", error);
+      res.status(500).json({ message: "Failed to register push token" });
+    }
+  });
+
+  app.delete('/api/push-tokens/:token', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { token } = req.params;
+      
+      await storage.removePushToken(userId, token);
+      res.json({ message: "Push token removed successfully" });
+    } catch (error) {
+      console.error("Error removing push token:", error);
+      res.status(500).json({ message: "Failed to remove push token" });
+    }
+  });
+
+  // Manual weekly summary notification trigger (for testing)
+  app.post('/api/admin/trigger-weekly-summary', isAuthenticated, async (req: any, res) => {
+    try {
+      const { notificationService } = await import('./notificationService');
+      await notificationService.sendWeeklySummaryNotifications();
+      res.json({ message: "Weekly summary notifications sent successfully" });
+    } catch (error) {
+      console.error("Error triggering weekly summary notifications:", error);
+      res.status(500).json({ message: "Failed to trigger weekly summary notifications" });
     }
   });
 
