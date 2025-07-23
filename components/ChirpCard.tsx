@@ -6,6 +6,7 @@ import ReplyIcon from './icons/ReplyIcon';
 import RepostIcon from './icons/RepostIcon';
 import ShareIcon from './icons/ShareIcon';
 import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
+import { useAuth } from './AuthContext';
 
 interface User {
   id: string;
@@ -38,6 +39,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     return null;
   }
 
+  const { user } = useAuth();
   const [reactions, setReactions] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [reposts, setReposts] = useState(0);
@@ -69,11 +71,32 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     ]);
   };
 
-  const handleReactionPress = (emoji: string) => {
-    setReactions(prev => prev + 1);
-    setShowReactionPicker(false);
-    // TODO: Add reaction to database
-    Alert.alert('Reaction Added', `You reacted with ${emoji}`);
+  const handleReactionPress = async (emoji: string) => {
+    try {
+      if (!user?.id) {
+        Alert.alert('Sign in required', 'Please sign in to react to chirps.');
+        return;
+      }
+
+      const { addReaction } = await import('../mobile-db');
+      
+      console.log('Adding reaction:', emoji, 'to chirp:', chirp.id, 'by user:', user.id);
+      
+      const reactionAdded = await addReaction(chirp.id, emoji, user.id);
+      
+      if (reactionAdded) {
+        setReactions(prev => prev + 1);
+        console.log('Reaction added successfully');
+      } else {
+        setReactions(prev => Math.max(0, prev - 1));
+        console.log('Reaction removed');
+      }
+      
+      setShowReactionPicker(false);
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      Alert.alert('Error', 'Failed to add reaction. Please try again.');
+    }
   };
 
   const handleMoreOptions = () => {
