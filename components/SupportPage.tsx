@@ -121,7 +121,14 @@ export default function SupportPage({ onClose }: SupportPageProps) {
               setMessage('');
               setEmail('');
               if (onClose) onClose();
-              else router.back();
+              else {
+                // Navigate back to settings page specifically
+                if (typeof window !== 'undefined' && window.location) {
+                  window.location.href = '/settings';
+                } else {
+                  router.push('/settings');
+                }
+              }
             }
           }
         ]
@@ -144,7 +151,14 @@ export default function SupportPage({ onClose }: SupportPageProps) {
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => {
           if (onClose) onClose();
-          else router.back();
+          else {
+            // Navigate back to settings page specifically
+            if (typeof window !== 'undefined' && window.location) {
+              window.location.href = '/settings';
+            } else {
+              router.push('/settings');
+            }
+          }
         }}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>

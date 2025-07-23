@@ -404,6 +404,11 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Minimized Compose Margin**: Reduced marginTop from 12px to 4px in ComposeChirp container
 - **Improved Layout Flow**: Eliminated awkward spacing gap for better visual continuity between header and compose field
 
+### January 23, 2025 - Support Page Navigation Fix
+- **Fixed Back Button**: Support page back button now correctly navigates to settings page instead of using browser back
+- **Consistent Navigation**: Both header back button and post-submission navigation return to /settings
+- **Cross-Platform Support**: Added proper navigation handling for both web and mobile environments
+
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection
 - **Database Connection Restored**: Fixed database queries to use correct column names (author_id, reply_to_id) and proper field mapping
