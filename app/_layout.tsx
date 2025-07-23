@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '../hooks/useColorScheme';
 import { AuthProvider } from '../components/AuthContext';
+import PushNotificationProvider from '../components/PushNotificationProvider';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,19 +22,21 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="feedback" options={{ headerShown: false }} />
-          <Stack.Screen name="user-profile" options={{ headerShown: false }} />
-          <Stack.Screen name="profile-page" options={{ headerShown: false }} />
-          <Stack.Screen name="view-profile" options={{ headerShown: false }} />
-          <Stack.Screen name="support" options={{ headerShown: false }} />
-          <Stack.Screen name="subscription" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <PushNotificationProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="feedback" options={{ headerShown: false }} />
+            <Stack.Screen name="user-profile" options={{ headerShown: false }} />
+            <Stack.Screen name="profile-page" options={{ headerShown: false }} />
+            <Stack.Screen name="view-profile" options={{ headerShown: false }} />
+            <Stack.Screen name="support" options={{ headerShown: false }} />
+            <Stack.Screen name="subscription" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </PushNotificationProvider>
     </AuthProvider>
   );
 }

@@ -10,7 +10,7 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-06-30.basil",
 });
-import { insertChirpSchema, insertReactionSchema, insertFollowSchema, insertFeedbackSchema } from "@shared/schema";
+import { insertChirpSchema, insertReactionSchema, insertFollowSchema, insertFeedbackSchema, insertPushTokenSchema, insertNotificationSchema } from "@shared/schema";
 import { generateWeeklySummary, generateUserAvatar, generateUserBanner, generateUserBio, generateUserInterests, generatePersonalizedProfile } from "./openai";
 import { z } from "zod";
 
@@ -30,6 +30,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error triggering weekly analytics:", error);
       res.status(500).json({ message: "Failed to trigger weekly analytics" });
+    }
+  });
+
+  // Push token management (for mobile push notifications)
+  app.post('/api/push-tokens', async (req, res) => {
+    try {
+      const userId = 'chirp-preview-001'; // Default to @chirp account for demo
+      
+      const validatedData = insertPushTokenSchema.parse({
+        userId,
+        token: req.body.token,
+        platform: req.body.platform,
+      });
+
+      await storage.addPushToken(validatedData.userId, validatedData.token, validatedData.platform);
+      
+      console.log('Push token registered successfully:', validatedData.token);
+      res.json({ success: true, message: 'Push token registered' });
+    } catch (error) {
+      console.error('Error registering push token:', error);
+      res.status(500).json({ error: 'Failed to register push token' });
+    }
+  });
+
+  // Create notification and trigger push notification
+  app.post('/api/notifications', async (req, res) => {
+    try {
+      const validatedData = insertNotificationSchema.parse(req.body);
+      
+      // Create notification and send push notification
+      const { notificationService } = await import('./notificationService');
+      await notificationService.createAndSendNotification(
+        validatedData.userId,
+        validatedData.type,
+        validatedData.fromUserId,
+        validatedData.chirpId
+      );
+      
+      console.log('Notification created and push notification sent');
+      res.json({ success: true, message: 'Notification created' });
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      res.status(500).json({ error: 'Failed to create notification' });
     }
   });
 

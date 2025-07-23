@@ -1,10 +1,26 @@
 import { storage } from './storage';
+import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 
 interface PushNotificationPayload {
   title: string;
   body: string;
   data?: Record<string, any>;
 }
+
+interface ExpoMessage {
+  to: string;
+  sound: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  badge?: number;
+}
+
+// Create Expo SDK client
+const expo = new Expo({
+  accessToken: process.env.EXPO_ACCESS_TOKEN, // Optional - not required for sending notifications
+  useFcmV1: true
+});
 
 class NotificationService {
   // Create notification and send push notification
@@ -94,7 +110,7 @@ class NotificationService {
 
     let fromUser = null;
     if (notification.fromUserId) {
-      fromUser = await storage.getUserById(notification.fromUserId);
+      fromUser = await storage.getUser(notification.fromUserId);
     }
 
     const displayName = fromUser ? 
@@ -143,29 +159,39 @@ class NotificationService {
   // Send to specific device using Expo Push Notifications
   async sendToDevice(token: string, platform: string, payload: PushNotificationPayload) {
     try {
-      // For now, we'll implement basic push notification structure
-      // In production, you would integrate with Expo Push Notification service
-      console.log(`Sending push notification to ${platform} device:`, {
+      // Check if the push token is valid
+      if (!Expo.isExpoPushToken(token)) {
+        console.error(`Push token ${token} is not a valid Expo push token`);
+        return;
+      }
+
+      // Create the message
+      const message: ExpoPushMessage = {
         to: token,
+        sound: 'default',
         title: payload.title,
         body: payload.body,
-        data: payload.data,
-        sound: 'default',
+        data: payload.data || {},
         badge: 1,
-      });
+        channelId: 'default',
+      };
 
-      // TODO: Integrate with Expo Push Notifications API
-      // const message = {
-      //   to: token,
-      //   title: payload.title,
-      //   body: payload.body,
-      //   data: payload.data,
-      //   sound: 'default',
-      //   badge: 1,
-      // };
+      console.log(`Sending push notification to ${platform} device:`, message);
 
-      // Send via Expo Push API
-      // await this.expoPushClient.sendPushNotificationAsync(message);
+      // Send the notification
+      const ticketChunk = await expo.sendPushNotificationsAsync([message]);
+      console.log('Push notification ticket:', ticketChunk);
+
+      // Handle any errors
+      for (const ticket of ticketChunk) {
+        if (ticket.status === 'error') {
+          console.error('Error sending push notification:', ticket.message);
+          if (ticket.details?.error === 'DeviceNotRegistered') {
+            // Remove invalid token from database
+            await storage.removePushToken(token);
+          }
+        }
+      }
 
     } catch (error) {
       console.error(`Error sending push to ${platform} device:`, error);

@@ -90,6 +90,10 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       
       const newReply = await createReply(replyText.trim(), chirp.id, user.id);
       
+      // Trigger push notification for reply
+      const { triggerReplyNotification } = await import('../mobile-db');
+      await triggerReplyNotification(chirp.author.id, user.id, parseInt(chirp.id));
+      
       // Update local state
       setReplies(prev => prev + 1);
       setReplyText('');
@@ -138,6 +142,11 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
             [emoji]: prev[emoji] + 1
           }));
         }
+        
+        // Trigger push notification for reaction
+        const { triggerReactionNotification } = await import('../mobile-db');
+        await triggerReactionNotification(chirp.author.id, user.id, parseInt(chirp.id));
+        
         console.log('Reaction added successfully');
       } else {
         setReactions(prev => Math.max(0, prev - 1));

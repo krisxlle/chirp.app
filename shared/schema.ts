@@ -309,7 +309,11 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   pushSent: true,
 });
 
-export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
+export const insertPushTokenSchema = createInsertSchema(pushTokens, {
+  userId: z.string(),
+  token: z.string(),
+  platform: z.string(),
+}).omit({
   id: true,
   createdAt: true,
   lastUsed: true,

@@ -73,6 +73,12 @@ export interface IStorage {
   getFollowers(userId: string): Promise<Array<User>>;
   getFollowing(userId: string): Promise<Array<User>>;
   getFollowCounts(userId: string): Promise<{ followers: number; following: number }>;
+
+  // Push token operations
+  addPushToken(userId: string, token: string, platform: string): Promise<void>;
+  getUserPushTokens(userId: string): Promise<Array<{ token: string; platform: string }>>;
+  removePushToken(token: string): Promise<void>;
+  markPushNotificationSent(notificationId: number): Promise<void>;
   
   // Reaction operations
   addReaction(reaction: InsertReaction): Promise<Reaction>;
@@ -143,6 +149,12 @@ export interface IStorage {
 
   // User notification settings
   getUserNotificationSetting(userId: string, followedUserId: string): Promise<UserNotificationSetting | undefined>;
+
+  // Push token operations
+  addPushToken(userId: string, token: string, platform: string): Promise<void>;
+  getUserPushTokens(userId: string): Promise<Array<{ token: string; platform: string }>>;
+  removePushToken(token: string): Promise<void>;
+  markPushNotificationSent(notificationId: number): Promise<void>;
   setUserNotificationSetting(userId: string, followedUserId: string, notifyOnPost: boolean): Promise<UserNotificationSetting>;
   deleteUserNotificationSetting(userId: string, followedUserId: string): Promise<void>;
 
@@ -2109,6 +2121,61 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating weekly analytics preference:", error);
       return false;
+    }
+  }
+
+  // Push token operations
+  async addPushToken(userId: string, token: string, platform: string): Promise<void> {
+    try {
+      // Remove existing token if it exists
+      await db.delete(pushTokens).where(eq(pushTokens.token, token));
+      
+      // Add new token
+      await db.insert(pushTokens).values({
+        userId,
+        token,
+        platform,
+        lastUsed: new Date(),
+      });
+    } catch (error) {
+      console.error("Error adding push token:", error);
+      throw error;
+    }
+  }
+
+  async getUserPushTokens(userId: string): Promise<Array<{ token: string; platform: string }>> {
+    try {
+      const tokens = await db
+        .select({
+          token: pushTokens.token,
+          platform: pushTokens.platform,
+        })
+        .from(pushTokens)
+        .where(eq(pushTokens.userId, userId));
+
+      return tokens;
+    } catch (error) {
+      console.error("Error getting user push tokens:", error);
+      return [];
+    }
+  }
+
+  async removePushToken(token: string): Promise<void> {
+    try {
+      await db.delete(pushTokens).where(eq(pushTokens.token, token));
+    } catch (error) {
+      console.error("Error removing push token:", error);
+    }
+  }
+
+  async markPushNotificationSent(notificationId: number): Promise<void> {
+    try {
+      await db
+        .update(notifications)
+        .set({ pushSent: true })
+        .where(eq(notifications.id, notificationId));
+    } catch (error) {
+      console.error("Error marking push notification as sent:", error);
     }
   }
 }

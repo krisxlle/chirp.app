@@ -1045,3 +1045,80 @@ export async function updateChirpPlusBadgeVisibility(userId: string, showBadge: 
     throw error;
   }
 }
+
+// Trigger notification for reactions (will send push notification)
+export async function triggerReactionNotification(authorId: string, reactorId: string, chirpId: number) {
+  try {
+    if (authorId === reactorId) return; // Don't notify self
+
+    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: authorId,
+        type: 'reaction',
+        fromUserId: reactorId,
+        chirpId: chirpId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to trigger reaction notification');
+    }
+
+    console.log('Reaction notification triggered successfully');
+  } catch (error) {
+    console.error('Error triggering reaction notification:', error);
+  }
+}
+
+// Trigger notification for follows (will send push notification)
+export async function triggerFollowNotification(followedUserId: string, followerId: string) {
+  try {
+    if (followedUserId === followerId) return; // Don't notify self
+
+    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: followedUserId,
+        type: 'follow',
+        fromUserId: followerId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to trigger follow notification');
+    }
+
+    console.log('Follow notification triggered successfully');
+  } catch (error) {
+    console.error('Error triggering follow notification:', error);
+  }
+}
+
+// Trigger notification for replies (will send push notification)
+export async function triggerReplyNotification(originalAuthorId: string, replierId: string, chirpId: number) {
+  try {
+    if (originalAuthorId === replierId) return; // Don't notify self
+
+    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: originalAuthorId,
+        type: 'reply',
+        fromUserId: replierId,
+        chirpId: chirpId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to trigger reply notification');
+    }
+
+    console.log('Reply notification triggered successfully');
+  } catch (error) {
+    console.error('Error triggering reply notification:', error);
+  }
+}
