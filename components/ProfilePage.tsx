@@ -502,6 +502,7 @@ const styles = StyleSheet.create({
     bottom: 16,
     right: 16,
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
   aiProfileButton: {
@@ -511,12 +512,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    opacity: 1.0,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    height: 40, // Fixed height for consistency
   },
   aiProfileIcon: {
     fontSize: 14,
@@ -541,6 +542,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    height: 40, // Fixed height for consistency
   },
   settingsIcon: {
     fontSize: 14,
@@ -998,14 +1000,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e8ed',
     marginLeft: 8,
-  },
-  settingsIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  settingsText: {
-    fontSize: 14,
-    color: '#14171a',
-    fontWeight: '600',
   },
 });
