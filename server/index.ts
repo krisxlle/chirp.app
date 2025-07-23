@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeScheduler } from "./scheduler";
 
 const app = express();
 app.use(express.json());
@@ -72,11 +71,13 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
     
-    // Initialize the weekly analytics scheduler
-    initializeScheduler();
-    
-    // Initialize notification scheduler
-    const { initializeNotificationScheduler } = require('./scheduler');
-    initializeNotificationScheduler();
+    // Try to initialize schedulers if they exist
+    try {
+      const { initializeScheduler, initializeNotificationScheduler } = require('./scheduler');
+      if (initializeScheduler) initializeScheduler();
+      if (initializeNotificationScheduler) initializeNotificationScheduler();
+    } catch (error) {
+      log('Scheduler modules not found, skipping initialization');
+    }
   });
 })();

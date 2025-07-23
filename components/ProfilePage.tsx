@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import ChirpCard from './ChirpCard';
 import SettingsPage from './SettingsPage';
+import { useAuth } from './AuthContext';
 import { getChirpsFromDB } from '../mobile-db';
 
 interface User {
@@ -44,6 +45,7 @@ interface ProfileStats {
 }
 
 export default function ProfilePage() {
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'replies' | 'reactions'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
@@ -64,21 +66,12 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    // Mock user data for now - will be replaced with real data
-    setUser({
-      id: '1',
-      firstName: 'Chirp',
-      lastName: '',
-      email: 'user@example.com',
-      customHandle: '@Chirp',
-      bio: 'Welcome to Chirp | @kriselle',
-      joinedAt: '5 days ago',
-      profileImageUrl: undefined,
-      bannerImageUrl: undefined
-    });
-    
-    fetchUserChirps();
-  }, []);
+    // Use authenticated user data from AuthContext
+    if (authUser) {
+      setUser(authUser);
+      fetchUserChirps();
+    }
+  }, [authUser]);
 
   const displayName = user?.firstName || user?.customHandle || 'User';
 
@@ -102,7 +95,7 @@ export default function ProfilePage() {
       console.log('Generating AI profile with prompt:', aiPrompt);
       
       // Call OpenAI API for image generation
-      const response = await fetch('http://localhost:5000/api/ai/generate-images', {
+      const response = await fetch('http://localhost:5001/api/ai/generate-images', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +116,14 @@ export default function ProfilePage() {
       setAiPrompt('');
       Alert.alert('Success!', 'Your AI profile has been generated! Your new avatar and banner are being saved.');
       
-      // Optionally refresh the profile data here
+      // Refresh the user profile to show new images
+      if (authUser && result.avatarUrl && result.bannerUrl) {
+        setUser(prev => prev ? {
+          ...prev,
+          profileImageUrl: result.avatarUrl,
+          bannerImageUrl: result.bannerUrl
+        } : null);
+      }
       
     } catch (error) {
       console.error('Error generating AI profile:', error);

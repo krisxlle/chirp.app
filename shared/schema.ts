@@ -327,10 +327,7 @@ export const pushTokensRelations = relations(pushTokens, ({ one }) => ({
 export type PushToken = typeof pushTokens.$inferSelect;
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
-  id: true,
-  createdAt: true,
-});
+
 
 export const insertVipCodeSchema = createInsertSchema(vipCodes).omit({
   id: true,

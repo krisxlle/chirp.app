@@ -853,6 +853,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI routes
+  // Combined image generation endpoint for mobile app
+  app.post('/api/ai/generate-images', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { prompt, type } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+
+      console.log(`Generating ${type} images for user ${userId} with prompt:`, prompt);
+
+      // Get user details for personalized generation
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const name = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.handle || 'User';
+      const isChirpPlus = user.isChirpPlus || false;
+
+      // Generate both avatar and banner with the custom prompt
+      const [avatarUrl, bannerUrl] = await Promise.all([
+        generateUserAvatar(userId, name, prompt, isChirpPlus),
+        generateUserBanner(userId, prompt, isChirpPlus)
+      ]);
+
+      console.log('Generated images:', { avatarUrl, bannerUrl });
+
+      res.json({ 
+        success: true, 
+        avatarUrl, 
+        bannerUrl,
+        message: "Profile images generated successfully" 
+      });
+    } catch (error) {
+      console.error("Error generating profile images:", error);
+      res.status(500).json({ message: "Failed to generate profile images", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   app.post('/api/ai/weekly-summary', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

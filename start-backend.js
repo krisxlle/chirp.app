@@ -1,39 +1,45 @@
 #!/usr/bin/env node
 
-// Simple backend starter for testing
+// Start the backend API server on port 5001
+// This allows the Expo mobile app to run on port 5000 and connect to the API on 5001
+
 const { spawn } = require('child_process');
 
-console.log('Starting Chirp backend server...');
-console.log('Database URL available:', !!process.env.DATABASE_URL);
+// Set the port to 5001 for the backend
+process.env.PORT = '5001';
 
+console.log('🚀 Starting Chirp Backend API Server on port 5001...');
+console.log('📱 Mobile app should run on port 5000 and connect to this API');
+
+// Start the server using tsx to run TypeScript directly
 const server = spawn('npx', ['tsx', 'server/index.ts'], {
-  stdio: ['pipe', 'pipe', 'pipe'],
+  stdio: 'inherit',
   env: {
     ...process.env,
-    PORT: '3000',
+    PORT: '5001',
     NODE_ENV: 'development'
   }
 });
 
-server.stdout.on('data', (data) => {
-  console.log('[Backend]:', data.toString().trim());
-});
-
-server.stderr.on('data', (data) => {
-  console.error('[Backend Error]:', data.toString().trim());
-});
-
 server.on('error', (error) => {
-  console.error('Failed to start backend:', error);
+  console.error('❌ Failed to start backend server:', error);
+  process.exit(1);
 });
 
 server.on('exit', (code) => {
-  console.log('Backend server exited with code:', code);
+  if (code !== 0) {
+    console.error(`❌ Backend server exited with code ${code}`);
+    process.exit(code);
+  }
 });
 
-// Keep the process running
+// Handle graceful shutdown
 process.on('SIGINT', () => {
-  console.log('Shutting down backend server...');
-  server.kill();
-  process.exit();
+  console.log('\n⏹️  Shutting down backend server...');
+  server.kill('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  console.log('\n⏹️  Shutting down backend server...');
+  server.kill('SIGTERM');
 });
