@@ -865,7 +865,7 @@ export default function Profile() {
         console.log("AI Prompt dialog state changed:", open);
         setShowAIPrompt(open);
       }}>
-        <DialogContent className="max-w-md fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-md fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] max-h-[80vh] overflow-y-auto">
           <DialogTitle className="text-lg font-semibold mb-4">Generate AI Profile</DialogTitle>
           <div className="space-y-4">
             <div>
