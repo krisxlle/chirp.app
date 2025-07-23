@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Image } from 'react-native';
 import { useAuth } from './AuthContext';
-import ChirpLogoGradient from './icons/ChirpLogoGradient';
 
 export default function SignInScreenNew() {
   const { signIn } = useAuth();
@@ -24,7 +23,11 @@ export default function SignInScreenNew() {
         {/* Logo and Header */}
         <View style={styles.logoContainer}>
           <View style={styles.logoBackground}>
-            <ChirpLogoGradient size={120} />
+            <Image 
+              source={require('../assets/icon.png')} 
+              style={styles.logoImage} 
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.title}>Welcome to Chirp</Text>
           <Text style={styles.subtitle}>
@@ -103,6 +106,14 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 20,
     marginBottom: 24,
+    width: 160,
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoImage: {
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: 32,

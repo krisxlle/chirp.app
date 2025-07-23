@@ -347,6 +347,7 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Thread Creation Logic**: Implemented proper thread creation that posts multiple connected chirps with reply_to_id relationships
 - **Enhanced Mobile Database**: Updated createChirp function to support reply_to_id parameter for proper thread relationships
 - **Thread Visual Design**: Added connecting lines between thread items, remove buttons for individual chirps, and add buttons for building threads
+- **Landing Page Logo Update**: Replaced geometric ChirpLogoGradient component with actual app logo image (assets/icon.png) for consistent branding
 
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection
