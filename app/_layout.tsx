@@ -26,14 +26,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="feedback" options={{ headerShown: false }} />
           <Stack.Screen name="user-profile" options={{ headerShown: false }} />
-          <Stack.Screen 
-            name="profile/[userId]" 
-            options={{ 
-              headerShown: true,
-              presentation: 'modal',
-              title: 'Profile'
-            }} 
-          />
+          <Stack.Screen name="profile-page" options={{ headerShown: false }} />
+          <Stack.Screen name="view-profile" options={{ headerShown: false }} />
           <Stack.Screen name="support" options={{ headerShown: false }} />
           <Stack.Screen name="subscription" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />

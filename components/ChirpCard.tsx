@@ -304,10 +304,10 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         // Try different navigation approaches
         console.log('Attempting navigation to:', `/user-profile/${chirp.author.id}`);
         
-        // Try simple route without nested folders
-        console.log('Trying user-profile route');
-        router.push(`/user-profile?userId=${chirp.author.id}`);
-        console.log('Router.push called for user-profile with userId:', chirp.author.id);
+        // Try view-profile route with fallbacks
+        console.log('🎯 Attempting view-profile navigation');
+        router.push(`/view-profile?userId=${chirp.author.id}`);
+        console.log('✅ Navigation call made to view-profile');
       } catch (error) {
         console.error('Navigation error:', error);
         Alert.alert('Navigation Error', `Failed to open profile page. Error: ${error}`);
