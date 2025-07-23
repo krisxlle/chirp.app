@@ -47,18 +47,18 @@ export async function generateWeeklySummary(
     const analysis = JSON.parse(analysisResponse.choices[0].message.content || '{}');
     
     // Generate summary chirp - make it funny and shareable but HALF THE LENGTH!
-    const summaryPrompt = `Create a short, hilarious weekly summary (under 140 characters)! Include:
+    const summaryPrompt = `Create a short, hilarious weekly summary (under 140 characters) with BOLD formatting for key words! Include:
     - Posted ${chirpCount} chirps this week
     - Their vibe: ${analysis.weeklyVibes || weeklyTone}
     
-    Style: Quick, witty, Gen Z humor. Like a bestie roasting you in one perfect line.
+    Style: Quick, witty, Gen Z humor. Like a bestie roasting you in one perfect line. Use **bold** for emphasis on key words/numbers.
     
     Examples:
-    - "Posted ${chirpCount} times this week giving main character energy but make it chaotic 💀"
-    - "Your ${chirpCount} posts screamed 'I'm fine' this week bestie"
-    - "Week summary: ${chirpCount} posts of pure chaos energy ✨"
+    - "Posted **${chirpCount} times** this week giving **main character energy** but make it chaotic 💀"
+    - "Your **${chirpCount} posts** screamed **'I'm fine'** this week bestie"
+    - "Week summary: **${chirpCount} posts** of pure **chaos energy** ✨"
     
-    Keep it SHORT (under 140 chars), punchy, and shareable!`;
+    Keep it SHORT (under 140 chars), punchy, and shareable! Use **bold** for emphasis on numbers and key phrases!`;
 
     const summaryResponse = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -93,15 +93,15 @@ export async function generateWeeklySummary(
   }
 }
 
-// Fallback funny summaries when AI fails - HALF LENGTH
+// Fallback funny summaries when AI fails - HALF LENGTH with BOLD formatting
 function getFallbackFunnySummary(chirpCount: number, topChirp: string): string {
   const funnySummaries = [
-    `Posted ${chirpCount} times this week giving chaotic energy 💀`,
-    `Week recap: ${chirpCount} posts of pure unhinged vibes ✨`,
-    `This week I chose chaos and posted ${chirpCount} times`,
-    `POV: ${chirpCount} posts was apparently normal for me`,
-    `Weekly summary: ${chirpCount} posts of me being iconic`,
-    `Me this week: ${chirpCount} posts like I'm the main character`
+    `Posted **${chirpCount} times** this week giving **chaotic energy** 💀`,
+    `Week recap: **${chirpCount} posts** of pure **unhinged vibes** ✨`,
+    `This week I chose **chaos** and posted **${chirpCount} times**`,
+    `POV: **${chirpCount} posts** was apparently **normal** for me`,
+    `Weekly summary: **${chirpCount} posts** of me being **iconic**`,
+    `Me this week: **${chirpCount} posts** like I'm the **main character**`
   ];
   
   return funnySummaries[Math.floor(Math.random() * funnySummaries.length)];

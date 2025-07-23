@@ -424,7 +424,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       )}
 
       <Text style={styles.content}>
-        {chirp.content.split(/(@\w+|#\w+)/).map((part, index) => {
+        {chirp.content.split(/(@\w+|#\w+|\*\*[^*]+\*\*)/).map((part, index) => {
           if (part.startsWith('@')) {
             return (
               <TouchableOpacity 
@@ -449,6 +449,10 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
                 <Text style={styles.hashtagText}>{part}</Text>
               </TouchableOpacity>
             );
+          } else if (part.startsWith('**') && part.endsWith('**')) {
+            // Bold text formatting
+            const boldText = part.slice(2, -2);
+            return <Text key={index} style={styles.boldText}>{boldText}</Text>;
           }
           return <Text key={index}>{part}</Text>;
         })}
@@ -818,6 +822,10 @@ const styles = StyleSheet.create({
     color: '#7c3aed',
     fontSize: 15,
     fontWeight: '500',
+  },
+  boldText: {
+    fontWeight: '700',
+    color: '#14171a',
   },
   repliesContainer: {
     marginTop: 12,

@@ -190,18 +190,18 @@ async function generateAdvancedWeeklySummary(
       apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
     });
 
-    const prompt = `Create a concise weekly social media summary using bullet points and symbols:
+    const prompt = `Create a concise weekly social media summary using bullet points, symbols, and BOLD formatting:
 
-📊 This week: ${chirpCount} chirps posted, gained ${newFollowers} followers
-🎯 Engagement: ${engagementRate.toFixed(1)}% rate
-${topReactions.length > 0 ? `🔥 Top reactions: ${topReactions.map(r => `${r.emoji}(${r.count})`).join(' ')}` : ''}
+📊 This week: **${chirpCount} chirps** posted, gained **${newFollowers} followers**
+🎯 Engagement: **${engagementRate.toFixed(1)}%** rate
+${topReactions.length > 0 ? `🔥 Top reactions: ${topReactions.map(r => `**${r.emoji}(${r.count})**`).join(' ')}` : ''}
 
-Generate 2-3 bullet points with symbols (✨📈💡🚀⚡) focusing on:
-• Key performance highlight
-• Growth insight or engagement win
-• One actionable tip for next week
+Generate 2-3 bullet points with symbols (✨📈💡🚀⚡) and **bold** formatting for key numbers/words focusing on:
+• Key performance highlight (bold the metrics)
+• Growth insight or engagement win (bold achievements)
+• One actionable tip for next week (bold the action)
 
-Keep each bullet under 15 words. Be encouraging and data-focused. Use symbols to make it visually appealing.`;
+Keep each bullet under 15 words. Be encouraging and data-focused. Use **bold** for all numbers and key terms!`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
