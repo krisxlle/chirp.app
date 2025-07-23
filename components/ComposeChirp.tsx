@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
     marginHorizontal: 16,
-    marginTop: 4,
+    marginTop: 0,
     marginBottom: 3,
     borderRadius: 16,
     paddingVertical: 16,

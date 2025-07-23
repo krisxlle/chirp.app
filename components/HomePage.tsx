@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     backgroundColor: '#fafafa',
-    paddingTop: 80, // Reduced space for fixed header
+    paddingTop: 52, // Minimal space for header
   },
   scrollContent: {
     paddingBottom: 100, // Space for bottom nav
