@@ -141,76 +141,93 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   };
 
   if (isThreadMode) {
-    // Thread mode - show full screen thread interface like the screenshot
+    // Thread mode - use same formatting as normal compose field
     return (
-      <View style={styles.threadContainer}>
-        {/* Header */}
+      <View style={styles.threadModeContainer}>
+        {/* Header with Cancel and Post All buttons */}
         <View style={styles.threadHeader}>
           <TouchableOpacity onPress={() => setIsThreadMode(false)} style={styles.cancelButton}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[
-              styles.postAllButton,
-              threadChirps.length === 0 && styles.postButtonDisabled
+              styles.postButton,
+              (threadChirps.length === 0 || isPosting) && styles.postButtonDisabled
             ]}
             onPress={handleSubmit}
             disabled={threadChirps.length === 0 || isPosting}
           >
-            <Text style={styles.postAllButtonText}>
+            <Text style={styles.postButtonText}>
               {isPosting ? "Posting..." : "Post all"}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Thread List */}
+        {/* Thread List with same styling as normal compose */}
         <View style={styles.threadList}>
           {threadChirps.map((chirp, index) => (
-            <View key={index} style={styles.threadItem}>
-              <View style={styles.threadItemLeft}>
-                <UserAvatar user={user} size="sm" />
-                {index < threadChirps.length - 1 && <View style={styles.threadLine} />}
-              </View>
-              <View style={styles.threadItemContent}>
-                <Text style={styles.threadItemText}>{chirp}</Text>
-                <TouchableOpacity 
-                  onPress={() => removeFromThread(index)}
-                  style={styles.removeButton}
-                >
-                  <Text style={styles.removeButtonText}>✕</Text>
-                </TouchableOpacity>
+            <View key={index} style={styles.container}>
+              <View style={styles.composeArea}>
+                <UserAvatar user={user} size="md" />
+                <View style={styles.inputContainer}>
+                  <Text style={styles.threadChirpText}>{chirp}</Text>
+                  <View style={styles.actionRow}>
+                    <View style={styles.leftActions}>
+                      <Text style={styles.threadIndexText}>Chirp {index + 1}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => removeFromThread(index)}
+                      style={styles.removeThreadButton}
+                    >
+                      <Text style={styles.removeButtonText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
             </View>
           ))}
           
-          {/* Current compose area */}
-          <View style={styles.threadItem}>
-            <View style={styles.threadItemLeft}>
-              <UserAvatar user={user} size="sm" />
-            </View>
-            <View style={styles.threadItemContent}>
-              <TextInput
-                style={styles.threadTextInput}
-                placeholder={threadChirps.length === 0 ? "Start a thread..." : "Add another chirp..."}
-                placeholderTextColor="#9ca3af"
-                value={content}
-                onChangeText={setContent}
-                multiline
-                maxLength={maxLength}
-                textAlignVertical="top"
-              />
-              {content.trim() && (
-                <TouchableOpacity onPress={addToThread} style={styles.addButton}>
-                  <Text style={styles.addButtonText}>+</Text>
-                </TouchableOpacity>
-              )}
+          {/* Current compose area - exact same as normal compose */}
+          <View style={styles.container}>
+            <View style={styles.composeArea}>
+              <UserAvatar user={user} size="md" />
+              
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder={threadChirps.length === 0 ? "Start a thread..." : "Add another chirp..."}
+                  placeholderTextColor="#9ca3af"
+                  value={content}
+                  onChangeText={setContent}
+                  multiline
+                  maxLength={maxLength}
+                  textAlignVertical="top"
+                />
+                
+                <View style={styles.actionRow}>
+                  <View style={styles.leftActions}>
+                    <TouchableOpacity 
+                      style={styles.threadButton}
+                      onPress={addToThread}
+                      disabled={!content.trim() || content.length > maxLength}
+                    >
+                      <ThreadIcon size={16} color="#7c3aed" />
+                      <Text style={styles.threadButtonText}>Add</Text>
+                    </TouchableOpacity>
+                    
+                    <Text style={[styles.charCount, { color: getCharCountColor() }]}>
+                      {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
+                    </Text>
+                  </View>
+                </View>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Bottom notice */}
         <View style={styles.threadBottomNotice}>
-          <Text style={styles.threadBottomNoticeText}>Everyone can reply</Text>
+          <Text style={styles.threadBottomNoticeText}>Everyone can reply to threads</Text>
         </View>
       </View>
     );
@@ -352,10 +369,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  // Thread mode styles
-  threadContainer: {
+  // Thread mode styles - matching normal compose field
+  threadModeContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     paddingTop: 50,
   },
   threadHeader: {
@@ -363,7 +380,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
+    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
@@ -373,99 +391,47 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 16,
     color: '#374151',
-    fontWeight: '500',
-  },
-  postAllButton: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  postAllButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
     fontWeight: '600',
   },
   threadList: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 12,
   },
-  threadItem: {
-    flexDirection: 'row',
-    marginBottom: 16,
+  threadChirpText: {
+    fontSize: 18,
+    lineHeight: 24,
+    color: '#1a1a1a',
+    marginBottom: 12,
   },
-  threadItemLeft: {
-    alignItems: 'center',
-    marginRight: 12,
+  threadIndexText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
   },
-  threadLine: {
-    width: 2,
-    backgroundColor: '#d1d5db',
-    flex: 1,
-    marginTop: 8,
-  },
-  threadItemContent: {
-    flex: 1,
-    minHeight: 60,
-    position: 'relative',
-  },
-  threadItemText: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  threadTextInput: {
-    fontSize: 16,
-    lineHeight: 22,
-    minHeight: 60,
-    color: '#1f2937',
-    textAlignVertical: 'top',
-    paddingRight: 40,
-  },
-  removeButton: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  removeThreadButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
   },
   removeButtonText: {
     fontSize: 14,
     color: '#6b7280',
-    fontWeight: '600',
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: 8,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#7c3aed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonText: {
-    fontSize: 18,
-    color: '#ffffff',
-    fontWeight: '600',
+    fontWeight: '500',
   },
   threadBottomNotice: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-    alignItems: 'center',
   },
   threadBottomNoticeText: {
     fontSize: 14,
-    color: '#60a5fa',
+    color: '#6b7280',
+    textAlign: 'center',
     fontWeight: '500',
   },
 });
