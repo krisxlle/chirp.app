@@ -274,8 +274,8 @@ const styles = StyleSheet.create({
     minWidth: 50,
   },
   activeFeedButton: {
-    backgroundColor: '#d946ef',
-    shadowColor: '#d946ef',
+    backgroundColor: '#7c3aed',
+    shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 6,

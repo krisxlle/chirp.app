@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   postAllButton: {
-    backgroundColor: '#60a5fa',
+    backgroundColor: '#7c3aed',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

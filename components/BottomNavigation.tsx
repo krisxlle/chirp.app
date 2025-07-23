@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   activeNavItem: {
-    backgroundColor: '#d946ef',
-    shadowColor: '#d946ef',
+    backgroundColor: '#7c3aed',
+    shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
