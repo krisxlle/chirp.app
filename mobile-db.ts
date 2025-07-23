@@ -127,7 +127,7 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
 }
 
 // Create a new chirp
-export async function createChirp(content: string, authorId?: string): Promise<MobileChirp | null> {
+export async function createChirp(content: string, authorId?: string, replyToId?: string | null): Promise<MobileChirp | null> {
   try {
     console.log('Creating new chirp in database...');
     
@@ -155,8 +155,8 @@ export async function createChirp(content: string, authorId?: string): Promise<M
     }
     
     const result = await sql`
-      INSERT INTO chirps (content, author_id, created_at)
-      VALUES (${filteredContent}, ${authorId}, NOW())
+      INSERT INTO chirps (content, author_id, reply_to_id, created_at)
+      VALUES (${filteredContent}, ${authorId}, ${replyToId}, NOW())
       RETURNING 
         id::text,
         content,
@@ -754,19 +754,12 @@ export async function updateUserProfile(userId: string, updates: {
     
     return {
       id: result[0].id,
-      email: result[0].email,
-      handle: result[0].handle,
-      customHandle: result[0].custom_handle,
-      firstName: result[0].first_name,
-      lastName: result[0].last_name,
+      username: result[0].handle,
+      displayName: `${result[0].first_name || ''} ${result[0].last_name || ''}`.trim(),
       bio: result[0].bio,
-      profileImageUrl: result[0].profile_image_url,
-      bannerImageUrl: result[0].banner_image_url,
+      avatarUrl: result[0].profile_image_url,
+      bannerUrl: result[0].banner_image_url,
       linkInBio: result[0].link_in_bio,
-      isChirpPlus: result[0].is_chirp_plus,
-      showChirpPlusBadge: result[0].show_chirp_plus_badge,
-      createdAt: result[0].created_at,
-      updatedAt: result[0].updated_at
     };
   } catch (error) {
     console.error('Error updating user profile:', error);

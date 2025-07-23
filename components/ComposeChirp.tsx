@@ -11,6 +11,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [content, setContent] = useState("");
   const [isThreadMode, setIsThreadMode] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [threadChirps, setThreadChirps] = useState<string[]>([]);
   
   const { user: authUser } = useAuth();
   
@@ -35,15 +36,45 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     profileImageUrl: undefined,
   };
 
-  const handleSubmit = async () => {
+  const addToThread = () => {
     if (!content.trim()) {
-      Alert.alert("Empty chirp", "Please write something before posting.");
+      Alert.alert("Empty chirp", "Please write something before adding to thread.");
       return;
     }
 
     if (content.length > maxLength) {
       Alert.alert("Too long", `Chirps must be ${maxLength} characters or less.`);
       return;
+    }
+
+    setThreadChirps([...threadChirps, content.trim()]);
+    setContent("");
+  };
+
+  const handleSubmit = async () => {
+    if (isThreadMode) {
+      // In thread mode, first add current content to thread if it exists
+      if (content.trim()) {
+        addToThread();
+        return;
+      }
+      
+      // If no current content but we have thread chirps, post the entire thread
+      if (threadChirps.length === 0) {
+        Alert.alert("Empty thread", "Please add some chirps to your thread before posting.");
+        return;
+      }
+    } else {
+      // Normal mode - just check for content
+      if (!content.trim()) {
+        Alert.alert("Empty chirp", "Please write something before posting.");
+        return;
+      }
+
+      if (content.length > maxLength) {
+        Alert.alert("Too long", `Chirps must be ${maxLength} characters or less.`);
+        return;
+      }
     }
 
     setIsPosting(true);
@@ -57,22 +88,39 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         throw new Error('You must be signed in to post a chirp');
       }
       
-      const newChirp = await createChirp(content.trim(), user.id);
-      
-      if (newChirp) {
-        console.log('Chirp posted successfully:', newChirp.id);
-        Alert.alert("Success!", "Your chirp has been posted!");
-        setContent("");
-        onPost?.();
+      if (isThreadMode) {
+        // Post all chirps in the thread
+        let previousChirpId: string | null = null;
+        for (const chirpContent of threadChirps) {
+          const newChirp = await createChirp(chirpContent, user.id, previousChirpId);
+          if (newChirp) {
+            previousChirpId = newChirp.id;
+          }
+        }
+        Alert.alert("Success!", "Your thread has been posted!");
+        setThreadChirps([]);
+        setIsThreadMode(false);
       } else {
-        throw new Error('Failed to create chirp');
+        // Post single chirp
+        const newChirp = await createChirp(content.trim(), user.id);
+        if (newChirp) {
+          Alert.alert("Success!", "Your chirp has been posted!");
+        }
       }
+      
+      setContent("");
+      onPost?.();
     } catch (error) {
       console.error('Error posting chirp:', error);
-      Alert.alert("Error", error instanceof Error ? error.message : "Failed to post chirp. Please try again.");
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to post. Please try again.");
     } finally {
       setIsPosting(false);
     }
+  };
+
+  const removeFromThread = (index: number) => {
+    const newThreadChirps = threadChirps.filter((_, i) => i !== index);
+    setThreadChirps(newThreadChirps);
   };
 
   const getCharCountColor = () => {
@@ -81,6 +129,83 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     return '#6b7280'; // gray
   };
 
+  if (isThreadMode) {
+    // Thread mode - show full screen thread interface like the screenshot
+    return (
+      <View style={styles.threadContainer}>
+        {/* Header */}
+        <View style={styles.threadHeader}>
+          <TouchableOpacity onPress={() => setIsThreadMode(false)} style={styles.cancelButton}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[
+              styles.postAllButton,
+              threadChirps.length === 0 && styles.postButtonDisabled
+            ]}
+            onPress={handleSubmit}
+            disabled={threadChirps.length === 0 || isPosting}
+          >
+            <Text style={styles.postAllButtonText}>
+              {isPosting ? "Posting..." : "Post all"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Thread List */}
+        <View style={styles.threadList}>
+          {threadChirps.map((chirp, index) => (
+            <View key={index} style={styles.threadItem}>
+              <View style={styles.threadItemLeft}>
+                <UserAvatar user={user} size="sm" />
+                {index < threadChirps.length - 1 && <View style={styles.threadLine} />}
+              </View>
+              <View style={styles.threadItemContent}>
+                <Text style={styles.threadItemText}>{chirp}</Text>
+                <TouchableOpacity 
+                  onPress={() => removeFromThread(index)}
+                  style={styles.removeButton}
+                >
+                  <Text style={styles.removeButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          
+          {/* Current compose area */}
+          <View style={styles.threadItem}>
+            <View style={styles.threadItemLeft}>
+              <UserAvatar user={user} size="sm" />
+            </View>
+            <View style={styles.threadItemContent}>
+              <TextInput
+                style={styles.threadTextInput}
+                placeholder={threadChirps.length === 0 ? "Start a thread..." : "Add another chirp..."}
+                placeholderTextColor="#9ca3af"
+                value={content}
+                onChangeText={setContent}
+                multiline
+                maxLength={maxLength}
+                textAlignVertical="top"
+              />
+              {content.trim() && (
+                <TouchableOpacity onPress={addToThread} style={styles.addButton}>
+                  <Text style={styles.addButtonText}>+</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Bottom notice */}
+        <View style={styles.threadBottomNotice}>
+          <Text style={styles.threadBottomNoticeText}>Everyone can reply</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Normal compose mode
   return (
     <View style={styles.container}>
       <View style={styles.composeArea}>
@@ -102,7 +227,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             <View style={styles.leftActions}>
               <TouchableOpacity 
                 style={styles.threadButton}
-                onPress={() => setIsThreadMode(!isThreadMode)}
+                onPress={() => setIsThreadMode(true)}
               >
                 <Text style={styles.threadButtonIcon}>✨</Text>
                 <Text style={styles.threadButtonText}>Thread</Text>
@@ -128,17 +253,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           </View>
         </View>
       </View>
-      
-      {isThreadMode && (
-        <View style={styles.threadNotice}>
-          <Text style={styles.threadNoticeText}>
-            ✨ Thread mode enabled - create multiple connected chirps
-          </Text>
-          <TouchableOpacity onPress={() => setIsThreadMode(false)}>
-            <Text style={styles.threadNoticeClose}>✕</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 }
@@ -229,24 +343,120 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  threadNotice: {
+  // Thread mode styles
+  threadContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    paddingTop: 50,
+  },
+  threadHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  threadNoticeText: {
+  cancelButton: {
+    padding: 8,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  postAllButton: {
+    backgroundColor: '#60a5fa',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  postAllButtonText: {
+    color: '#ffffff',
     fontSize: 14,
-    color: '#4b5563',
-    flex: 1,
+    fontWeight: '600',
   },
-  threadNoticeClose: {
-    fontSize: 18,
+  threadList: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  threadItem: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  threadItemLeft: {
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  threadLine: {
+    width: 2,
+    backgroundColor: '#d1d5db',
+    flex: 1,
+    marginTop: 8,
+  },
+  threadItemContent: {
+    flex: 1,
+    minHeight: 60,
+    position: 'relative',
+  },
+  threadItemText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  threadTextInput: {
+    fontSize: 16,
+    lineHeight: 22,
+    minHeight: 60,
+    color: '#1f2937',
+    textAlignVertical: 'top',
+    paddingRight: 40,
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeButtonText: {
+    fontSize: 14,
     color: '#6b7280',
     fontWeight: '600',
-    paddingHorizontal: 8,
+  },
+  addButton: {
+    position: 'absolute',
+    bottom: 8,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#7c3aed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: 18,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  threadBottomNotice: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  threadBottomNoticeText: {
+    fontSize: 14,
+    color: '#60a5fa',
+    fontWeight: '500',
   },
 });
