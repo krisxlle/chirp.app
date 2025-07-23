@@ -380,6 +380,9 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Support Form Integration**: Full contact form with email, subject, message fields and API submission
 - **Enhanced Button Styling**: Updated sign out button to neutral gray theme instead of red for better UX
 - **Navigation Integration**: Both buttons properly navigate within React Native and web environments
+- **Chirp+ Badge Toggle**: Implemented functional badge visibility toggle in settings page for Chirp+ members
+- **Badge Database Function**: Added updateChirpPlusBadgeVisibility function to mobile-db.ts with proper error handling
+- **Real-time Badge Control**: Users can now show/hide their Chirp+ badge on profile and posts with immediate feedback
 
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection

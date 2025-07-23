@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import UserAvatar from './UserAvatar';
 import { useAuth } from './AuthContext';
-import { updateUserProfile, cancelSubscription } from '../mobile-db';
+import { updateUserProfile, cancelSubscription, updateChirpPlusBadgeVisibility } from '../mobile-db';
 import Svg, { Path } from 'react-native-svg';
 
 interface SettingsPageProps {
@@ -142,6 +142,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
   const [linkInBio, setLinkInBio] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [isBadgeToggling, setIsBadgeToggling] = useState(false);
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -383,12 +384,29 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
               </View>
               <Switch
                 value={user?.showChirpPlusBadge !== false}
-                onValueChange={(value) => {
-                  // TODO: Implement badge visibility toggle
-                  console.log('Toggle badge visibility:', value);
+                onValueChange={async (value) => {
+                  if (!user || isBadgeToggling) return;
+                  
+                  setIsBadgeToggling(true);
+                  try {
+                    await updateChirpPlusBadgeVisibility(user.id, value);
+                    // Update user context - for now just show success
+                    Alert.alert(
+                      'Success',
+                      value 
+                        ? 'Chirp+ badge will now be visible on your profile and posts' 
+                        : 'Chirp+ badge has been hidden from your profile and posts'
+                    );
+                  } catch (error) {
+                    console.error('Error updating badge visibility:', error);
+                    Alert.alert('Error', 'Failed to update badge visibility. Please try again.');
+                  } finally {
+                    setIsBadgeToggling(false);
+                  }
                 }}
                 trackColor={{ false: '#d1d5db', true: '#7c3aed' }}
                 thumbColor="#ffffff"
+                disabled={isBadgeToggling}
               />
             </View>
           </View>

@@ -908,3 +908,26 @@ export async function cancelSubscription(userId: string): Promise<void> {
     throw error;
   }
 }
+
+// Update Chirp+ badge visibility
+export async function updateChirpPlusBadgeVisibility(userId: string, showBadge: boolean): Promise<void> {
+  try {
+    console.log('Updating badge visibility for user:', userId, 'show:', showBadge);
+    
+    const result = await sql`
+      UPDATE users 
+      SET show_chirp_plus_badge = ${showBadge}
+      WHERE id = ${userId}
+      RETURNING id
+    `;
+    
+    if (result.length === 0) {
+      throw new Error('User not found');
+    }
+    
+    console.log('Badge visibility updated successfully');
+  } catch (error) {
+    console.error('Error updating badge visibility:', error);
+    throw error;
+  }
+}
