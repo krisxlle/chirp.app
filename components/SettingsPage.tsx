@@ -13,10 +13,86 @@ import {
 import UserAvatar from './UserAvatar';
 import { useAuth } from './AuthContext';
 import { updateUserProfile, cancelSubscription } from '../mobile-db';
+import Svg, { Path } from 'react-native-svg';
 
 interface SettingsPageProps {
   onClose: () => void;
 }
+
+// Custom Icon Components
+const UserIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" 
+      fill={color}
+    />
+  </Svg>
+);
+
+const EditIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const LinkIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M9 17H7A5 5 0 0 1 7 7h2" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M15 7h2a5 5 0 1 1 0 10h-2" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M9 12h6" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const CrownIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M2 20h20l-2-6-4 2-4-4-4 4-4-2-2 6z" 
+      fill={color}
+    />
+    <Path 
+      d="M6 14l4-4 4 4 4-2-2-6H4l2 6 4 2z" 
+      fill={color}
+    />
+  </Svg>
+);
 
 export default function SettingsPage({ onClose }: SettingsPageProps) {
   const { user } = useAuth();
@@ -94,7 +170,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       {/* Profile Name Section */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>👤 Profile Name</Text>
+          <View style={styles.cardTitleContainer}>
+            <UserIcon size={20} color="#7c3aed" />
+            <Text style={styles.cardTitle}>Profile Name</Text>
+          </View>
         </View>
         <View style={styles.cardContent}>
           <Text style={styles.currentInfo}>
@@ -143,7 +222,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       {/* Bio Section */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>✏️ Bio</Text>
+          <View style={styles.cardTitleContainer}>
+            <EditIcon size={20} color="#7c3aed" />
+            <Text style={styles.cardTitle}>Bio</Text>
+          </View>
         </View>
         <View style={styles.cardContent}>
           <Text style={styles.currentInfo}>
@@ -168,7 +250,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       {/* Link in Bio Section */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>🔗 Link in Bio</Text>
+          <View style={styles.cardTitleContainer}>
+            <LinkIcon size={20} color="#7c3aed" />
+            <Text style={styles.cardTitle}>Link in Bio</Text>
+          </View>
         </View>
         <View style={styles.cardContent}>
           <Text style={styles.currentInfo}>
@@ -196,7 +281,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     <View style={styles.tabContent}>
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>👑 Chirp+ Subscription</Text>
+          <View style={styles.cardTitleContainer}>
+            <CrownIcon size={20} color="#7c3aed" />
+            <Text style={styles.cardTitle}>Chirp+ Subscription</Text>
+          </View>
         </View>
         <View style={styles.cardContent}>
           {user?.isChirpPlus ? (
@@ -404,6 +492,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  cardTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   cardTitle: {
     fontSize: 18,

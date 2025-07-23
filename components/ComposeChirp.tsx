@@ -2,10 +2,21 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import UserAvatar from './UserAvatar';
 import { useAuth } from './AuthContext';
+import Svg, { Path } from 'react-native-svg';
 
 interface ComposeChirpProps {
   onPost?: () => void;
 }
+
+// Thread Icon Component
+const ThreadIcon = ({ size = 16, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0L9.937 15.5Z" 
+      fill={color}
+    />
+  </Svg>
+);
 
 export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [content, setContent] = useState("");
@@ -229,7 +240,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 style={styles.threadButton}
                 onPress={() => setIsThreadMode(true)}
               >
-                <Text style={styles.threadButtonIcon}>✨</Text>
+                <ThreadIcon size={16} color="#7c3aed" />
                 <Text style={styles.threadButtonText}>Thread</Text>
               </TouchableOpacity>
               
@@ -308,11 +319,9 @@ const styles = StyleSheet.create({
     borderColor: '#d1d5db',
     backgroundColor: '#ffffff',
     marginRight: 12,
+    gap: 6,
   },
-  threadButtonIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
+
   threadButtonText: {
     fontSize: 14,
     color: '#7c3aed',

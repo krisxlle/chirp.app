@@ -1,6 +1,47 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Image } from 'react-native';
 import { useAuth } from './AuthContext';
+import Svg, { Path } from 'react-native-svg';
+
+// Custom Icon Components
+const SparklesIcon = ({ size = 28, color = "#ffffff" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0L9.937 15.5Z" 
+      fill={color}
+    />
+    <Path 
+      d="M19 8.5a.5.5 0 0 0-1 0v1a1 1 0 0 1-1 1h-1a.5.5 0 0 0 0 1h1a1 1 0 0 1 1 1v1a.5.5 0 0 0 1 0v-1a1 1 0 0 1 1-1h1a.5.5 0 0 0 0-1h-1a1 1 0 0 1-1-1v-1Z" 
+      fill={color}
+    />
+  </Svg>
+);
+
+const HeartIcon = ({ size = 28, color = "#ffffff" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
+      fill={color}
+    />
+  </Svg>
+);
+
+const BotIcon = ({ size = 28, color = "#ffffff" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M12 8a1 1 0 0 0-1 1v3a1 1 0 0 0 2 0V9a1 1 0 0 0-1-1Z" 
+      fill={color}
+    />
+    <Path 
+      d="M21 9v10c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2ZM8 18a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" 
+      fill={color}
+    />
+    <Path 
+      d="M12 2a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1Z" 
+      fill={color}
+    />
+  </Svg>
+);
 
 export default function SignInScreenNew() {
   const { signIn } = useAuth();
@@ -38,7 +79,9 @@ export default function SignInScreenNew() {
         {/* Features */}
         <View style={styles.featuresContainer}>
           <View style={styles.feature}>
-            <Text style={styles.featureIcon}>✨</Text>
+            <View style={styles.featureIconContainer}>
+              <SparklesIcon size={28} color="#ffffff" />
+            </View>
             <Text style={styles.featureTitle}>Share Your Unfiltered Thoughts</Text>
             <Text style={styles.featureDescription}>
               Express yourself authentically without judgment
@@ -46,7 +89,9 @@ export default function SignInScreenNew() {
           </View>
 
           <View style={styles.feature}>
-            <Text style={styles.featureIcon}>💜</Text>
+            <View style={styles.featureIconContainer}>
+              <HeartIcon size={28} color="#ffffff" />
+            </View>
             <Text style={styles.featureTitle}>React to Everything</Text>
             <Text style={styles.featureDescription}>
               Use extensive mood reactions to express how you really feel
@@ -54,7 +99,9 @@ export default function SignInScreenNew() {
           </View>
 
           <View style={styles.feature}>
-            <Text style={styles.featureIcon}>🤖</Text>
+            <View style={styles.featureIconContainer}>
+              <BotIcon size={28} color="#ffffff" />
+            </View>
             <Text style={styles.featureTitle}>AI-Powered Profiles</Text>
             <Text style={styles.featureDescription}>
               Let AI help create your perfect profile based on your personality
@@ -140,9 +187,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     alignItems: 'center',
   },
-  featureIcon: {
-    fontSize: 32,
+  featureIconContainer: {
     marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   featureTitle: {
     fontSize: 18,
