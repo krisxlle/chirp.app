@@ -46,7 +46,25 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
-  const reactionEmojis = ['😀', '😍', '🤔', '😢', '😡', '👏', '🔥', '❤️', '💯', '✨'];
+  // Track individual reaction counts for quick access buttons
+  const [reactionCounts, setReactionCounts] = useState<{[key: string]: number}>({
+    '🫶🏼': 0,
+    '😭': 0,
+    '💀': 0
+  });
+  
+  // Comprehensive mood reactions for Chirp
+  const reactionEmojis = [
+    '😀', '😍', '🤔', '😢', '😡', '👏', '🔥', '❤️', '💯', '✨',
+    '😂', '🥰', '😭', '💀', '🤩', '😱', '🤯', '😴', '🤤', '🫶🏼',
+    '👀', '💪', '🤡', '👻', '🦋', '🌸', '💎', '🌟', '☕', '🎉',
+    '🌙', '⭐', '💫', '🔮', '🍃', '🌺', '🫧', '🤍', '💜', '🌈',
+    '🦄', '🧚‍♀️', '🌻', '🍯', '🧸', '🎨', '📚', '🎭', '🎪', '🎵',
+    '🎬', '📸', '💌', '✨', '🌙', '🔆', '💝', '🎀', '🧩', '🪩'
+  ];
+
+  // Quick access mood buttons - most popular reactions
+  const quickMoodReactions = ['🫶🏼', '😭', '💀'];
 
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -111,9 +129,23 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       
       if (reactionAdded) {
         setReactions(prev => prev + 1);
+        // Update specific emoji count
+        if (quickMoodReactions.includes(emoji)) {
+          setReactionCounts(prev => ({
+            ...prev,
+            [emoji]: prev[emoji] + 1
+          }));
+        }
         console.log('Reaction added successfully');
       } else {
         setReactions(prev => Math.max(0, prev - 1));
+        // Update specific emoji count
+        if (quickMoodReactions.includes(emoji)) {
+          setReactionCounts(prev => ({
+            ...prev,
+            [emoji]: Math.max(0, prev[emoji] - 1)
+          }));
+        }
         console.log('Reaction removed');
       }
       
@@ -412,9 +444,9 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         </TouchableOpacity>
 
         <View style={styles.reactionsContainer}>
-          <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
+          <TouchableOpacity style={styles.reactionButton} onPress={() => handleReactionPress('🫶🏼')}>
             <Text style={styles.reactionIcon}>🫶🏼</Text>
-            <Text style={styles.reactionCount}>{reactions}</Text>
+            <Text style={styles.reactionCount}>{reactionCounts['🫶🏼']}</Text>
           </TouchableOpacity>
           
           {showReactionPicker && (
@@ -431,14 +463,14 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
             </View>
           )}
           
-          <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
+          <TouchableOpacity style={styles.reactionButton} onPress={() => handleReactionPress('😭')}>
             <Text style={styles.reactionIcon}>😭</Text>
-            <Text style={styles.reactionCount}>0</Text>
+            <Text style={styles.reactionCount}>{reactionCounts['😭']}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.reactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
+          <TouchableOpacity style={styles.reactionButton} onPress={() => handleReactionPress('💀')}>
             <Text style={styles.reactionIcon}>💀</Text>
-            <Text style={styles.reactionCount}>0</Text>
+            <Text style={styles.reactionCount}>{reactionCounts['💀']}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.addReactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
