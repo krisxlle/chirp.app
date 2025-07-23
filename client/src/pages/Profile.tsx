@@ -49,7 +49,7 @@ function RepliesTab({ userId }: { userId: string }) {
     );
   }
 
-  if (!replies || replies.length === 0) {
+  if (!replies || (replies as any).length === 0) {
     return (
       <div className="text-center py-8">
         <div className="text-4xl mb-4">💬</div>
@@ -60,7 +60,7 @@ function RepliesTab({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-4">
-      {replies.map((chirp: any) => (
+      {(replies as any).map((chirp: any) => (
         <div key={chirp.id} className="border border-gray-200 rounded-lg overflow-hidden">
           {/* ChirpCard already handles parent chirp display for replies */}
           <ChirpCard chirp={chirp} />
@@ -94,7 +94,7 @@ function MoodReactedTab({ userId }: { userId: string }) {
     );
   }
 
-  if (!reactedChirps || reactedChirps.length === 0) {
+  if (!reactedChirps || (reactedChirps as any).length === 0) {
     return (
       <div className="text-center py-8">
         <div className="text-4xl mb-4">🎭</div>
@@ -105,7 +105,7 @@ function MoodReactedTab({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-0 border border-gray-200 rounded-lg overflow-hidden">
-      {reactedChirps.map((chirp: any, index: number) => (
+      {(reactedChirps as any).map((chirp: any, index: number) => (
         <div key={chirp.id} className={index > 0 ? "border-t border-gray-200" : ""}>
           <ChirpCard chirp={chirp} />
         </div>
@@ -195,7 +195,7 @@ export default function Profile() {
 
   const followMutation = useMutation({
     mutationFn: async () => {
-      if (followStatus?.isFollowing) {
+      if ((followStatus as any)?.isFollowing) {
         await apiRequest(`/api/follows/${userId}`, {
           method: "DELETE",
         });
@@ -211,8 +211,8 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'is-following'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'follow-counts'] });
       toast({
-        title: followStatus?.isFollowing ? "Unfollowed" : "Following",
-        description: followStatus?.isFollowing 
+        title: (followStatus as any)?.isFollowing ? "Unfollowed" : "Following",
+        description: (followStatus as any)?.isFollowing 
           ? "You unfollowed this user" 
           : "You are now following this user",
       });
@@ -239,7 +239,7 @@ export default function Profile() {
 
   const blockMutation = useMutation({
     mutationFn: async () => {
-      if (blockStatus?.blocked) {
+      if ((blockStatus as any)?.blocked) {
         await apiRequest(`/api/users/${userId}/block`, {
           method: "DELETE",
         });
@@ -254,8 +254,8 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'blocked-by'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'is-following'] });
       toast({
-        title: blockStatus?.blocked ? "Unblocked" : "Blocked",
-        description: blockStatus?.blocked 
+        title: (blockStatus as any)?.blocked ? "Unblocked" : "Blocked",
+        description: (blockStatus as any)?.blocked 
           ? "You unblocked this user" 
           : "You blocked this user",
       });
@@ -273,15 +273,15 @@ export default function Profile() {
     mutationFn: async () => {
       await apiRequest(`/api/users/${userId}/notifications`, {
         method: "POST",
-        body: JSON.stringify({ enabled: !notificationStatus?.enabled }),
+        body: JSON.stringify({ enabled: !(notificationStatus as any)?.enabled }),
         headers: { "Content-Type": "application/json" },
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'notifications'] });
       toast({
-        title: notificationStatus?.enabled ? "Notifications off" : "Notifications on",
-        description: notificationStatus?.enabled 
+        title: (notificationStatus as any)?.enabled ? "Notifications off" : "Notifications on",
+        description: (notificationStatus as any)?.enabled 
           ? "You won't get notifications from this user" 
           : "You'll get notifications from this user",
       });
@@ -483,8 +483,8 @@ export default function Profile() {
             </Button>
             <div className="min-w-0 flex-1">
               <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate">Profile</h1>
-              {chirps.length > 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{chirpCount?.count || chirps?.length || 0} chirps</p>
+              {(chirps as any).length > 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{(chirpCount as any)?.count || (chirps as any)?.length || 0} chirps</p>
               )}
             </div>
           </div>
