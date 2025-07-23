@@ -1,37 +1,107 @@
 import nodemailer from 'nodemailer';
 
+async function sendFeedbackEmailViaGmail(feedback: any, userClaims?: any): Promise<boolean> {
+  try {
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASSWORD
+      }
+    });
+
+    const userName = feedback.name || 'Anonymous User';
+    const userEmail = feedback.email || userClaims?.email || 'Not provided';
+    const submissionTime = new Date().toLocaleString();
+
+    const emailHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%); padding: 24px; text-align: center;">
+        <div style="display: inline-block; background: white; border-radius: 12px; padding: 8px; margin-bottom: 12px;">
+          <div style="font-size: 24px;">🐤</div>
+        </div>
+        <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">New Feedback Received</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">Someone shared their thoughts about Chirp</p>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding: 24px;">
+        <!-- User Info -->
+        <div style="background: #f8f9ff; border-radius: 8px; padding: 16px; margin-bottom: 20px; border-left: 4px solid #7c3aed;">
+          <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 18px;">👤 Submission Details</h3>
+          <div style="display: grid; gap: 8px;">
+            <div><strong style="color: #4b5563;">Name:</strong> <span style="color: #1f2937;">${userName}</span></div>
+            <div><strong style="color: #4b5563;">Email:</strong> <span style="color: #1f2937;">${userEmail}</span></div>
+            <div><strong style="color: #4b5563;">Category:</strong> <span style="color: #1f2937;">${feedback.category}</span></div>
+            <div><strong style="color: #4b5563;">Submitted:</strong> <span style="color: #1f2937;">${submissionTime}</span></div>
+          </div>
+        </div>
+        
+        <!-- Message -->
+        <div style="background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 style="margin: 0 0 16px 0; color: #1f2937; font-size: 18px;">💭 Message</h3>
+          <div style="background: #f9fafb; border-radius: 6px; padding: 16px; border-left: 4px solid #d1d5db;">
+            <p style="margin: 0; line-height: 1.6; color: #374151; white-space: pre-wrap; font-size: 15px;">${feedback.message}</p>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="margin-top: 24px; padding: 16px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            <strong>📋 Next Steps:</strong> ${userEmail !== 'Not provided' ? 'Consider responding to the user within 24 hours.' : 'No email provided - this is anonymous feedback.'}
+          </p>
+        </div>
+      </div>
+    </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: 'joinchirp@gmail.com',
+      subject: `🐤 New Chirp Feedback: ${feedback.category}`,
+      html: emailHtml
+    });
+
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to send feedback email via Gmail:', error);
+    return false;
+  }
+}
+
 export async function sendFeedbackNotification(feedback: any, userClaims?: any): Promise<boolean> {
   try {
-    // For now, just log the feedback details to console
-    // This is completely free and works immediately
+    // Log the feedback details to console for immediate visibility
     console.log("🐤 NEW CHIRP FEEDBACK RECEIVED:");
     console.log("==================================");
+    console.log(`Name: ${feedback.name || 'Anonymous'}`);
     console.log(`Category: ${feedback.category}`);
-    console.log(`Subject: ${feedback.subject}`);
     console.log(`Email: ${feedback.email || 'Not provided'}`);
-    console.log(`Location: ${feedback.location || 'Not specified'}`);
     console.log(`User: ${userClaims ? `${userClaims.email} (ID: ${userClaims.sub})` : 'Anonymous'}`);
-    console.log(`Time: ${new Date(feedback.createdAt).toLocaleString()}`);
+    console.log(`Time: ${new Date().toLocaleString()}`);
     console.log("----------------------------------");
     console.log(`Message:\n${feedback.message}`);
     console.log("==================================");
     
-    // Check Gmail credentials explicitly
+    // Check Gmail credentials
     console.log(`🔍 Gmail User: ${process.env.GMAIL_USER ? 'SET' : 'NOT SET'}`);
     console.log(`🔍 Gmail Password: ${process.env.GMAIL_PASSWORD ? 'SET' : 'NOT SET'}`);
     
-    // Optional: If user wants email notifications later, they can set up Gmail SMTP
+    // Send email via Gmail if credentials are configured
     if (process.env.GMAIL_USER && process.env.GMAIL_PASSWORD) {
-      console.log("📧 Gmail credentials detected, attempting to send email...");
-      const emailSent = await sendEmailViaGmail(feedback, userClaims);
-      if (!emailSent) {
+      console.log("📧 Gmail credentials detected, sending feedback email...");
+      const emailSent = await sendFeedbackEmailViaGmail(feedback, userClaims);
+      if (emailSent) {
+        console.log("✅ Feedback email sent successfully to joinchirp@gmail.com");
+      } else {
         console.warn("⚠️ Email sending failed, but feedback was still saved to database");
       }
+      return emailSent;
     } else {
       console.log("📝 Gmail credentials not configured, only logging to console");
+      return false;
     }
-    
-    return true;
   } catch (error) {
     console.error("Error processing feedback notification:", error);
     return false;
