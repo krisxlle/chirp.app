@@ -394,6 +394,11 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Updated Default User Logic**: Modified getFirstUser() function to prioritize @chirp preview account over other users
 - **Preview Account Features**: @chirp account has Chirp+ status, custom handle 'chirp', and appropriate bio for demonstrations
 
+### January 23, 2025 - Landing Page Logo Updates
+- **Removed Purple Background**: Eliminated the light purple square background behind the logo on the landing page
+- **Added Rounded Corners**: Applied 20px border radius to the logo image for better visual appeal
+- **Simplified Logo Container**: Cleaned up logoBackground styling while maintaining proper centering and spacing
+
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection
 - **Database Connection Restored**: Fixed database queries to use correct column names (author_id, reply_to_id) and proper field mapping

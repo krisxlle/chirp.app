@@ -149,18 +149,14 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   logoBackground: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 50,
-    padding: 20,
     marginBottom: 24,
-    width: 160,
-    height: 160,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoImage: {
     width: 120,
     height: 120,
+    borderRadius: 20,
   },
   title: {
     fontSize: 32,
