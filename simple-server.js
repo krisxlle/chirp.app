@@ -1,4 +1,4 @@
-// Simple Express server to serve the original web client interface
+// Simple Express server to serve the built application
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -6,37 +6,86 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ error: 'Internal Server Error' });
+// Add request parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// API routes - define these early
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'Application server is running', timestamp: new Date().toISOString() });
 });
 
 async function startServer() {
   try {
     console.log('Setting up static file serving...');
     
-    // Serve static files from dist directory (built Expo web app)
-    app.use(express.static(path.resolve(__dirname, 'dist')));
+    // Check if dist directory exists
+    const distPath = path.resolve(__dirname, 'dist');
+    if (!fs.existsSync(distPath)) {
+      console.log('Dist directory not found, checking for public directory...');
+      const publicPath = path.resolve(__dirname, 'public');
+      if (!fs.existsSync(publicPath)) {
+        console.error('Neither dist nor public directory found. Building application...');
+        // Try to build the application
+        const { exec } = require('child_process');
+        const util = require('util');
+        const execPromise = util.promisify(exec);
+        
+        try {
+          console.log('Running build command...');
+          await execPromise('npm run build');
+          console.log('Build completed successfully');
+        } catch (buildError) {
+          console.error('Build failed:', buildError);
+          console.log('Serving from Expo dev server instead...');
+        }
+      } else {
+        // Use public directory if available
+        app.use(express.static(publicPath));
+        console.log('Serving static files from public directory');
+      }
+    } else {
+      // Serve static files from dist directory (built Expo web app)
+      app.use(express.static(distPath));
+      console.log('Serving static files from dist directory');
+    }
     
-    // Simple API endpoint to verify server is working
-    app.get('/api/health', (req, res) => {
-      res.json({ status: 'Original web client is running', timestamp: new Date().toISOString() });
-    });
-    
-    // Middleware to serve index.html for unmatched routes (SPA behavior)
+    // SPA fallback route - use middleware instead of wildcard route to avoid path-to-regexp issues
     app.use((req, res, next) => {
-      // Skip if it's an API route or if a static file was found
+      // Skip API routes or if response already sent
       if (req.path.startsWith('/api') || res.headersSent) {
         return next();
       }
       
-      const indexPath = path.resolve(__dirname, 'dist/index.html');
+      // Try dist first, then public, then fallback
+      const possiblePaths = [
+        path.resolve(__dirname, 'dist/index.html'),
+        path.resolve(__dirname, 'public/index.html'),
+        path.resolve(__dirname, 'client/index.html')
+      ];
       
-      // Check if index.html exists before serving
-      if (!fs.existsSync(indexPath)) {
-        console.error('index.html not found at:', indexPath);
-        return res.status(404).send('Application not found. Please build the client first.');
+      let indexPath = null;
+      for (const testPath of possiblePaths) {
+        if (fs.existsSync(testPath)) {
+          indexPath = testPath;
+          break;
+        }
+      }
+      
+      if (!indexPath) {
+        console.error('No index.html found in any expected location');
+        return res.status(404).send(`
+          <html>
+            <body>
+              <h1>Application not found</h1>
+              <p>Please build the client first using: <code>npm run build</code></p>
+              <p>Checked paths:</p>
+              <ul>
+                ${possiblePaths.map(p => `<li>${p}</li>`).join('')}
+              </ul>
+            </body>
+          </html>
+        `);
       }
       
       res.sendFile(indexPath, (err) => {
@@ -47,12 +96,18 @@ async function startServer() {
       });
     });
 
-    console.log(`Starting original web client on http://localhost:${port}`);
-    console.log('This serves the client/ directory interface, not the Expo app');
+    // Error handling middleware - must be at the end
+    app.use((err, req, res, next) => {
+      console.error('Server error:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+    });
+
+    console.log(`Starting application server on http://localhost:${port}`);
+    console.log('Checking for built assets and serving application...');
     
     const server = app.listen(port, '0.0.0.0', () => {
-      console.log(`✓ Original web client is running on port ${port}`);
-      console.log('✓ Using client/src/App.tsx instead of Expo app/(tabs)');
+      console.log(`✓ Application server is running on port ${port}`);
+      console.log(`✓ Visit http://localhost:${port} to view the app`);
     });
 
     // Graceful shutdown handling
