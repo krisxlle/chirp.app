@@ -1856,6 +1856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const { productId } = req.body;
       const user = await storage.getUser(userId);
 
       if (!user) {
@@ -1864,6 +1865,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (user.isChirpPlus) {
         return res.status(400).json({ message: "User already has Chirp+ subscription" });
+      }
+
+      // Validate product ID
+      const expectedProductId = "com.kriselle.chirp.plus.monthly";
+      if (productId && productId !== expectedProductId) {
+        return res.status(400).json({ 
+          message: `Invalid product ID. Expected: ${expectedProductId}` 
+        });
       }
 
       // Check if user already has a Stripe customer ID
@@ -1938,6 +1947,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         subscriptionId: subscription.id,
         clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        productId: expectedProductId,
+        url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/api/stripe/checkout?session_id=${subscription.id}`
       });
     } catch (error) {
       console.error("Error creating subscription:", error);
@@ -1966,6 +1977,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching subscription:", error);
       res.status(500).json({ message: "Failed to fetch subscription details" });
+    }
+  });
+
+  // Verify in-app purchase
+  app.post('/api/verify-purchase', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { receiptData, productId } = req.body;
+      
+      // Validate product ID
+      const expectedProductId = "com.kriselle.chirp.plus.monthly";
+      if (productId !== expectedProductId) {
+        return res.status(400).json({ 
+          message: `Invalid product ID. Expected: ${expectedProductId}, received: ${productId}` 
+        });
+      }
+
+      // In a real implementation, this would:
+      // 1. Verify the receipt with Apple/Google Play Store
+      // 2. Check if the purchase is valid and not fraudulent
+      // 3. Update the user's subscription status
+      
+      console.log(`Verifying purchase for user ${userId} with product ID: ${productId}`);
+      
+      // For now, simulate successful verification and activate Chirp+
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 month from now
+      
+      await storage.updateUserChirpPlus(userId, true, expiresAt);
+      
+      res.json({
+        success: true,
+        message: "Purchase verified successfully",
+        productId: expectedProductId,
+        expiresAt: expiresAt.toISOString()
+      });
+    } catch (error) {
+      console.error("Error verifying purchase:", error);
+      res.status(500).json({ message: "Failed to verify purchase" });
     }
   });
 

@@ -393,6 +393,90 @@ export async function getTrendingHashtags() {
   }
 }
 
+// Create subscription with specific product ID
+export async function createSubscription(productId: string = "com.kriselle.chirp.plus.monthly") {
+  try {
+    console.log(`Creating subscription with product ID: ${productId}`);
+    
+    const response = await fetch('/api/create-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ productId })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create subscription');
+    }
+
+    const result = await response.json();
+    console.log('Subscription created:', result);
+    return result;
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+    throw error;
+  }
+}
+
+// Handle in-app purchase verification
+export async function verifyPurchase(receiptData: any, productId: string = "com.kriselle.chirp.plus.monthly") {
+  try {
+    console.log(`Verifying purchase for product ID: ${productId}`);
+    
+    const response = await fetch('/api/verify-purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ 
+        receiptData, 
+        productId 
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to verify purchase');
+    }
+
+    const result = await response.json();
+    console.log('Purchase verified:', result);
+    return result;
+  } catch (error) {
+    console.error('Error verifying purchase:', error);
+    throw error;
+  }
+}
+
+// Get user subscription status
+export async function getSubscriptionStatus() {
+  try {
+    const response = await fetch('/api/subscription', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    if (response.status === 404) {
+      return { hasSubscription: false };
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to get subscription status');
+    }
+
+    const result = await response.json();
+    return { hasSubscription: true, ...result };
+  } catch (error) {
+    console.error('Error getting subscription status:', error);
+    return { hasSubscription: false };
+  }
+}
+
 // Get chirps containing a specific hashtag in trending order
 export async function getChirpsByHashtag(hashtag: string): Promise<MobileChirp[]> {
   try {

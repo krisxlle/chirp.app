@@ -308,7 +308,20 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
                 Upgrade to Chirp+ for unlimited AI generations, premium models, and exclusive features.
               </Text>
               
-              <TouchableOpacity style={styles.upgradeButton}>
+              <TouchableOpacity 
+                style={styles.upgradeButton}
+                onPress={() => {
+                  // Navigate to subscription page
+                  if (typeof window !== 'undefined' && window.location) {
+                    // Browser environment
+                    window.location.href = '/subscription';
+                  } else {
+                    // React Native environment
+                    const { router } = require('expo-router');
+                    router.push('/subscription');
+                  }
+                }}
+              >
                 <Text style={styles.upgradeButtonText}>Upgrade to Chirp+</Text>
               </TouchableOpacity>
             </View>
