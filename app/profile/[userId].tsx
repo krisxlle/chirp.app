@@ -110,6 +110,7 @@ export default function UserProfileScreen() {
   const handleText = user?.customHandle || user?.handle || user?.id;
 
   if (loading) {
+    console.log('🔥 Profile loading state - showing spinner');
     return (
       <View style={styles.container}>
         <Stack.Screen 

@@ -304,9 +304,10 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         // Try different navigation approaches
         console.log('Attempting navigation to:', `/user-profile/${chirp.author.id}`);
         
-        // Use the existing profile route that's already configured
-        router.push(`/profile/${chirp.author.id}`);
-        console.log('Router.push called successfully to /profile/' + chirp.author.id);
+        // Test with simple route first
+        console.log('Testing navigation to test-profile page');
+        router.push(`/test-profile`);
+        console.log('Router.push called successfully to /test-profile');
       } catch (error) {
         console.error('Navigation error:', error);
         Alert.alert('Navigation Error', `Failed to open profile page. Error: ${error}`);
