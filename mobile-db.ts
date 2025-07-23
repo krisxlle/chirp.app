@@ -393,6 +393,46 @@ export async function getTrendingHashtags() {
   }
 }
 
+// Get chirps containing a specific hashtag in trending order
+export async function getChirpsByHashtag(hashtag: string): Promise<MobileChirp[]> {
+  try {
+    console.log(`Fetching chirps for hashtag: ${hashtag}`);
+    // Ensure hashtag starts with #
+    const cleanHashtag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
+    
+    const chirps = await sql`
+      SELECT 
+        c.id::text,
+        c.content,
+        c.created_at as "createdAt",
+        COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
+        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
+        COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+        u.profile_image_url,
+        u.banner_image_url,
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
+      FROM chirps c
+      LEFT JOIN users u ON c.author_id = u.id
+      WHERE c.content ILIKE ${`%${cleanHashtag}%`}
+        AND c.reply_to_id IS NULL
+      ORDER BY 
+        -- Trending order: prioritize engagement and recency
+        ((SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) * 2 + 
+         (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) * 3 +
+         CASE WHEN c.created_at > NOW() - INTERVAL '1 day' THEN 10 ELSE 0 END) DESC,
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) DESC,
+        c.created_at DESC
+      LIMIT 50
+    `;
+    
+    return formatChirpResults(chirps);
+  } catch (error) {
+    console.error('Error fetching chirps by hashtag:', error);
+    return [];
+  }
+}
+
 export async function searchChirps(query: string) {
   try {
     const chirps = await sql`

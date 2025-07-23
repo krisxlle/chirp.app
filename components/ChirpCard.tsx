@@ -370,7 +370,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       )}
 
       <Text style={styles.content}>
-        {chirp.content.split(/(@\w+)/).map((part, index) => {
+        {chirp.content.split(/(@\w+|#\w+)/).map((part, index) => {
           if (part.startsWith('@')) {
             return (
               <TouchableOpacity 
@@ -381,6 +381,18 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
                 }}
               >
                 <Text style={styles.mentionText}>{part}</Text>
+              </TouchableOpacity>
+            );
+          } else if (part.startsWith('#')) {
+            return (
+              <TouchableOpacity 
+                key={index}
+                onPress={() => {
+                  const cleanHashtag = part.replace('#', '');
+                  router.push(`/hashtag/${cleanHashtag}`);
+                }}
+              >
+                <Text style={styles.hashtagText}>{part}</Text>
               </TouchableOpacity>
             );
           }
@@ -745,6 +757,11 @@ const styles = StyleSheet.create({
   mentionText: {
     color: '#7c3aed',
     fontSize: 15,
+  },
+  hashtagText: {
+    color: '#7c3aed',
+    fontSize: 15,
+    fontWeight: '500',
   },
   repliesContainer: {
     marginTop: 12,

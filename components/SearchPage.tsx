@@ -98,7 +98,15 @@ export default function SearchPage() {
           <View style={styles.trendingSection}>
             <Text style={styles.sectionTitle}>Trending Topics</Text>
             {trendingTopics.map((topic, index) => (
-              <TouchableOpacity key={index} style={styles.trendingItem}>
+              <TouchableOpacity 
+                key={index} 
+                style={styles.trendingItem}
+                onPress={() => {
+                  // Navigate to hashtag page
+                  const cleanHashtag = topic.hashtag.replace('#', '');
+                  router.push(`/hashtag/${cleanHashtag}`);
+                }}
+              >
                 <Text style={styles.hashtag}>{topic.hashtag}</Text>
                 <Text style={styles.trendingCount}>{topic.count}</Text>
               </TouchableOpacity>
