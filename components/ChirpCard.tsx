@@ -387,8 +387,11 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginLeft: 52, // Align with avatar
+    marginRight: 16, // Add right margin to prevent overflow
     paddingTop: 4,
+    overflow: 'hidden', // Prevent overflow
   },
   actionButton: {
     flexDirection: 'row',
@@ -410,7 +413,9 @@ const styles = StyleSheet.create({
   reactionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
     marginRight: 20,
+    overflow: 'hidden',
   },
   reactionButton: {
     flexDirection: 'row',
@@ -523,7 +528,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   shareButtonContainer: {
-    marginLeft: 'auto',
+    flexShrink: 0,
   },
   shareButton: {
     marginLeft: 0,
