@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
+import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
 import ReplyIcon from './icons/ReplyIcon';
 import RepostIcon from './icons/RepostIcon';
@@ -118,8 +119,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
   const handleAvatarPress = () => {
     if (chirp.author?.id) {
-      Alert.alert('Profile Navigation', `Navigate to profile for ${displayName} (ID: ${chirp.author.id})`);
-      // TODO: Implement actual profile navigation to ProfilePage with user ID
+      router.push(`/profile/${chirp.author.id}`);
     }
   };
 
