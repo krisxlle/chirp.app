@@ -43,11 +43,22 @@ export default function UserProfileScreen() {
 
   console.log('UserProfileScreen mounted with userId:', userId);
   console.log('Type of userId:', typeof userId);
-
+  
+  // Add error boundary and detailed logging
   useEffect(() => {
+    console.log('UserProfileScreen useEffect triggered');
+    console.log('Current userId from params:', userId);
+    
+    if (!userId) {
+      console.error('No userId provided to profile screen');
+      return;
+    }
+    
     fetchUserProfile();
     fetchUserChirps();
   }, [userId]);
+
+
 
   const fetchUserProfile = async () => {
     try {
@@ -554,3 +565,5 @@ const styles = StyleSheet.create({
     color: '#657786',
   },
 });
+
+export default UserProfileScreen;
