@@ -295,9 +295,18 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   const handleAvatarPress = () => {
     if (chirp.author?.id) {
       console.log('Navigating to user profile page for user:', chirp.author.id);
+      
+      const displayName = chirp.author.firstName && chirp.author.lastName 
+        ? `${chirp.author.firstName} ${chirp.author.lastName}`
+        : (chirp.author.customHandle || chirp.author.handle || 'User');
+      
       try {
-        router.push(`/user-profile/${chirp.author.id}`);
-        console.log('Navigation to user profile page initiated successfully');
+        // Try different navigation approaches
+        console.log('Attempting navigation to:', `/user-profile/${chirp.author.id}`);
+        
+        // Use the existing profile route that's already configured
+        router.push(`/profile/${chirp.author.id}`);
+        console.log('Router.push called successfully to /profile/' + chirp.author.id);
       } catch (error) {
         console.error('Navigation error:', error);
         Alert.alert('Navigation Error', `Failed to open profile page. Error: ${error}`);
