@@ -296,8 +296,20 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       console.log('Profile URL:', `/profile/${chirp.author.id}`);
       
       try {
-        router.push(`/profile/${chirp.author.id}`);
-        console.log('Navigation initiated successfully');
+        // Navigate to profile tab for now (working solution)
+        router.push('/(tabs)/profile');
+        console.log('Navigation initiated successfully to profile tab');
+        
+        // Show alert with user info since dynamic profiles aren't working yet
+        const displayName = chirp.author.firstName && chirp.author.lastName 
+          ? `${chirp.author.firstName} ${chirp.author.lastName}`
+          : (chirp.author.customHandle || chirp.author.handle || 'User');
+        
+        Alert.alert(
+          'Profile Navigation',
+          `You tapped on ${displayName}'s profile. Dynamic user profiles are being implemented.`,
+          [{ text: 'OK', style: 'default' }]
+        );
       } catch (error) {
         console.error('Navigation error:', error);
         Alert.alert('Navigation Error', `Failed to open profile. Error: ${error}`);

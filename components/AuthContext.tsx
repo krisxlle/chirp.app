@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ProfileProvider } from './ProfileContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
@@ -155,7 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      <ProfileProvider>
+        {children}
+      </ProfileProvider>
     </AuthContext.Provider>
   );
 }
