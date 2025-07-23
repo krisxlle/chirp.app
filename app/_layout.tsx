@@ -25,12 +25,11 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="feedback" options={{ headerShown: false }} />
-          <Stack.Screen name="test-profile" options={{ headerShown: true }} />
           <Stack.Screen 
             name="profile/[userId]" 
             options={{ 
               headerShown: true,
-              presentation: 'card',
+              presentation: 'modal',
               title: 'Profile'
             }} 
           />

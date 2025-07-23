@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import UserAvatar from '../../components/UserAvatar';
 
 interface User {
@@ -113,13 +113,15 @@ export default function UserProfileScreen() {
     console.log('🔥 Profile loading state - showing spinner');
     return (
       <View style={styles.container}>
-        <Stack.Screen 
-          options={{
-            title: 'Profile',
-            headerShown: true,
-            presentation: 'card'
-          }} 
-        />
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Profile</Text>
+        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#7c3aed" />
           <Text style={styles.loadingText}>Loading profile...</Text>
@@ -131,21 +133,17 @@ export default function UserProfileScreen() {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Stack.Screen 
-          options={{
-            title: 'Profile',
-            headerShown: true,
-            presentation: 'card'
-          }} 
-        />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>User not found</Text>
+        <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.backButtonText}>Go Back</Text>
+            <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Profile</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>User not found</Text>
         </View>
       </View>
     );
@@ -153,13 +151,15 @@ export default function UserProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen 
-        options={{
-          title: displayName,
-          headerShown: true,
-          presentation: 'card'
-        }} 
-      />
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{displayName}</Text>
+      </View>
       
       <ScrollView style={styles.scrollView}>
         {/* Profile Header */}
@@ -233,6 +233,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginLeft: 16,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -254,13 +270,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backButton: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   backButtonText: {
-    color: '#ffffff',
+    color: '#7c3aed',
     fontSize: 16,
     fontWeight: '600',
   },

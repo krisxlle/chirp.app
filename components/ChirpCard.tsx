@@ -304,10 +304,14 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         // Try different navigation approaches
         console.log('Attempting navigation to:', `/user-profile/${chirp.author.id}`);
         
-        // Test with simple route first
-        console.log('Testing navigation to test-profile page');
-        router.push(`/test-profile`);
-        console.log('Router.push called successfully to /test-profile');
+        // Try different navigation method - use Link component approach
+        console.log('Trying alternative navigation method');
+        const href = `/profile/${chirp.author.id}`;
+        console.log('Navigating to href:', href);
+        
+        // Use router.replace instead of push
+        router.replace(href);
+        console.log('Router.replace called for profile navigation');
       } catch (error) {
         console.error('Navigation error:', error);
         Alert.alert('Navigation Error', `Failed to open profile page. Error: ${error}`);
