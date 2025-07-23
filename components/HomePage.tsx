@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image, ActivityIndicator } from 'react-native';
 import { getChirpsFromDB, getForYouChirps, getLatestChirps, getTrendingChirps } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
 import ComposeChirp from './ComposeChirp';
@@ -93,7 +93,7 @@ export default function HomePage() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading your authentic chirps...</Text>
+        <ActivityIndicator size="large" color="#7c3aed" />
       </View>
     );
   }

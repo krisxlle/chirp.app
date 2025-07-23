@@ -311,6 +311,12 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Enhanced Blocking System**: Fixed blocking logic so when user A blocks user B, user B cannot see follow/unfollow button or profile content
 - **Bidirectional Block Enforcement**: Added proper checks to prevent blocked users from accessing profile content and interaction buttons
 
+### January 23, 2025 - UI Improvements and Landing Page Update
+- **Landing Page Logo Update**: Changed landing page image to use assets/icon.png (purple/pink bird logo) instead of logo.jpg for consistent branding
+- **Loading State Enhancement**: Replaced "Loading your authentic chirps..." text with animated purple loading spinner (ActivityIndicator) for better user experience
+- **AI Profile Popup Positioning**: Fixed AI Profile dialog positioning to appear at top center of screen with higher z-index for proper visibility
+- **Simplified AI Profile Generation**: Removed personality quiz feature, now uses direct input box for custom AI profile prompts with Cancel button
+
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection
 - **Database Connection Restored**: Fixed database queries to use correct column names (author_id, reply_to_id) and proper field mapping
