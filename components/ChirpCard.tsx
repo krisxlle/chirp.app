@@ -409,6 +409,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#657786',
     fontWeight: '500',
+    marginLeft: 6,
   },
   reactionsContainer: {
     flexDirection: 'row',
