@@ -125,28 +125,103 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   };
 
   const handleMoreOptions = () => {
-    const isOwnChirp = chirp.author.id === 'current_user_id'; // TODO: Get actual current user ID
+    const isOwnChirp = user?.id && chirp.author.id === user.id;
     
     if (isOwnChirp) {
       Alert.alert('Chirp Options', 'Choose an action', [
         { text: 'Delete Chirp', style: 'destructive', onPress: () => handleDeleteChirp() },
+        { text: 'Edit Chirp', onPress: () => Alert.alert('Edit', 'Edit functionality coming soon') },
         { text: 'Cancel', style: 'cancel' }
       ]);
     } else {
       Alert.alert('User Options', 'Choose an action', [
-        { text: 'Unfollow', onPress: () => Alert.alert('Unfollowed', `You unfollowed ${displayName}`) },
-        { text: 'Block User', style: 'destructive', onPress: () => Alert.alert('Blocked', `You blocked ${displayName}`) },
-        { text: 'Turn on Notifications', onPress: () => Alert.alert('Notifications', `Turned on notifications for ${displayName}`) },
+        { text: `Follow ${displayName}`, onPress: () => handleFollowUser() },
+        { text: 'Copy Link to Profile', onPress: () => handleCopyUserProfile() },
+        { text: 'Block User', style: 'destructive', onPress: () => handleBlockUser() },
+        { text: 'Report Chirp', style: 'destructive', onPress: () => handleReportChirp() },
         { text: 'Cancel', style: 'cancel' }
       ]);
     }
   };
 
-  const handleDeleteChirp = () => {
+  const handleDeleteChirp = async () => {
     Alert.alert('Delete Chirp', 'Are you sure you want to delete this chirp?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Deleted', 'Chirp has been deleted') }
+      { 
+        text: 'Delete', 
+        style: 'destructive', 
+        onPress: async () => {
+          try {
+            // TODO: Implement actual delete functionality
+            // const { deleteChirp } = await import('../mobile-db');
+            // await deleteChirp(chirp.id);
+            Alert.alert('Deleted', 'Chirp has been deleted');
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete chirp');
+          }
+        }
+      }
     ]);
+  };
+
+  const handleFollowUser = async () => {
+    try {
+      // TODO: Implement follow functionality
+      Alert.alert('Followed', `You are now following ${displayName}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to follow user');
+    }
+  };
+
+  const handleCopyUserProfile = async () => {
+    const profileUrl = `https://chirp.app/profile/${chirp.author.id}`;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(profileUrl);
+        Alert.alert('Link Copied!', `Profile link for ${displayName} has been copied to your clipboard.`);
+      } else {
+        Alert.alert('Profile Link', `Copy this link: ${profileUrl}`);
+      }
+    } catch (error) {
+      Alert.alert('Profile Link', `Copy this link: ${profileUrl}`);
+    }
+  };
+
+  const handleBlockUser = () => {
+    Alert.alert(
+      'Block User', 
+      `Are you sure you want to block ${displayName}? You won't see their chirps anymore.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Block', 
+          style: 'destructive', 
+          onPress: () => {
+            // TODO: Implement block functionality
+            Alert.alert('Blocked', `You have blocked ${displayName}`);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleReportChirp = () => {
+    Alert.alert(
+      'Report Chirp',
+      'Why are you reporting this chirp?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Spam', onPress: () => submitReport('spam') },
+        { text: 'Inappropriate Content', onPress: () => submitReport('inappropriate') },
+        { text: 'Harassment', onPress: () => submitReport('harassment') },
+        { text: 'Other', onPress: () => submitReport('other') }
+      ]
+    );
+  };
+
+  const submitReport = (reason: string) => {
+    // TODO: Implement actual reporting functionality
+    Alert.alert('Report Submitted', 'Thank you for reporting this content. We will review it shortly.');
   };
 
   const handleShare = async () => {
