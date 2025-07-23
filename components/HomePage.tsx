@@ -150,7 +150,7 @@ export default function HomePage() {
             <Text style={styles.logoText}>Chirp</Text>
           </View>
           
-          {/* Feed Type Selector - exactly like original */}
+          {/* Feed Type Selector - compact on same line */}
           <View style={styles.feedControls}>
             <TouchableOpacity 
               style={[styles.feedButton, feedType === 'personalized' && styles.activeFeedButton]}
@@ -238,12 +238,14 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   headerContent: {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    flex: 1,
   },
   logoImage: {
     width: 32,
@@ -260,16 +262,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#f7f9fa',
     borderRadius: 12,
-    padding: 4,
+    padding: 3,
   },
   feedButton: {
-    flex: 1,
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 50,
   },
   activeFeedButton: {
     backgroundColor: '#d946ef',
@@ -284,7 +286,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   feedButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#657786',
   },
@@ -294,7 +296,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     backgroundColor: '#fafafa',
-    paddingTop: 52, // Minimal space for header
+    paddingTop: 42, // Reduced for smaller header
   },
   scrollContent: {
     paddingBottom: 100, // Space for bottom nav
