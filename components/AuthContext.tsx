@@ -5,6 +5,14 @@ interface User {
   id: string;
   email: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  customHandle?: string;
+  handle?: string;
+  profileImageUrl?: string;
+  avatarUrl?: string;
+  bannerImageUrl?: string;
+  bio?: string;
 }
 
 interface AuthContextType {

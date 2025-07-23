@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import UserAvatar from './UserAvatar';
+import { useAuth } from './AuthContext';
 
 interface ComposeChirpProps {
   onPost?: () => void;
@@ -10,15 +11,26 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [content, setContent] = useState("");
   const [isThreadMode, setIsThreadMode] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-
+  
+  const { user: authUser } = useAuth();
+  
   const maxLength = 280;
   const remainingChars = maxLength - content.length;
 
-  // Mock user data - in real app would come from auth context
-  const user = {
+  // Convert auth user to expected User format for UserAvatar component
+  const user = authUser ? {
+    id: authUser.id,
+    firstName: authUser.firstName || authUser.name || authUser.email?.split('@')[0] || 'User',
+    lastName: authUser.lastName || '',
+    email: authUser.email,
+    profileImageUrl: authUser.profileImageUrl || authUser.avatarUrl,
+    customHandle: authUser.customHandle,
+    handle: authUser.handle,
+    bio: authUser.bio,
+  } : {
     id: "1",
-    firstName: "Anonymous",
-    lastName: "User",
+    firstName: "User",
+    lastName: "",
     email: "user@example.com",
     profileImageUrl: undefined,
   };
