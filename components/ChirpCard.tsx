@@ -6,6 +6,7 @@ import ReplyIcon from './icons/ReplyIcon';
 import RepostIcon from './icons/RepostIcon';
 import ShareIcon from './icons/ShareIcon';
 import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
+import UserProfileModal from './UserProfileModal';
 import { useAuth } from './AuthContext';
 
 interface User {
@@ -43,6 +44,8 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   const [reactions, setReactions] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [reposts, setReposts] = useState(0);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
@@ -292,28 +295,9 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
   const handleAvatarPress = () => {
     if (chirp.author?.id) {
-      console.log('Navigating to profile:', chirp.author.id);
-      console.log('Profile URL:', `/profile/${chirp.author.id}`);
-      
-      try {
-        // Navigate to profile tab for now (working solution)
-        router.push('/(tabs)/profile');
-        console.log('Navigation initiated successfully to profile tab');
-        
-        // Show alert with user info since dynamic profiles aren't working yet
-        const displayName = chirp.author.firstName && chirp.author.lastName 
-          ? `${chirp.author.firstName} ${chirp.author.lastName}`
-          : (chirp.author.customHandle || chirp.author.handle || 'User');
-        
-        Alert.alert(
-          'Profile Navigation',
-          `You tapped on ${displayName}'s profile. Dynamic user profiles are being implemented.`,
-          [{ text: 'OK', style: 'default' }]
-        );
-      } catch (error) {
-        console.error('Navigation error:', error);
-        Alert.alert('Navigation Error', `Failed to open profile. Error: ${error}`);
-      }
+      console.log('Opening profile modal for user:', chirp.author.id);
+      setSelectedUserId(chirp.author.id);
+      setShowProfileModal(true);
     } else {
       console.log('No author ID found for chirp:', chirp);
       Alert.alert('Error', 'Unable to open profile - no user ID found');
@@ -556,6 +540,13 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           )}
         </View>
       )}
+
+      {/* User Profile Modal */}
+      <UserProfileModal 
+        visible={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        userId={selectedUserId}
+      />
     </TouchableOpacity>
   );
 }

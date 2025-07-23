@@ -214,6 +214,89 @@ export async function createChirp(content: string, authorId?: string, replyToId?
   }
 }
 
+// Get user by ID for profile viewing
+export async function getUserById(userId: string): Promise<MobileUser | null> {
+  try {
+    console.log('Fetching user by ID:', userId);
+    const users = await sql`
+      SELECT 
+        id::text,
+        email,
+        first_name,
+        last_name,
+        custom_handle,
+        handle,
+        profile_image_url,
+        banner_image_url,
+        bio,
+        joined_at,
+        is_chirp_plus,
+        show_chirp_plus_badge,
+        stripe_customer_id,
+        stripe_subscription_id
+      FROM users 
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+    
+    if (users.length > 0) {
+      const user = users[0];
+      return {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        custom_handle: user.custom_handle,
+        handle: user.handle,
+        profile_image_url: user.profile_image_url,
+        banner_image_url: user.banner_image_url,
+        bio: user.bio,
+        joined_at: user.joined_at,
+        is_chirp_plus: user.is_chirp_plus,
+        show_chirp_plus_badge: user.show_chirp_plus_badge,
+        stripe_customer_id: user.stripe_customer_id,
+        stripe_subscription_id: user.stripe_subscription_id
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching user by ID:', error);
+    return null;
+  }
+}
+
+// Get chirps by user ID for profile viewing
+export async function getChirpsByUserId(userId: string): Promise<MobileChirp[]> {
+  try {
+    console.log('Fetching chirps by user ID:', userId);
+    const chirps = await sql`
+      SELECT 
+        c.id::text,
+        c.content,
+        c.created_at as "createdAt",
+        COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
+        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
+        COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+        u.profile_image_url,
+        u.banner_image_url,
+        u.id::text as author_id,
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
+      FROM chirps c
+      LEFT JOIN users u ON c.author_id = u.id
+      WHERE c.author_id = ${userId}
+      ORDER BY c.created_at DESC
+      LIMIT 20
+    `;
+    
+    return formatChirpResults(chirps);
+  } catch (error) {
+    console.error('Error fetching user chirps:', error);
+    return [];
+  }
+}
+
 function formatChirpResults(chirps: any[]): MobileChirp[] {
   console.log(`Successfully loaded ${chirps.length} authentic chirps`);
   return chirps.map(chirp => ({
@@ -221,7 +304,7 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
     content: String(chirp.content),
     createdAt: chirp.createdAt ? new Date(chirp.createdAt).toISOString() : new Date().toISOString(),
     author: {
-      id: '1',
+      id: String(chirp.author_id || '1'),
       firstName: String(chirp.display_name || 'User').split(' ')[0],
       lastName: String(chirp.display_name || 'User').split(' ')[1] || '',
       email: 'user@chirp.com',
