@@ -564,6 +564,40 @@ export async function createReply(content: string, replyToId: string, authorId: 
   }
 }
 
+// Get replies for a specific chirp
+export async function getChirpReplies(chirpId: string): Promise<MobileChirp[]> {
+  try {
+    console.log('Fetching replies for chirp:', chirpId);
+    
+    const replies = await sql`
+      SELECT 
+        c.id,
+        c.content,
+        c.created_at as "createdAt",
+        c.author_id,
+        u.custom_handle,
+        u.handle,
+        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle, 'User') as display_name,
+        u.profile_image_url,
+        u.banner_image_url,
+        COUNT(DISTINCT r.id) as reaction_count,
+        COUNT(DISTINCT replies.id) as reply_count
+      FROM chirps c
+      LEFT JOIN users u ON c.author_id = u.id
+      LEFT JOIN reactions r ON c.id = r.chirp_id
+      LEFT JOIN chirps replies ON c.id = replies.reply_to_id
+      WHERE c.reply_to_id = ${chirpId}
+      GROUP BY c.id, c.content, c.created_at, c.author_id, u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.banner_image_url
+      ORDER BY c.created_at ASC
+    `;
+    
+    return formatChirpResults(replies);
+  } catch (error) {
+    console.error('Error fetching chirp replies:', error);
+    throw error;
+  }
+}
+
 // Create a repost of a chirp
 export async function createRepost(originalChirpId: string, userId: string) {
   try {

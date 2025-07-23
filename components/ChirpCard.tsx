@@ -55,12 +55,37 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     setShowReplyInput(true);
   };
 
-  const submitReply = () => {
-    if (replyText.trim()) {
+  const submitReply = async () => {
+    if (!replyText.trim()) return;
+    
+    if (!user?.id) {
+      Alert.alert('Sign in required', 'Please sign in to reply to chirps.');
+      return;
+    }
+
+    try {
+      const { createReply } = await import('../mobile-db');
+      
+      console.log('Creating reply to chirp:', chirp.id, 'by user:', user.id);
+      
+      const newReply = await createReply(chirp.id, replyText.trim(), user.id);
+      
+      // Update local state
       setReplies(prev => prev + 1);
       setReplyText('');
       setShowReplyInput(false);
-      Alert.alert('Reply Posted', 'Your reply has been posted!');
+      
+      // If thread is currently shown, refresh replies
+      if (showReplies) {
+        const { getChirpReplies } = await import('../mobile-db');
+        const updatedReplies = await getChirpReplies(chirp.id);
+        setThreadReplies(updatedReplies);
+      }
+      
+      console.log('Reply posted successfully');
+    } catch (error) {
+      console.error('Error posting reply:', error);
+      Alert.alert('Error', 'Failed to post reply. Please try again.');
     }
   };
 
@@ -163,8 +188,35 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
                        ? `${chirp.author.firstName} ${chirp.author.lastName}`
                        : chirp.author?.email?.split('@')[0] || 'Anonymous User');
 
-  const handleChirpPress = () => {
-    Alert.alert('View Replies', `Show ${replies} replies for this chirp`);
+  const [showReplies, setShowReplies] = useState(false);
+  const [threadReplies, setThreadReplies] = useState<any[]>([]);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+
+  const handleChirpPress = async () => {
+    if (replies === 0) {
+      // No replies to show
+      return;
+    }
+    
+    if (showReplies) {
+      // Hide replies
+      setShowReplies(false);
+    } else {
+      // Show replies - fetch from database
+      setLoadingReplies(true);
+      try {
+        const { getChirpReplies } = await import('../mobile-db');
+        const repliesData = await getChirpReplies(chirp.id);
+        setThreadReplies(repliesData);
+        setShowReplies(true);
+        console.log(`Loaded ${repliesData.length} replies for chirp ${chirp.id}`);
+      } catch (error) {
+        console.error('Error loading replies:', error);
+        Alert.alert('Error', 'Failed to load replies. Please try again.');
+      } finally {
+        setLoadingReplies(false);
+      }
+    }
   };
 
   return (
@@ -308,6 +360,24 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
               <Text style={styles.submitButtonText}>Reply</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      )}
+
+      {/* Thread Replies */}
+      {showReplies && (
+        <View style={styles.repliesContainer}>
+          {loadingReplies ? (
+            <Text style={styles.loadingText}>Loading replies...</Text>
+          ) : threadReplies.length === 0 ? (
+            <Text style={styles.noRepliesText}>No replies yet</Text>
+          ) : (
+            threadReplies.map((reply, index) => (
+              <View key={reply.id} style={styles.replyWrapper}>
+                <View style={styles.replyConnector} />
+                <ChirpCard chirp={reply} />
+              </View>
+            ))
+          )}
         </View>
       )}
     </TouchableOpacity>
@@ -560,5 +630,35 @@ const styles = StyleSheet.create({
   mentionText: {
     color: '#7c3aed',
     fontSize: 15,
+  },
+  repliesContainer: {
+    marginTop: 12,
+    paddingLeft: 16,
+    borderLeftWidth: 2,
+    borderLeftColor: '#e1e8ed',
+  },
+  replyWrapper: {
+    marginBottom: 8,
+  },
+  replyConnector: {
+    position: 'absolute',
+    left: -2,
+    top: 0,
+    width: 2,
+    height: '100%',
+    backgroundColor: '#7c3aed',
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#657786',
+    textAlign: 'center',
+    padding: 16,
+  },
+  noRepliesText: {
+    fontSize: 14,
+    color: '#657786',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    padding: 16,
   },
 });
