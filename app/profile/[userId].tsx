@@ -28,7 +28,7 @@ interface ProfileStats {
   reactions: number;
 }
 
-export default function UserProfileScreen() {
+function UserProfileScreen() {
   const { userId } = useLocalSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'replies' | 'reactions'>('chirps');
@@ -41,8 +41,11 @@ export default function UserProfileScreen() {
     reactions: 0
   });
 
+  // Add immediate console log to check if component loads at all
+  console.log('🔥 UserProfileScreen component loaded!');
   console.log('UserProfileScreen mounted with userId:', userId);
   console.log('Type of userId:', typeof userId);
+  console.log('All params:', useLocalSearchParams());
   
   // Add error boundary and detailed logging
   useEffect(() => {
