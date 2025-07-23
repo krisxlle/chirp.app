@@ -13,6 +13,12 @@ interface User {
   avatarUrl?: string;
   bannerImageUrl?: string;
   bio?: string;
+  // Chirp+ subscription fields
+  isChirpPlus?: boolean;
+  chirpPlusExpiresAt?: string;
+  showChirpPlusBadge?: boolean;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 interface AuthContextType {
@@ -65,7 +71,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           profileImageUrl: dbUser.profile_image_url,
           avatarUrl: dbUser.profile_image_url,
           bannerImageUrl: dbUser.banner_image_url,
-          bio: dbUser.bio
+          bio: dbUser.bio,
+          // Include Chirp+ subscription data
+          isChirpPlus: dbUser.is_chirp_plus,
+          chirpPlusExpiresAt: dbUser.chirp_plus_expires_at,
+          showChirpPlusBadge: dbUser.show_chirp_plus_badge,
+          stripeCustomerId: dbUser.stripe_customer_id,
+          stripeSubscriptionId: dbUser.stripe_subscription_id
         };
         
         await AsyncStorage.setItem('user', JSON.stringify(user));
@@ -89,7 +101,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             profileImageUrl: fallbackUser.profile_image_url,
             avatarUrl: fallbackUser.profile_image_url,
             bannerImageUrl: fallbackUser.banner_image_url,
-            bio: fallbackUser.bio
+            bio: fallbackUser.bio,
+            // Include Chirp+ subscription data
+            isChirpPlus: fallbackUser.is_chirp_plus,
+            chirpPlusExpiresAt: fallbackUser.chirp_plus_expires_at,
+            showChirpPlusBadge: fallbackUser.show_chirp_plus_badge,
+            stripeCustomerId: fallbackUser.stripe_customer_id,
+            stripeSubscriptionId: fallbackUser.stripe_subscription_id
           };
           
           await AsyncStorage.setItem('user', JSON.stringify(user));

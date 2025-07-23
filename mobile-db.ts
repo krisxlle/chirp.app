@@ -284,7 +284,12 @@ export async function getUserByEmail(email: string) {
         COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
         bio,
         profile_image_url,
-        banner_image_url
+        banner_image_url,
+        is_chirp_plus,
+        chirp_plus_expires_at,
+        show_chirp_plus_badge,
+        stripe_customer_id,
+        stripe_subscription_id
       FROM users 
       WHERE email = ${email}
       LIMIT 1
@@ -292,6 +297,7 @@ export async function getUserByEmail(email: string) {
     
     if (users.length > 0) {
       console.log('Found user:', users[0].custom_handle || users[0].handle || users[0].id);
+      console.log('Chirp+ status:', users[0].is_chirp_plus ? 'Active' : 'Inactive');
       return users[0];
     }
     return null;
@@ -316,7 +322,12 @@ export async function getFirstUser() {
         COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
         bio,
         profile_image_url,
-        banner_image_url
+        banner_image_url,
+        is_chirp_plus,
+        chirp_plus_expires_at,
+        show_chirp_plus_badge,
+        stripe_customer_id,
+        stripe_subscription_id
       FROM users 
       ORDER BY id
       LIMIT 1
@@ -324,6 +335,7 @@ export async function getFirstUser() {
     
     if (users.length > 0) {
       console.log('Using demo user:', users[0].custom_handle || users[0].handle || users[0].id);
+      console.log('Chirp+ status:', users[0].is_chirp_plus ? 'Active' : 'Inactive');
       return users[0];
     }
     return null;
@@ -588,5 +600,82 @@ export async function createRepost(originalChirpId: string, userId: string) {
   } catch (error) {
     console.error('Error managing repost:', error);
     throw error;
+  }
+}
+
+// Check if user has active Chirp+ subscription
+export function isChirpPlusActive(user: any): boolean {
+  if (!user || !user.is_chirp_plus) {
+    return false;
+  }
+  
+  // If no expiration date, consider it active (lifetime or special cases)
+  if (!user.chirp_plus_expires_at) {
+    return true;
+  }
+  
+  // Check if subscription hasn't expired
+  const expirationDate = new Date(user.chirp_plus_expires_at);
+  const now = new Date();
+  
+  return expirationDate > now;
+}
+
+// Get user's current subscription status with validation
+export async function getUserSubscriptionStatus(userId: string) {
+  try {
+    console.log('Checking subscription status for user:', userId);
+    
+    const users = await sql`
+      SELECT 
+        id::text,
+        is_chirp_plus,
+        chirp_plus_expires_at,
+        show_chirp_plus_badge,
+        stripe_customer_id,
+        stripe_subscription_id
+      FROM users 
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+    
+    if (users.length === 0) {
+      return {
+        isActive: false,
+        isSubscribed: false,
+        expiresAt: null,
+        showBadge: false
+      };
+    }
+    
+    const user = users[0];
+    const isActive = isChirpPlusActive(user);
+    
+    // If subscription expired, update database status
+    if (user.is_chirp_plus && !isActive) {
+      console.log('Subscription expired, updating database status');
+      await sql`
+        UPDATE users 
+        SET is_chirp_plus = false 
+        WHERE id = ${userId}
+      `;
+    }
+    
+    return {
+      isActive: isActive,
+      isSubscribed: user.is_chirp_plus,
+      expiresAt: user.chirp_plus_expires_at,
+      showBadge: user.show_chirp_plus_badge && isActive,
+      stripeCustomerId: user.stripe_customer_id,
+      stripeSubscriptionId: user.stripe_subscription_id
+    };
+  } catch (error) {
+    console.error('Error checking subscription status:', error);
+    return {
+      isActive: false,
+      isSubscribed: false,
+      expiresAt: null,
+      showBadge: false
+    };
   }
 }

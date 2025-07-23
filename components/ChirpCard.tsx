@@ -158,7 +158,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           <View style={styles.nameRow}>
             <TouchableOpacity onPress={handleAvatarPress} style={styles.nameContainer}>
               <Text style={styles.username}>{displayName}</Text>
-              {(chirp.author as any)?.isChirpPlus && (
+              {(chirp.author as any)?.isChirpPlus && (chirp.author as any)?.showChirpPlusBadge && (
                 <Text style={styles.crownBadge}>👑</Text>
               )}
             </TouchableOpacity>

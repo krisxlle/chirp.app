@@ -26,6 +26,12 @@ interface User {
   bannerImageUrl?: string;
   bio?: string;
   joinedAt?: string;
+  // Chirp+ subscription fields
+  isChirpPlus?: boolean;
+  chirpPlusExpiresAt?: string;
+  showChirpPlusBadge?: boolean;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 interface ProfileStats {
@@ -190,7 +196,9 @@ export default function ProfilePage() {
       <View style={styles.userInfo}>
         <View style={styles.nameRow}>
           <Text style={styles.displayName}>{displayName}</Text>
-          <Text style={styles.crownIcon}>👑</Text>
+          {user.isChirpPlus && user.showChirpPlusBadge && (
+            <Text style={styles.crownIcon}>👑</Text>
+          )}
         </View>
         <Text style={styles.handle}>{user.customHandle || user.handle}</Text>
         <Text style={styles.bio}>
