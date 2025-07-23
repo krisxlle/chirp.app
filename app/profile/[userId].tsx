@@ -39,6 +39,8 @@ export default function UserProfileScreen() {
   });
 
   console.log('🔥 UserProfileScreen component loaded! UserId:', userId);
+  console.log('🔥 All search params:', useLocalSearchParams());
+  console.log('🔥 UserProfileScreen mounted at:', new Date().toISOString());
 
   const fetchUserProfile = async (id: string) => {
     try {
