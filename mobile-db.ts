@@ -713,3 +713,81 @@ export async function getUserSubscriptionStatus(userId: string) {
     };
   }
 }
+
+// Settings and profile management functions
+export async function updateUserProfile(userId: string, updates: {
+  first_name?: string;
+  last_name?: string;
+  bio?: string;
+  link_in_bio?: string;
+}): Promise<MobileUser> {
+  try {
+    const result = await sql`
+      UPDATE users 
+      SET 
+        first_name = COALESCE(${updates.first_name}, first_name),
+        last_name = COALESCE(${updates.last_name}, last_name),
+        bio = COALESCE(${updates.bio}, bio),
+        link_in_bio = COALESCE(${updates.link_in_bio}, link_in_bio),
+        updated_at = NOW()
+      WHERE id = ${userId}
+      RETURNING 
+        id::text,
+        email,
+        handle,
+        custom_handle,
+        first_name,
+        last_name,
+        bio,
+        profile_image_url,
+        banner_image_url,
+        link_in_bio,
+        is_chirp_plus,
+        show_chirp_plus_badge,
+        created_at,
+        updated_at
+    `;
+    
+    if (result.length === 0) {
+      throw new Error('User not found');
+    }
+    
+    return {
+      id: result[0].id,
+      email: result[0].email,
+      handle: result[0].handle,
+      customHandle: result[0].custom_handle,
+      firstName: result[0].first_name,
+      lastName: result[0].last_name,
+      bio: result[0].bio,
+      profileImageUrl: result[0].profile_image_url,
+      bannerImageUrl: result[0].banner_image_url,
+      linkInBio: result[0].link_in_bio,
+      isChirpPlus: result[0].is_chirp_plus,
+      showChirpPlusBadge: result[0].show_chirp_plus_badge,
+      createdAt: result[0].created_at,
+      updatedAt: result[0].updated_at
+    };
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+}
+
+export async function cancelSubscription(userId: string): Promise<void> {
+  try {
+    await sql`
+      UPDATE users 
+      SET 
+        is_chirp_plus = false,
+        show_chirp_plus_badge = false,
+        stripe_subscription_id = NULL,
+        updated_at = NOW()
+      WHERE id = ${userId}
+    `;
+    console.log('Subscription cancelled successfully');
+  } catch (error) {
+    console.error('Error cancelling subscription:', error);
+    throw error;
+  }
+}

@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import ChirpCard from './ChirpCard';
+import SettingsPage from './SettingsPage';
 import { getChirpsFromDB } from '../mobile-db';
 
 interface User {
@@ -132,9 +133,15 @@ export default function ProfilePage() {
     }
   };
 
+  const [showSettings, setShowSettings] = useState(false);
+
   const handleSettings = () => {
-    Alert.alert('Settings', 'Navigate to settings page');
+    setShowSettings(true);
   };
+
+  if (showSettings) {
+    return <SettingsPage onClose={() => setShowSettings(false)} />;
+  }
 
   if (!user) {
     return (
