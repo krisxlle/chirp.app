@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image, ActivityIndicator } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { getChirpsFromDB, getForYouChirps, getLatestChirps, getTrendingChirps } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
 import ComposeChirp from './ComposeChirp';
@@ -35,6 +36,11 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [feedType, setFeedType] = useState<'personalized' | 'chronological' | 'trending'>('personalized');
+  
+  // Header animation state
+  const headerTranslateY = useSharedValue(0);
+  const lastScrollY = useRef(0);
+  const isHeaderVisible = useRef(true);
 
   const fetchChirps = async () => {
     try {
@@ -90,6 +96,38 @@ export default function HomePage() {
     }
   };
 
+  const handleScroll = (event: any) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    const scrollDifference = currentScrollY - lastScrollY.current;
+    
+    // Only hide/show if we've scrolled enough and are past initial scroll
+    if (Math.abs(scrollDifference) > 5 && currentScrollY > 50) {
+      if (scrollDifference > 0 && isHeaderVisible.current) {
+        // Scrolling down - hide header
+        headerTranslateY.value = withTiming(-100);
+        isHeaderVisible.current = false;
+      } else if (scrollDifference < 0 && !isHeaderVisible.current) {
+        // Scrolling up - show header
+        headerTranslateY.value = withTiming(0);
+        isHeaderVisible.current = true;
+      }
+    }
+    
+    // Always show header when at top
+    if (currentScrollY <= 50 && !isHeaderVisible.current) {
+      headerTranslateY.value = withTiming(0);
+      isHeaderVisible.current = true;
+    }
+    
+    lastScrollY.current = currentScrollY;
+  };
+
+  const animatedHeaderStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: headerTranslateY.value }],
+    };
+  });
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -100,8 +138,8 @@ export default function HomePage() {
 
   return (
     <View style={styles.container}>
-      {/* Header - exactly like original */}
-      <View style={styles.header}>
+      {/* Animated Header */}
+      <Animated.View style={[styles.header, animatedHeaderStyle]}>
         <View style={styles.headerContent}>
           <View style={styles.logoContainer}>
             <Image 
@@ -142,11 +180,13 @@ export default function HomePage() {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </Animated.View>
 
       <ScrollView 
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -185,6 +225,10 @@ const styles = StyleSheet.create({
     color: '#657786',
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
@@ -250,6 +294,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     backgroundColor: '#fafafa',
+    paddingTop: 100, // Space for fixed header
   },
   scrollContent: {
     paddingBottom: 100, // Space for bottom nav
