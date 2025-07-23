@@ -9,6 +9,7 @@ import {
   ImageBackground,
   Alert 
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import ChirpCard from './ChirpCard';
 import { getChirpsFromDB } from '../mobile-db';
@@ -167,8 +168,15 @@ export default function ProfilePage() {
         
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.generateProfileButton} onPress={handleAIProfile}>
-            <Text style={styles.generateProfileButtonText}>Generate Profile</Text>
+          <TouchableOpacity onPress={handleAIProfile}>
+            <LinearGradient
+              colors={['#7c3aed', '#ec4899']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.generateProfileButton}
+            >
+              <Text style={styles.generateProfileButtonText}>Generate Profile</Text>
+            </LinearGradient>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.settingsButtonRounded} onPress={handleSettings}>
@@ -959,18 +967,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   generateProfileButton: {
-    backgroundColor: 'transparent',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e1e8ed',
-    // Purple-pink gradient background will be added via LinearGradient component
+    justifyContent: 'center',
   },
   generateProfileButtonText: {
-    color: '#7c3aed',
+    color: '#ffffff',
     fontWeight: '600',
     fontSize: 14,
   },
