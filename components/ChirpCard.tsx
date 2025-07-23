@@ -590,17 +590,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginLeft: 52, // Align with avatar
-    marginRight: 16, // Add right margin to prevent overflow
+    marginRight: 8, // Reduced right margin
     paddingTop: 4,
-    overflow: 'hidden', // Prevent overflow
+    overflow: 'visible', // Allow buttons to be visible
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 20,
+    marginRight: 12, // Reduced spacing between action buttons
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4, // Reduced horizontal padding
     borderRadius: 4,
+    minWidth: 0,
+    flexShrink: 1,
   },
   actionIcon: {
     fontSize: 16,
@@ -616,33 +618,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 20,
-    overflow: 'hidden',
+    marginRight: 8,
+    overflow: 'visible',
   },
   reactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 4,
+    minWidth: 0,
+    flexShrink: 1,
   },
   reactionIcon: {
-    fontSize: 16,
-    marginRight: 2,
+    fontSize: 14,
+    marginRight: 1,
   },
   reactionCount: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#657786',
     fontWeight: '500',
+    minWidth: 0,
   },
   addReactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 4,
+    marginLeft: 2,
+    minWidth: 0,
+    flexShrink: 1,
   },
   addReactionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#7c3aed',
     fontWeight: '600',
-    marginRight: 2,
+    marginRight: 1,
   },
   reactionPicker: {
     position: 'absolute',
