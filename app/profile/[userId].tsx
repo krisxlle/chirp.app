@@ -41,6 +41,9 @@ export default function UserProfileScreen() {
     reactions: 0
   });
 
+  console.log('UserProfileScreen mounted with userId:', userId);
+  console.log('Type of userId:', typeof userId);
+
   useEffect(() => {
     fetchUserProfile();
     fetchUserChirps();

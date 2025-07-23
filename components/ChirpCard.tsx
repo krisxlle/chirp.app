@@ -292,7 +292,19 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
   const handleAvatarPress = () => {
     if (chirp.author?.id) {
-      router.push(`/profile/${chirp.author.id}`);
+      console.log('Navigating to profile:', chirp.author.id);
+      console.log('Profile URL:', `/profile/${chirp.author.id}`);
+      
+      try {
+        router.push(`/profile/${chirp.author.id}`);
+        console.log('Navigation initiated successfully');
+      } catch (error) {
+        console.error('Navigation error:', error);
+        Alert.alert('Navigation Error', `Failed to open profile. Error: ${error}`);
+      }
+    } else {
+      console.log('No author ID found for chirp:', chirp);
+      Alert.alert('Error', 'Unable to open profile - no user ID found');
     }
   };
 
