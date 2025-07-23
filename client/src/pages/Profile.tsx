@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { PersonalityQuiz } from "@/components/PersonalityQuiz";
+
 import ChirpCard from "@/components/ChirpCard";
 import WeeklySummary from "@/components/WeeklySummary";
 import UserAvatar from "@/components/UserAvatar";
@@ -122,7 +122,7 @@ export default function Profile() {
   const queryClient = useQueryClient();
   
   const userIdOrHandle = params.userId || currentUser?.id;
-  const [showQuiz, setShowQuiz] = useState(false);
+
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [showAIPrompt, setShowAIPrompt] = useState(false);
@@ -138,7 +138,7 @@ export default function Profile() {
   });
 
   // Determine the actual userId 
-  const userId = isOwnProfile ? currentUser?.id : (resolvedUser?.id || userIdOrHandle);
+  const userId = isOwnProfile ? currentUser?.id : ((resolvedUser as any)?.id || userIdOrHandle);
 
   // Get profile data - use current user for own profile, resolved user for others
   const actualProfileUser = isOwnProfile ? currentUser : resolvedUser;
@@ -326,7 +326,7 @@ export default function Profile() {
         title: "Profile Generated!",
         description: "Your AI profile has been created!",
       });
-      setShowQuiz(false);
+
       setShowAIPrompt(false);
       setCustomPrompt("");
       // Invalidate and refetch both auth user and profile user data
@@ -398,16 +398,7 @@ export default function Profile() {
 
 
 
-  const handleQuizComplete = (result: any, customPrompts: string) => {
-    console.log("Quiz complete, calling mutation with:", result, customPrompts);
-    generatePersonalizedProfileMutation.mutate({
-      personality: result.personality,
-      traits: result.traits,
-      interests: result.interests,
-      style: result.style,
-      customPrompts: customPrompts || ""
-    });
-  };
+
 
   const handleCustomPromptGenerate = () => {
     console.log("Custom prompt generate clicked with:", customPrompt);
@@ -538,7 +529,7 @@ export default function Profile() {
                 <div className="flex items-end justify-between -mt-10 mb-4">
                   <div className="relative z-10">
                     <div className="rounded-full border-4 border-white dark:border-gray-900">
-                      <UserAvatar user={user} size="xl" />
+                      <UserAvatar user={user as any} size="xl" />
                     </div>
                   </div>
                   {!isOwnProfile && !(blockedByStatus as any)?.blockedBy ? (
@@ -797,17 +788,7 @@ export default function Profile() {
         )}
       </main>
       
-      {/* Personality Quiz Dialog */}
-      <Dialog open={showQuiz} onOpenChange={setShowQuiz}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogTitle className="sr-only">AI Profile Generation Quiz</DialogTitle>
-          <PersonalityQuiz
-            onComplete={handleQuizComplete}
-            onClose={() => setShowQuiz(false)}
-            isGenerating={generatePersonalizedProfileMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
+
 
       {/* Followers Modal */}
       <Dialog open={showFollowersModal} onOpenChange={setShowFollowersModal}>
@@ -884,7 +865,7 @@ export default function Profile() {
         console.log("AI Prompt dialog state changed:", open);
         setShowAIPrompt(open);
       }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] max-h-[80vh] overflow-y-auto">
           <DialogTitle className="text-lg font-semibold mb-4">Generate AI Profile</DialogTitle>
           <div className="space-y-4">
             <div>
@@ -911,16 +892,12 @@ export default function Profile() {
                 {generatePersonalizedProfileMutation.isPending ? "Generating..." : "Generate"}
               </Button>
               <Button
-                onClick={() => {
-                  console.log("Take Quiz Instead button clicked!");
-                  setShowAIPrompt(false);
-                  setShowQuiz(true);
-                }}
+                onClick={() => setShowAIPrompt(false)}
                 variant="outline"
                 disabled={generatePersonalizedProfileMutation.isPending}
                 className="flex-1"
               >
-                Take Quiz Instead
+                Cancel
               </Button>
             </div>
           </div>
