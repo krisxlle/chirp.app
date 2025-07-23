@@ -373,6 +373,14 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Purchase Verification**: Added proper receipt verification system for validating in-app purchase authenticity
 - **Subscription Management**: Enhanced existing subscription management with product ID tracking and validation
 
+### January 23, 2025 - Settings Page Sign Out and Support Integration
+- **Sign Out Button**: Added functional sign out button with confirmation dialog and proper logout API integration
+- **Contact Support Button**: Implemented contact support navigation to comprehensive support page
+- **Support Page Component**: Created mobile-friendly support page based on original web client design
+- **Support Form Integration**: Full contact form with email, subject, message fields and API submission
+- **Enhanced Button Styling**: Updated sign out button to neutral gray theme instead of red for better UX
+- **Navigation Integration**: Both buttons properly navigate within React Native and web environments
+
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection
 - **Database Connection Restored**: Fixed database queries to use correct column names (author_id, reply_to_id) and proper field mapping

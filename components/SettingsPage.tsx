@@ -94,6 +94,44 @@ const CrownIcon = ({ size = 20, color = "#7c3aed" }) => (
   </Svg>
 );
 
+const LogOutIcon = ({ size = 20, color = "#9ca3af" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M16 17l5-5-5-5" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M21 12H9" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const SupportIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 export default function SettingsPage({ onClose }: SettingsPageProps) {
   const { user } = useAuth();
   
@@ -373,8 +411,63 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
             Handle: @{user?.customHandle || user?.handle}
           </Text>
           
-          <TouchableOpacity style={styles.signOutButton}>
+          <TouchableOpacity 
+            style={styles.signOutButton}
+            onPress={() => {
+              Alert.alert(
+                "Sign Out",
+                "Are you sure you want to sign out?",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel"
+                  },
+                  {
+                    text: "Sign Out",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        // Call sign out API
+                        await fetch('/api/auth/logout', {
+                          method: 'POST',
+                          credentials: 'include'
+                        });
+                        
+                        // Navigate to welcome screen
+                        if (typeof window !== 'undefined' && window.location) {
+                          window.location.href = '/';
+                        } else {
+                          const { router } = require('expo-router');
+                          router.replace('/');
+                        }
+                      } catch (error) {
+                        console.error('Sign out error:', error);
+                        Alert.alert("Error", "Failed to sign out. Please try again.");
+                      }
+                    }
+                  }
+                ]
+              );
+            }}
+          >
+            <LogOutIcon size={20} color="#9ca3af" />
             <Text style={styles.signOutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.supportButton}
+            onPress={() => {
+              // Navigate to support page
+              if (typeof window !== 'undefined' && window.location) {
+                window.location.href = '/support';
+              } else {
+                const { router } = require('expo-router');
+                router.push('/support');
+              }
+            }}
+          >
+            <SupportIcon size={20} color="#7c3aed" />
+            <Text style={styles.supportButtonText}>Contact Support</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -618,15 +711,39 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   signOutButton: {
-    backgroundColor: '#6b7280',
+    backgroundColor: '#f3f4f6',
     borderRadius: 8,
     paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
   },
   signOutButtonText: {
-    color: '#ffffff',
+    color: '#6b7280',
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
+  },
+  supportButton: {
+    backgroundColor: '#ede9fe',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#c4b5fd',
+  },
+  supportButtonText: {
+    color: '#7c3aed',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
