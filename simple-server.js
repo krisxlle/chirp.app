@@ -16,23 +16,22 @@ async function startServer() {
   try {
     console.log('Setting up static file serving...');
     
-    // Serve static files from client directory
-    app.use(express.static(path.resolve(__dirname, 'client')));
+    // Serve static files from dist directory (built Expo web app)
+    app.use(express.static(path.resolve(__dirname, 'dist')));
     
     // Simple API endpoint to verify server is working
     app.get('/api/health', (req, res) => {
       res.json({ status: 'Original web client is running', timestamp: new Date().toISOString() });
     });
     
-    // Serve index.html for all non-API routes (SPA behavior)
-    // Use a more robust pattern that doesn't cause path-to-regexp issues
-    app.use('*', (req, res, next) => {
-      // Skip if it's an API route
-      if (req.path.startsWith('/api')) {
+    // Middleware to serve index.html for unmatched routes (SPA behavior)
+    app.use((req, res, next) => {
+      // Skip if it's an API route or if a static file was found
+      if (req.path.startsWith('/api') || res.headersSent) {
         return next();
       }
       
-      const indexPath = path.resolve(__dirname, 'client/index.html');
+      const indexPath = path.resolve(__dirname, 'dist/index.html');
       
       // Check if index.html exists before serving
       if (!fs.existsSync(indexPath)) {
