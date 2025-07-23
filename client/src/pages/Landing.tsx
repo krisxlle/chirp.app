@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, Heart, Bot } from "lucide-react";
 import BrandIcon from "@/components/BrandIcon";
+// Using public path for icon since it's available in the public directory
 
 export default function Landing() {
   return (
@@ -10,7 +11,7 @@ export default function Landing() {
         <CardContent className="pt-8 pb-8 text-center">
           <div className="flex justify-center mb-6">
             <img 
-              src="/logo.jpg" 
+              src="/icons/icon.png" 
               alt="Chirp Logo" 
               className="w-16 h-16 object-cover object-center rounded-2xl shadow-lg"
             />
