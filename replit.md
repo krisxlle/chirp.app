@@ -334,6 +334,7 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Database Thread Functions**: Implemented getChirpReplies and createReply functions with proper database integration
 - **Thread UI**: Added expandable thread display with visual connectors and recursive reply rendering
 - **Reply Creation**: Enhanced reply functionality to save to database and refresh thread view automatically
+- **Accurate Timestamps**: Fixed timestamp formatting to show precise time differences (now, 5m, 2h, 1d, Jan 15, etc.)
 
 ### January 22, 2025 - Successfully Enhanced Expo App with Original Client Functionality
 - **User Request**: User requested Expo app to look and function exactly like original client/src/pages with authentic database connection

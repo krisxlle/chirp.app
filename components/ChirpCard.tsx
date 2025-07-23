@@ -175,11 +175,26 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays <= 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffMinutes < 1) return 'now';
+    if (diffMinutes < 60) return `${diffMinutes}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays === 1) return '1d';
+    if (diffDays < 7) return `${diffDays}d`;
+    if (diffDays < 365) {
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      const day = date.getDate();
+      return `${month} ${day}`;
+    }
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
   };
 
   const displayName = chirp.author?.customHandle || 
