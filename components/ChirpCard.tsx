@@ -45,7 +45,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   const { user } = useAuth();
   const [reactions, setReactions] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
-  const [reposts, setReposts] = useState(0);
+  const [reposts, setReposts] = useState(chirp.repostCount || 0);
+  const [userHasReposted, setUserHasReposted] = useState(false);
   // Removed modal state - using page navigation instead
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
@@ -75,10 +76,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
   
-  // Load user's current reaction on component mount
+  // Load user's current reaction and repost status on component mount
   useEffect(() => {
     if (user?.id) {
       loadUserReaction();
+      loadUserRepostStatus();
     }
   }, [chirp.id, user?.id]);
   
@@ -97,6 +99,16 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
       }
     } catch (error) {
       console.error('Error loading user reaction:', error);
+    }
+  };
+
+  const loadUserRepostStatus = async () => {
+    try {
+      const { getUserRepostStatus } = await import('../mobile-db');
+      const hasReposted = await getUserRepostStatus(chirp.id, user?.id || '');
+      setUserHasReposted(hasReposted);
+    } catch (error) {
+      console.error('Error loading user repost status:', error);
     }
   };
 
@@ -142,11 +154,41 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
     }
   };
 
-  const handleRepost = () => {
-    Alert.alert('Repost', 'Share this chirp?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Repost', onPress: () => setReposts(prev => prev + 1) }
-    ]);
+  const handleRepost = async () => {
+    try {
+      if (!user?.id) {
+        Alert.alert('Sign in required', 'Please sign in to repost chirps.');
+        return;
+      }
+
+      const { createRepost } = await import('../mobile-db');
+      
+      console.log('Creating repost of chirp:', chirp.id, 'by user:', user.id);
+      
+      const repostAdded = await createRepost(chirp.id, user.id);
+      
+      if (repostAdded) {
+        // User added a new repost
+        setReposts(prev => prev + 1);
+        setUserHasReposted(true);
+        
+        // Trigger push notification for repost
+        const { triggerRepostNotification } = await import('../mobile-db');
+        await triggerRepostNotification(chirp.author.id, user.id, parseInt(chirp.id));
+        
+        console.log('Repost added successfully');
+        Alert.alert('Reposted!', 'This chirp has been shared to your profile.');
+      } else {
+        // User removed their repost
+        setReposts(prev => Math.max(0, prev - 1));
+        setUserHasReposted(false);
+        console.log('Repost removed');
+        Alert.alert('Unreposted', 'This chirp has been removed from your profile.');
+      }
+    } catch (error) {
+      console.error('Error handling repost:', error);
+      Alert.alert('Error', 'Failed to repost. Please try again.');
+    }
   };
 
   const handleReactionPress = async (emoji: string) => {
@@ -618,8 +660,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={handleRepost}>
-          <RepostIcon size={18} color="#657786" />
-          <Text style={styles.actionText}>{reposts}</Text>
+          <RepostIcon size={18} color={userHasReposted ? "#7c3aed" : "#657786"} />
+          <Text style={[styles.actionText, userHasReposted && { color: "#7c3aed" }]}>{reposts}</Text>
         </TouchableOpacity>
 
         <View style={styles.reactionsContainer}>

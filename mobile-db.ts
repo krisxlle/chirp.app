@@ -1056,6 +1056,22 @@ export async function createRepost(originalChirpId: string, userId: string) {
   }
 }
 
+// Check if user has reposted a chirp
+export async function getUserRepostStatus(chirpId: string, userId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM reposts 
+      WHERE chirp_id = ${chirpId} AND user_id = ${userId}
+      LIMIT 1
+    `;
+    
+    return result.length > 0;
+  } catch (error) {
+    console.error('Error checking repost status:', error);
+    return false;
+  }
+}
+
 // Check if user has active Chirp+ subscription
 export function isChirpPlusActive(user: any): boolean {
   if (!user || !user.is_chirp_plus) {
@@ -1507,5 +1523,31 @@ export async function triggerReplyNotification(originalAuthorId: string, replier
     console.log('Reply notification triggered successfully');
   } catch (error) {
     console.error('Error triggering reply notification:', error);
+  }
+}
+
+// Trigger notification for reposts (will send push notification)
+export async function triggerRepostNotification(originalAuthorId: string, reposterId: string, chirpId: number) {
+  try {
+    if (originalAuthorId === reposterId) return; // Don't notify self
+
+    const response = await fetch(`/api/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: originalAuthorId,
+        type: 'repost',
+        fromUserId: reposterId,
+        chirpId: chirpId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to trigger repost notification');
+    }
+
+    console.log('Repost notification triggered successfully');
+  } catch (error) {
+    console.error('Error triggering repost notification:', error);
   }
 }

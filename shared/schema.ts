@@ -179,6 +179,19 @@ export const userBlocks = pgTable("user_blocks", {
 export type InsertUserBlock = typeof userBlocks.$inferInsert;
 export type UserBlock = typeof userBlocks.$inferSelect;
 
+// Reposts table for chirp reposts
+export const reposts = pgTable("reposts", {
+  id: serial("id").primaryKey(),
+  chirpId: integer("chirp_id").notNull().references(() => chirps.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueRepost: unique().on(table.chirpId, table.userId),
+}));
+
+export type InsertRepost = typeof reposts.$inferInsert;
+export type Repost = typeof reposts.$inferSelect;
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   chirps: many(chirps),
