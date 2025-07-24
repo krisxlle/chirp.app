@@ -73,6 +73,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   // Quick access mood buttons - most popular reactions
   const quickMoodReactions = ['🫶🏼', '😭', '💀'];
 
+  // Calculate display name for the chirp author
+  const displayName = chirp.author.firstName && chirp.author.lastName 
+    ? `${chirp.author.firstName} ${chirp.author.lastName}`
+    : (chirp.author.customHandle || chirp.author.handle || 'User');
+
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
   
@@ -473,10 +478,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
     if (chirp.author?.id) {
       console.log('✅ Navigating to user profile page for user:', chirp.author.id);
       
-      const displayName = chirp.author.firstName && chirp.author.lastName 
-        ? `${chirp.author.firstName} ${chirp.author.lastName}`
-        : (chirp.author.customHandle || chirp.author.handle || 'User');
-      
       try {
         const profileRoute = `/profile/${chirp.author.id}`;
         console.log('🎯 Using dynamic profile route:', profileRoute);
@@ -536,13 +537,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
     const b = num / 1000000000;
     return b % 1 === 0 ? `${b}B` : `${b.toFixed(1)}B`;
   };
-
-  // Priority: customHandle > handle (numerical ID) > first/last name as fallback
-  const displayName = chirp.author?.customHandle || 
-                     chirp.author?.handle ||
-                     (chirp.author?.firstName && chirp.author?.lastName 
-                       ? `${chirp.author.firstName} ${chirp.author.lastName}`
-                       : 'Anonymous User');
 
   const [showReplies, setShowReplies] = useState(false);
   const [threadReplies, setThreadReplies] = useState<any[]>([]);
