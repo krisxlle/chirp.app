@@ -237,12 +237,42 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(profileUrl);
-        Alert.alert('Link Copied!', `Profile link for ${displayName} has been copied to your clipboard.`);
+        console.log('✅ Profile link copied to clipboard:', profileUrl);
+        // Use a fallback notification instead of Alert
+        if (typeof window !== 'undefined') {
+          const notification = document.createElement('div');
+          notification.textContent = `Profile link for ${displayName} copied!`;
+          notification.style.cssText = `
+            position: fixed; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: #7c3aed; 
+            color: white; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            z-index: 1000;
+            font-weight: 600;
+          `;
+          document.body.appendChild(notification);
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 2000);
+        }
       } else {
-        Alert.alert('Profile Link', `Copy this link: ${profileUrl}`);
+        console.log('📋 Fallback: Profile link:', profileUrl);
+        // Fallback for environments without clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = profileUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        console.log('✅ Profile link copied using fallback method');
       }
     } catch (error) {
-      Alert.alert('Profile Link', `Copy this link: ${profileUrl}`);
+      console.error('❌ Error copying profile link:', error);
+      console.log('📋 Manual copy needed:', profileUrl);
     }
   };
 
