@@ -407,12 +407,6 @@ export default function ProfilePage() {
           </View>
         )}
       </View>
-
-      {/* Feed Posted Notice */}
-      <View style={styles.feedNotice}>
-        <Text style={styles.checkmarkIcon}>✓</Text>
-        <Text style={styles.feedNoticeText}>Weekly summary has been posted to your feed</Text>
-      </View>
       
       {/* AI Prompt Overlay */}
       {showAIPrompt && (
