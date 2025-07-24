@@ -8,7 +8,6 @@ export interface MobileChirp {
   author: {
     id: string;
     firstName: string;
-    lastName: string;
     email: string;
     customHandle: string;
     handle: string;
@@ -32,7 +31,6 @@ export interface MobileChirp {
     author: {
       id: string;
       firstName: string;
-      lastName: string;
       customHandle: string;
       handle: string;
       profileImageUrl?: string | null;

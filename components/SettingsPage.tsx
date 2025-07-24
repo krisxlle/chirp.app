@@ -138,7 +138,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
   
   // State for profile editing
   const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
+  // lastName functionality removed per user request
   const [bio, setBio] = useState(user?.bio || '');
   const [linkInBio, setLinkInBio] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -152,7 +152,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     try {
       const updatedUser = await updateUserProfile(user.id, {
         first_name: firstName,
-        last_name: lastName,
+        // last_name field removed per user request
         bio: bio,
         link_in_bio: linkInBio
       });
@@ -230,10 +230,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         </View>
         <View style={styles.cardContent}>
           <Text style={styles.currentInfo}>
-            Current name: {user?.firstName && user?.lastName 
-              ? `${user.firstName} ${user.lastName}`
-              : user?.customHandle || user?.handle || 'Not set'
-            }
+            Current name: {user?.firstName || user?.customHandle || user?.handle || 'Not set'}
           </Text>
           
           <View style={styles.inputSection}>
@@ -247,16 +244,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
             />
           </View>
           
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Last Name</Text>
-            <TextInput
-              style={styles.textInput}
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Enter your last name"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
+          {/* Last Name input removed per user request */}
           
           <TouchableOpacity
             onPress={handleUpdateProfile}

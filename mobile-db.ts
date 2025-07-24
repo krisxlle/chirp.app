@@ -226,7 +226,7 @@ export async function createChirp(content: string, authorId?: string, replyToId?
       SELECT 
         id::text,
         COALESCE(custom_handle, handle, CAST(id AS text), 'user') as username,
-        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        COALESCE(first_name, custom_handle, handle) as display_name,
         profile_image_url
       FROM users 
       WHERE id = ${authorId}
@@ -249,7 +249,7 @@ export async function createChirp(content: string, authorId?: string, replyToId?
       author: {
         id: author.id,
         firstName: author.display_name?.split(' ')[0] || author.username || 'User',
-        lastName: author.display_name?.split(' ').slice(1).join(' ') || '',
+        lastName: "",
         email: `${author.username}@chirp.com`,
         handle: author.username,
         customHandle: author.username,
@@ -362,8 +362,8 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
       // For reposts, show the reposter's info in the header
       author: {
         id: String(chirp.author_id),
-        firstName: String(chirp.display_name || 'User').split(' ')[0],
-        lastName: String(chirp.display_name || 'User').split(' ')[1] || '',
+        firstName: String(chirp.display_name || 'User').split(' ')[0] || 'User',
+        lastName: '',
         email: 'user@chirp.com',
         customHandle: String(chirp.username || 'user'),
         handle: String(chirp.username || 'user'),
@@ -384,8 +384,8 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
         createdAt: chirp.original_created_at ? new Date(chirp.original_created_at).toISOString() : new Date().toISOString(),
         author: {
           id: String(chirp.original_author_id),
-          firstName: String(chirp.original_display_name || 'User').split(' ')[0],
-          lastName: String(chirp.original_display_name || 'User').split(' ')[1] || '',
+          firstName: String(chirp.original_display_name || 'User').split(' ')[0] || 'User',
+          lastName: '',
           customHandle: String(chirp.original_username || 'user'),
           handle: String(chirp.original_username || 'user'),
           profileImageUrl: chirp.original_profile_image_url || null,
@@ -408,7 +408,7 @@ export async function getUserFromDB() {
       SELECT 
         id,
         custom_handle,
-        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        COALESCE(first_name, custom_handle, handle) as display_name,
         bio,
         profile_image_url as avatar_url,
         banner_image_url as banner_url,
@@ -440,7 +440,7 @@ export async function getUserByEmail(email: string) {
         last_name,
         custom_handle,
         handle,
-        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        COALESCE(first_name, custom_handle, handle) as display_name,
         bio,
         profile_image_url,
         banner_image_url,
@@ -479,7 +479,7 @@ export async function getFirstUser() {
         last_name,
         custom_handle,
         handle,
-        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        COALESCE(first_name, custom_handle, handle) as display_name,
         bio,
         profile_image_url,
         banner_image_url,
@@ -509,7 +509,7 @@ export async function getFirstUser() {
         last_name,
         custom_handle,
         handle,
-        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        COALESCE(first_name, custom_handle, handle) as display_name,
         bio,
         profile_image_url,
         banner_image_url,
@@ -789,7 +789,7 @@ export async function searchUsers(query: string) {
       SELECT 
         id,
         COALESCE(custom_handle, handle) as username,
-        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        COALESCE(first_name, custom_handle, handle) as display_name,
         bio,
         profile_image_url
       FROM users
@@ -997,7 +997,7 @@ export async function createReply(content: string, replyToId: string, authorId: 
       SELECT 
         id::text,
         COALESCE(custom_handle, handle, CAST(id AS text), 'user') as username,
-        COALESCE(first_name || ' ' || last_name, custom_handle, handle) as display_name,
+        COALESCE(first_name, custom_handle, handle) as display_name,
         profile_image_url
       FROM users 
       WHERE id = ${authorId}
@@ -1020,7 +1020,7 @@ export async function createReply(content: string, replyToId: string, authorId: 
       author: {
         id: author.id,
         firstName: author.display_name?.split(' ')[0] || author.username || 'User',
-        lastName: author.display_name?.split(' ').slice(1).join(' ') || '',
+        lastName: "",
         email: `${author.username}@chirp.com`,
         handle: author.username,
         customHandle: author.username,
@@ -1124,6 +1124,22 @@ async function getNestedReplies(replyId: string): Promise<MobileChirp[]> {
 }
 
 // Create a repost of a chirp - creates actual chirp entries that appear in feeds
+// Check if user has reposted a specific chirp
+export async function checkUserReposted(userId: string, chirpId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM chirps 
+      WHERE author_id = ${userId} AND repost_of_id = ${chirpId}
+      LIMIT 1
+    `;
+    
+    return result.length > 0;
+  } catch (error) {
+    console.error('Error checking user repost status:', error);
+    return false;
+  }
+}
+
 export async function createRepost(originalChirpId: string, userId: string) {
   try {
     console.log('Creating repost of chirp:', originalChirpId, 'by user:', userId);

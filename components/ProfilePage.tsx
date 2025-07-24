@@ -20,7 +20,6 @@ import { getChirpsFromDB } from '../mobile-db';
 interface User {
   id: string;
   firstName?: string;
-  lastName?: string;
   email: string;
   customHandle?: string;
   handle?: string;
@@ -90,9 +89,7 @@ export default function ProfilePage() {
     }
   }, [authUser]);
 
-  const displayName = user?.firstName && user?.lastName 
-    ? `${user.firstName} ${user.lastName}` 
-    : user?.customHandle || user?.handle || 'User';
+  const displayName = user?.firstName || user?.customHandle || user?.handle || 'User';
 
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -402,7 +399,6 @@ export default function ProfilePage() {
                 <ChirpCard 
                   key={reply.id} 
                   chirp={reply} 
-                  currentUserId={user?.id || ''} 
                   onDeleteSuccess={fetchUserChirps}
                 />
               ))
