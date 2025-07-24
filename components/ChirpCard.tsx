@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -49,6 +49,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   // Removed modal state - using page navigation instead
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [userReaction, setUserReaction] = useState<string | null>(null);
   
   // States for user interaction options
   const [isFollowing, setIsFollowing] = useState(false);
@@ -56,13 +57,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loadingUserActions, setLoadingUserActions] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
-  
-  // Track individual reaction counts for quick access buttons
-  const [reactionCounts, setReactionCounts] = useState<{[key: string]: number}>({
-    '🫶🏼': 0,
-    '😭': 0,
-    '💀': 0
-  });
   
   // Comprehensive mood reactions for Chirp
   const reactionEmojis = [
@@ -79,6 +73,23 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
 
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
+  
+  // Load user's current reaction on component mount
+  useEffect(() => {
+    if (user?.id) {
+      loadUserReaction();
+    }
+  }, [chirp.id, user?.id]);
+  
+  const loadUserReaction = async () => {
+    try {
+      const { getUserReactionForChirp } = await import('../mobile-db');
+      const reaction = await getUserReactionForChirp(chirp.id, user?.id || '');
+      setUserReaction(reaction);
+    } catch (error) {
+      console.error('Error loading user reaction:', error);
+    }
+  };
 
   const handleReply = () => {
     setShowReplyInput(true);
@@ -140,17 +151,14 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
       
       console.log('Adding reaction:', emoji, 'to chirp:', chirp.id, 'by user:', user.id);
       
-      const reactionAdded = await addReaction(chirp.id, emoji, user.id);
+      const result = await addReaction(chirp.id, emoji, user.id);
       
-      if (reactionAdded) {
-        setReactions(prev => prev + 1);
-        // Update specific emoji count
-        if (quickMoodReactions.includes(emoji)) {
-          setReactionCounts(prev => ({
-            ...prev,
-            [emoji]: prev[emoji] + 1
-          }));
+      if (result.added) {
+        // User added a new reaction
+        if (!userReaction) {
+          setReactions(prev => prev + 1);
         }
+        setUserReaction(result.emoji);
         
         // Trigger push notification for reaction
         const { triggerReactionNotification } = await import('../mobile-db');
@@ -158,14 +166,9 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         
         console.log('Reaction added successfully');
       } else {
+        // User removed their reaction
         setReactions(prev => Math.max(0, prev - 1));
-        // Update specific emoji count
-        if (quickMoodReactions.includes(emoji)) {
-          setReactionCounts(prev => ({
-            ...prev,
-            [emoji]: Math.max(0, prev[emoji] - 1)
-          }));
-        }
+        setUserReaction(null);
         console.log('Reaction removed');
       }
       
@@ -606,17 +609,46 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         </TouchableOpacity>
 
         <View style={styles.reactionsContainer}>
-          <TouchableOpacity style={styles.reactionButton} onPress={() => handleReactionPress('🫶🏼')}>
-            <Text style={styles.reactionIcon}>🫶🏼</Text>
-            <Text style={styles.reactionCount}>{reactionCounts['🫶🏼']}</Text>
+          {/* Show user's selected reaction with purple background */}
+          {userReaction ? (
+            <TouchableOpacity 
+              style={[styles.reactionButton, styles.selectedReactionButton]} 
+              onPress={() => handleReactionPress(userReaction)}
+            >
+              <Text style={styles.reactionIcon}>{userReaction}</Text>
+              <Text style={styles.reactionCount}>{reactions}</Text>
+            </TouchableOpacity>
+          ) : (
+            /* Show quick access reactions when no reaction is selected */
+            quickMoodReactions.map((emoji) => (
+              <TouchableOpacity 
+                key={emoji}
+                style={styles.reactionButton} 
+                onPress={() => handleReactionPress(emoji)}
+              >
+                <Text style={styles.reactionIcon}>{emoji}</Text>
+              </TouchableOpacity>
+            ))
+          )}
+          
+          {/* Always show plus button to change/add reaction */}
+          <TouchableOpacity 
+            style={styles.addReactionButton} 
+            onPress={() => setShowReactionPicker(!showReactionPicker)}
+          >
+            <Text style={styles.addReactionText}>+</Text>
           </TouchableOpacity>
           
+          {/* Reaction picker for all emojis */}
           {showReactionPicker && (
             <View style={styles.reactionPicker}>
               {reactionEmojis.map((emoji, index) => (
                 <TouchableOpacity 
                   key={index}
-                  style={styles.reactionOption}
+                  style={[
+                    styles.reactionOption,
+                    userReaction === emoji && styles.selectedReactionOption
+                  ]}
                   onPress={() => handleReactionPress(emoji)}
                 >
                   <Text style={styles.reactionEmoji}>{emoji}</Text>
@@ -624,21 +656,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
               ))}
             </View>
           )}
-          
-          <TouchableOpacity style={styles.reactionButton} onPress={() => handleReactionPress('😭')}>
-            <Text style={styles.reactionIcon}>😭</Text>
-            <Text style={styles.reactionCount}>{reactionCounts['😭']}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.reactionButton} onPress={() => handleReactionPress('💀')}>
-            <Text style={styles.reactionIcon}>💀</Text>
-            <Text style={styles.reactionCount}>{reactionCounts['💀']}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.addReactionButton} onPress={() => setShowReactionPicker(!showReactionPicker)}>
-            <Text style={styles.addReactionText}>+</Text>
-            <Text style={styles.reactionCount}>1</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.shareButtonContainer}>
@@ -991,6 +1008,16 @@ const styles = StyleSheet.create({
   },
   reactionOption: {
     marginHorizontal: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  selectedReactionOption: {
+    backgroundColor: '#f3e8ff',
+  },
+  selectedReactionButton: {
+    backgroundColor: '#f3e8ff',
+    borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },

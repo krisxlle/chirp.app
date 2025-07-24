@@ -755,34 +755,52 @@ export async function searchUsers(query: string) {
   }
 }
 
-// Add reaction to a chirp
+// Get user's current reaction for a chirp (single reaction system)
+export async function getUserReactionForChirp(chirpId: string, userId: string): Promise<string | null> {
+  try {
+    const result = await sql`
+      SELECT emoji FROM reactions 
+      WHERE chirp_id = ${chirpId} AND user_id = ${userId}
+      LIMIT 1
+    `;
+    
+    return result.length > 0 ? result[0].emoji : null;
+  } catch (error) {
+    console.error('Error getting user reaction:', error);
+    return null;
+  }
+}
+
 export async function addReaction(chirpId: string, emoji: string, userId: string) {
   try {
     console.log('Adding reaction:', emoji, 'to chirp:', chirpId, 'by user:', userId);
     
-    // Check if reaction already exists
-    const existingReaction = await sql`
-      SELECT id FROM reactions 
-      WHERE chirp_id = ${chirpId} AND user_id = ${userId} AND emoji = ${emoji}
-      LIMIT 1
-    `;
+    // Get current user reaction to check if it's the same emoji (toggle behavior)
+    const currentReaction = await getUserReactionForChirp(chirpId, userId);
     
-    if (existingReaction.length > 0) {
-      // Remove existing reaction (toggle off)
+    if (currentReaction === emoji) {
+      // Same emoji - remove it (toggle off)
       await sql`
         DELETE FROM reactions 
-        WHERE chirp_id = ${chirpId} AND user_id = ${userId} AND emoji = ${emoji}
+        WHERE chirp_id = ${chirpId} AND user_id = ${userId}
       `;
-      console.log('Removed reaction');
-      return false; // Reaction removed
+      console.log('Removed reaction (toggled off)');
+      return { added: false, emoji: null };
     } else {
+      // Different emoji or no previous reaction - replace/add
+      // First remove any existing reaction
+      await sql`
+        DELETE FROM reactions 
+        WHERE chirp_id = ${chirpId} AND user_id = ${userId}
+      `;
+      
       // Add new reaction
       await sql`
         INSERT INTO reactions (chirp_id, user_id, emoji, created_at)
         VALUES (${chirpId}, ${userId}, ${emoji}, NOW())
       `;
       console.log('Added reaction');
-      return true; // Reaction added
+      return { added: true, emoji };
     }
   } catch (error) {
     console.error('Error managing reaction:', error);
