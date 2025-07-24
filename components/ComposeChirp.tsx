@@ -65,15 +65,19 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 
   const handleSubmit = async () => {
     if (isThreadMode) {
-      // In thread mode, first add current content to thread if it exists
-      if (content.trim()) {
-        addToThread();
+      // In thread mode, we're posting the entire thread
+      // First check if we have any content at all
+      const hasCurrentContent = content.trim();
+      const hasThreadChirps = threadChirps.length > 0;
+      
+      if (!hasCurrentContent && !hasThreadChirps) {
+        Alert.alert("Empty thread", "Please write something before posting your thread.");
         return;
       }
       
-      // If no current content but we have thread chirps, post the entire thread
-      if (threadChirps.length === 0) {
-        Alert.alert("Empty thread", "Please add some chirps to your thread before posting.");
+      // Validate current content if it exists
+      if (hasCurrentContent && content.length > maxLength) {
+        Alert.alert("Too long", `Current chirp must be ${maxLength} characters or less.`);
         return;
       }
     } else {
@@ -101,9 +105,15 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       }
       
       if (isThreadMode) {
+        // Create the complete thread content array
+        const allThreadContent = [...threadChirps];
+        if (content.trim()) {
+          allThreadContent.push(content.trim());
+        }
+        
         // Post all chirps in the thread
         let previousChirpId: string | null = null;
-        for (const chirpContent of threadChirps) {
+        for (const chirpContent of allThreadContent) {
           const newChirp = await createChirp(chirpContent, user.id, previousChirpId);
           if (newChirp) {
             previousChirpId = newChirp.id;
@@ -152,7 +162,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={handleSubmit}
-            disabled={threadChirps.length === 0 || isPosting}
+            disabled={(threadChirps.length === 0 && !content.trim()) || isPosting}
           >
             <LinearGradient
               colors={['#7c3aed', '#ec4899']}
@@ -160,7 +170,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               end={{ x: 1, y: 0 }}
               style={[
                 styles.postButton,
-                (threadChirps.length === 0 || isPosting) && styles.postButtonDisabled
+                ((threadChirps.length === 0 && !content.trim()) || isPosting) && styles.postButtonDisabled
               ]}
             >
               <Text style={styles.postButtonText}>
