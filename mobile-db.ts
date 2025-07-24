@@ -393,9 +393,9 @@ export async function getUserByEmail(email: string) {
 // Get @chirp preview user for demo mode
 export async function getFirstUser() {
   try {
-    console.log('Getting @chirp preview user for demo mode...');
-    // First try to get the @chirp preview user
-    const chirpUser = await sql`
+    console.log('Getting user for demo mode...');
+    // Use user ID "1" to match the existing chirps in the database
+    const demoUser = await sql`
       SELECT 
         id::text,
         email,
@@ -413,15 +413,14 @@ export async function getFirstUser() {
         stripe_customer_id,
         stripe_subscription_id
       FROM users 
-      WHERE LOWER(custom_handle) = 'chirp' OR LOWER(handle) = 'chirp'
-      ORDER BY CASE WHEN LOWER(custom_handle) = 'chirp' THEN 1 ELSE 2 END
+      WHERE id = '1'
       LIMIT 1
     `;
     
-    if (chirpUser.length > 0) {
-      console.log('Using @chirp preview user:', chirpUser[0].custom_handle || chirpUser[0].handle || chirpUser[0].id);
-      console.log('Chirp+ status:', chirpUser[0].is_chirp_plus ? 'Active' : 'Inactive');
-      return chirpUser[0];
+    if (demoUser.length > 0) {
+      console.log('Using demo user:', demoUser[0].custom_handle || demoUser[0].handle || demoUser[0].id);
+      console.log('Chirp+ status:', demoUser[0].is_chirp_plus ? 'Active' : 'Inactive');
+      return demoUser[0];
     }
     
     // Fallback to first available user if @chirp doesn't exist

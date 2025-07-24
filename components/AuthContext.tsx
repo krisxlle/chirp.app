@@ -189,11 +189,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const validateUser = async () => {
       if (user && !isLoading) {
         console.log('🔍 Validating current user:', user.id);
-        // Check if user with ID "1" should be switched to @chirp
-        // Only clear if truly invalid user - @Chirp account (45185401) is valid
-        if (user.id === '1') {
-          console.log('🔄 Detected invalid user ID - switching to @Chirp...');
-          await forceLoginToChirp();
+        // Force refresh if user has wrong ID (cached from previous version)
+        if (user.id === '45185401') {
+          console.log('🔄 Detected cached user with old ID - clearing and refreshing...');
+          await signOut();
+          setTimeout(() => {
+            console.log('🚀 Auto-signing in with corrected user ID...');
+            signIn('preview@chirp.app');
+          }, 100);
+        } else {
+          console.log('✅ User validation complete - ID:', user.id);
         }
       }
     };
