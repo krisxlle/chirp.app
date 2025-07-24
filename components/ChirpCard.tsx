@@ -237,27 +237,6 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(profileUrl);
-        // Use a fallback notification instead of Alert
-        if (typeof window !== 'undefined') {
-          const notification = document.createElement('div');
-          notification.textContent = `Profile link for ${displayName} copied!`;
-          notification.style.cssText = `
-            position: fixed; 
-            top: 20px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            background: #7c3aed; 
-            color: white; 
-            padding: 12px 24px; 
-            border-radius: 8px; 
-            z-index: 1000;
-            font-weight: 600;
-          `;
-          document.body.appendChild(notification);
-          setTimeout(() => {
-            document.body.removeChild(notification);
-          }, 2000);
-        }
       } else {
         // Fallback for environments without clipboard API
         const textArea = document.createElement('textarea');
