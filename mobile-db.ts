@@ -5,16 +5,10 @@ import type { MobileChirp, MobileUser } from './mobile-types';
 // Get database URL for React Native/Expo environment
 // In Expo, we need to use a different approach for environment variables
 const getDatabaseUrl = () => {
-  // Try multiple ways to access the DATABASE_URL
+  // For Node.js environment (server-side) 
   if (typeof process !== 'undefined' && process.env && process.env.DATABASE_URL) {
     console.log('✅ Using process.env.DATABASE_URL');
     return process.env.DATABASE_URL;
-  }
-  
-  // For Expo web, try VITE environment variables
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATABASE_URL) {
-    console.log('✅ Using VITE_DATABASE_URL from import.meta.env');
-    return import.meta.env.VITE_DATABASE_URL;
   }
   
   // For Expo web, try global environment
@@ -23,7 +17,7 @@ const getDatabaseUrl = () => {
     return (window as any).__ENV__.DATABASE_URL;
   }
   
-  // Final fallback to the actual database URL
+  // Final fallback to the actual database URL for Expo environment
   const dbUrl = 'postgresql://neondb_owner:npg_vLmUtE3gZ8Ck@ep-flat-river-afy8pigw.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require';
   console.log('⚠️ Using hardcoded fallback database URL for Expo environment');
   return dbUrl;
