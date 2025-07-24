@@ -19,9 +19,11 @@ interface User {
 }
 
 export default function UserProfileScreen() {
-  console.log('🔥 UserProfileScreen component loaded!');
+  console.log('🔥🔥🔥 UserProfileScreen component MOUNTED!');
   
   const { userId } = useLocalSearchParams<{ userId: string }>();
+  console.log('🔥🔥🔥 Raw params from useLocalSearchParams:', { userId });
+  
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [chirps, setChirps] = useState([]);
@@ -31,7 +33,7 @@ export default function UserProfileScreen() {
     followers: 0
   });
 
-  console.log('Profile screen params:', { userId });
+  console.log('🔥🔥🔥 Profile screen initialized with userId:', userId);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
