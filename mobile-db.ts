@@ -770,6 +770,36 @@ export async function addReaction(chirpId: string, emoji: string, userId: string
   }
 }
 
+// Delete a chirp (only by the author)
+export async function deleteChirp(chirpId: string, userId: string): Promise<void> {
+  try {
+    console.log(`Deleting chirp ${chirpId} by user ${userId}`);
+    
+    // First verify the user owns the chirp
+    const chirpCheck = await sql`
+      SELECT author_id::text FROM chirps WHERE id = ${chirpId}
+    `;
+    
+    if (chirpCheck.length === 0) {
+      throw new Error('Chirp not found');
+    }
+    
+    if (chirpCheck[0].author_id !== userId) {
+      throw new Error('You can only delete your own chirps');
+    }
+    
+    // Delete the chirp (cascade will handle reactions and replies)
+    await sql`
+      DELETE FROM chirps WHERE id = ${chirpId} AND author_id = ${userId}
+    `;
+    
+    console.log('✅ Chirp deleted successfully');
+  } catch (error) {
+    console.error('❌ Error deleting chirp:', error);
+    throw error;
+  }
+}
+
 // Create a reply to a chirp
 export async function createReply(content: string, replyToId: string, authorId: string): Promise<MobileChirp | null> {
   try {

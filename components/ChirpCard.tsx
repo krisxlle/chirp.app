@@ -199,12 +199,15 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         style: 'destructive', 
         onPress: async () => {
           try {
-            // TODO: Implement actual delete functionality
-            // const { deleteChirp } = await import('../mobile-db');
-            // await deleteChirp(chirp.id);
-            Alert.alert('Deleted', 'Chirp has been deleted');
+            console.log('🗑️ Deleting chirp:', chirp.id, 'by user:', user?.id);
+            const { deleteChirp } = await import('../mobile-db');
+            await deleteChirp(chirp.id, String(user?.id));
+            Alert.alert('Deleted', 'Chirp has been deleted successfully');
+            setShowOptionsModal(false);
+            // Optionally trigger a refresh of the feed here
           } catch (error) {
-            Alert.alert('Error', 'Failed to delete chirp');
+            console.error('Delete error:', error);
+            Alert.alert('Error', 'Failed to delete chirp. Please try again.');
           }
         }
       }
