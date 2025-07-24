@@ -522,11 +522,11 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     position: 'relative',
-    height: 200,
+    height: 100, // Reduced by 50% from 200px
   },
   banner: {
     width: '100%',
-    height: 200,
+    height: 100, // Reduced by 50% from 200px
   },
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
