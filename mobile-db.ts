@@ -1293,6 +1293,8 @@ export async function updateUserProfile(userId: string, updates: {
   last_name?: string;
   bio?: string;
   link_in_bio?: string;
+  profileImageUrl?: string;
+  bannerImageUrl?: string;
 }): Promise<MobileUser> {
   try {
     const result = await sql`
@@ -1302,6 +1304,8 @@ export async function updateUserProfile(userId: string, updates: {
         last_name = COALESCE(${updates.last_name}, last_name),
         bio = COALESCE(${updates.bio}, bio),
         link_in_bio = COALESCE(${updates.link_in_bio}, link_in_bio),
+        profile_image_url = COALESCE(${updates.profileImageUrl}, profile_image_url),
+        banner_image_url = COALESCE(${updates.bannerImageUrl}, banner_image_url),
         updated_at = NOW()
       WHERE id = ${userId}
       RETURNING 

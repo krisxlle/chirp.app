@@ -109,44 +109,55 @@ export default function ProfilePage() {
       return;
     }
 
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found. Please sign in again.');
+      return;
+    }
+
     try {
       setIsGenerating(true);
       console.log('Generating AI profile with prompt:', aiPrompt);
       
-      // Call OpenAI API for image generation
-      const response = await fetch('http://localhost:5001/api/ai/generate-images', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: aiPrompt,
-          type: 'profile'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate profile images');
+      // Import the AI generation function
+      const { generateAIProfile } = await import('../mobile-ai');
+      
+      // Generate AI profile using direct OpenAI integration
+      const result = await generateAIProfile(aiPrompt);
+      
+      if (!result.avatar && !result.banner) {
+        throw new Error('AI profile generation returned no images');
       }
-
-      const result = await response.json();
+      
+      // Update user profile in database with new images
+      const { updateUserProfile } = await import('../mobile-db');
+      const updateData: any = {};
+      
+      if (result.avatar) {
+        updateData.profileImageUrl = result.avatar;
+      }
+      if (result.banner) {
+        updateData.bannerImageUrl = result.banner;
+      }
+      if (result.bio) {
+        updateData.bio = result.bio;
+      }
+      
+      // Update profile in database
+      await updateUserProfile(user.id, updateData);
       
       setShowAIPrompt(false);
       setAiPrompt('');
-      Alert.alert('Success!', 'Your AI profile has been generated! Your new avatar and banner are being saved.');
+      Alert.alert('Success!', 'Your AI profile has been generated and saved!');
       
-      // Refresh the user profile to show new images
-      if (authUser && result.avatarUrl && result.bannerUrl) {
-        setUser(prev => prev ? {
-          ...prev,
-          profileImageUrl: result.avatarUrl,
-          bannerImageUrl: result.bannerUrl
-        } : null);
-      }
+      // Update local user state to show new images immediately
+      setUser(prev => prev ? {
+        ...prev,
+        ...updateData
+      } : null);
       
     } catch (error) {
       console.error('Error generating AI profile:', error);
-      Alert.alert('Error', 'Profile generation failed. Please try again.');
+      Alert.alert('Error', `Profile generation failed: ${error.message}. Please try again.`);
     } finally {
       setIsGenerating(false);
     }

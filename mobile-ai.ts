@@ -1,16 +1,16 @@
 // AI profile generation for mobile app using OpenAI
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
-export async function generateAIProfile(personalityAnswers: string[]): Promise<{
+export async function generateAIProfile(userPrompt: string): Promise<{
   avatar?: string;
   banner?: string;
   bio?: string;
   interests?: string[];
 }> {
   try {
-    console.log('Generating AI profile with OpenAI...');
+    console.log('Generating AI profile with OpenAI using prompt:', userPrompt);
     
-    // Generate bio
+    // Generate bio based on user prompt
     const bioResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -21,7 +21,7 @@ export async function generateAIProfile(personalityAnswers: string[]): Promise<{
         model: 'gpt-4o',
         messages: [{
           role: 'user',
-          content: `Create a fun, authentic bio for a social media profile based on these personality traits: ${personalityAnswers.join(', ')}. Make it 1-2 sentences, casual and engaging. No emojis.`
+          content: `Create a fun, authentic bio for a social media profile based on this description: "${userPrompt}". Make it 1-2 sentences, casual and engaging. No emojis.`
         }],
         max_tokens: 100
       })
@@ -30,7 +30,7 @@ export async function generateAIProfile(personalityAnswers: string[]): Promise<{
     const bioData = await bioResponse.json();
     const bio = bioData.choices?.[0]?.message?.content || 'Passionate about sharing authentic moments and connecting with amazing people.';
 
-    // Generate interests
+    // Generate interests based on user prompt
     const interestsResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -41,7 +41,7 @@ export async function generateAIProfile(personalityAnswers: string[]): Promise<{
         model: 'gpt-4o',
         messages: [{
           role: 'user',
-          content: `Based on these personality traits: ${personalityAnswers.join(', ')}, suggest 5 relevant interests as single words or short phrases. Return as JSON array: ["interest1", "interest2", ...]`
+          content: `Based on this user description: "${userPrompt}", suggest 5 relevant interests as single words or short phrases. Return as JSON object with "interests" array: {"interests": ["interest1", "interest2", ...]}`
         }],
         max_tokens: 100,
         response_format: { type: "json_object" }
@@ -59,7 +59,7 @@ export async function generateAIProfile(personalityAnswers: string[]): Promise<{
       console.log('Using fallback interests');
     }
 
-    // Generate avatar image
+    // Generate avatar image based on user prompt
     const avatarResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -68,7 +68,7 @@ export async function generateAIProfile(personalityAnswers: string[]): Promise<{
       },
       body: JSON.stringify({
         model: 'dall-e-3',
-        prompt: `Create a maximalist, explosively detailed cartoon avatar representing someone with these traits: ${personalityAnswers.slice(0, 3).join(', ')}. Hyper-detailed collage aesthetic with layered symbols, patterns, textures, floating elements, and rich visual density. Soft pastels and harmonious jewel tones. Square format, no text.`,
+        prompt: `Create a maximalist, explosively detailed cartoon avatar for someone described as: "${userPrompt}". Hyper-detailed collage aesthetic with layered symbols, patterns, textures, floating elements, and rich visual density. Soft pastels and harmonious jewel tones. Square format, no text.`,
         n: 1,
         size: '1024x1024',
         quality: 'standard'
@@ -87,7 +87,7 @@ export async function generateAIProfile(personalityAnswers: string[]): Promise<{
       },
       body: JSON.stringify({
         model: 'dall-e-3',
-        prompt: `Create a maximalist banner image reflecting these personality traits: ${personalityAnswers.slice(0, 3).join(', ')}. Explosively detailed landscape with layered visual elements, floating symbols, rich textures, and dense visual composition. Soft pastels and jewel tones. Wide banner format 1792x1024, no text.`,
+        prompt: `Create a maximalist banner image for someone described as: "${userPrompt}". Explosively detailed landscape with layered visual elements, floating symbols, rich textures, and dense visual composition. Soft pastels and jewel tones. Wide banner format 1792x1024, no text.`,
         n: 1,
         size: '1792x1024',
         quality: 'standard'
