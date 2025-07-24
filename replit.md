@@ -413,6 +413,16 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Route Configuration Verification**: Verified proper Stack.Screen configuration in app/_layout.tsx for dynamic profile routes
 - **Enhanced Error Handling**: Added timeout delays and detailed debugging logs for profile navigation troubleshooting
 
+### January 24, 2025 - Improved Reply Nesting and Thread Hierarchy
+- **ENHANCED Reply Hierarchy System**: Completely redesigned reply nesting logic to only nest secondary replies (replies to replies) while keeping direct replies to original chirps at same indentation level
+- **Removed Duplicate Gray Line**: Eliminated gray vertical border from repliesContainer, keeping only purple thread connector lines for cleaner visual design
+- **Advanced Database Reply Structure**: Updated getChirpReplies function in mobile-db.ts to fetch hierarchical reply data with nested reply relationships
+- **Nested Reply Database Functions**: Added getNestedReplies helper function to properly fetch replies to replies with correct attribution and hierarchy markers
+- **Enhanced ChirpCard Rendering**: Updated reply rendering logic to display direct replies at same level and only indent secondary replies with nestedRepliesContainer styling
+- **Type System Updates**: Added nestedReplies, isDirectReply, and isNestedReply properties to MobileChirp interface for proper hierarchy tracking
+- **Visual Thread Connectors**: Implemented separate styling for direct replies and nested replies with proper purple connector lines and indentation
+- **Clean Thread Display**: Achieved proper visual hierarchy where direct replies to main chirp appear at same level, and only replies to those replies get deeper nesting
+
 ### January 23, 2025 - Profile Navigation Debugging in Progress
 - **Issue Identified**: Profile navigation triggers successfully (logs show "Navigation initiated successfully") but UserProfileScreen component fails to mount
 - **Missing Export Fixed**: Added proper export statement to UserProfileScreen component in app/profile/[userId].tsx

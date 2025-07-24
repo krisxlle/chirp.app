@@ -18,6 +18,9 @@ export interface MobileChirp {
   reactionCount: number;
   reactions: MobileReaction[];
   isWeeklySummary?: boolean;
+  nestedReplies?: MobileChirp[];
+  isDirectReply?: boolean;
+  isNestedReply?: boolean;
 }
 
 export interface MobileReaction {

@@ -792,9 +792,24 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
             <Text style={styles.noRepliesText}>No replies yet</Text>
           ) : (
             threadReplies.map((reply, index) => (
-              <View key={reply.id} style={styles.replyWrapper}>
-                <View style={styles.replyConnector} />
-                <ChirpCard chirp={reply} />
+              <View key={reply.id}>
+                {/* Direct reply to original chirp - same level with connector */}
+                <View style={styles.replyWrapper}>
+                  <View style={styles.replyConnector} />
+                  <ChirpCard chirp={reply} />
+                </View>
+                
+                {/* Nested replies (replies to this reply) - deeper indent */}
+                {reply.nestedReplies && reply.nestedReplies.length > 0 && (
+                  <View style={styles.nestedRepliesContainer}>
+                    {reply.nestedReplies.map((nestedReply, nestedIndex) => (
+                      <View key={nestedReply.id} style={styles.nestedReplyWrapper}>
+                        <View style={styles.nestedReplyConnector} />
+                        <ChirpCard chirp={nestedReply} />
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             ))
           )}
@@ -1212,6 +1227,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   replyConnector: {
+    position: 'absolute',
+    left: -2,
+    top: 0,
+    width: 2,
+    height: '100%',
+    backgroundColor: '#7c3aed',
+  },
+  nestedRepliesContainer: {
+    marginLeft: 20,
+    paddingLeft: 16,
+  },
+  nestedReplyWrapper: {
+    position: 'relative',
+    marginBottom: 8,
+  },
+  nestedReplyConnector: {
     position: 'absolute',
     left: -2,
     top: 0,

@@ -983,17 +983,19 @@ export async function createReply(content: string, replyToId: string, authorId: 
   }
 }
 
-// Get replies for a specific chirp
+// Get replies for a specific chirp with proper hierarchy
 export async function getChirpReplies(chirpId: string): Promise<MobileChirp[]> {
   try {
     console.log('Fetching replies for chirp:', chirpId);
     
-    const replies = await sql`
+    // First get all direct replies to the original chirp
+    const directReplies = await sql`
       SELECT 
         c.id,
         c.content,
         c.created_at as "createdAt",
         c.author_id,
+        c.reply_to_id,
         u.custom_handle,
         u.handle,
         COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle, 'User') as display_name,
@@ -1006,14 +1008,65 @@ export async function getChirpReplies(chirpId: string): Promise<MobileChirp[]> {
       LEFT JOIN reactions r ON c.id = r.chirp_id
       LEFT JOIN chirps replies ON c.id = replies.reply_to_id
       WHERE c.reply_to_id = ${chirpId}
-      GROUP BY c.id, c.content, c.created_at, c.author_id, u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.banner_image_url
+      GROUP BY c.id, c.content, c.created_at, c.author_id, c.reply_to_id, u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.banner_image_url
       ORDER BY c.created_at ASC
     `;
     
-    return formatChirpResults(replies);
+    const formattedDirectReplies = formatChirpResults(directReplies);
+    
+    // For each direct reply, get its nested replies (replies to replies)
+    const repliesWithNested = await Promise.all(
+      formattedDirectReplies.map(async (reply) => {
+        const nestedReplies = await getNestedReplies(reply.id);
+        return {
+          ...reply,
+          nestedReplies,
+          isDirectReply: true // Mark as direct reply to original chirp
+        };
+      })
+    );
+    
+    return repliesWithNested;
   } catch (error) {
     console.error('Error fetching chirp replies:', error);
     throw error;
+  }
+}
+
+// Helper function to get nested replies (replies to replies)
+async function getNestedReplies(replyId: string): Promise<MobileChirp[]> {
+  try {
+    const nestedReplies = await sql`
+      SELECT 
+        c.id,
+        c.content,
+        c.created_at as "createdAt",
+        c.author_id,
+        c.reply_to_id,
+        u.custom_handle,
+        u.handle,
+        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle, 'User') as display_name,
+        u.profile_image_url,
+        u.banner_image_url,
+        COUNT(DISTINCT r.id) as reaction_count,
+        COUNT(DISTINCT replies.id) as reply_count
+      FROM chirps c
+      LEFT JOIN users u ON c.author_id = u.id
+      LEFT JOIN reactions r ON c.id = r.chirp_id
+      LEFT JOIN chirps replies ON c.id = replies.reply_to_id
+      WHERE c.reply_to_id = ${replyId}
+      GROUP BY c.id, c.content, c.created_at, c.author_id, c.reply_to_id, u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.banner_image_url
+      ORDER BY c.created_at ASC
+    `;
+    
+    const formatted = formatChirpResults(nestedReplies);
+    return formatted.map(reply => ({
+      ...reply,
+      isNestedReply: true // Mark as nested reply
+    }));
+  } catch (error) {
+    console.error('Error fetching nested replies:', error);
+    return [];
   }
 }
 
