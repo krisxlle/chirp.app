@@ -134,7 +134,7 @@ const SupportIcon = ({ size = 20, color = "#7c3aed" }) => (
 );
 
 export default function SettingsPage({ onClose }: SettingsPageProps) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   
   // State for profile editing
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -459,18 +459,21 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
                     style: "destructive",
                     onPress: async () => {
                       try {
-                        // Use AuthContext signOut function
-                        const { signOut } = require('./AuthContext');
+                        console.log('🚪 User requested sign out');
                         await signOut();
+                        console.log('✅ Sign out successful');
                         
-                        Alert.alert("Signed Out", "You have been signed out successfully. The app will now refresh to allow you to sign into a different account.");
+                        Alert.alert("Signed Out", "You have been signed out successfully. The app will refresh to show the login screen.");
                         
-                        // Force app refresh to show login
-                        if (typeof window !== 'undefined' && window.location) {
-                          window.location.reload();
-                        }
-                        
+                        // Close settings and refresh the app
                         onClose();
+                        
+                        // Force app refresh to show login screen
+                        if (typeof window !== 'undefined' && window.location) {
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 1000);
+                        }
                       } catch (error) {
                         console.error('Sign out error:', error);
                         Alert.alert("Error", "Failed to sign out. Please try again.");
