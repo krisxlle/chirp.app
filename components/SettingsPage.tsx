@@ -690,8 +690,8 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   updateButtonContainer: {
-    borderRadius: 8,
     marginTop: 8,
+    // No border radius here to avoid double border radius with LinearGradient
   },
   updateButton: {
     paddingVertical: 12,
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   upgradeButtonContainer: {
-    borderRadius: 8,
+    // No border radius here to avoid double border radius with LinearGradient
   },
   upgradeButton: {
     paddingVertical: 12,

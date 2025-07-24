@@ -454,7 +454,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   submitButtonContainer: {
-    borderRadius: 12,
     marginTop: 8,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 4 },

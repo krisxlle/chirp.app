@@ -523,7 +523,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   aiProfileButtonContainer: {
-    borderRadius: 20,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
