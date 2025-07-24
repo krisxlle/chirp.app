@@ -518,6 +518,20 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
     });
   };
 
+  const formatNumber = (num: number) => {
+    if (num < 1000) return num.toString();
+    if (num < 1000000) {
+      const k = num / 1000;
+      return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
+    }
+    if (num < 1000000000) {
+      const m = num / 1000000;
+      return m % 1 === 0 ? `${m}M` : `${m.toFixed(1)}M`;
+    }
+    const b = num / 1000000000;
+    return b % 1 === 0 ? `${b}B` : `${b.toFixed(1)}B`;
+  };
+
   // Priority: customHandle > handle (numerical ID) > first/last name as fallback
   const displayName = chirp.author?.customHandle || 
                      chirp.author?.handle ||
@@ -782,7 +796,14 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         </View>
       )}
 
-      {/* Profile navigation now uses page routing */}
+      {/* Total reaction count display at bottom */}
+      {reactions > 0 && (
+        <View style={styles.totalReactionsContainer}>
+          <Text style={styles.totalReactionsText}>
+            {formatNumber(reactions)} mood reactions
+          </Text>
+        </View>
+      )}
       
       {/* Custom Options Modal */}
       <Modal
@@ -1207,6 +1228,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     padding: 16,
+  },
+  totalReactionsContainer: {
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginTop: 8,
+  },
+  totalReactionsText: {
+    fontSize: 12,
+    color: '#657786',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   // Modal styles
   modalOverlay: {
