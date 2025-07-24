@@ -33,9 +33,10 @@ interface Chirp {
 
 interface ChirpCardProps {
   chirp: Chirp;
+  onDeleteSuccess?: () => void;
 }
 
-export default function ChirpCard({ chirp }: ChirpCardProps) {
+export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   // Safety check for author data
   if (!chirp || !chirp.author) {
     return null;
@@ -215,9 +216,17 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
             Alert.alert('Deleted', 'Chirp has been deleted successfully');
             setShowOptionsModal(false);
             
-            // Trigger a refresh of the feed data
-            // You might need to implement a refresh mechanism here
-            console.log('📱 Chirp deleted - feed should refresh now');
+            // Force a refresh of the parent component's data
+            if (onDeleteSuccess) {
+              console.log('📱 Calling onDeleteSuccess callback to refresh feed');
+              onDeleteSuccess();
+            } else {
+              console.log('📱 No refresh callback available - implementing page reload');
+              // Force reload the current screen to show updated data
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }
           } catch (error) {
             console.error('❌ Delete error:', error);
             console.error('Error details:', {

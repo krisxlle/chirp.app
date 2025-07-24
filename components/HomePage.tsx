@@ -239,7 +239,11 @@ export default function HomePage() {
           </View>
         ) : (
           chirps.map((chirp) => (
-            <ChirpCard key={chirp.id} chirp={convertToChirpCard(chirp)} />
+            <ChirpCard 
+              key={chirp.id} 
+              chirp={convertToChirpCard(chirp)} 
+              onDeleteSuccess={fetchChirps}
+            />
           ))
         )}
       </Animated.ScrollView>
