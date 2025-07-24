@@ -1207,8 +1207,6 @@ const styles = StyleSheet.create({
   repliesContainer: {
     marginTop: 12,
     paddingLeft: 16,
-    borderLeftWidth: 2,
-    borderLeftColor: '#e1e8ed',
   },
   replyWrapper: {
     marginBottom: 8,
