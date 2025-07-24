@@ -198,11 +198,18 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
     console.log('User details:', { id: user?.id, type: typeof user?.id });
     
     Alert.alert('Delete Chirp', 'Are you sure you want to delete this chirp?', [
-      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Cancel', 
+        style: 'cancel',
+        onPress: () => {
+          console.log('🚫 Delete cancelled by user');
+        }
+      },
       { 
         text: 'Delete', 
         style: 'destructive', 
         onPress: async () => {
+          console.log('✅ User confirmed deletion, proceeding...');
           try {
             console.log('🗑️ Proceeding with deletion...');
             console.log('Deleting chirp:', chirp.id, 'by user:', user?.id);
