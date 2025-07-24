@@ -49,6 +49,12 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
+  // States for user interaction options
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [loadingUserActions, setLoadingUserActions] = useState(false);
+  
   // Track individual reaction counts for quick access buttons
   const [reactionCounts, setReactionCounts] = useState<{[key: string]: number}>({
     '🫶🏼': 0,
@@ -168,7 +174,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     }
   };
 
-  const handleMoreOptions = () => {
+  const handleMoreOptions = async () => {
     const isOwnChirp = user?.id && chirp.author.id === user.id;
     
     if (isOwnChirp) {
@@ -178,10 +184,33 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         { text: 'Cancel', style: 'cancel' }
       ]);
     } else {
+      // Load current user interaction states
+      if (user?.id && chirp.author.id) {
+        try {
+          const { checkFollowStatus, checkBlockStatus, getUserNotificationStatus } = await import('../mobile-db');
+          const [followStatus, blockStatus, notificationStatus] = await Promise.all([
+            checkFollowStatus(user.id, chirp.author.id),
+            checkBlockStatus(user.id, chirp.author.id),
+            getUserNotificationStatus(user.id, chirp.author.id)
+          ]);
+          
+          setIsFollowing(followStatus);
+          setIsBlocked(blockStatus);
+          setNotificationsEnabled(notificationStatus);
+        } catch (error) {
+          console.error('Error loading user interaction states:', error);
+        }
+      }
+      
+      const followText = isFollowing ? `Unfollow ${displayName}` : `Follow ${displayName}`;
+      const blockText = isBlocked ? `Unblock ${displayName}` : `Block ${displayName}`;
+      const notificationText = notificationsEnabled ? `Turn off notifications from ${displayName}` : `Turn on notifications from ${displayName}`;
+      
       Alert.alert('User Options', 'Choose an action', [
-        { text: `Follow ${displayName}`, onPress: () => handleFollowUser() },
+        { text: followText, onPress: () => handleFollowToggle() },
+        { text: blockText, style: isBlocked ? 'default' : 'destructive', onPress: () => handleBlockToggle() },
+        { text: notificationText, onPress: () => handleNotificationToggle() },
         { text: 'Copy Link to Profile', onPress: () => handleCopyUserProfile() },
-        { text: 'Block User', style: 'destructive', onPress: () => handleBlockUser() },
         { text: 'Report Chirp', style: 'destructive', onPress: () => handleReportChirp() },
         { text: 'Cancel', style: 'cancel' }
       ]);
@@ -208,12 +237,27 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     ]);
   };
 
-  const handleFollowUser = async () => {
+  const handleFollowToggle = async () => {
+    if (loadingUserActions || !user?.id || !chirp.author.id) return;
+    
+    setLoadingUserActions(true);
     try {
-      // TODO: Implement follow functionality
-      Alert.alert('Followed', `You are now following ${displayName}`);
+      const { followUser, unfollowUser } = await import('../mobile-db');
+      
+      if (isFollowing) {
+        await unfollowUser(user.id, chirp.author.id);
+        setIsFollowing(false);
+        Alert.alert('Unfollowed', `You are no longer following ${displayName}`);
+      } else {
+        await followUser(user.id, chirp.author.id);
+        setIsFollowing(true);
+        Alert.alert('Followed', `You are now following ${displayName}`);
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to follow user');
+      console.error('Error toggling follow:', error);
+      Alert.alert('Error', 'Failed to update follow status. Please try again.');
+    } finally {
+      setLoadingUserActions(false);
     }
   };
 
@@ -231,22 +275,85 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     }
   };
 
-  const handleBlockUser = () => {
-    Alert.alert(
-      'Block User', 
-      `Are you sure you want to block ${displayName}? You won't see their chirps anymore.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Block', 
-          style: 'destructive', 
-          onPress: () => {
-            // TODO: Implement block functionality
-            Alert.alert('Blocked', `You have blocked ${displayName}`);
+  const handleBlockToggle = async () => {
+    if (loadingUserActions || !user?.id || !chirp.author.id) return;
+    
+    if (isBlocked) {
+      // Unblock user
+      Alert.alert(
+        'Unblock User', 
+        `Are you sure you want to unblock ${displayName}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Unblock', 
+            onPress: async () => {
+              setLoadingUserActions(true);
+              try {
+                const { unblockUser } = await import('../mobile-db');
+                await unblockUser(user.id, chirp.author.id);
+                setIsBlocked(false);
+                Alert.alert('Unblocked', `You have unblocked ${displayName}`);
+              } catch (error) {
+                console.error('Error unblocking user:', error);
+                Alert.alert('Error', 'Failed to unblock user. Please try again.');
+              } finally {
+                setLoadingUserActions(false);
+              }
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    } else {
+      // Block user
+      Alert.alert(
+        'Block User', 
+        `Are you sure you want to block ${displayName}? You won't see their chirps anymore and they won't be able to follow you.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Block', 
+            style: 'destructive', 
+            onPress: async () => {
+              setLoadingUserActions(true);
+              try {
+                const { blockUser } = await import('../mobile-db');
+                await blockUser(user.id, chirp.author.id);
+                setIsBlocked(true);
+                setIsFollowing(false); // Remove follow relationship when blocking
+                Alert.alert('Blocked', `You have blocked ${displayName}`);
+              } catch (error) {
+                console.error('Error blocking user:', error);
+                Alert.alert('Error', 'Failed to block user. Please try again.');
+              } finally {
+                setLoadingUserActions(false);
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const handleNotificationToggle = async () => {
+    if (loadingUserActions || !user?.id || !chirp.author.id) return;
+    
+    setLoadingUserActions(true);
+    try {
+      const { toggleUserNotifications } = await import('../mobile-db');
+      const newState = await toggleUserNotifications(user.id, chirp.author.id);
+      setNotificationsEnabled(newState);
+      
+      const message = newState 
+        ? `You will now receive notifications when ${displayName} posts`
+        : `You will no longer receive notifications from ${displayName}`;
+      Alert.alert('Notifications Updated', message);
+    } catch (error) {
+      console.error('Error toggling notifications:', error);
+      Alert.alert('Error', 'Failed to update notification settings. Please try again.');
+    } finally {
+      setLoadingUserActions(false);
+    }
   };
 
   const handleReportChirp = () => {

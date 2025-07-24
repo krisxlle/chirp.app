@@ -1074,6 +1074,192 @@ export async function cancelSubscription(userId: string): Promise<void> {
   }
 }
 
+// Follow/Unfollow functionality
+export async function followUser(followerId: string, followeeId: string): Promise<boolean> {
+  try {
+    console.log(`User ${followerId} attempting to follow user ${followeeId}`);
+    
+    // Check if already following
+    const existingFollow = await sql`
+      SELECT id FROM follows 
+      WHERE follower_id = ${followerId} AND followee_id = ${followeeId}
+      LIMIT 1
+    `;
+    
+    if (existingFollow.length > 0) {
+      console.log('Already following this user');
+      return false; // Already following
+    }
+    
+    // Add follow relationship
+    await sql`
+      INSERT INTO follows (follower_id, followee_id, created_at)
+      VALUES (${followerId}, ${followeeId}, NOW())
+    `;
+    
+    console.log('Successfully followed user');
+    return true; // Follow added
+  } catch (error) {
+    console.error('Error following user:', error);
+    throw error;
+  }
+}
+
+export async function unfollowUser(followerId: string, followeeId: string): Promise<boolean> {
+  try {
+    console.log(`User ${followerId} attempting to unfollow user ${followeeId}`);
+    
+    const result = await sql`
+      DELETE FROM follows 
+      WHERE follower_id = ${followerId} AND followee_id = ${followeeId}
+    `;
+    
+    console.log('Successfully unfollowed user');
+    return true; // Unfollow successful
+  } catch (error) {
+    console.error('Error unfollowing user:', error);
+    throw error;
+  }
+}
+
+export async function checkFollowStatus(followerId: string, followeeId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM follows 
+      WHERE follower_id = ${followerId} AND followee_id = ${followeeId}
+      LIMIT 1
+    `;
+    
+    return result.length > 0;
+  } catch (error) {
+    console.error('Error checking follow status:', error);
+    return false;
+  }
+}
+
+// Block functionality
+export async function blockUser(blockerId: string, blockedId: string): Promise<boolean> {
+  try {
+    console.log(`User ${blockerId} attempting to block user ${blockedId}`);
+    
+    // Check if already blocked
+    const existingBlock = await sql`
+      SELECT id FROM blocks 
+      WHERE blocker_id = ${blockerId} AND blocked_id = ${blockedId}
+      LIMIT 1
+    `;
+    
+    if (existingBlock.length > 0) {
+      console.log('User already blocked');
+      return false; // Already blocked
+    }
+    
+    // Add block relationship and remove any follow relationships
+    await sql`
+      INSERT INTO blocks (blocker_id, blocked_id, created_at)
+      VALUES (${blockerId}, ${blockedId}, NOW())
+    `;
+    
+    // Remove any existing follow relationships
+    await sql`
+      DELETE FROM follows 
+      WHERE (follower_id = ${blockerId} AND followee_id = ${blockedId})
+         OR (follower_id = ${blockedId} AND followee_id = ${blockerId})
+    `;
+    
+    console.log('Successfully blocked user');
+    return true; // Block added
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    throw error;
+  }
+}
+
+export async function unblockUser(blockerId: string, blockedId: string): Promise<boolean> {
+  try {
+    console.log(`User ${blockerId} attempting to unblock user ${blockedId}`);
+    
+    const result = await sql`
+      DELETE FROM blocks 
+      WHERE blocker_id = ${blockerId} AND blocked_id = ${blockedId}
+    `;
+    
+    console.log('Successfully unblocked user');
+    return true; // Unblock successful
+  } catch (error) {
+    console.error('Error unblocking user:', error);
+    throw error;
+  }
+}
+
+export async function checkBlockStatus(blockerId: string, blockedId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM blocks 
+      WHERE blocker_id = ${blockerId} AND blocked_id = ${blockedId}
+      LIMIT 1
+    `;
+    
+    return result.length > 0;
+  } catch (error) {
+    console.error('Error checking block status:', error);
+    return false;
+  }
+}
+
+// Notification settings functionality
+export async function toggleUserNotifications(userId: string, targetUserId: string): Promise<boolean> {
+  try {
+    console.log(`User ${userId} toggling notifications for user ${targetUserId}`);
+    
+    // Check if notifications are currently enabled
+    const existingNotificationSetting = await sql`
+      SELECT id, notifications_enabled FROM user_notification_settings 
+      WHERE user_id = ${userId} AND target_user_id = ${targetUserId}
+      LIMIT 1
+    `;
+    
+    if (existingNotificationSetting.length > 0) {
+      // Toggle existing setting
+      const newState = !existingNotificationSetting[0].notifications_enabled;
+      await sql`
+        UPDATE user_notification_settings 
+        SET notifications_enabled = ${newState}, updated_at = NOW()
+        WHERE user_id = ${userId} AND target_user_id = ${targetUserId}
+      `;
+      console.log(`Notifications ${newState ? 'enabled' : 'disabled'} for user`);
+      return newState;
+    } else {
+      // Create new setting (default to enabled)
+      await sql`
+        INSERT INTO user_notification_settings (user_id, target_user_id, notifications_enabled, created_at)
+        VALUES (${userId}, ${targetUserId}, true, NOW())
+      `;
+      console.log('Notifications enabled for user');
+      return true;
+    }
+  } catch (error) {
+    console.error('Error toggling user notifications:', error);
+    throw error;
+  }
+}
+
+export async function getUserNotificationStatus(userId: string, targetUserId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT notifications_enabled FROM user_notification_settings 
+      WHERE user_id = ${userId} AND target_user_id = ${targetUserId}
+      LIMIT 1
+    `;
+    
+    // Default to enabled if no setting exists
+    return result.length > 0 ? result[0].notifications_enabled : true;
+  } catch (error) {
+    console.error('Error checking notification status:', error);
+    return true; // Default to enabled
+  }
+}
+
 // Update Chirp+ badge visibility
 export async function updateChirpPlusBadgeVisibility(userId: string, showBadge: boolean): Promise<void> {
   try {
