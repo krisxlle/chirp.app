@@ -361,7 +361,11 @@ export default function ProfilePage() {
               </View>
             ) : (
               userChirps.map((chirp) => (
-                <ChirpCard key={chirp.id} chirp={chirp} />
+                <ChirpCard 
+                  key={chirp.id} 
+                  chirp={chirp} 
+                  onDeleteSuccess={fetchUserChirps}
+                />
               ))
             )}
           </View>
