@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Modal, ScrollView, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
@@ -641,19 +641,26 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
           
           {/* Reaction picker for all emojis */}
           {showReactionPicker && (
-            <View style={styles.reactionPicker}>
-              {reactionEmojis.map((emoji, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={[
-                    styles.reactionOption,
-                    userReaction === emoji && styles.selectedReactionOption
-                  ]}
-                  onPress={() => handleReactionPress(emoji)}
-                >
-                  <Text style={styles.reactionEmoji}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.reactionPickerContainer}>
+              <ScrollView 
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.reactionPicker}
+                contentContainerStyle={styles.reactionPickerContent}
+              >
+                {reactionEmojis.map((emoji, index) => (
+                  <TouchableOpacity 
+                    key={index}
+                    style={[
+                      styles.reactionOption,
+                      userReaction === emoji && styles.selectedReactionOption
+                    ]}
+                    onPress={() => handleReactionPress(emoji)}
+                  >
+                    <Text style={styles.reactionEmoji}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -990,21 +997,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 1,
   },
-  reactionPicker: {
+  reactionPickerContainer: {
     position: 'absolute',
     bottom: 40,
     left: 0,
+    right: -16, // Extend to edge of card
+    zIndex: 10,
+  },
+  reactionPicker: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    flexDirection: 'row',
+    maxHeight: 60,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 10,
+  },
+  reactionPickerContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   reactionOption: {
     marginHorizontal: 4,
