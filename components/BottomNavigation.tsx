@@ -138,7 +138,10 @@ const styles = StyleSheet.create({
   activeNavItem: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderRadius: 12,
+    minWidth: 60,
   },
   iconContainer: {
     position: 'relative',

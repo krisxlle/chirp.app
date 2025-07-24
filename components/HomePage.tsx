@@ -316,9 +316,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   activeFeedButton: {
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    minWidth: 50,
   },
   feedButtonIcon: {
     fontSize: 12,
