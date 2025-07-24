@@ -71,6 +71,18 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   const [userReaction, setUserReaction] = useState<string | null>(null);
   const [userReactionCount, setUserReactionCount] = useState<number>(0);
   
+  // Real-time timestamp updates
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  
+  // Update timestamp every minute for real-time display
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+  
   // States for user interaction options
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -513,8 +525,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffTime = Math.abs(currentTime - date.getTime());
     
     const diffMinutes = Math.floor(diffTime / (1000 * 60));
     const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
