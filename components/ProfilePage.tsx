@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   chirpsContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   analyticsContainer: {
     marginTop: 16,
