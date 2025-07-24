@@ -33,7 +33,12 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png",
-      "staticAssets": ["./public/generated-images"]
+      "staticAssets": ["./public/generated-images"],
+      "build": {
+        "babel": {
+          "include": ["@babel/plugin-proposal-export-namespace-from"]
+        }
+      }
     },
     "plugins": [
       "expo-router",
