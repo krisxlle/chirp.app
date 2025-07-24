@@ -498,8 +498,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     position: 'absolute',
     bottom: -40,
-    left: '50%',
-    marginLeft: -40,
+    left: 16,
     borderRadius: 40,
     borderWidth: 4,
     borderColor: '#ffffff',

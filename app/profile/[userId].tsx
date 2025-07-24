@@ -135,14 +135,19 @@ export default function UserProfileScreen() {
       </View>
       
       <ScrollView style={styles.content}>
-        <View style={styles.profileCard}>
-          <View style={styles.successBanner}>
-            <Text style={styles.successText}>✅ Profile Navigation Working!</Text>
+        {/* Banner */}
+        <View style={styles.bannerContainer}>
+          <View style={styles.banner}>
+            <View style={styles.bannerOverlay} />
           </View>
           
+          {/* Profile Avatar positioned on left between banner and white space */}
           <View style={styles.avatarContainer}>
             <UserAvatar user={user} size="xl" />
           </View>
+        </View>
+
+        <View style={styles.profileCard}>
           
           <Text style={styles.displayName}>{displayName}</Text>
           <Text style={styles.handle}>@{user.custom_handle || user.handle || user.id}</Text>
@@ -260,14 +265,10 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     backgroundColor: '#ffffff',
-    margin: 16,
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: 40,
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 16,
   },
   successBanner: {
     backgroundColor: '#10b981',
@@ -281,9 +282,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  bannerContainer: {
+    position: 'relative',
+    height: 200,
+  },
+  banner: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#7c3aed',
+  },
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+  },
   avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
+    position: 'absolute',
+    bottom: -40,
+    left: 16,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#ffffff',
   },
   displayName: {
     fontSize: 24,
