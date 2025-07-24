@@ -536,9 +536,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -40,
     left: 16,
-    borderRadius: 40,
+    borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
     borderWidth: 4,
     borderColor: '#ffffff',
+    width: 88, // 80px avatar + 8px border (4px each side)
+    height: 88, // 80px avatar + 8px border (4px each side) 
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionButtons: {
     flexDirection: 'row',
