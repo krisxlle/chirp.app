@@ -1097,6 +1097,26 @@ export async function updateChirpPlusBadgeVisibility(userId: string, showBadge: 
   }
 }
 
+// Feedback submission function
+export async function submitFeedback(feedback: {
+  name: string;
+  email: string;
+  category: string;
+  message: string;
+}): Promise<void> {
+  try {
+    console.log('Submitting feedback to database...');
+    await sql`
+      INSERT INTO feedback (name, email, category, message, created_at)
+      VALUES (${feedback.name}, ${feedback.email}, ${feedback.category}, ${feedback.message}, NOW())
+    `;
+    console.log('Feedback submitted successfully');
+  } catch (error) {
+    console.error('Error submitting feedback:', error);
+    throw error;
+  }
+}
+
 // Trigger notification for reactions (will send push notification)
 export async function triggerReactionNotification(authorId: string, reactorId: string, chirpId: number) {
   try {

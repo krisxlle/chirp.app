@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { submitFeedback } from '../mobile-db';
 
 interface FeedbackFormProps {
   onClose?: () => void;
@@ -40,45 +41,35 @@ export default function FeedbackForm({ onClose }: FeedbackFormProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.trim() || 'Anonymous',
-          email: email.trim() || '',
-          category: category || 'General Feedback',
-          message: message.trim(),
-        }),
+      await submitFeedback({
+        name: name.trim() || 'Anonymous',
+        email: email.trim() || '',
+        category: category || 'General Feedback',
+        message: message.trim(),
       });
 
-      if (response.ok) {
-        Alert.alert(
-          'Thank You!',
-          'Your feedback has been sent successfully. We appreciate your input!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                if (onClose) {
-                  onClose();
-                } else {
-                  router.back();
-                }
-              },
+      Alert.alert(
+        'Thank You!',
+        'Your feedback has been sent successfully. We appreciate your input!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (onClose) {
+                onClose();
+              } else {
+                router.back();
+              }
             },
-          ]
-        );
-        
-        // Reset form
-        setName('');
-        setEmail('');
-        setCategory('');
-        setMessage('');
-      } else {
-        throw new Error('Failed to send feedback');
-      }
+          },
+        ]
+      );
+      
+      // Reset form
+      setName('');
+      setEmail('');
+      setCategory('');
+      setMessage('');
     } catch (error) {
       console.error('Feedback submission error:', error);
       Alert.alert(
