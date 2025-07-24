@@ -473,19 +473,18 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
                     style: "destructive",
                     onPress: async () => {
                       try {
-                        // Call sign out API
-                        await fetch('/api/auth/logout', {
-                          method: 'POST',
-                          credentials: 'include'
-                        });
+                        // Use AuthContext signOut function
+                        const { signOut } = require('./AuthContext');
+                        await signOut();
                         
-                        // Navigate to welcome screen
+                        Alert.alert("Signed Out", "You have been signed out successfully. The app will now refresh to allow you to sign into a different account.");
+                        
+                        // Force app refresh to show login
                         if (typeof window !== 'undefined' && window.location) {
-                          window.location.href = '/';
-                        } else {
-                          const { router } = require('expo-router');
-                          router.replace('/');
+                          window.location.reload();
                         }
+                        
+                        onClose();
                       } catch (error) {
                         console.error('Sign out error:', error);
                         Alert.alert("Error", "Failed to sign out. Please try again.");

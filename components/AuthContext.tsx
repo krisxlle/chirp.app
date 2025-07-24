@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.removeItem('user');
       setUser(null);
       console.log('🚀 Forcing login to @chirp account...');
-      await signIn('preview@chirp.app');
+      await signIn('kriselle.t@gmail.com');
     } catch (error) {
       console.error('Force login error:', error);
     }
@@ -190,8 +190,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user && !isLoading) {
         console.log('🔍 Validating current user:', user.id);
         // Check if user with ID "1" should be switched to @chirp
-        if (user.id === '1' || user.id === 1) {
-          console.log('🔄 Detected invalid user ID "1" - switching to @chirp...');
+        if (user.id === '1' || user.id === 'chirp-preview-001') {
+          console.log('🔄 Detected invalid user ID - switching to @chirp...');
           await forceLoginToChirp();
         }
       }
