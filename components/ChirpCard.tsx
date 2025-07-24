@@ -175,7 +175,12 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   };
 
   const handleMoreOptions = async () => {
+    console.log('🔥 Triple dot menu pressed!');
+    console.log('User ID:', user?.id);
+    console.log('Chirp author ID:', chirp.author.id);
+    
     const isOwnChirp = user?.id && chirp.author.id === user.id;
+    console.log('Is own chirp:', isOwnChirp);
     
     if (isOwnChirp) {
       Alert.alert('Chirp Options', 'Choose an action', [
@@ -504,7 +509,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       onPress={handleChirpPress}
       activeOpacity={0.95}
     >
-      <View style={styles.header}>
+      <View style={styles.header} pointerEvents="box-none">
         <TouchableOpacity onPress={handleAvatarPress}>
           <UserAvatar user={chirp.author} size="md" />
         </TouchableOpacity>
@@ -534,7 +539,15 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           )}
         </View>
         
-        <TouchableOpacity style={styles.moreButton} onPress={() => handleMoreOptions()}>
+        <TouchableOpacity 
+          style={styles.moreButton} 
+          onPress={() => {
+            console.log('🚀 More button touched!');
+            handleMoreOptions();
+          }}
+          activeOpacity={0.6}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Text style={styles.moreText}>⋯</Text>
         </TouchableOpacity>
       </View>
