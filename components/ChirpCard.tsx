@@ -499,6 +499,13 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>
           
+          {/* Show handle under the display name */}
+          <TouchableOpacity onPress={handleAvatarPress} style={styles.handleContainer}>
+            <Text style={styles.handle}>
+              @{chirp.author?.customHandle || chirp.author?.handle || 'user'}
+            </Text>
+          </TouchableOpacity>
+          
           {chirp.isWeeklySummary && (
             <View style={styles.weeklySummaryRow}>
               <LinearGradient
@@ -821,6 +828,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#14171a',
+  },
+  handleContainer: {
+    marginTop: 2,
+  },
+  handle: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#a78bfa',
   },
   crownIcon: {
     fontSize: 12,
