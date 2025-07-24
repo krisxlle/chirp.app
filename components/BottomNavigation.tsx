@@ -56,7 +56,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
               >
                 <View style={styles.iconContainer}>
                   <item.component
-                    size={24}
+                    size={18}
                     color='#ffffff'
                   />
                   
@@ -73,7 +73,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
             ) : (
               <View style={styles.iconContainer}>
                 <item.component
-                  size={24}
+                  size={18}
                   color='#6b7280'
                 />
                 
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+    paddingHorizontal: 3,
+    paddingVertical: 3,
   },
   navContainer: {
     flexDirection: 'row',
@@ -114,18 +114,18 @@ const styles = StyleSheet.create({
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    minWidth: 60,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 9,
+    minWidth: 45,
   },
   activeNavItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    minWidth: 60,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 9,
+    minWidth: 45,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -156,19 +156,19 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -8,
+    top: -3,
+    right: -6,
     backgroundColor: '#ef4444',
-    borderRadius: 9,
-    minWidth: 18,
-    height: 16,
+    borderRadius: 7,
+    minWidth: 14,
+    height: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
   },
   badgeText: {
     color: '#ffffff',
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '600',
     textAlign: 'center',
   },
