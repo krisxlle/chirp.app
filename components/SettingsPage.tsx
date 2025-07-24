@@ -590,20 +590,24 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    height: 40,
     borderRadius: 20,
     marginRight: 12,
     backgroundColor: '#f7f9fa',
     borderWidth: 1,
     borderColor: '#e1e8ed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activeTabButtonContainer: {
     borderColor: '#7c3aed',
   },
   activeTabButton: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    height: 40,
     borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabButtonText: {
     fontSize: 14,
@@ -676,7 +680,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   updateButton: {
-    paddingVertical: 12,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
@@ -694,6 +698,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
   },
   subscriptionStatus: {
     fontSize: 16,
@@ -710,17 +715,20 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: '#6b7280',
     borderRadius: 8,
-    paddingVertical: 12,
+    height: 48,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
   },
   upgradeButton: {
-    paddingVertical: 12,
+    height: 48,
     alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 8,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 2 },
@@ -732,6 +740,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
   },
   switchRow: {
     flexDirection: 'row',
@@ -756,7 +765,7 @@ const styles = StyleSheet.create({
   signOutButton: {
     backgroundColor: '#f3f4f6',
     borderRadius: 8,
-    paddingVertical: 12,
+    height: 48,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -770,11 +779,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+    textAlign: 'center',
   },
   supportButton: {
     backgroundColor: '#ede9fe',
     borderRadius: 8,
-    paddingVertical: 12,
+    height: 48,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -788,5 +798,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+    textAlign: 'center',
   },
 });
