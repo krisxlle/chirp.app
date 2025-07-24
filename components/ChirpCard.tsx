@@ -90,6 +90,23 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   const [loadingUserActions, setLoadingUserActions] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   
+  // Check if user has already reposted this chirp
+  useEffect(() => {
+    const checkRepostStatus = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { checkUserReposted } = await import('../mobile-db');
+        const hasReposted = await checkUserReposted(user.id, chirp.id);
+        setUserHasReposted(hasReposted);
+      } catch (error) {
+        console.error('Error checking repost status:', error);
+      }
+    };
+    
+    checkRepostStatus();
+  }, [user?.id, chirp.id]);
+  
   // Comprehensive mood reactions for Chirp
   const reactionEmojis = [
     '😀', '😍', '🤔', '😢', '😡', '👏', '🔥', '❤️', '💯', '✨',
@@ -103,9 +120,9 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   // Quick access mood buttons - most popular reactions
   const quickMoodReactions = ['🫶🏼', '😭', '💀'];
 
-  // Calculate display name for the chirp author
-  const displayName = chirp.author.firstName && chirp.author.lastName 
-    ? `${chirp.author.firstName} ${chirp.author.lastName}`
+  // Calculate display name for the chirp author (remove lastName functionality)
+  const displayName = chirp.author.firstName 
+    ? chirp.author.firstName
     : (chirp.author.customHandle || chirp.author.handle || 'User');
 
   const [showReplyInput, setShowReplyInput] = useState(false);
@@ -658,7 +675,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         </View>
       )}
 
-      {chirp.isWeeklySummary && (
+      {(chirp.isWeeklySummary || (chirp.isRepost && chirp.originalChirp?.isWeeklySummary)) && (
         <Text style={styles.weeklySummaryTitle}>
           Weekly Summary (2025-07-13 - 2025-07-19)
         </Text>
@@ -705,7 +722,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
           <Text style={styles.actionText}>{replies}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={handleRepost}>
+        <TouchableOpacity 
+          style={[styles.actionButton, userHasReposted && { backgroundColor: '#f3e8ff' }]} 
+          onPress={handleRepost}
+        >
           <RepostIcon size={18} color={userHasReposted ? "#7c3aed" : "#657786"} />
           <Text style={[styles.actionText, userHasReposted && { color: "#7c3aed" }]}>{reposts}</Text>
         </TouchableOpacity>
