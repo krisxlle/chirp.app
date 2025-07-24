@@ -693,24 +693,8 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
             </Text>
             
             {user?.id && chirp.author.id === user.id ? (
-              // Own chirp options
+              // Own chirp options - only Delete and Cancel
               <>
-                <TouchableOpacity style={styles.modalOption} onPress={() => {
-                  setShowOptionsModal(false);
-                  Alert.alert('Edit', 'Edit functionality coming soon');
-                }}>
-                  <LinearGradient
-                    colors={['#7c3aed', '#ec4899']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.modalOptionGradientBorder}
-                  >
-                    <View style={styles.modalOptionInner}>
-                      <Text style={styles.modalOptionText}>Edit Chirp</Text>
-                    </View>
-                  </LinearGradient>
-                </TouchableOpacity>
-                
                 <TouchableOpacity style={styles.modalOption} onPress={() => {
                   setShowOptionsModal(false);
                   handleDeleteChirp();
