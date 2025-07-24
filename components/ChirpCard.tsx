@@ -437,12 +437,13 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     });
   };
 
-  // Priority: customHandle > handle > first/last name > email
+  // Priority: customHandle > handle (numerical ID) > email > first/last name as fallback
   const displayName = chirp.author?.customHandle || 
                      chirp.author?.handle ||
+                     chirp.author?.email?.split('@')[0] ||
                      (chirp.author?.firstName && chirp.author?.lastName 
                        ? `${chirp.author.firstName} ${chirp.author.lastName}`
-                       : chirp.author?.email?.split('@')[0] || 'Anonymous User');
+                       : 'Anonymous User');
 
   const [showReplies, setShowReplies] = useState(false);
   const [threadReplies, setThreadReplies] = useState<any[]>([]);
