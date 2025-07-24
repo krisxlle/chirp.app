@@ -691,16 +691,34 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
               <>
                 <TouchableOpacity style={styles.modalOption} onPress={() => {
                   setShowOptionsModal(false);
-                  handleDeleteChirp();
+                  Alert.alert('Edit', 'Edit functionality coming soon');
                 }}>
-                  <Text style={[styles.modalOptionText, styles.destructiveText]}>Delete Chirp</Text>
+                  <LinearGradient
+                    colors={['#7c3aed', '#ec4899']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.modalOptionGradientBorder}
+                  >
+                    <View style={styles.modalOptionInner}>
+                      <Text style={styles.modalOptionText}>Edit Chirp</Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.modalOption} onPress={() => {
                   setShowOptionsModal(false);
-                  Alert.alert('Edit', 'Edit functionality coming soon');
+                  handleDeleteChirp();
                 }}>
-                  <Text style={styles.modalOptionText}>Edit Chirp</Text>
+                  <LinearGradient
+                    colors={['#dc2626', '#ef4444']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.modalOptionGradientBorder}
+                  >
+                    <View style={styles.modalOptionInner}>
+                      <Text style={[styles.modalOptionText, styles.destructiveText]}>Delete Chirp</Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
               </>
             ) : (
@@ -710,25 +728,52 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
                   setShowOptionsModal(false);
                   handleFollowToggle();
                 }}>
-                  <Text style={styles.modalOptionText}>
-                    {isFollowing ? `Unfollow ${displayName}` : `Follow ${displayName}`}
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.modalOption} onPress={() => {
-                  setShowOptionsModal(false);
-                  handleBlockToggle();
-                }}>
-                  <Text style={[styles.modalOptionText, !isBlocked && styles.destructiveText]}>
-                    {isBlocked ? `Unblock ${displayName}` : `Block ${displayName}`}
-                  </Text>
+                  <LinearGradient
+                    colors={['#7c3aed', '#ec4899']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.modalOptionGradientBorder}
+                  >
+                    <View style={styles.modalOptionInner}>
+                      <Text style={styles.modalOptionText}>
+                        {isFollowing ? `Unfollow ${displayName}` : `Follow ${displayName}`}
+                      </Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.modalOption} onPress={() => {
                   setShowOptionsModal(false);
                   handleCopyUserProfile();
                 }}>
-                  <Text style={styles.modalOptionText}>Copy Link to Profile</Text>
+                  <LinearGradient
+                    colors={['#7c3aed', '#ec4899']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.modalOptionGradientBorder}
+                  >
+                    <View style={styles.modalOptionInner}>
+                      <Text style={styles.modalOptionText}>Copy Link to Profile</Text>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  setShowOptionsModal(false);
+                  handleBlockToggle();
+                }}>
+                  <LinearGradient
+                    colors={['#dc2626', '#ef4444']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.modalOptionGradientBorder}
+                  >
+                    <View style={styles.modalOptionInner}>
+                      <Text style={[styles.modalOptionText, styles.destructiveText]}>
+                        {isBlocked ? `Unblock ${displayName}` : `Block ${displayName}`}
+                      </Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
               </>
             )}
@@ -1066,16 +1111,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginVertical: 4,
+    marginVertical: 6,
+  },
+  modalOptionGradientBorder: {
+    borderRadius: 12,
+    padding: 2,
+  },
+  modalOptionInner: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
   },
   modalOptionText: {
     fontSize: 16,
     color: '#14171a',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   destructiveText: {
     color: '#dc2626',
