@@ -437,6 +437,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     });
   };
 
+  // Priority: customHandle > handle > first/last name > email
   const displayName = chirp.author?.customHandle || 
                      chirp.author?.handle ||
                      (chirp.author?.firstName && chirp.author?.lastName 
