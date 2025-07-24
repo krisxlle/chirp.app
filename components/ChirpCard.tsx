@@ -107,14 +107,21 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
     checkRepostStatus();
   }, [user?.id, chirp.id]);
   
-  // Comprehensive mood reactions for Chirp
+  // Comprehensive mood reactions for Chirp - Organized by categories for better UX
   const reactionEmojis = [
-    '😀', '😍', '🤔', '😢', '😡', '👏', '🔥', '❤️', '💯', '✨',
-    '😂', '🥰', '😭', '💀', '🤩', '😱', '🤯', '😴', '🤤', '🫶🏼',
-    '👀', '💪', '🤡', '👻', '🦋', '🌸', '💎', '🌟', '☕', '🎉',
-    '🌙', '⭐', '💫', '🔮', '🍃', '🌺', '🫧', '🤍', '💜', '🌈',
-    '🦄', '🧚‍♀️', '🌻', '🍯', '🧸', '🎨', '📚', '🎭', '🎪', '🎵',
-    '🎬', '📸', '💌', '✨', '🌙', '🔆', '💝', '🎀', '🧩', '🪩'
+    // Popular emotions & expressions
+    '😀', '😂', '🥰', '😍', '🤔', '😢', '😭', '😡', '🤩', '😱',
+    '🤯', '😴', '🤤', '🫶🏼', '💀', '👀', '💪', '🤡', '👏', '🔥',
+    // Hearts & love
+    '❤️', '💜', '🤍', '💙', '💚', '💛', '🧡', '🖤', '💖', '💕',
+    // Sparkles & magic  
+    '✨', '💫', '⭐', '🌟', '🔆', '💎', '🔮', '🪩', '🎭', '🎪',
+    // Nature & aesthetic
+    '🦋', '🌸', '🌺', '🌻', '🍃', '🌙', '🌈', '🦄', '🧚‍♀️', '☕',
+    // Celebration & vibes
+    '🎉', '💯', '🎵', '🎨', '📸', '💌', '🍯', '🧸', '💝', '🎀',
+    // Extra expressions
+    '🫧', '📚', '🎬', '🧩', '👻', '🥳', '😇', '🤪', '😎', '🥺'
   ];
 
   // Quick access mood buttons - most popular reactions
@@ -761,28 +768,42 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
             <Text style={styles.addReactionText}>+</Text>
           </TouchableOpacity>
           
-          {/* Reaction picker for all emojis */}
+          {/* Reaction picker for all emojis - Grid Layout */}
           {showReactionPicker && (
             <View style={styles.reactionPickerContainer}>
-              <ScrollView 
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.reactionPicker}
-                contentContainerStyle={styles.reactionPickerContent}
-              >
-                {reactionEmojis.map((emoji, index) => (
-                  <TouchableOpacity 
-                    key={index}
-                    style={[
-                      styles.reactionOption,
-                      userReaction === emoji && styles.selectedReactionOption
-                    ]}
-                    onPress={() => handleReactionPress(emoji)}
-                  >
-                    <Text style={styles.reactionEmoji}>{emoji}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              <View style={styles.reactionPickerWrapper}>
+                {/* Close button */}
+                <TouchableOpacity 
+                  style={styles.reactionPickerClose}
+                  onPress={() => setShowReactionPicker(false)}
+                >
+                  <Text style={styles.reactionPickerCloseText}>×</Text>
+                </TouchableOpacity>
+                
+                <ScrollView 
+                  showsVerticalScrollIndicator={false}
+                  style={styles.reactionPicker}
+                  contentContainerStyle={styles.reactionPickerContent}
+                >
+                  <View style={styles.reactionGrid}>
+                    {reactionEmojis.map((emoji, index) => (
+                      <TouchableOpacity 
+                        key={index}
+                        style={[
+                          styles.reactionGridOption,
+                          userReaction === emoji && styles.selectedReactionOption
+                        ]}
+                        onPress={() => {
+                          handleReactionPress(emoji);
+                          setShowReactionPicker(false); // Auto-close after selection
+                        }}
+                      >
+                        <Text style={styles.reactionEmoji}>{emoji}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
             </View>
           )}
         </View>
@@ -1166,26 +1187,63 @@ const styles = StyleSheet.create({
   },
   reactionPickerContainer: {
     position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: -16, // Extend to edge of card
+    bottom: 45,
+    left: -16,
+    right: -16,
     zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  reactionPicker: {
+  reactionPickerWrapper: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
-    maxHeight: 60,
-    elevation: 4,
+    width: '90%',
+    maxHeight: 200, // Increased height for grid
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  reactionPicker: {
+    flex: 1,
   },
   reactionPickerContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    padding: 16,
+  },
+  reactionGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  reactionGridOption: {
+    width: '18%', // 5 columns with spacing
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
+  },
+  reactionPickerClose: {
+    position: 'absolute',
+    top: 8,
+    right: 12,
+    zIndex: 20,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionPickerCloseText: {
+    fontSize: 18,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   reactionOption: {
     marginHorizontal: 4,
