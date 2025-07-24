@@ -482,11 +482,9 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         const profileRoute = `/profile/${chirp.author.id}`;
         console.log('🎯 Using dynamic profile route:', profileRoute);
         
-        // Add a small delay to see if that helps
-        setTimeout(() => {
-          router.push(profileRoute);
-          console.log('✅ Navigation initiated successfully to:', profileRoute);
-        }, 100);
+        // Use router.push directly without delay
+        router.push(profileRoute);
+        console.log('✅ Navigation initiated successfully to:', profileRoute);
         
       } catch (error) {
         console.error('❌ Navigation error:', error);
