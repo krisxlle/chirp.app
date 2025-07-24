@@ -499,3 +499,13 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Database Integration**: Maintained all social interaction functionality (follow/unfollow, block, notifications) in mobile-db.ts
 - **Triple Dot Menu**: Confirmed working state for profile interaction options with proper state management
 - **Status**: Profile images now properly hosted and accessible via Expo's static file serving, graceful fallback for any loading failures
+
+### January 24, 2025 - Database Schema Alignment Fix
+- **CRITICAL DATABASE FIXES**: Fixed all database schema mismatches between mobile-db.ts functions and actual PostgreSQL schema
+- **Follow System Repair**: Updated followUser/unfollowUser functions to use correct column name `following_id` instead of `followee_id`
+- **Block System Repair**: Fixed blockUser/unblockUser functions to use correct table name `user_blocks` instead of `blocks`
+- **Missing Function Addition**: Added required checkFollowStatus function that ChirpCard component was trying to import
+- **Stats Query Fix**: Corrected getUserStats function to use proper column name for followers count query
+- **Notification Settings Fix**: Updated getUserNotificationStatus to use correct column names for notification preferences
+- **Triple Dot Menu Resolution**: ChirpCard triple dot menu now fully functional with proper follow/unfollow and block/unblock capabilities
+- **Status**: All database functions properly aligned with schema, social interaction features working correctly

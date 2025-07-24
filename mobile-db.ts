@@ -492,7 +492,7 @@ export async function getUserStats(userId: string) {
     const stats = await sql`
       SELECT 
         (SELECT COUNT(*) FROM chirps WHERE author_id = ${userId}) as chirps,
-        (SELECT COUNT(*) FROM follows WHERE followed_id = ${userId}) as followers,
+        (SELECT COUNT(*) FROM follows WHERE following_id = ${userId}) as followers,
         (SELECT COUNT(*) FROM follows WHERE follower_id = ${userId}) as following
     `;
     
@@ -1075,14 +1075,14 @@ export async function cancelSubscription(userId: string): Promise<void> {
 }
 
 // Follow/Unfollow functionality
-export async function followUser(followerId: string, followeeId: string): Promise<boolean> {
+export async function followUser(followerId: string, followingId: string): Promise<boolean> {
   try {
-    console.log(`User ${followerId} attempting to follow user ${followeeId}`);
+    console.log(`User ${followerId} attempting to follow user ${followingId}`);
     
     // Check if already following
     const existingFollow = await sql`
       SELECT id FROM follows 
-      WHERE follower_id = ${followerId} AND followee_id = ${followeeId}
+      WHERE follower_id = ${followerId} AND following_id = ${followingId}
       LIMIT 1
     `;
     
@@ -1093,8 +1093,8 @@ export async function followUser(followerId: string, followeeId: string): Promis
     
     // Add follow relationship
     await sql`
-      INSERT INTO follows (follower_id, followee_id, created_at)
-      VALUES (${followerId}, ${followeeId}, NOW())
+      INSERT INTO follows (follower_id, following_id, created_at)
+      VALUES (${followerId}, ${followingId}, NOW())
     `;
     
     console.log('Successfully followed user');
@@ -1105,13 +1105,13 @@ export async function followUser(followerId: string, followeeId: string): Promis
   }
 }
 
-export async function unfollowUser(followerId: string, followeeId: string): Promise<boolean> {
+export async function unfollowUser(followerId: string, followingId: string): Promise<boolean> {
   try {
-    console.log(`User ${followerId} attempting to unfollow user ${followeeId}`);
+    console.log(`User ${followerId} attempting to unfollow user ${followingId}`);
     
     const result = await sql`
       DELETE FROM follows 
-      WHERE follower_id = ${followerId} AND followee_id = ${followeeId}
+      WHERE follower_id = ${followerId} AND following_id = ${followingId}
     `;
     
     console.log('Successfully unfollowed user');
@@ -1122,21 +1122,6 @@ export async function unfollowUser(followerId: string, followeeId: string): Prom
   }
 }
 
-export async function checkFollowStatus(followerId: string, followeeId: string): Promise<boolean> {
-  try {
-    const result = await sql`
-      SELECT id FROM follows 
-      WHERE follower_id = ${followerId} AND followee_id = ${followeeId}
-      LIMIT 1
-    `;
-    
-    return result.length > 0;
-  } catch (error) {
-    console.error('Error checking follow status:', error);
-    return false;
-  }
-}
-
 // Block functionality
 export async function blockUser(blockerId: string, blockedId: string): Promise<boolean> {
   try {
@@ -1144,7 +1129,7 @@ export async function blockUser(blockerId: string, blockedId: string): Promise<b
     
     // Check if already blocked
     const existingBlock = await sql`
-      SELECT id FROM blocks 
+      SELECT id FROM user_blocks 
       WHERE blocker_id = ${blockerId} AND blocked_id = ${blockedId}
       LIMIT 1
     `;
@@ -1156,15 +1141,15 @@ export async function blockUser(blockerId: string, blockedId: string): Promise<b
     
     // Add block relationship and remove any follow relationships
     await sql`
-      INSERT INTO blocks (blocker_id, blocked_id, created_at)
+      INSERT INTO user_blocks (blocker_id, blocked_id, created_at)
       VALUES (${blockerId}, ${blockedId}, NOW())
     `;
     
     // Remove any existing follow relationships
     await sql`
       DELETE FROM follows 
-      WHERE (follower_id = ${blockerId} AND followee_id = ${blockedId})
-         OR (follower_id = ${blockedId} AND followee_id = ${blockerId})
+      WHERE (follower_id = ${blockerId} AND following_id = ${blockedId})
+         OR (follower_id = ${blockedId} AND following_id = ${blockerId})
     `;
     
     console.log('Successfully blocked user');
@@ -1180,7 +1165,7 @@ export async function unblockUser(blockerId: string, blockedId: string): Promise
     console.log(`User ${blockerId} attempting to unblock user ${blockedId}`);
     
     const result = await sql`
-      DELETE FROM blocks 
+      DELETE FROM user_blocks 
       WHERE blocker_id = ${blockerId} AND blocked_id = ${blockedId}
     `;
     
@@ -1192,10 +1177,25 @@ export async function unblockUser(blockerId: string, blockedId: string): Promise
   }
 }
 
+export async function checkFollowStatus(currentUserId: string, targetUserId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM follows 
+      WHERE follower_id = ${currentUserId} AND following_id = ${targetUserId}
+      LIMIT 1
+    `;
+    
+    return result.length > 0;
+  } catch (error) {
+    console.error('Error checking follow status:', error);
+    return false;
+  }
+}
+
 export async function checkBlockStatus(blockerId: string, blockedId: string): Promise<boolean> {
   try {
     const result = await sql`
-      SELECT id FROM blocks 
+      SELECT id FROM user_blocks 
       WHERE blocker_id = ${blockerId} AND blocked_id = ${blockedId}
       LIMIT 1
     `;
@@ -1214,25 +1214,25 @@ export async function toggleUserNotifications(userId: string, targetUserId: stri
     
     // Check if notifications are currently enabled
     const existingNotificationSetting = await sql`
-      SELECT id, notifications_enabled FROM user_notification_settings 
-      WHERE user_id = ${userId} AND target_user_id = ${targetUserId}
+      SELECT id, notify_on_post FROM user_notification_settings 
+      WHERE user_id = ${userId} AND followed_user_id = ${targetUserId}
       LIMIT 1
     `;
     
     if (existingNotificationSetting.length > 0) {
       // Toggle existing setting
-      const newState = !existingNotificationSetting[0].notifications_enabled;
+      const newState = !existingNotificationSetting[0].notify_on_post;
       await sql`
         UPDATE user_notification_settings 
-        SET notifications_enabled = ${newState}, updated_at = NOW()
-        WHERE user_id = ${userId} AND target_user_id = ${targetUserId}
+        SET notify_on_post = ${newState}, created_at = NOW()
+        WHERE user_id = ${userId} AND followed_user_id = ${targetUserId}
       `;
       console.log(`Notifications ${newState ? 'enabled' : 'disabled'} for user`);
       return newState;
     } else {
       // Create new setting (default to enabled)
       await sql`
-        INSERT INTO user_notification_settings (user_id, target_user_id, notifications_enabled, created_at)
+        INSERT INTO user_notification_settings (user_id, followed_user_id, notify_on_post, created_at)
         VALUES (${userId}, ${targetUserId}, true, NOW())
       `;
       console.log('Notifications enabled for user');
@@ -1247,13 +1247,13 @@ export async function toggleUserNotifications(userId: string, targetUserId: stri
 export async function getUserNotificationStatus(userId: string, targetUserId: string): Promise<boolean> {
   try {
     const result = await sql`
-      SELECT notifications_enabled FROM user_notification_settings 
-      WHERE user_id = ${userId} AND target_user_id = ${targetUserId}
+      SELECT notify_on_post FROM user_notification_settings 
+      WHERE user_id = ${userId} AND followed_user_id = ${targetUserId}
       LIMIT 1
     `;
     
     // Default to enabled if no setting exists
-    return result.length > 0 ? result[0].notifications_enabled : true;
+    return result.length > 0 ? result[0].notify_on_post : true;
   } catch (error) {
     console.error('Error checking notification status:', error);
     return true; // Default to enabled
