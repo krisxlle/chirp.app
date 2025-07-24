@@ -84,25 +84,29 @@ export default function SearchPage() {
         {(['trending', 'chirps', 'users'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTabContainer]}
+            style={styles.tab}
             onPress={() => setActiveTab(tab)}
           >
-            {activeTab === tab ? (
-              <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.activeTab}
-              >
-                <Text style={[styles.tabText, styles.activeTabText]}>
-                  {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
-                </Text>
-              </LinearGradient>
-            ) : (
-              <Text style={styles.tabText}>
-                {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
-              </Text>
-            )}
+            <View style={styles.tabContent}>
+              {activeTab === tab ? (
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.activeTab}
+                >
+                  <Text style={styles.activeTabText}>
+                    {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
+                  </Text>
+                </LinearGradient>
+              ) : (
+                <View style={styles.inactiveTab}>
+                  <Text style={styles.tabText}>
+                    {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -240,25 +244,44 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    minHeight: 52,
   },
-  activeTabContainer: {
-    borderRadius: 4,
+  tabContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activeTab: {
     paddingVertical: 8,
     paddingHorizontal: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 4,
+    minHeight: 32,
+  },
+  inactiveTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 32,
   },
   tabText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#657786',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   activeTabText: {
     color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   content: {
     flex: 1,
