@@ -302,6 +302,13 @@ const styles = StyleSheet.create({
     minWidth: 50,
   },
   activeFeedButtonContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -309,12 +316,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   activeFeedButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 50,
+    borderRadius: 8,
   },
   feedButtonIcon: {
     fontSize: 12,

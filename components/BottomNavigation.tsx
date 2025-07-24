@@ -123,6 +123,12 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   activeNavItemContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    minWidth: 60,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -132,10 +138,7 @@ const styles = StyleSheet.create({
   activeNavItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
     borderRadius: 12,
-    minWidth: 60,
   },
   iconContainer: {
     position: 'relative',
