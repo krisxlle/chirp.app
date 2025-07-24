@@ -16,11 +16,29 @@ export interface MobileChirp {
   };
   replyCount: number;
   reactionCount: number;
+  repostCount?: number;
   reactions: MobileReaction[];
   isWeeklySummary?: boolean;
   nestedReplies?: MobileChirp[];
   isDirectReply?: boolean;
   isNestedReply?: boolean;
+  // Repost-related fields
+  isRepost?: boolean;
+  repostOfId?: string | null;
+  originalChirp?: {
+    id: string;
+    content: string;
+    createdAt: string;
+    author: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      customHandle: string;
+      handle: string;
+      profileImageUrl?: string | null;
+    };
+    isWeeklySummary?: boolean;
+  };
 }
 
 export interface MobileReaction {

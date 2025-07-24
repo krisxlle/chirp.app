@@ -55,22 +55,37 @@ export async function getForYouChirps(): Promise<MobileChirp[]> {
         c.content,
         c.created_at as "createdAt",
         c.author_id::text,
+        c.repost_of_id,
         COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
         COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         u.profile_image_url,
         u.banner_image_url,
-        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
-        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
+        -- Original chirp data for reposts
+        oc.id as original_chirp_id,
+        oc.content as original_content,
+        oc.created_at as original_created_at,
+        oc.author_id as original_author_id,
+        COALESCE(ou.custom_handle, ou.handle, CAST(ou.id AS text), 'user') as original_username,
+        COALESCE(ou.first_name || ' ' || ou.last_name, ou.custom_handle, ou.handle) as original_display_name,
+        ou.profile_image_url as original_profile_image_url,
+        ou.banner_image_url as original_banner_image_url,
+        COALESCE(oc.is_weekly_summary, false) as original_is_weekly_summary,
+        -- Counts based on original chirp for reposts, current chirp for regular posts
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = COALESCE(c.repost_of_id, c.id)) as reaction_count,
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = COALESCE(c.repost_of_id, c.id)) as reply_count,
+        (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = COALESCE(c.repost_of_id, c.id)) as repost_count
       FROM chirps c
       LEFT JOIN users u ON c.author_id = u.id
+      LEFT JOIN chirps oc ON c.repost_of_id = oc.id
+      LEFT JOIN users ou ON oc.author_id = ou.id
       WHERE c.reply_to_id IS NULL
       ORDER BY 
         -- Sophisticated ranking algorithm
-        ((SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) * 3 + 
-         (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) * 2 + 
+        ((SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = COALESCE(c.repost_of_id, c.id)) * 3 + 
+         (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = COALESCE(c.repost_of_id, c.id)) * 2 + 
          CASE WHEN c.created_at > NOW() - INTERVAL '1 day' THEN 10 ELSE 0 END +
-         CASE WHEN c.is_weekly_summary THEN 5 ELSE 0 END) DESC,
+         CASE WHEN COALESCE(c.is_weekly_summary, oc.is_weekly_summary) THEN 5 ELSE 0 END) DESC,
         c.created_at DESC
       LIMIT 20
     `;
@@ -91,15 +106,30 @@ export async function getLatestChirps(): Promise<MobileChirp[]> {
         c.content,
         c.created_at as "createdAt",
         c.author_id::text,
+        c.repost_of_id,
         COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
         COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         u.profile_image_url,
         u.banner_image_url,
-        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
-        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
+        -- Original chirp data for reposts
+        oc.id as original_chirp_id,
+        oc.content as original_content,
+        oc.created_at as original_created_at,
+        oc.author_id as original_author_id,
+        COALESCE(ou.custom_handle, ou.handle, CAST(ou.id AS text), 'user') as original_username,
+        COALESCE(ou.first_name || ' ' || ou.last_name, ou.custom_handle, ou.handle) as original_display_name,
+        ou.profile_image_url as original_profile_image_url,
+        ou.banner_image_url as original_banner_image_url,
+        COALESCE(oc.is_weekly_summary, false) as original_is_weekly_summary,
+        -- Counts based on original chirp for reposts, current chirp for regular posts
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = COALESCE(c.repost_of_id, c.id)) as reaction_count,
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = COALESCE(c.repost_of_id, c.id)) as reply_count,
+        (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = COALESCE(c.repost_of_id, c.id)) as repost_count
       FROM chirps c
       LEFT JOIN users u ON c.author_id = u.id
+      LEFT JOIN chirps oc ON c.repost_of_id = oc.id
+      LEFT JOIN users ou ON oc.author_id = ou.id
       WHERE c.reply_to_id IS NULL
       ORDER BY c.created_at DESC
       LIMIT 20
@@ -321,26 +351,49 @@ export async function getChirpsByUserId(userId: string): Promise<MobileChirp[]> 
 
 function formatChirpResults(chirps: any[]): MobileChirp[] {
   console.log(`Successfully loaded ${chirps.length} authentic chirps`);
-  return chirps.map(chirp => ({
-    id: String(chirp.id),
-    content: String(chirp.content),
-    createdAt: chirp.createdAt ? new Date(chirp.createdAt).toISOString() : new Date().toISOString(),
-    replyToId: chirp.replyToId || null,
-    author: {
-      id: String(chirp.author_id),
-      firstName: String(chirp.display_name || 'User').split(' ')[0],
-      lastName: String(chirp.display_name || 'User').split(' ')[1] || '',
-      email: 'user@chirp.com',
-      customHandle: String(chirp.username || 'user'),
-      handle: String(chirp.username || 'user'),
-      profileImageUrl: chirp.profile_image_url || null,
-      bannerImageUrl: chirp.banner_image_url || null
-    },
-    replyCount: parseInt(chirp.reply_count) || 0,
-    reactionCount: parseInt(chirp.reaction_count) || 0,
-    reactions: [],
-    isWeeklySummary: Boolean(chirp.isWeeklySummary)
-  })) as MobileChirp[];
+  return chirps.map(chirp => {
+    const isRepost = Boolean(chirp.repost_of_id);
+    
+    return {
+      id: String(chirp.id),
+      content: isRepost ? String(chirp.original_content || '') : String(chirp.content),
+      createdAt: chirp.createdAt ? new Date(chirp.createdAt).toISOString() : new Date().toISOString(),
+      replyToId: chirp.replyToId || null,
+      // For reposts, show the reposter's info in the header
+      author: {
+        id: String(chirp.author_id),
+        firstName: String(chirp.display_name || 'User').split(' ')[0],
+        lastName: String(chirp.display_name || 'User').split(' ')[1] || '',
+        email: 'user@chirp.com',
+        customHandle: String(chirp.username || 'user'),
+        handle: String(chirp.username || 'user'),
+        profileImageUrl: chirp.profile_image_url || null,
+        bannerImageUrl: chirp.banner_image_url || null
+      },
+      replyCount: parseInt(chirp.reply_count) || 0,
+      reactionCount: parseInt(chirp.reaction_count) || 0,
+      repostCount: parseInt(chirp.repost_count) || 0,
+      reactions: [],
+      isWeeklySummary: Boolean(isRepost ? chirp.original_is_weekly_summary : chirp.isWeeklySummary),
+      // Repost-specific fields
+      isRepost,
+      repostOfId: chirp.repost_of_id ? String(chirp.repost_of_id) : null,
+      originalChirp: isRepost ? {
+        id: String(chirp.original_chirp_id),
+        content: String(chirp.original_content || ''),
+        createdAt: chirp.original_created_at ? new Date(chirp.original_created_at).toISOString() : new Date().toISOString(),
+        author: {
+          id: String(chirp.original_author_id),
+          firstName: String(chirp.original_display_name || 'User').split(' ')[0],
+          lastName: String(chirp.original_display_name || 'User').split(' ')[1] || '',
+          customHandle: String(chirp.original_username || 'user'),
+          handle: String(chirp.original_username || 'user'),
+          profileImageUrl: chirp.original_profile_image_url || null,
+        },
+        isWeeklySummary: Boolean(chirp.original_is_weekly_summary)
+      } : undefined
+    };
+  }) as MobileChirp[];
 }
 
 export async function getChirpsFromDB(): Promise<MobileChirp[]> {
@@ -1070,7 +1123,7 @@ async function getNestedReplies(replyId: string): Promise<MobileChirp[]> {
   }
 }
 
-// Create a repost of a chirp
+// Create a repost of a chirp - creates actual chirp entries that appear in feeds
 export async function createRepost(originalChirpId: string, userId: string) {
   try {
     console.log('Creating repost of chirp:', originalChirpId, 'by user:', userId);
@@ -1079,29 +1132,61 @@ export async function createRepost(originalChirpId: string, userId: string) {
       throw new Error('User ID is required to create a repost');
     }
     
-    // Check if user already reposted this chirp
-    const existingRepost = await sql`
-      SELECT id FROM reposts 
-      WHERE chirp_id = ${originalChirpId} AND user_id = ${userId}
+    // Check if user already has a repost chirp for this original chirp
+    const existingRepostChirp = await sql`
+      SELECT id FROM chirps 
+      WHERE repost_of_id = ${originalChirpId} AND author_id = ${userId}
       LIMIT 1
     `;
     
-    if (existingRepost.length > 0) {
-      // Remove existing repost (toggle off)
+    if (existingRepostChirp.length > 0) {
+      // Remove existing repost chirp (toggle off)
+      const repostChirpId = existingRepostChirp[0].id;
+      await sql`
+        DELETE FROM chirps 
+        WHERE id = ${repostChirpId} AND author_id = ${userId}
+      `;
+      
+      // Also remove from reposts tracking table
       await sql`
         DELETE FROM reposts 
         WHERE chirp_id = ${originalChirpId} AND user_id = ${userId}
       `;
-      console.log('Removed repost');
-      return false; // Repost removed
+      
+      console.log('Removed repost chirp from timeline');
+      return { reposted: false, repostChirpId: null };
     } else {
-      // Add new repost
+      // Create new repost chirp entry that will appear in feeds
+      const repostResult = await sql`
+        INSERT INTO chirps (author_id, content, repost_of_id, created_at)
+        VALUES (${userId}, '', ${originalChirpId}, NOW())
+        RETURNING id
+      `;
+      
+      const repostChirpId = repostResult[0].id;
+      
+      // Add entry to reposts tracking table for additional repost functionality
       await sql`
         INSERT INTO reposts (chirp_id, user_id, created_at)
         VALUES (${originalChirpId}, ${userId}, NOW())
+        ON CONFLICT (chirp_id, user_id) DO NOTHING
       `;
-      console.log('Added repost');
-      return true; // Repost added
+      
+      // Create notification for the original chirp author
+      const originalChirp = await sql`
+        SELECT author_id FROM chirps WHERE id = ${originalChirpId}
+      `;
+      
+      if (originalChirp.length > 0 && originalChirp[0].author_id !== userId) {
+        await sql`
+          INSERT INTO notifications (user_id, type, from_user_id, chirp_id, created_at)
+          VALUES (${originalChirp[0].author_id}, 'repost', ${userId}, ${originalChirpId}, NOW())
+        `;
+        console.log('Created repost notification for original author');
+      }
+      
+      console.log('Created repost chirp that will appear in timeline:', repostChirpId);
+      return { reposted: true, repostChirpId };
     }
   } catch (error) {
     console.error('Error managing repost:', error);

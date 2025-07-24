@@ -28,7 +28,25 @@ interface Chirp {
   author: User;
   replyCount: number;
   reactionCount: number;
+  repostCount?: number;
   isWeeklySummary?: boolean;
+  // Repost-related fields
+  isRepost?: boolean;
+  repostOfId?: string | null;
+  originalChirp?: {
+    id: string;
+    content: string;
+    createdAt: string;
+    author: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      customHandle: string;
+      handle: string;
+      profileImageUrl?: string | null;
+    };
+    isWeeklySummary?: boolean;
+  };
 }
 
 interface ChirpCardProps {
@@ -170,25 +188,20 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
       
       console.log('Creating repost of chirp:', chirp.id, 'by user:', user.id);
       
-      const repostAdded = await createRepost(chirp.id, user.id);
+      const repostResult = await createRepost(chirp.id, user.id);
       
-      if (repostAdded) {
+      if (repostResult.reposted) {
         // User added a new repost
         setReposts(prev => prev + 1);
         setUserHasReposted(true);
-        
-        // Trigger push notification for repost
-        const { triggerRepostNotification } = await import('../mobile-db');
-        await triggerRepostNotification(chirp.author.id, user.id, parseInt(chirp.id));
-        
-        console.log('Repost added successfully');
-        Alert.alert('Reposted!', 'This chirp has been shared to your profile.');
+        console.log('Repost added successfully - new chirp ID:', repostResult.repostChirpId);
+        Alert.alert('Reposted!', 'This chirp has been shared to your timeline and will appear in feeds.');
       } else {
         // User removed their repost
         setReposts(prev => Math.max(0, prev - 1));
         setUserHasReposted(false);
-        console.log('Repost removed');
-        Alert.alert('Unreposted', 'This chirp has been removed from your profile.');
+        console.log('Repost removed from timeline');
+        Alert.alert('Unreposted', 'This chirp has been removed from your timeline.');
       }
     } catch (error) {
       console.error('Error handling repost:', error);
@@ -217,8 +230,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         setUserReaction(result.emoji);
         
         // Get accurate count for the specific emoji
-        const emojiCount = await getEmojiReactionCount(chirp.id, result.emoji);
-        setUserReactionCount(emojiCount);
+        if (result.emoji) {
+          const emojiCount = await getEmojiReactionCount(chirp.id, result.emoji);
+          setUserReactionCount(emojiCount);
+        }
         
         // Trigger push notification for reaction
         const { triggerReactionNotification } = await import('../mobile-db');
@@ -623,6 +638,15 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         </TouchableOpacity>
       </View>
 
+      {chirp.isRepost && chirp.originalChirp && (
+        <View style={styles.repostIndicator}>
+          <RepostIcon size={16} color="#7c3aed" />
+          <Text style={styles.repostText}>
+            {displayName} reposted
+          </Text>
+        </View>
+      )}
+
       {chirp.isWeeklySummary && (
         <Text style={styles.weeklySummaryTitle}>
           Weekly Summary (2025-07-13 - 2025-07-19)
@@ -1013,6 +1037,18 @@ const styles = StyleSheet.create({
     color: '#14171a',
     marginBottom: 8,
     marginLeft: 52, // Align with content below avatar
+  },
+  repostIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 52,
+    marginBottom: 8,
+  },
+  repostText: {
+    fontSize: 13,
+    color: '#7c3aed',
+    fontWeight: '500',
+    marginLeft: 6,
   },
   moreButton: {
     padding: 8,
