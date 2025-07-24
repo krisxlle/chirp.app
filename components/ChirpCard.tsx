@@ -193,19 +193,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   };
 
   const handleDeleteChirp = async () => {
-    console.log('🗑️ Delete chirp button pressed');
+    console.log('🗑️ Delete chirp button pressed - proceeding immediately...');
     console.log('Chirp details:', { id: chirp.id, authorId: chirp.author.id });
     console.log('User details:', { id: user?.id, type: typeof user?.id });
     
-    // Use window.confirm for web environment compatibility
-    const confirmed = window.confirm('Are you sure you want to delete this chirp?');
-    
-    if (!confirmed) {
-      console.log('🚫 Delete cancelled by user');
-      return;
-    }
-    
-    console.log('✅ User confirmed deletion, proceeding...');
     try {
       console.log('🗑️ Proceeding with deletion...');
       console.log('Deleting chirp:', chirp.id, 'by user:', user?.id);
@@ -216,7 +207,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
       await deleteChirp(chirp.id, String(user?.id));
       console.log('✅ Delete operation completed successfully');
       
-      alert('Chirp has been deleted successfully');
       setShowOptionsModal(false);
       
       // Force a refresh of the parent component's data
