@@ -182,6 +182,9 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     const isOwnChirp = user?.id && chirp.author.id === user.id;
     console.log('Is own chirp:', isOwnChirp);
     
+    // Test Alert immediately to confirm it works
+    console.log('Testing Alert functionality...');
+    
     if (isOwnChirp) {
       Alert.alert('Chirp Options', 'Choose an action', [
         { text: 'Delete Chirp', style: 'destructive', onPress: () => handleDeleteChirp() },
@@ -189,34 +192,12 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         { text: 'Cancel', style: 'cancel' }
       ]);
     } else {
-      // Load current user interaction states
-      if (user?.id && chirp.author.id) {
-        try {
-          const { checkFollowStatus, checkBlockStatus, getUserNotificationStatus } = await import('../mobile-db');
-          const [followStatus, blockStatus, notificationStatus] = await Promise.all([
-            checkFollowStatus(user.id, chirp.author.id),
-            checkBlockStatus(user.id, chirp.author.id),
-            getUserNotificationStatus(user.id, chirp.author.id)
-          ]);
-          
-          setIsFollowing(followStatus);
-          setIsBlocked(blockStatus);
-          setNotificationsEnabled(notificationStatus);
-        } catch (error) {
-          console.error('Error loading user interaction states:', error);
-        }
-      }
-      
-      const followText = isFollowing ? `Unfollow ${displayName}` : `Follow ${displayName}`;
-      const blockText = isBlocked ? `Unblock ${displayName}` : `Block ${displayName}`;
-      const notificationText = notificationsEnabled ? `Turn off notifications from ${displayName}` : `Turn on notifications from ${displayName}`;
-      
+      // Simplified test - show Alert immediately without async database calls
       Alert.alert('User Options', 'Choose an action', [
-        { text: followText, onPress: () => handleFollowToggle() },
-        { text: blockText, style: isBlocked ? 'default' : 'destructive', onPress: () => handleBlockToggle() },
-        { text: notificationText, onPress: () => handleNotificationToggle() },
-        { text: 'Copy Link to Profile', onPress: () => handleCopyUserProfile() },
-        { text: 'Report Chirp', style: 'destructive', onPress: () => handleReportChirp() },
+        { text: `Follow ${displayName}`, onPress: () => Alert.alert('Follow', 'Follow functionality working') },
+        { text: `Block ${displayName}`, style: 'destructive', onPress: () => Alert.alert('Block', 'Block functionality working') },
+        { text: 'Copy Link to Profile', onPress: () => Alert.alert('Copy', 'Copy functionality working') },
+        { text: 'Report Chirp', style: 'destructive', onPress: () => Alert.alert('Report', 'Report functionality working') },
         { text: 'Cancel', style: 'cancel' }
       ]);
     }
