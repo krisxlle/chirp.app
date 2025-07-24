@@ -269,7 +269,6 @@ export default function SupportPage({ onClose }: SupportPageProps) {
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={[styles.submitButtonContainer, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
           >
@@ -277,7 +276,7 @@ export default function SupportPage({ onClose }: SupportPageProps) {
               colors={['#7c3aed', '#ec4899']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.submitButton}
+              style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
             >
               {isSubmitting ? (
                 <ActivityIndicator color="#ffffff" size="small" />
@@ -453,21 +452,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 16,
   },
-  submitButtonContainer: {
-    marginTop: 8,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
   submitButton: {
+    marginTop: 8,
     paddingVertical: 16,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   submitButtonDisabled: {
     backgroundColor: '#9ca3af',

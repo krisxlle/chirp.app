@@ -259,7 +259,6 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           </View>
           
           <TouchableOpacity
-            style={[styles.updateButtonContainer, isUpdating && styles.disabledButton]}
             onPress={handleUpdateProfile}
             disabled={isUpdating}
           >
@@ -267,7 +266,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
               colors={['#7c3aed', '#ec4899']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.updateButton}
+              style={[styles.updateButton, isUpdating && styles.disabledButton]}
             >
               {isUpdating ? (
                 <ActivityIndicator color="#ffffff" size="small" />
@@ -369,7 +368,6 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
               </Text>
               
               <TouchableOpacity 
-                style={styles.upgradeButtonContainer}
                 onPress={() => {
                   // Navigate to subscription page
                   if (typeof window !== 'undefined' && window.location) {
@@ -689,15 +687,17 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  updateButtonContainer: {
-    marginTop: 8,
-    // No border radius here to avoid double border radius with LinearGradient
-  },
   updateButton: {
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
+    marginTop: 8,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   disabledButton: {
     backgroundColor: '#d1d5db',
@@ -730,13 +730,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  upgradeButtonContainer: {
-    // No border radius here to avoid double border radius with LinearGradient
-  },
   upgradeButton: {
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 8,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   upgradeButtonText: {
     color: '#ffffff',

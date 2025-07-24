@@ -151,10 +151,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[
-              styles.postButtonContainer,
-              (threadChirps.length === 0 || isPosting) && styles.postButtonDisabled
-            ]}
             onPress={handleSubmit}
             disabled={threadChirps.length === 0 || isPosting}
           >
@@ -162,7 +158,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               colors={['#7c3aed', '#ec4899']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.postButton}
+              style={[
+                styles.postButton,
+                (threadChirps.length === 0 || isPosting) && styles.postButtonDisabled
+              ]}
             >
               <Text style={styles.postButtonText}>
                 {isPosting ? "Posting..." : "Post all"}
@@ -275,10 +274,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             </View>
             
             <TouchableOpacity
-              style={[
-                styles.postButtonContainer,
-                (!content.trim() || content.length > maxLength || isPosting) && styles.postButtonDisabled
-              ]}
               onPress={handleSubmit}
               disabled={!content.trim() || content.length > maxLength || isPosting}
             >
@@ -286,7 +281,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 colors={['#7c3aed', '#ec4899']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.postButton}
+                style={[
+                  styles.postButton,
+                  (!content.trim() || content.length > maxLength || isPosting) && styles.postButtonDisabled
+                ]}
               >
                 <Text style={styles.postButtonText}>
                   {isPosting ? "Posting..." : "Chirp"}
@@ -363,19 +361,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  postButtonContainer: {
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   postButton: {
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   postButtonDisabled: {
     backgroundColor: '#d1d5db',
