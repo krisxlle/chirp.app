@@ -84,10 +84,14 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
     if (imageUrl.includes('oaidalleapiprodscus')) {
       processedImageUrl = `${imageUrl}&cache_bust=${Date.now()}`;
     } else if (imageUrl.startsWith('/generated-images/') || imageUrl.includes('/generated-images/')) {
-      // For local generated images, fall back to colored avatars since they look great
-      // This is actually better UX than broken image links
-      console.log('Using generated colored avatar instead of stored image:', imageUrl);
-      processedImageUrl = null;
+      // Handle local backend storage images - access directly from assets
+      const filename = imageUrl.split('/').pop();
+      if (filename) {
+        processedImageUrl = `/generated-images/${filename}`;
+        console.log('Loading image directly from static assets:', processedImageUrl);
+      } else {
+        processedImageUrl = undefined;
+      }
     }
   }
 
