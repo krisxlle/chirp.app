@@ -58,8 +58,18 @@ export default function ProfilePage() {
 
   const fetchUserChirps = async () => {
     try {
-      const chirps = await getChirpsFromDB();
+      if (!authUser?.id) return;
+      
+      console.log('Fetching chirps for user:', authUser.id);
+      const { getChirpsByUserId } = await import('../mobile-db');
+      const chirps = await getChirpsByUserId(authUser.id);
       setUserChirps(chirps);
+      
+      // Update stats based on actual data
+      setStats(prev => ({
+        ...prev,
+        chirps: chirps.length
+      }));
     } catch (error) {
       console.error('Error fetching user chirps:', error);
     }
@@ -73,7 +83,9 @@ export default function ProfilePage() {
     }
   }, [authUser]);
 
-  const displayName = user?.firstName || user?.customHandle || 'User';
+  const displayName = user?.firstName && user?.lastName 
+    ? `${user.firstName} ${user.lastName}` 
+    : user?.customHandle || user?.handle || 'User';
 
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -206,7 +218,7 @@ export default function ProfilePage() {
             <Text style={styles.crownIcon}>👑</Text>
           )}
         </View>
-        <Text style={styles.handle}>{user.customHandle || user.handle}</Text>
+        <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
         <Text style={styles.bio}>
           {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
             if (part.startsWith('@')) {
@@ -225,7 +237,7 @@ export default function ProfilePage() {
         
         <View style={styles.joinedRow}>
           <Text style={styles.calendarIcon}>📅</Text>
-          <Text style={styles.joinedText}>Joined {user.joinedAt}</Text>
+          <Text style={styles.joinedText}>Joined January 2025</Text>
         </View>
       </View>
 
@@ -264,7 +276,7 @@ export default function ProfilePage() {
         </View>
         
         <Text style={styles.weeklySummaryContent}>
-          This week you posted 5 times and honestly? Peak tech anxiety energy ⚡ That chirp about AI stealing jobs hit different - giving main character meets existential crisis vibes 🦋 Plus all those notification tests? You're basically running QA for the whole platform ⭐ Tech-savvy chaos but make it relatable
+          This week the @chirp account posted **5 chirps** showcasing all the platform features! From welcome messages to thread demonstrations - giving **main character energy** with that premium Chirp+ flex 👑 Those reaction tutorials and hashtag tips? **Pure educational vibes** helping users master the app ✨ Official account but make it relatable
         </Text>
 
         {/* Analytics within Weekly Summary */}
@@ -287,7 +299,7 @@ export default function ProfilePage() {
             <Text style={styles.topChirpIcon}>🏆</Text>
             <Text style={styles.topChirpTitle}>Top Chirp</Text>
             <Text style={styles.topChirpContent}>
-              "I did not even get to chirp the first reply , Al stole this moment from me they are stealing our jobs 🤖"
+              "Welcome to Chirp! 🐤 This is the official preview account. Explore all the features and discover your authentic social voice."
             </Text>
           </View>
 
@@ -313,10 +325,10 @@ export default function ProfilePage() {
             <Text style={styles.commonWordsTitle}>📈 Common Words</Text>
             <View style={styles.tagsContainer}>
               <Text style={styles.tag}>chirp</Text>
-              <Text style={styles.tag}>reply</Text>
-              <Text style={styles.tag}>AI</Text>
-              <Text style={styles.tag}>jobs</Text>
-              <Text style={styles.tag}>notifications</Text>
+              <Text style={styles.tag}>features</Text>
+              <Text style={styles.tag}>premium</Text>
+              <Text style={styles.tag}>welcome</Text>
+              <Text style={styles.tag}>reactions</Text>
             </View>
           </View>
         </View>
