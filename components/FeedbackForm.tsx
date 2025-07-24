@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 
 interface FeedbackFormProps {
@@ -143,16 +144,26 @@ export default function FeedbackForm({ onClose }: FeedbackFormProps) {
                 key={cat}
                 style={[
                   styles.categoryButton,
-                  category === cat && styles.categoryButtonSelected
+                  category === cat && styles.categoryButtonSelectedContainer
                 ]}
                 onPress={() => setCategory(cat)}
               >
-                <Text style={[
-                  styles.categoryButtonText,
-                  category === cat && styles.categoryButtonTextSelected
-                ]}>
-                  {cat}
-                </Text>
+                {category === cat ? (
+                  <LinearGradient
+                    colors={['#7c3aed', '#ec4899']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.categoryButtonSelected}
+                  >
+                    <Text style={[styles.categoryButtonText, styles.categoryButtonTextSelected]}>
+                      {cat}
+                    </Text>
+                  </LinearGradient>
+                ) : (
+                  <Text style={styles.categoryButtonText}>
+                    {cat}
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -173,15 +184,22 @@ export default function FeedbackForm({ onClose }: FeedbackFormProps) {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+          style={[styles.submitButtonContainer, isSubmitting && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={isSubmitting}
         >
-          {isSubmitting ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.submitButtonText}>Send Feedback</Text>
-          )}
+          <LinearGradient
+            colors={['#7c3aed', '#ec4899']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.submitButton}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.submitButtonText}>Send Feedback</Text>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
 
         <Text style={styles.contactInfo}>
@@ -264,9 +282,13 @@ const styles = StyleSheet.create({
     borderColor: '#e1e8ed',
     marginRight: 8,
   },
-  categoryButtonSelected: {
-    backgroundColor: '#7c3aed',
+  categoryButtonSelectedContainer: {
     borderColor: '#7c3aed',
+  },
+  categoryButtonSelected: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   categoryButtonText: {
     fontSize: 14,
@@ -276,12 +298,14 @@ const styles = StyleSheet.create({
   categoryButtonTextSelected: {
     color: '#ffffff',
   },
+  submitButtonContainer: {
+    marginTop: 8,
+    borderRadius: 8,
+  },
   submitButton: {
-    backgroundColor: '#7c3aed',
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
   },
   submitButtonDisabled: {
     backgroundColor: '#9ca3af',

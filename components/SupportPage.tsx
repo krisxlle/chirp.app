@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator 
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
@@ -268,18 +269,25 @@ export default function SupportPage({ onClose }: SupportPageProps) {
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            style={[styles.submitButtonContainer, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" size="small" />
-            ) : (
-              <>
-                <SendIcon size={20} color="#ffffff" />
-                <Text style={styles.submitButtonText}>Send Support Request</Text>
-              </>
-            )}
+            <LinearGradient
+              colors={['#7c3aed', '#ec4899']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.submitButton}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <>
+                  <SendIcon size={20} color="#ffffff" />
+                  <Text style={styles.submitButtonText}>Send Support Request</Text>
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -445,20 +453,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 16,
   },
-  submitButton: {
-    backgroundColor: '#7c3aed',
+  submitButtonContainer: {
     borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 8,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  submitButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
   },
   submitButtonDisabled: {
     backgroundColor: '#9ca3af',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { getTrendingHashtags, searchChirps, searchUsers } from '../mobile-db';
 import ChirpCard from './ChirpCard';
@@ -83,12 +84,25 @@ export default function SearchPage() {
         {(['trending', 'chirps', 'users'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            style={[styles.tab, activeTab === tab && styles.activeTabContainer]}
             onPress={() => setActiveTab(tab)}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
-            </Text>
+            {activeTab === tab ? (
+              <LinearGradient
+                colors={['#7c3aed', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.activeTab}
+              >
+                <Text style={[styles.tabText, styles.activeTabText]}>
+                  {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
+                </Text>
+              </LinearGradient>
+            ) : (
+              <Text style={styles.tabText}>
+                {tab === 'trending' ? 'Trending' : tab === 'chirps' ? 'Chirps' : 'Users'}
+              </Text>
+            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -229,8 +243,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
+  activeTabContainer: {
+    borderRadius: 4,
+  },
   activeTab: {
-    borderBottomColor: '#7c3aed',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    borderRadius: 4,
   },
   tabText: {
     fontSize: 16,
@@ -238,7 +258,7 @@ const styles = StyleSheet.create({
     color: '#657786',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   content: {
     flex: 1,

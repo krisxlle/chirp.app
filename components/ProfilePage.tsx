@@ -417,13 +417,20 @@ export default function ProfilePage() {
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]}
+                style={[styles.generateButtonContainer, isGenerating && styles.generateButtonDisabled]}
                 onPress={generateProfile}
                 disabled={isGenerating}
               >
-                <Text style={styles.generateButtonText}>
-                  {isGenerating ? 'Generating...' : 'Generate'}
-                </Text>
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.generateButton}
+                >
+                  <Text style={styles.generateButtonText}>
+                    {isGenerating ? 'Generating...' : 'Generate'}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -505,18 +512,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  aiProfileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+  aiProfileButtonContainer: {
     borderRadius: 20,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    height: 40, // Fixed height for consistency
+  },
+  aiProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
     height: 40, // Fixed height for consistency
   },
   aiProfileIcon: {
@@ -961,13 +971,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-  generateButton: {
+  generateButtonContainer: {
     flex: 1,
-    backgroundColor: '#7c3aed',
+    borderRadius: 25,
+  },
+  generateButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 25,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   generateButtonDisabled: {
     backgroundColor: '#b8b8b8',

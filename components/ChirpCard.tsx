@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
 import ReplyIcon from './icons/ReplyIcon';
@@ -413,9 +414,14 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           
           {chirp.isWeeklySummary && (
             <View style={styles.weeklySummaryRow}>
-              <View style={styles.weeklySummaryBadge}>
+              <LinearGradient
+                colors={['#7c3aed', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.weeklySummaryBadge}
+              >
                 <Text style={styles.summaryBadgeText}>Weekly Summary</Text>
-              </View>
+              </LinearGradient>
               <Text style={styles.summaryDate}>3 days ago</Text>
             </View>
           )}
@@ -540,11 +546,18 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.submitButton, !replyText.trim() && styles.submitButtonDisabled]}
+              style={[styles.submitButtonContainer, !replyText.trim() && styles.submitButtonDisabled]}
               onPress={submitReply}
               disabled={!replyText.trim()}
             >
-              <Text style={styles.submitButtonText}>Reply</Text>
+              <LinearGradient
+                colors={['#7c3aed', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.submitButton}
+              >
+                <Text style={styles.submitButtonText}>Reply</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -629,7 +642,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   weeklySummaryBadge: {
-    backgroundColor: '#7c3aed',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
@@ -791,11 +803,15 @@ const styles = StyleSheet.create({
     color: '#657786',
     fontWeight: '600',
   },
+  submitButtonContainer: {
+    borderRadius: 20,
+  },
   submitButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#7c3aed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitButtonDisabled: {
     backgroundColor: '#e1e8ed',

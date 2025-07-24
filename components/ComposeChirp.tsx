@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import { useAuth } from './AuthContext';
 import Svg, { Path } from 'react-native-svg';
@@ -151,15 +152,22 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           </TouchableOpacity>
           <TouchableOpacity 
             style={[
-              styles.postButton,
+              styles.postButtonContainer,
               (threadChirps.length === 0 || isPosting) && styles.postButtonDisabled
             ]}
             onPress={handleSubmit}
             disabled={threadChirps.length === 0 || isPosting}
           >
-            <Text style={styles.postButtonText}>
-              {isPosting ? "Posting..." : "Post all"}
-            </Text>
+            <LinearGradient
+              colors={['#7c3aed', '#ec4899']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.postButton}
+            >
+              <Text style={styles.postButtonText}>
+                {isPosting ? "Posting..." : "Post all"}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -268,15 +276,22 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             
             <TouchableOpacity
               style={[
-                styles.postButton,
+                styles.postButtonContainer,
                 (!content.trim() || content.length > maxLength || isPosting) && styles.postButtonDisabled
               ]}
               onPress={handleSubmit}
               disabled={!content.trim() || content.length > maxLength || isPosting}
             >
-              <Text style={styles.postButtonText}>
-                {isPosting ? "Posting..." : "Chirp"}
-              </Text>
+              <LinearGradient
+                colors={['#7c3aed', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.postButton}
+              >
+                <Text style={styles.postButtonText}>
+                  {isPosting ? "Posting..." : "Chirp"}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -348,18 +363,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  postButton: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  postButtonContainer: {
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+  },
+  postButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   postButtonDisabled: {
     backgroundColor: '#d1d5db',

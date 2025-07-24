@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator 
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import { useAuth } from './AuthContext';
 import { updateUserProfile, cancelSubscription, updateChirpPlusBadgeVisibility } from '../mobile-db';
@@ -195,12 +196,25 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
 
   const TabButton = ({ id, title, active }: { id: string; title: string; active: boolean }) => (
     <TouchableOpacity
-      style={[styles.tabButton, active && styles.activeTabButton]}
+      style={[styles.tabButton, active && styles.activeTabButtonContainer]}
       onPress={() => setActiveTab(id)}
     >
-      <Text style={[styles.tabButtonText, active && styles.activeTabButtonText]}>
-        {title}
-      </Text>
+      {active ? (
+        <LinearGradient
+          colors={['#7c3aed', '#ec4899']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.activeTabButton}
+        >
+          <Text style={[styles.tabButtonText, styles.activeTabButtonText]}>
+            {title}
+          </Text>
+        </LinearGradient>
+      ) : (
+        <Text style={styles.tabButtonText}>
+          {title}
+        </Text>
+      )}
     </TouchableOpacity>
   );
 
@@ -245,15 +259,22 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           </View>
           
           <TouchableOpacity
-            style={[styles.updateButton, isUpdating && styles.disabledButton]}
+            style={[styles.updateButtonContainer, isUpdating && styles.disabledButton]}
             onPress={handleUpdateProfile}
             disabled={isUpdating}
           >
-            {isUpdating ? (
-              <ActivityIndicator color="#ffffff" size="small" />
-            ) : (
-              <Text style={styles.updateButtonText}>Update Name</Text>
-            )}
+            <LinearGradient
+              colors={['#7c3aed', '#ec4899']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.updateButton}
+            >
+              {isUpdating ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <Text style={styles.updateButtonText}>Update Name</Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -348,7 +369,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
               </Text>
               
               <TouchableOpacity 
-                style={styles.upgradeButton}
+                style={styles.upgradeButtonContainer}
                 onPress={() => {
                   // Navigate to subscription page
                   if (typeof window !== 'undefined' && window.location) {
@@ -361,7 +382,14 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
                   }
                 }}
               >
-                <Text style={styles.upgradeButtonText}>Upgrade to Chirp+</Text>
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.upgradeButton}
+                >
+                  <Text style={styles.upgradeButtonText}>Upgrade to Chirp+</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           )}
@@ -584,9 +612,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e8ed',
   },
-  activeTabButton: {
-    backgroundColor: '#7c3aed',
+  activeTabButtonContainer: {
     borderColor: '#7c3aed',
+  },
+  activeTabButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
   },
   tabButtonText: {
     fontSize: 14,
@@ -658,13 +690,15 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  updateButton: {
-    backgroundColor: '#7c3aed',
+  updateButtonContainer: {
     borderRadius: 8,
+    marginTop: 8,
+  },
+  updateButton: {
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    borderRadius: 8,
   },
   disabledButton: {
     backgroundColor: '#d1d5db',
@@ -697,11 +731,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  upgradeButton: {
-    backgroundColor: '#7c3aed',
+  upgradeButtonContainer: {
     borderRadius: 8,
+  },
+  upgradeButton: {
     paddingVertical: 12,
     alignItems: 'center',
+    borderRadius: 8,
   },
   upgradeButtonText: {
     color: '#ffffff',

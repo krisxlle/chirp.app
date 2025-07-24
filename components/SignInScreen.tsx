@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from './AuthContext';
 import ChirpLogo from './icons/ChirpLogo';
 
@@ -60,13 +61,20 @@ export default function SignInScreen() {
           />
 
           <TouchableOpacity
-            style={[styles.signInButton, isLoading && styles.disabledButton]}
+            style={[styles.signInButtonContainer, isLoading && styles.disabledButton]}
             onPress={handleSignIn}
             disabled={isLoading}
           >
-            <Text style={styles.signInButtonText}>
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Text>
+            <LinearGradient
+              colors={['#7c3aed', '#ec4899']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.signInButton}
+            >
+              <Text style={styles.signInButtonText}>
+                {isLoading ? 'Signing In...' : 'Sign In'}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -118,12 +126,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: '#ffffff',
   },
-  signInButton: {
-    backgroundColor: '#7c3aed',
+  signInButtonContainer: {
     borderRadius: 12,
+    marginTop: 8,
+  },
+  signInButton: {
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 8,
+    borderRadius: 12,
   },
   disabledButton: {
     opacity: 0.6,

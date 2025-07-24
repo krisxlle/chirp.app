@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { getChirpsFromDB, getForYouChirps, getLatestChirps, getTrendingChirps } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
@@ -153,30 +154,57 @@ export default function HomePage() {
           {/* Feed Type Selector - compact on same line */}
           <View style={styles.feedControls}>
             <TouchableOpacity 
-              style={[styles.feedButton, feedType === 'personalized' && styles.activeFeedButton]}
+              style={[styles.feedButton, feedType === 'personalized' && styles.activeFeedButtonContainer]}
               onPress={() => setFeedType('personalized')}
             >
-              <Text style={[styles.feedButtonText, feedType === 'personalized' && styles.activeFeedButtonText]}>
-                For You
-              </Text>
+              {feedType === 'personalized' ? (
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.activeFeedButton}
+                >
+                  <Text style={styles.activeFeedButtonText}>For You</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={styles.feedButtonText}>For You</Text>
+              )}
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.feedButton, feedType === 'chronological' && styles.activeFeedButton]}
+              style={[styles.feedButton, feedType === 'chronological' && styles.activeFeedButtonContainer]}
               onPress={() => setFeedType('chronological')}
             >
-              <Text style={[styles.feedButtonText, feedType === 'chronological' && styles.activeFeedButtonText]}>
-                Latest
-              </Text>
+              {feedType === 'chronological' ? (
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.activeFeedButton}
+                >
+                  <Text style={styles.activeFeedButtonText}>Latest</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={styles.feedButtonText}>Latest</Text>
+              )}
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.feedButton, feedType === 'trending' && styles.activeFeedButton]}
+              style={[styles.feedButton, feedType === 'trending' && styles.activeFeedButtonContainer]}
               onPress={() => setFeedType('trending')}
             >
-              <Text style={[styles.feedButtonText, feedType === 'trending' && styles.activeFeedButtonText]}>
-                Trending
-              </Text>
+              {feedType === 'trending' ? (
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.activeFeedButton}
+                >
+                  <Text style={styles.activeFeedButtonText}>Trending</Text>
+                </LinearGradient>
+              ) : (
+                <Text style={styles.feedButtonText}>Trending</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -273,13 +301,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 50,
   },
-  activeFeedButton: {
-    backgroundColor: '#7c3aed',
+  activeFeedButtonContainer: {
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 4,
+  },
+  activeFeedButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50,
   },
   feedButtonIcon: {
     fontSize: 12,

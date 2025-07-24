@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator 
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
@@ -215,18 +216,25 @@ export default function SubscriptionPage({ onClose }: SubscriptionPageProps) {
 
         {/* Subscribe Button */}
         <TouchableOpacity
-          style={[styles.subscribeButton, isLoading && styles.subscribeButtonDisabled]}
+          style={[styles.subscribeButtonContainer, isLoading && styles.subscribeButtonDisabled]}
           onPress={handleSubscribe}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <ActivityIndicator color="#ffffff" size="small" />
-          ) : (
-            <>
-              <CrownIcon size={20} color="#ffffff" />
-              <Text style={styles.subscribeButtonText}>Subscribe to Chirp+ - $4.99/month</Text>
-            </>
-          )}
+          <LinearGradient
+            colors={['#7c3aed', '#ec4899']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.subscribeButton}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#ffffff" size="small" />
+            ) : (
+              <>
+                <CrownIcon size={20} color="#ffffff" />
+                <Text style={styles.subscribeButtonText}>Subscribe to Chirp+ - $4.99/month</Text>
+              </>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Terms */}
@@ -348,21 +356,23 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
   },
+  subscribeButtonContainer: {
+    marginHorizontal: 24,
+    marginBottom: 24,
+    borderRadius: 12,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   subscribeButton: {
-    backgroundColor: '#7c3aed',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 24,
-    marginBottom: 24,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   subscribeButtonDisabled: {
     backgroundColor: '#9ca3af',
