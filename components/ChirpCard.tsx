@@ -730,13 +730,6 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
                 }}>
                   <Text style={styles.modalOptionText}>Copy Link to Profile</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.modalOption} onPress={() => {
-                  setShowOptionsModal(false);
-                  handleReportChirp();
-                }}>
-                  <Text style={[styles.modalOptionText, styles.destructiveText]}>Report Chirp</Text>
-                </TouchableOpacity>
               </>
             )}
             
