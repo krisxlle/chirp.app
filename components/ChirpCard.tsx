@@ -177,11 +177,14 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
 
   const handleMoreOptions = async () => {
     console.log('🔥 Triple dot menu pressed!');
-    console.log('User ID:', user?.id);
-    console.log('Chirp author ID:', chirp.author.id);
+    console.log('User ID:', user?.id, 'Type:', typeof user?.id);
+    console.log('Chirp author ID:', chirp.author.id, 'Type:', typeof chirp.author.id);
     
-    const isOwnChirp = user?.id && chirp.author.id === user.id;
-    console.log('Is own chirp:', isOwnChirp);
+    // Ensure both are strings for comparison
+    const userId = String(user?.id || '');
+    const authorId = String(chirp.author.id || '');
+    const isOwnChirp = userId && authorId && userId === authorId;
+    console.log('Is own chirp:', isOwnChirp, `(${userId} === ${authorId})`);
     
     // Show custom modal instead of Alert
     console.log('Opening options modal...');
@@ -689,10 +692,10 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              {user?.id && chirp.author.id === user.id ? 'Chirp Options' : 'User Options'}
+              {String(user?.id || '') === String(chirp.author.id || '') ? 'Chirp Options' : 'User Options'}
             </Text>
             
-            {user?.id && chirp.author.id === user.id ? (
+            {String(user?.id || '') === String(chirp.author.id || '') ? (
               // Own chirp options - only Delete and Cancel
               <>
                 <TouchableOpacity style={styles.modalOption} onPress={() => {
