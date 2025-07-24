@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    paddingTop: 60, // Account for status bar
+    paddingTop: 20, // Reduced top padding to fix spacing issue
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
     backgroundColor: '#ffffff',
