@@ -67,16 +67,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
+      console.log('🔐 Attempting sign in for:', email);
+      
       // Get actual user from database based on email
-      const { getUserByEmail } = await import('../mobile-db');
-      const dbUser = await getUserByEmail(email);
+      const { getUserByEmail, getFirstUser } = await import('../mobile-db');
+      let dbUser = await getUserByEmail(email);
+      
+      // If user not found by email, try to get @chirp preview user for demo
+      if (!dbUser && email === 'preview@chirp.app') {
+        console.log('🎯 Loading @chirp preview user for demo...');
+        dbUser = await getFirstUser();
+      }
       
       if (dbUser) {
+        console.log('✅ User authenticated successfully:', dbUser.custom_handle || dbUser.handle || dbUser.id);
         // Use real user data from database
         const user = {
           id: dbUser.id,
           email: dbUser.email || email,
-          name: dbUser.display_name || email.split('@')[0],
+          name: dbUser.display_name || dbUser.custom_handle || dbUser.handle || email.split('@')[0],
           firstName: dbUser.first_name,
           lastName: dbUser.last_name,
           customHandle: dbUser.custom_handle,

@@ -315,12 +315,12 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         console.log('Attempting navigation to:', `/user-profile/${chirp.author.id}`);
         
         // Try view-profile route with fallbacks
-        console.log('🎯 Attempting view-profile navigation');
-        router.push(`/view-profile?userId=${chirp.author.id}`);
-        console.log('✅ Navigation call made to view-profile');
+        console.log('🎯 Using dynamic profile route');
+        router.push(`/profile/${chirp.author.id}`);
+        console.log('✅ Navigation initiated successfully');
       } catch (error) {
         console.error('Navigation error:', error);
-        Alert.alert('Navigation Error', `Failed to open profile page. Error: ${error}`);
+        Alert.alert('Navigation Error', 'Failed to open user profile. Please try again.');
       }
     } else {
       console.log('No author ID found for chirp:', chirp);

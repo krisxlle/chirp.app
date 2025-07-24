@@ -459,6 +459,57 @@ export async function getFirstUser() {
   }
 }
 
+// Get user's chirps for profile display
+export async function getUserChirps(userId: string) {
+  try {
+    console.log('Fetching chirps for user:', userId);
+    const chirps = await sql`
+      SELECT 
+        c.id::text,
+        c.content,
+        c.created_at as "createdAt",
+        COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
+      FROM chirps c
+      WHERE c.author_id = ${userId}
+      ORDER BY c.created_at DESC
+      LIMIT 10
+    `;
+    
+    console.log(`Found ${chirps.length} chirps for user`);
+    return chirps;
+  } catch (error) {
+    console.error('Error fetching user chirps:', error);
+    return [];
+  }
+}
+
+// Get user stats (chirp count, followers, following)
+export async function getUserStats(userId: string) {
+  try {
+    console.log('Fetching stats for user:', userId);
+    const stats = await sql`
+      SELECT 
+        (SELECT COUNT(*) FROM chirps WHERE author_id = ${userId}) as chirps,
+        (SELECT COUNT(*) FROM follows WHERE followed_id = ${userId}) as followers,
+        (SELECT COUNT(*) FROM follows WHERE follower_id = ${userId}) as following
+    `;
+    
+    const userStats = {
+      chirps: Number(stats[0]?.chirps || 0),
+      followers: Number(stats[0]?.followers || 0), 
+      following: Number(stats[0]?.following || 0)
+    };
+    
+    console.log('User stats:', userStats);
+    return userStats;
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    return { chirps: 0, followers: 0, following: 0 };
+  }
+}
+
 export async function getReactionsForChirp(chirpId: number) {
   try {
     const reactions = await sql`
@@ -1051,7 +1102,7 @@ export async function triggerReactionNotification(authorId: string, reactorId: s
   try {
     if (authorId === reactorId) return; // Don't notify self
 
-    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+    const response = await fetch(`/api/notifications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1077,7 +1128,7 @@ export async function triggerFollowNotification(followedUserId: string, follower
   try {
     if (followedUserId === followerId) return; // Don't notify self
 
-    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+    const response = await fetch(`/api/notifications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1102,7 +1153,7 @@ export async function triggerReplyNotification(originalAuthorId: string, replier
   try {
     if (originalAuthorId === replierId) return; // Don't notify self
 
-    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+    const response = await fetch(`/api/notifications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
