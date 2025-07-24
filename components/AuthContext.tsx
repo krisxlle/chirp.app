@@ -166,8 +166,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🚪 Signing out user...');
       await AsyncStorage.removeItem('user');
       setUser(null);
+      setIsLoading(false);
+      console.log('✅ User signed out successfully');
     } catch (error) {
       console.error('Sign out error:', error);
+      throw error;
     }
   };
 
