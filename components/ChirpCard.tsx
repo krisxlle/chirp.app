@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
@@ -54,6 +54,7 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   const [isBlocked, setIsBlocked] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loadingUserActions, setLoadingUserActions] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
   
   // Track individual reaction counts for quick access buttons
   const [reactionCounts, setReactionCounts] = useState<{[key: string]: number}>({
@@ -182,25 +183,9 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     const isOwnChirp = user?.id && chirp.author.id === user.id;
     console.log('Is own chirp:', isOwnChirp);
     
-    // Test Alert immediately to confirm it works
-    console.log('Testing Alert functionality...');
-    
-    if (isOwnChirp) {
-      Alert.alert('Chirp Options', 'Choose an action', [
-        { text: 'Delete Chirp', style: 'destructive', onPress: () => handleDeleteChirp() },
-        { text: 'Edit Chirp', onPress: () => Alert.alert('Edit', 'Edit functionality coming soon') },
-        { text: 'Cancel', style: 'cancel' }
-      ]);
-    } else {
-      // Simplified test - show Alert immediately without async database calls
-      Alert.alert('User Options', 'Choose an action', [
-        { text: `Follow ${displayName}`, onPress: () => Alert.alert('Follow', 'Follow functionality working') },
-        { text: `Block ${displayName}`, style: 'destructive', onPress: () => Alert.alert('Block', 'Block functionality working') },
-        { text: 'Copy Link to Profile', onPress: () => Alert.alert('Copy', 'Copy functionality working') },
-        { text: 'Report Chirp', style: 'destructive', onPress: () => Alert.alert('Report', 'Report functionality working') },
-        { text: 'Cancel', style: 'cancel' }
-      ]);
-    }
+    // Show custom modal instead of Alert
+    console.log('Opening options modal...');
+    setShowOptionsModal(true);
   };
 
   const handleDeleteChirp = async () => {
@@ -683,6 +668,84 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
       )}
 
       {/* Profile navigation now uses page routing */}
+      
+      {/* Custom Options Modal */}
+      <Modal
+        visible={showOptionsModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowOptionsModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowOptionsModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {user?.id && chirp.author.id === user.id ? 'Chirp Options' : 'User Options'}
+            </Text>
+            
+            {user?.id && chirp.author.id === user.id ? (
+              // Own chirp options
+              <>
+                <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  setShowOptionsModal(false);
+                  handleDeleteChirp();
+                }}>
+                  <Text style={[styles.modalOptionText, styles.destructiveText]}>Delete Chirp</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  setShowOptionsModal(false);
+                  Alert.alert('Edit', 'Edit functionality coming soon');
+                }}>
+                  <Text style={styles.modalOptionText}>Edit Chirp</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // Other user options
+              <>
+                <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  setShowOptionsModal(false);
+                  handleFollowToggle();
+                }}>
+                  <Text style={styles.modalOptionText}>
+                    {isFollowing ? `Unfollow ${displayName}` : `Follow ${displayName}`}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  setShowOptionsModal(false);
+                  handleBlockToggle();
+                }}>
+                  <Text style={[styles.modalOptionText, !isBlocked && styles.destructiveText]}>
+                    {isBlocked ? `Unblock ${displayName}` : `Block ${displayName}`}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  setShowOptionsModal(false);
+                  handleCopyUserProfile();
+                }}>
+                  <Text style={styles.modalOptionText}>Copy Link to Profile</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  setShowOptionsModal(false);
+                  handleReportChirp();
+                }}>
+                  <Text style={[styles.modalOptionText, styles.destructiveText]}>Report Chirp</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            
+            <TouchableOpacity style={[styles.modalOption, styles.cancelOption]} onPress={() => setShowOptionsModal(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </TouchableOpacity>
   );
 }
@@ -982,5 +1045,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     padding: 16,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    minWidth: 280,
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#14171a',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginVertical: 4,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#14171a',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  destructiveText: {
+    color: '#dc2626',
+  },
+  cancelOption: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e1e8ed',
+    paddingTop: 16,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: '#657786',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
