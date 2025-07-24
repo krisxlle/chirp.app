@@ -1040,22 +1040,22 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12, // Reduced spacing between action buttons
-    paddingVertical: 4,
-    paddingHorizontal: 4, // Reduced horizontal padding
+    marginRight: 8, // Further reduced spacing between action buttons
+    paddingVertical: 3,
+    paddingHorizontal: 3, // Further reduced horizontal padding
     borderRadius: 4,
     minWidth: 0,
     flexShrink: 1,
   },
   actionIcon: {
-    fontSize: 16,
-    marginRight: 4,
+    fontSize: 15, // Slightly smaller icons
+    marginRight: 3,
   },
   actionText: {
-    fontSize: 13,
+    fontSize: 12, // Smaller text
     color: '#657786',
     fontWeight: '500',
-    marginLeft: 6,
+    marginLeft: 4,
   },
   reactionsContainer: {
     flexDirection: 'row',
@@ -1067,16 +1067,17 @@ const styles = StyleSheet.create({
   reactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 4,
+    marginRight: 3, // Reduced margin for tighter spacing
     minWidth: 0,
     flexShrink: 1,
+    paddingHorizontal: 2, // Added small padding to prevent touching
   },
   reactionIcon: {
-    fontSize: 14,
+    fontSize: 13, // Slightly smaller icon
     marginRight: 1,
   },
   reactionCount: {
-    fontSize: 11,
+    fontSize: 10, // Smaller count text
     color: '#657786',
     fontWeight: '500',
     minWidth: 0,
@@ -1084,12 +1085,13 @@ const styles = StyleSheet.create({
   addReactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 2,
+    marginLeft: 1,
     minWidth: 0,
     flexShrink: 1,
+    paddingHorizontal: 2,
   },
   addReactionText: {
-    fontSize: 12,
+    fontSize: 11, // Smaller plus button text
     color: '#7c3aed',
     fontWeight: '600',
     marginRight: 1,
@@ -1236,7 +1238,7 @@ const styles = StyleSheet.create({
   },
   nestedRepliesContainer: {
     marginLeft: 20,
-    paddingLeft: 16,
+    paddingLeft: 12, // Reduced padding to give more space for content
   },
   nestedReplyWrapper: {
     position: 'relative',
