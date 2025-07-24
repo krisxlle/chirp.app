@@ -296,6 +296,7 @@ export async function getChirpsByUserId(userId: string): Promise<MobileChirp[]> 
         c.id::text,
         c.content,
         c.created_at as "createdAt",
+        c.reply_to_id::text as "replyToId",
         COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
         COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
@@ -324,6 +325,7 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
     id: String(chirp.id),
     content: String(chirp.content),
     createdAt: chirp.createdAt ? new Date(chirp.createdAt).toISOString() : new Date().toISOString(),
+    replyToId: chirp.replyToId || null,
     author: {
       id: String(chirp.author_id),
       firstName: String(chirp.display_name || 'User').split(' ')[0],

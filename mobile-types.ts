@@ -4,6 +4,7 @@ export interface MobileChirp {
   id: string;
   content: string;
   createdAt: string;
+  replyToId?: string | null;
   author: {
     id: string;
     firstName: string;

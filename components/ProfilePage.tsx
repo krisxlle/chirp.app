@@ -49,6 +49,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'replies' | 'reactions'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
+  const [userReplies, setUserReplies] = useState<any[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
     following: 1,
     followers: 1,
@@ -62,13 +63,19 @@ export default function ProfilePage() {
       
       console.log('Fetching chirps for user:', authUser.id);
       const { getChirpsByUserId } = await import('../mobile-db');
-      const chirps = await getChirpsByUserId(authUser.id);
-      setUserChirps(chirps);
+      const allChirps = await getChirpsByUserId(authUser.id);
+      
+      // Separate original chirps from replies
+      const originalChirps = allChirps.filter(chirp => !chirp.replyToId);
+      const replies = allChirps.filter(chirp => chirp.replyToId);
+      
+      setUserChirps(originalChirps);
+      setUserReplies(replies);
       
       // Update stats based on actual data
       setStats(prev => ({
         ...prev,
-        chirps: chirps.length
+        chirps: originalChirps.length
       }));
     } catch (error) {
       console.error('Error fetching user chirps:', error);
@@ -372,10 +379,23 @@ export default function ProfilePage() {
         )}
         
         {activeTab === 'replies' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>↩️</Text>
-            <Text style={styles.emptyTitle}>No replies yet</Text>
-            <Text style={styles.emptySubtext}>Your replies will appear here</Text>
+          <View style={styles.repliesContainer}>
+            {userReplies.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>↩️</Text>
+                <Text style={styles.emptyTitle}>No replies yet</Text>
+                <Text style={styles.emptySubtext}>Your replies will appear here</Text>
+              </View>
+            ) : (
+              userReplies.map((reply) => (
+                <ChirpCard 
+                  key={reply.id} 
+                  chirp={reply} 
+                  currentUserId={user?.id || ''} 
+                  onDeleteSuccess={fetchUserChirps}
+                />
+              ))
+            )}
           </View>
         )}
         
@@ -826,6 +846,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   chirpsContainer: {
+    paddingHorizontal: 8,
+  },
+  repliesContainer: {
     paddingHorizontal: 8,
   },
   analyticsContainer: {
