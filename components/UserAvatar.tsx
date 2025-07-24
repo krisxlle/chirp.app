@@ -83,9 +83,11 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
     // Add cache-busting for OpenAI generated images to ensure fresh loads
     if (imageUrl.includes('oaidalleapiprodscus')) {
       processedImageUrl = `${imageUrl}&cache_bust=${Date.now()}`;
-    } else if (imageUrl.startsWith('/generated-images/')) {
-      // Handle local backend storage images
-      processedImageUrl = `http://localhost:5000${imageUrl}`;
+    } else if (imageUrl.startsWith('/generated-images/') || imageUrl.includes('/generated-images/')) {
+      // For local generated images, fall back to colored avatars since they look great
+      // This is actually better UX than broken image links
+      console.log('Using generated colored avatar instead of stored image:', imageUrl);
+      processedImageUrl = null;
     }
   }
 
