@@ -237,7 +237,6 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(profileUrl);
-        console.log('✅ Profile link copied to clipboard:', profileUrl);
         // Use a fallback notification instead of Alert
         if (typeof window !== 'undefined') {
           const notification = document.createElement('div');
@@ -260,7 +259,6 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
           }, 2000);
         }
       } else {
-        console.log('📋 Fallback: Profile link:', profileUrl);
         // Fallback for environments without clipboard API
         const textArea = document.createElement('textarea');
         textArea.value = profileUrl;
@@ -268,11 +266,9 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        console.log('✅ Profile link copied using fallback method');
       }
     } catch (error) {
-      console.error('❌ Error copying profile link:', error);
-      console.log('📋 Manual copy needed:', profileUrl);
+      console.error('Error copying profile link:', error);
     }
   };
 
