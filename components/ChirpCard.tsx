@@ -791,27 +791,36 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
           ) : threadReplies.length === 0 ? (
             <Text style={styles.noRepliesText}>No replies yet</Text>
           ) : (
-            threadReplies.map((reply, index) => (
-              <View key={reply.id}>
-                {/* Direct reply to original chirp - same level with connector */}
-                <View style={styles.replyWrapper}>
-                  <View style={styles.replyConnector} />
-                  <ChirpCard chirp={reply} />
-                </View>
-                
-                {/* Nested replies (replies to this reply) - deeper indent */}
-                {reply.nestedReplies && reply.nestedReplies.length > 0 && (
-                  <View style={styles.nestedRepliesContainer}>
-                    {reply.nestedReplies.map((nestedReply, nestedIndex) => (
-                      <View key={nestedReply.id} style={styles.nestedReplyWrapper}>
-                        <View style={styles.nestedReplyConnector} />
-                        <ChirpCard chirp={nestedReply} />
-                      </View>
-                    ))}
+            <View style={styles.threadContainer}>
+              {/* Continuous vertical line for all direct replies */}
+              {threadReplies.length > 0 && (
+                <View style={styles.continuousConnector} />
+              )}
+              
+              {threadReplies.map((reply, index) => (
+                <View key={reply.id}>
+                  {/* Direct reply to original chirp - same level with individual connector */}
+                  <View style={styles.replyWrapper}>
+                    <View style={styles.replyBranch} />
+                    <ChirpCard chirp={reply} />
                   </View>
-                )}
-              </View>
-            ))
+                  
+                  {/* Nested replies (replies to this reply) - deeper indent */}
+                  {reply.nestedReplies && reply.nestedReplies.length > 0 && (
+                    <View style={styles.nestedRepliesContainer}>
+                      {/* Continuous line for nested replies */}
+                      <View style={styles.nestedContinuousConnector} />
+                      {reply.nestedReplies.map((nestedReply, nestedIndex) => (
+                        <View key={nestedReply.id} style={styles.nestedReplyWrapper}>
+                          <View style={styles.nestedReplyBranch} />
+                          <ChirpCard chirp={nestedReply} />
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
           )}
         </View>
       )}
@@ -1225,32 +1234,59 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingLeft: 16,
   },
-  replyWrapper: {
-    marginBottom: 8,
+  threadContainer: {
+    position: 'relative',
   },
-  replyConnector: {
+  continuousConnector: {
     position: 'absolute',
     left: -2,
     top: 0,
+    bottom: 0,
     width: 2,
-    height: '100%',
     backgroundColor: '#7c3aed',
+    zIndex: 1,
+  },
+  replyWrapper: {
+    position: 'relative',
+    marginBottom: 8,
+    zIndex: 2,
+  },
+  replyBranch: {
+    position: 'absolute',
+    left: -2,
+    top: 20,
+    width: 12,
+    height: 2,
+    backgroundColor: '#7c3aed',
+    zIndex: 2,
   },
   nestedRepliesContainer: {
     marginLeft: 20,
-    paddingLeft: 12, // Reduced padding to give more space for content
+    paddingLeft: 12,
+    position: 'relative',
+  },
+  nestedContinuousConnector: {
+    position: 'absolute',
+    left: -2,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: '#7c3aed',
+    zIndex: 1,
   },
   nestedReplyWrapper: {
     position: 'relative',
     marginBottom: 8,
+    zIndex: 2,
   },
-  nestedReplyConnector: {
+  nestedReplyBranch: {
     position: 'absolute',
     left: -2,
-    top: 0,
-    width: 2,
-    height: '100%',
+    top: 20,
+    width: 12,
+    height: 2,
     backgroundColor: '#7c3aed',
+    zIndex: 2,
   },
   loadingText: {
     fontSize: 14,
