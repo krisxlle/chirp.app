@@ -43,10 +43,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
         {navItems.map((item) => (
           <TouchableOpacity
             key={item.key}
-            style={[
-              styles.navItem,
-              item.isActive && styles.activeNavItemContainer
-            ]}
+            style={styles.navItem}
             onPress={() => onTabChange(item.key)}
             activeOpacity={0.7}
           >
@@ -122,7 +119,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     minWidth: 60,
   },
-  activeNavItemContainer: {
+  activeNavItem: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
@@ -134,14 +131,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  activeNavItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    minWidth: 60,
   },
   iconContainer: {
     position: 'relative',

@@ -154,7 +154,7 @@ export default function HomePage() {
           {/* Feed Type Selector - compact on same line */}
           <View style={styles.feedControls}>
             <TouchableOpacity 
-              style={[styles.feedButton, feedType === 'personalized' && styles.activeFeedButtonContainer]}
+              style={styles.feedButton}
               onPress={() => setFeedType('personalized')}
             >
               {feedType === 'personalized' ? (
@@ -172,7 +172,7 @@ export default function HomePage() {
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.feedButton, feedType === 'chronological' && styles.activeFeedButtonContainer]}
+              style={styles.feedButton}
               onPress={() => setFeedType('chronological')}
             >
               {feedType === 'chronological' ? (
@@ -190,7 +190,7 @@ export default function HomePage() {
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.feedButton, feedType === 'trending' && styles.activeFeedButtonContainer]}
+              style={styles.feedButton}
               onPress={() => setFeedType('trending')}
             >
               {feedType === 'trending' ? (
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 50,
   },
-  activeFeedButtonContainer: {
+  activeFeedButton: {
     flexDirection: 'row',
     paddingHorizontal: 8,
     paddingVertical: 6,
@@ -314,15 +314,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 4,
-  },
-  activeFeedButton: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 50,
   },
   feedButtonIcon: {
     fontSize: 12,
