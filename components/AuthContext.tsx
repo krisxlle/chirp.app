@@ -189,17 +189,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const validateUser = async () => {
       if (user && !isLoading) {
         console.log('🔍 Validating current user:', user.id);
-        // Force refresh if user has wrong ID (cached from previous version)
-        if (user.id === '45185401') {
-          console.log('🔄 Detected cached user with old ID - clearing and refreshing...');
-          await signOut();
-          setTimeout(() => {
-            console.log('🚀 Auto-signing in with corrected user ID...');
-            signIn('preview@chirp.app');
-          }, 100);
-        } else {
-          console.log('✅ User validation complete - ID:', user.id);
-        }
+        // Authentication validation complete - no forced loops
+        console.log('✅ User validation complete - ID:', user.id);
       }
     };
     
