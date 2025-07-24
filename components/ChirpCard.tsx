@@ -736,7 +736,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
               <>
                 <TouchableOpacity style={styles.modalOption} onPress={() => {
                   setShowOptionsModal(false);
-                  handleDelete();
+                  handleDeleteChirp();
                 }}>
                   <LinearGradient
                     colors={['#dc2626', '#ef4444']}
