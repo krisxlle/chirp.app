@@ -177,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🧹 Clearing stored authentication data...');
       await AsyncStorage.removeItem('user');
       setUser(null);
-      console.log('🚀 Forcing login to @chirp account...');
+      console.log('🚀 Forcing login to @Chirp account...');
       await signIn('kriselle.t@gmail.com');
     } catch (error) {
       console.error('Force login error:', error);
@@ -190,8 +190,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user && !isLoading) {
         console.log('🔍 Validating current user:', user.id);
         // Check if user with ID "1" should be switched to @chirp
-        if (user.id === '1' || user.id === 'chirp-preview-001') {
-          console.log('🔄 Detected invalid user ID - switching to @chirp...');
+        // Only clear if truly invalid user - @Chirp account (45185401) is valid
+        if (user.id === '1') {
+          console.log('🔄 Detected invalid user ID - switching to @Chirp...');
           await forceLoginToChirp();
         }
       }

@@ -413,8 +413,8 @@ export async function getFirstUser() {
         stripe_customer_id,
         stripe_subscription_id
       FROM users 
-      WHERE custom_handle = 'chirp' OR handle = 'chirp' OR id = 'chirp-preview-001'
-      ORDER BY CASE WHEN custom_handle = 'chirp' THEN 1 ELSE 2 END
+      WHERE LOWER(custom_handle) = 'chirp' OR LOWER(handle) = 'chirp'
+      ORDER BY CASE WHEN LOWER(custom_handle) = 'chirp' THEN 1 ELSE 2 END
       LIMIT 1
     `;
     

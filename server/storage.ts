@@ -322,8 +322,6 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .where(or(
-        eq(users.handle, handle),
-        eq(users.customHandle, handle),
         sql`LOWER(${users.handle}) = LOWER(${handle})`,
         sql`LOWER(${users.customHandle}) = LOWER(${handle})`
       ));
@@ -1421,19 +1419,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async isHandleAvailable(handle: string): Promise<boolean> {
-    const [existingByHandle] = await db
+    const [existingUser] = await db
       .select()
       .from(users)
-      .where(eq(users.handle, handle))
-      .limit(1);
-      
-    const [existingByCustomHandle] = await db
-      .select()
-      .from(users)
-      .where(eq(users.customHandle, handle))
+      .where(or(
+        sql`LOWER(${users.handle}) = LOWER(${handle})`,
+        sql`LOWER(${users.customHandle}) = LOWER(${handle})`
+      ))
       .limit(1);
     
-    return !existingByHandle && !existingByCustomHandle;
+    return !existingUser;
   }
 
   async claimCustomHandle(userId: string, customHandle: string): Promise<void> {
