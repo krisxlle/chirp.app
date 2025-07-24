@@ -178,8 +178,11 @@ export default function ProfilePage() {
         <View style={styles.avatarContainer}>
           <UserAvatar user={user} size="xl" />
         </View>
-        
-        {/* Action Buttons */}
+      </View>
+
+      {/* User Info with Action Buttons */}
+      <View style={styles.userInfo}>
+        {/* Action Buttons positioned in white area */}
         <View style={styles.actionButtons}>
           <TouchableOpacity onPress={handleAIProfile}>
             <LinearGradient
@@ -197,10 +200,6 @@ export default function ProfilePage() {
             <Text style={styles.settingsText}>Settings</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* User Info */}
-      <View style={styles.userInfo}>
         <View style={styles.nameRow}>
           <Text style={styles.displayName}>{displayName}</Text>
           {user.isChirpPlus && user.showChirpPlusBadge && (
@@ -505,12 +504,11 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   actionButtons: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: 12,
+    marginBottom: 16,
   },
   aiProfileButtonContainer: {
     borderRadius: 20,
