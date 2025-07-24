@@ -7,25 +7,49 @@ import type { MobileChirp, MobileUser } from './mobile-types';
 const getDatabaseUrl = () => {
   // Try multiple ways to access the DATABASE_URL
   if (typeof process !== 'undefined' && process.env && process.env.DATABASE_URL) {
+    console.log('✅ Using process.env.DATABASE_URL');
     return process.env.DATABASE_URL;
+  }
+  
+  // For Expo web, try VITE environment variables
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATABASE_URL) {
+    console.log('✅ Using VITE_DATABASE_URL from import.meta.env');
+    return import.meta.env.VITE_DATABASE_URL;
   }
   
   // For Expo web, try global environment
   if (typeof window !== 'undefined' && (window as any).__ENV__?.DATABASE_URL) {
+    console.log('✅ Using DATABASE_URL from window.__ENV__');
     return (window as any).__ENV__.DATABASE_URL;
   }
   
-  // Fallback to the actual database URL from environment
+  // Final fallback to the actual database URL
   const dbUrl = 'postgresql://neondb_owner:npg_vLmUtE3gZ8Ck@ep-flat-river-afy8pigw.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require';
-  console.log('Using fallback database URL for Expo environment');
+  console.log('⚠️ Using hardcoded fallback database URL for Expo environment');
   return dbUrl;
 };
 
-const databaseUrl = getDatabaseUrl();
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL could not be determined');
-}
-const sql = neon(databaseUrl);
+let sql: any;
+
+// Initialize database connection with error handling
+const initializeDatabase = () => {
+  try {
+    const databaseUrl = getDatabaseUrl();
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL could not be determined');
+    }
+    console.log('🔌 Initializing database connection...');
+    sql = neon(databaseUrl);
+    console.log('✅ Database connection initialized successfully');
+    return sql;
+  } catch (error) {
+    console.error('❌ Failed to initialize database connection:', error);
+    throw error;
+  }
+};
+
+// Initialize the connection
+sql = initializeDatabase();
 
 // Feed algorithms for sophisticated content ranking
 export async function getForYouChirps(): Promise<MobileChirp[]> {
@@ -770,32 +794,76 @@ export async function addReaction(chirpId: string, emoji: string, userId: string
   }
 }
 
-// Delete a chirp (only by the author)
+// Delete a chirp (only by the author) - with fallback API approach
 export async function deleteChirp(chirpId: string, userId: string): Promise<void> {
   try {
-    console.log(`Deleting chirp ${chirpId} by user ${userId}`);
+    console.log(`🗑️ Starting deleteChirp function`);
+    console.log(`Chirp ID: ${chirpId} (type: ${typeof chirpId})`);
+    console.log(`User ID: ${userId} (type: ${typeof userId})`);
     
-    // First verify the user owns the chirp
-    const chirpCheck = await sql`
-      SELECT author_id::text FROM chirps WHERE id = ${chirpId}
-    `;
-    
-    if (chirpCheck.length === 0) {
-      throw new Error('Chirp not found');
+    // Try direct database approach first
+    try {
+      console.log('🔍 Attempting direct database deletion...');
+      
+      // First verify the user owns the chirp
+      const chirpCheck = await sql`
+        SELECT author_id::text FROM chirps WHERE id = ${chirpId}
+      `;
+      
+      console.log('📋 Chirp check result:', chirpCheck);
+      
+      if (chirpCheck.length === 0) {
+        console.log('❌ Chirp not found in database');
+        throw new Error('Chirp not found');
+      }
+      
+      const authorId = chirpCheck[0].author_id;
+      console.log(`🔐 Chirp author: ${authorId}, Requesting user: ${userId}`);
+      
+      if (authorId !== userId) {
+        console.log('❌ User does not own this chirp');
+        throw new Error(`You can only delete your own chirps. Author: ${authorId}, User: ${userId}`);
+      }
+      
+      console.log('✅ Ownership verified, proceeding with deletion...');
+      
+      // Delete the chirp (cascade will handle reactions and replies)
+      const deleteResult = await sql`
+        DELETE FROM chirps WHERE id = ${chirpId} AND author_id = ${userId}
+      `;
+      
+      console.log('🗑️ Delete result:', deleteResult);
+      console.log('✅ Chirp deleted successfully from database');
+      
+    } catch (dbError) {
+      console.log('❌ Direct database approach failed, trying API fallback...');
+      console.error('Database error:', dbError);
+      
+      // Fallback to API approach if direct database fails
+      try {
+        const response = await fetch(`/api/chirps/${chirpId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`API deletion failed: ${error}`);
+        }
+        
+        console.log('✅ Chirp deleted successfully via API fallback');
+      } catch (apiError) {
+        console.error('❌ API fallback also failed:', apiError);
+        throw new Error(`Both database and API deletion failed: ${dbError.message}`);
+      }
     }
     
-    if (chirpCheck[0].author_id !== userId) {
-      throw new Error('You can only delete your own chirps');
-    }
-    
-    // Delete the chirp (cascade will handle reactions and replies)
-    await sql`
-      DELETE FROM chirps WHERE id = ${chirpId} AND author_id = ${userId}
-    `;
-    
-    console.log('✅ Chirp deleted successfully');
   } catch (error) {
-    console.error('❌ Error deleting chirp:', error);
+    console.error('❌ Error in deleteChirp function:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error.message);
     throw error;
   }
 }

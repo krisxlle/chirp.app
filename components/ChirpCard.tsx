@@ -192,6 +192,10 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
   };
 
   const handleDeleteChirp = async () => {
+    console.log('🗑️ Delete chirp button pressed');
+    console.log('Chirp details:', { id: chirp.id, authorId: chirp.author.id });
+    console.log('User details:', { id: user?.id, type: typeof user?.id });
+    
     Alert.alert('Delete Chirp', 'Are you sure you want to delete this chirp?', [
       { text: 'Cancel', style: 'cancel' },
       { 
@@ -199,15 +203,28 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
         style: 'destructive', 
         onPress: async () => {
           try {
-            console.log('🗑️ Deleting chirp:', chirp.id, 'by user:', user?.id);
+            console.log('🗑️ Proceeding with deletion...');
+            console.log('Deleting chirp:', chirp.id, 'by user:', user?.id);
+            
             const { deleteChirp } = await import('../mobile-db');
+            console.log('DeleteChirp function imported successfully');
+            
             await deleteChirp(chirp.id, String(user?.id));
+            console.log('✅ Delete operation completed successfully');
+            
             Alert.alert('Deleted', 'Chirp has been deleted successfully');
             setShowOptionsModal(false);
-            // Optionally trigger a refresh of the feed here
+            
+            // Trigger a refresh of the feed data
+            // You might need to implement a refresh mechanism here
+            console.log('📱 Chirp deleted - feed should refresh now');
           } catch (error) {
-            console.error('Delete error:', error);
-            Alert.alert('Error', 'Failed to delete chirp. Please try again.');
+            console.error('❌ Delete error:', error);
+            console.error('Error details:', {
+              message: error.message,
+              stack: error.stack
+            });
+            Alert.alert('Error', `Failed to delete chirp: ${error.message}`);
           }
         }
       }
