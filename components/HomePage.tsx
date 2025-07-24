@@ -40,6 +40,7 @@ export default function HomePage() {
   
   // Header animation state
   const headerTranslateY = useSharedValue(0);
+  const contentPaddingTop = useSharedValue(42);
   const lastScrollY = useRef(0);
   const isHeaderVisible = useRef(true);
 
@@ -106,10 +107,12 @@ export default function HomePage() {
       if (scrollDifference > 0 && isHeaderVisible.current) {
         // Scrolling down - hide header
         headerTranslateY.value = withTiming(-100);
+        contentPaddingTop.value = withTiming(0);
         isHeaderVisible.current = false;
       } else if (scrollDifference < 0 && !isHeaderVisible.current) {
         // Scrolling up - show header
         headerTranslateY.value = withTiming(0);
+        contentPaddingTop.value = withTiming(42);
         isHeaderVisible.current = true;
       }
     }
@@ -117,6 +120,7 @@ export default function HomePage() {
     // Always show header when at top
     if (currentScrollY <= 50 && !isHeaderVisible.current) {
       headerTranslateY.value = withTiming(0);
+      contentPaddingTop.value = withTiming(42);
       isHeaderVisible.current = true;
     }
     
@@ -126,6 +130,12 @@ export default function HomePage() {
   const animatedHeaderStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: headerTranslateY.value }],
+    };
+  });
+
+  const animatedContentStyle = useAnimatedStyle(() => {
+    return {
+      paddingTop: contentPaddingTop.value,
     };
   });
 
@@ -210,8 +220,8 @@ export default function HomePage() {
         </View>
       </Animated.View>
 
-      <ScrollView 
-        style={styles.content}
+      <Animated.ScrollView 
+        style={[styles.content, animatedContentStyle]}
         contentContainerStyle={styles.scrollContent}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -232,7 +242,7 @@ export default function HomePage() {
             <ChirpCard key={chirp.id} chirp={convertToChirpCard(chirp)} />
           ))
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -330,7 +340,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     backgroundColor: '#fafafa',
-    paddingTop: 42, // Reduced for smaller header
+    // paddingTop now animated via useAnimatedStyle
   },
   scrollContent: {
     paddingBottom: 100, // Space for bottom nav
