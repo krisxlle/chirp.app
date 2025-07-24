@@ -771,6 +771,21 @@ export async function getUserReactionForChirp(chirpId: string, userId: string): 
   }
 }
 
+// Get count of specific emoji reactions for a chirp
+export async function getEmojiReactionCount(chirpId: string, emoji: string): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT COUNT(*) as count FROM reactions 
+      WHERE chirp_id = ${chirpId} AND emoji = ${emoji}
+    `;
+    
+    return parseInt(result[0].count) || 0;
+  } catch (error) {
+    console.error('Error getting emoji reaction count:', error);
+    return 0;
+  }
+}
+
 export async function addReaction(chirpId: string, emoji: string, userId: string) {
   try {
     console.log('Adding reaction:', emoji, 'to chirp:', chirpId, 'by user:', userId);

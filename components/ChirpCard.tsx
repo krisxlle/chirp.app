@@ -50,6 +50,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [userReaction, setUserReaction] = useState<string | null>(null);
+  const [userReactionCount, setUserReactionCount] = useState<number>(0);
   
   // States for user interaction options
   const [isFollowing, setIsFollowing] = useState(false);
@@ -83,9 +84,17 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   
   const loadUserReaction = async () => {
     try {
-      const { getUserReactionForChirp } = await import('../mobile-db');
+      const { getUserReactionForChirp, getEmojiReactionCount } = await import('../mobile-db');
       const reaction = await getUserReactionForChirp(chirp.id, user?.id || '');
       setUserReaction(reaction);
+      
+      // If user has a reaction, get the count for that specific emoji
+      if (reaction) {
+        const count = await getEmojiReactionCount(chirp.id, reaction);
+        setUserReactionCount(count);
+      } else {
+        setUserReactionCount(0);
+      }
     } catch (error) {
       console.error('Error loading user reaction:', error);
     }
@@ -147,7 +156,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         return;
       }
 
-      const { addReaction } = await import('../mobile-db');
+      const { addReaction, getEmojiReactionCount } = await import('../mobile-db');
       
       console.log('Adding reaction:', emoji, 'to chirp:', chirp.id, 'by user:', user.id);
       
@@ -160,6 +169,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         }
         setUserReaction(result.emoji);
         
+        // Get accurate count for the specific emoji
+        const emojiCount = await getEmojiReactionCount(chirp.id, result.emoji);
+        setUserReactionCount(emojiCount);
+        
         // Trigger push notification for reaction
         const { triggerReactionNotification } = await import('../mobile-db');
         await triggerReactionNotification(chirp.author.id, user.id, parseInt(chirp.id));
@@ -169,6 +182,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         // User removed their reaction
         setReactions(prev => Math.max(0, prev - 1));
         setUserReaction(null);
+        setUserReactionCount(0);
         console.log('Reaction removed');
       }
       
@@ -616,7 +630,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
               onPress={() => handleReactionPress(userReaction)}
             >
               <Text style={styles.reactionIcon}>{userReaction}</Text>
-              <Text style={styles.reactionCount}>{reactions}</Text>
+              <Text style={styles.reactionCount}>{userReactionCount}</Text>
             </TouchableOpacity>
           ) : (
             /* Show quick access reactions when no reaction is selected */
