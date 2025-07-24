@@ -197,54 +197,47 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
     console.log('Chirp details:', { id: chirp.id, authorId: chirp.author.id });
     console.log('User details:', { id: user?.id, type: typeof user?.id });
     
-    Alert.alert('Delete Chirp', 'Are you sure you want to delete this chirp?', [
-      { 
-        text: 'Cancel', 
-        style: 'cancel',
-        onPress: () => {
-          console.log('🚫 Delete cancelled by user');
-        }
-      },
-      { 
-        text: 'Delete', 
-        style: 'destructive', 
-        onPress: async () => {
-          console.log('✅ User confirmed deletion, proceeding...');
-          try {
-            console.log('🗑️ Proceeding with deletion...');
-            console.log('Deleting chirp:', chirp.id, 'by user:', user?.id);
-            
-            const { deleteChirp } = await import('../mobile-db');
-            console.log('DeleteChirp function imported successfully');
-            
-            await deleteChirp(chirp.id, String(user?.id));
-            console.log('✅ Delete operation completed successfully');
-            
-            Alert.alert('Deleted', 'Chirp has been deleted successfully');
-            setShowOptionsModal(false);
-            
-            // Force a refresh of the parent component's data
-            if (onDeleteSuccess) {
-              console.log('📱 Calling onDeleteSuccess callback to refresh feed');
-              onDeleteSuccess();
-            } else {
-              console.log('📱 No refresh callback available - implementing page reload');
-              // Force reload the current screen to show updated data
-              if (typeof window !== 'undefined') {
-                window.location.reload();
-              }
-            }
-          } catch (error) {
-            console.error('❌ Delete error:', error);
-            console.error('Error details:', {
-              message: error.message,
-              stack: error.stack
-            });
-            Alert.alert('Error', `Failed to delete chirp: ${error.message}`);
-          }
+    // Use window.confirm for web environment compatibility
+    const confirmed = window.confirm('Are you sure you want to delete this chirp?');
+    
+    if (!confirmed) {
+      console.log('🚫 Delete cancelled by user');
+      return;
+    }
+    
+    console.log('✅ User confirmed deletion, proceeding...');
+    try {
+      console.log('🗑️ Proceeding with deletion...');
+      console.log('Deleting chirp:', chirp.id, 'by user:', user?.id);
+      
+      const { deleteChirp } = await import('../mobile-db');
+      console.log('DeleteChirp function imported successfully');
+      
+      await deleteChirp(chirp.id, String(user?.id));
+      console.log('✅ Delete operation completed successfully');
+      
+      alert('Chirp has been deleted successfully');
+      setShowOptionsModal(false);
+      
+      // Force a refresh of the parent component's data
+      if (onDeleteSuccess) {
+        console.log('📱 Calling onDeleteSuccess callback to refresh feed');
+        onDeleteSuccess();
+      } else {
+        console.log('📱 No refresh callback available - implementing page reload');
+        // Force reload the current screen to show updated data
+        if (typeof window !== 'undefined') {
+          window.location.reload();
         }
       }
-    ]);
+    } catch (error) {
+      console.error('❌ Delete error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      alert(`Failed to delete chirp: ${error.message}`);
+    }
   };
 
   const handleFollowToggle = async () => {
