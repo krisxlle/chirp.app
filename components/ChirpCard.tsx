@@ -467,27 +467,32 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   };
 
   const handleAvatarPress = () => {
+    console.log('🔥 Avatar pressed! Author data:', chirp.author);
+    console.log('🔥 Author ID:', chirp.author?.id);
+    
     if (chirp.author?.id) {
-      console.log('Navigating to user profile page for user:', chirp.author.id);
+      console.log('✅ Navigating to user profile page for user:', chirp.author.id);
       
       const displayName = chirp.author.firstName && chirp.author.lastName 
         ? `${chirp.author.firstName} ${chirp.author.lastName}`
         : (chirp.author.customHandle || chirp.author.handle || 'User');
       
       try {
-        // Try different navigation approaches
-        console.log('Attempting navigation to:', `/user-profile/${chirp.author.id}`);
+        const profileRoute = `/profile/${chirp.author.id}`;
+        console.log('🎯 Using dynamic profile route:', profileRoute);
         
-        // Try view-profile route with fallbacks
-        console.log('🎯 Using dynamic profile route');
-        router.push(`/profile/${chirp.author.id}`);
-        console.log('✅ Navigation initiated successfully');
+        // Add a small delay to see if that helps
+        setTimeout(() => {
+          router.push(profileRoute);
+          console.log('✅ Navigation initiated successfully to:', profileRoute);
+        }, 100);
+        
       } catch (error) {
-        console.error('Navigation error:', error);
+        console.error('❌ Navigation error:', error);
         Alert.alert('Navigation Error', 'Failed to open user profile. Please try again.');
       }
     } else {
-      console.log('No author ID found for chirp:', chirp);
+      console.log('❌ No author ID found for chirp:', chirp);
       Alert.alert('Error', 'Unable to open profile - no user ID found');
     }
   };
