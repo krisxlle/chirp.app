@@ -38,9 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthState = async () => {
     try {
+      console.log('🔍 Checking authentication state...');
       const storedUser = await AsyncStorage.getItem('user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const user = JSON.parse(storedUser);
+        console.log('✅ Found stored user:', user.customHandle || user.handle || user.id);
+        setUser(user);
+      } else {
+        console.log('❌ No stored user found - will trigger auto-login');
       }
     } catch (error) {
       console.error('Error checking auth state:', error);
@@ -57,8 +62,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const autoLogin = async () => {
       if (!isLoading && !user) {
-        console.log('No user found - auto-signing in to @chirp for preview...');
-        await signIn('preview@chirp.app');
+        console.log('🚀 No user found - auto-signing in to @chirp for preview...');
+        const success = await signIn('preview@chirp.app');
+        if (success) {
+          console.log('🎉 Auto-login successful!');
+        } else {
+          console.log('❌ Auto-login failed, trying fallback...');
+        }
       }
     };
     
@@ -68,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
       console.log('🔐 Attempting sign in for:', email);
+      setIsLoading(true);
       
       // Get actual user from database based on email
       const { getUserByEmail, getFirstUser } = await import('../mobile-db');
@@ -104,7 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         await AsyncStorage.setItem('user', JSON.stringify(user));
         setUser(user);
-        console.log('Signed in as user:', user.customHandle || user.handle || user.id);
+        setIsLoading(false);
+        console.log('✅ Signed in as user:', user.customHandle || user.handle || user.id);
         return true;
       } else {
         // Fallback for demo - use first available user
@@ -134,11 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           await AsyncStorage.setItem('user', JSON.stringify(user));
           setUser(user);
-          console.log('Demo mode - signed in as user:', user.customHandle || user.handle || user.id);
+          setIsLoading(false);
+          console.log('✅ Demo mode - signed in as user:', user.customHandle || user.handle || user.id);
           return true;
         }
       }
       
+      console.log('❌ No users found in database');
+      setIsLoading(false);
       return false;
     } catch (error) {
       console.error('Sign in error:', error);
@@ -148,12 +163,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      console.log('🚪 Signing out user...');
       await AsyncStorage.removeItem('user');
       setUser(null);
     } catch (error) {
       console.error('Sign out error:', error);
     }
   };
+
+  // Force clear stored data and login to @chirp account
+  const forceLoginToChirp = async () => {
+    try {
+      console.log('🧹 Clearing stored authentication data...');
+      await AsyncStorage.removeItem('user');
+      setUser(null);
+      console.log('🚀 Forcing login to @chirp account...');
+      await signIn('preview@chirp.app');
+    } catch (error) {
+      console.error('Force login error:', error);
+    }
+  };
+
+  // Check if current user is valid in database and switch to @chirp if not
+  useEffect(() => {
+    const validateUser = async () => {
+      if (user && !isLoading) {
+        console.log('🔍 Validating current user:', user.id);
+        // Check if user with ID "1" should be switched to @chirp
+        if (user.id === '1' || user.id === 1) {
+          console.log('🔄 Detected invalid user ID "1" - switching to @chirp...');
+          await forceLoginToChirp();
+        }
+      }
+    };
+    
+    validateUser();
+  }, [user, isLoading]);
 
   const value = {
     user,
