@@ -56,7 +56,7 @@ export default function ChirpApp() {
 
   // If we're on a profile route, don't render the main app interface
   if (isProfileRoute) {
-    console.log('🚫 Profile route detected - returning null to let Expo Router handle it');
+    console.log('🚫🚫🚫 PROFILE ROUTE DETECTED IN CHIRPAPP - RETURNING NULL');
     return null;
   }
 

@@ -48,11 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return; // Exit early if user found
       } else {
         console.log('❌ No stored user found - will trigger auto-login');
+        setIsLoading(false); // Enable auto-login by setting loading to false
       }
     } catch (error) {
       console.error('Error checking auth state:', error);
+      setIsLoading(false);
     }
-    // Don't set loading to false here if no user - let auto-login handle it
   };
 
   useEffect(() => {
@@ -64,7 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const autoLogin = async () => {
-      if (!isLoading && !user && !hasAttemptedLogin) {
+      // Auto-login should trigger after auth check completes AND no user was found
+      if (!user && !hasAttemptedLogin) {
         setHasAttemptedLogin(true);
         console.log('🚀 No user found - auto-signing in to @chirp for preview...');
         try {
@@ -83,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
     
+    // Only trigger auto-login when conditions are met
     autoLogin();
   }, [isLoading, user, hasAttemptedLogin]);
 
