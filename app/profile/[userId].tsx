@@ -40,6 +40,22 @@ export default function UserProfileScreen() {
   console.log('🆔 Resolved userId:', userId);
   console.log('🔥🔥🔥 UserProfileScreen - COMPONENT IS MOUNTING!');
   
+  // Add early return if no userId
+  if (!userId) {
+    console.error('❌ No userId provided to profile screen');
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>User not found</Text>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [chirps, setChirps] = useState<any[]>([]);
