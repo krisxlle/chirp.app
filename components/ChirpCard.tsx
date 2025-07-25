@@ -523,13 +523,20 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   };
 
   const handleAvatarPress = () => {
-    if (!chirp.author?.id) return;
+    if (!chirp.author?.id) {
+      console.error('Avatar press failed: No author ID found');
+      return;
+    }
+    
+    console.log('🔥 Avatar pressed - navigating to profile:', chirp.author.id);
     
     try {
       // Fast, direct navigation
       router.push(`/profile/${chirp.author.id}`);
+      console.log('✅ Navigation initiated successfully');
     } catch (error) {
-      console.error('Navigation error:', error);
+      console.error('❌ Navigation error:', error);
+      Alert.alert('Navigation Error', 'Unable to open profile. Please try again.');
     }
   };
 
