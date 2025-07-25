@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import ChirpCard from './ChirpCard';
+import ChirpPlusBadge from './ChirpPlusBadge';
 import SettingsPage from './SettingsPage';
 import { useAuth } from './AuthContext';
 import { getChirpsFromDB } from '../mobile-db';
@@ -230,7 +231,7 @@ export default function ProfilePage() {
         <View style={styles.nameRow}>
           <Text style={styles.displayName}>{displayName}</Text>
           {user.isChirpPlus && user.showChirpPlusBadge && (
-            <Text style={styles.crownIcon}>👑</Text>
+            <ChirpPlusBadge size={18} />
           )}
         </View>
         <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
@@ -615,10 +616,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#14171a',
   },
-  crownIcon: {
-    fontSize: 16,
-    marginLeft: 4,
-  },
+
   handle: {
     fontSize: 15,
     color: '#657786',

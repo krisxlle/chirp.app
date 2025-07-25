@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import ChirpPlusBadge from './ChirpPlusBadge';
 import Svg, { Path } from 'react-native-svg';
 
 interface SubscriptionPageProps {
@@ -17,17 +18,7 @@ interface SubscriptionPageProps {
 }
 
 // Custom Icon Components
-const CrownIcon = ({ size = 20, color = "#7c3aed" }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path 
-      d="M2 12l3-8 7 3 7-3 3 8-10 8z" 
-      stroke={color} 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
+// Replaced with consistent ChirpPlusBadge component
 
 const CheckIcon = ({ size = 16, color = "#7c3aed" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -188,7 +179,7 @@ export default function SubscriptionPage({ onClose }: SubscriptionPageProps) {
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.iconContainer}>
-            <CrownIcon size={48} color="#7c3aed" />
+            <ChirpPlusBadge size={48} />
           </View>
           <Text style={styles.heroTitle}>Upgrade to Chirp+</Text>
           <Text style={styles.heroSubtitle}>
@@ -230,7 +221,7 @@ export default function SubscriptionPage({ onClose }: SubscriptionPageProps) {
               <ActivityIndicator color="#ffffff" size="small" />
             ) : (
               <>
-                <CrownIcon size={20} color="#ffffff" />
+                <ChirpPlusBadge size={20} color="#ffffff" />
                 <Text style={styles.subscribeButtonText}>Subscribe to Chirp+ - $4.99/month</Text>
               </>
             )}
