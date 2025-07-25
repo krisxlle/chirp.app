@@ -44,14 +44,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const user = JSON.parse(storedUser);
         console.log('✅ Found stored user:', user.customHandle || user.handle || user.id);
         setUser(user);
+        setIsLoading(false);
+        return; // Exit early if user found
       } else {
         console.log('❌ No stored user found - will trigger auto-login');
       }
     } catch (error) {
       console.error('Error checking auth state:', error);
-    } finally {
-      setIsLoading(false);
     }
+    // Don't set loading to false here if no user - let auto-login handle it
   };
 
   useEffect(() => {
@@ -59,24 +60,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Auto-login effect after auth state is checked (only once)
+  const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
+  
   useEffect(() => {
-    let hasAttemptedLogin = false;
-    
     const autoLogin = async () => {
       if (!isLoading && !user && !hasAttemptedLogin) {
-        hasAttemptedLogin = true;
+        setHasAttemptedLogin(true);
         console.log('🚀 No user found - auto-signing in to @chirp for preview...');
-        const success = await signIn('preview@chirp.app');
-        if (success) {
-          console.log('🎉 Auto-login successful!');
-        } else {
-          console.log('❌ Auto-login failed, trying fallback...');
+        try {
+          const success = await signIn('preview@chirp.app');
+          if (success) {
+            console.log('🎉 Auto-login successful!');
+          } else {
+            console.log('❌ Auto-login failed, trying fallback...');
+            // If auto-login fails, just stop loading to show sign-in screen
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.error('Auto-login error:', error);
+          setIsLoading(false);
         }
       }
     };
     
     autoLogin();
-  }, [isLoading, user]);
+  }, [isLoading, user, hasAttemptedLogin]);
 
   const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
@@ -160,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     } catch (error) {
       console.error('Sign in error:', error);
+      setIsLoading(false);
       return false;
     }
   };
