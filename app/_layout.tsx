@@ -33,6 +33,7 @@ export default function RootLayout() {
                 animation: 'slide_from_right'
               }} 
             />
+            <Stack.Screen name="test-screen" />
             <Stack.Screen name="feedback" />
             <Stack.Screen name="support" />
             <Stack.Screen name="subscription" />
