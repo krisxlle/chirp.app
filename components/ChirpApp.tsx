@@ -26,32 +26,15 @@ export default function ChirpApp() {
     }
   }, [pathname]);
 
-  // Monitor URL changes to detect profile routes
+  // Simple path check without interval monitoring
   const [currentPath, setCurrentPath] = useState('');
   
   useEffect(() => {
-    const updatePath = () => {
-      if (typeof window !== 'undefined') {
-        const newPath = window.location?.pathname || '';
-        console.log('🔍 URL changed to:', newPath);
-        setCurrentPath(newPath);
-      }
-    };
-    
-    // Set initial path
-    updatePath();
-    
-    // Listen for URL changes
-    window.addEventListener('popstate', updatePath);
-    
-    // Check every 100ms for URL changes (fallback)
-    const interval = setInterval(updatePath, 100);
-    
-    return () => {
-      window.removeEventListener('popstate', updatePath);
-      clearInterval(interval);
-    };
-  }, []);
+    if (typeof window !== 'undefined') {
+      const newPath = window.location?.pathname || '';
+      setCurrentPath(newPath);
+    }
+  }, [pathname]);
 
   // Check if we're on a profile route
   const isProfileRoute = React.useMemo(() => {

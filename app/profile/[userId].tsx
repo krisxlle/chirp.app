@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import UserAvatar from '../../components/UserAvatar';
+import ChirpCard from '../../components/ChirpCard';
+import { AuthContext } from '../../components/AuthContext';
 
 // Add immediate console log to verify file is being imported
 console.log('🔥🔥🔥 [UserProfileScreen] FILE LOADED - Profile page component importing');
@@ -36,6 +38,14 @@ export default function UserProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [chirps, setChirps] = useState([]);
+  const [replies, setReplies] = useState([]);
+  const [activeTab, setActiveTab] = useState('chirps');
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [followStatus, setFollowStatus] = useState({
+    isFollowing: false,
+    isBlocked: false,
+    notificationsEnabled: true
+  });
   const [stats, setStats] = useState({
     chirps: 0,
     following: 0,
@@ -56,7 +66,15 @@ export default function UserProfileScreen() {
 
       try {
         console.log('🔄 Fetching profile for userId:', userId);
-        const { getUserById, getUserChirps, getUserStats } = await import('../../mobile-db');
+        const { 
+          getUserById, 
+          getUserChirps, 
+          getUserStats, 
+          checkFollowStatus, 
+          checkBlockStatus,
+          getUserReplies,
+          getCurrentUserId
+        } = await import('../../mobile-db');
         
         // Fetch user data
         const userData = await getUserById(userId);
@@ -65,14 +83,26 @@ export default function UserProfileScreen() {
         if (userData) {
           setUser(userData);
           
-          // Fetch user's chirps and stats
-          const [userChirps, userStats] = await Promise.all([
+          // Get current user for relationship checks
+          const currentUserId = await getCurrentUserId();
+          
+          // Fetch user's chirps, replies, stats, and relationship status
+          const [userChirps, userReplies, userStats, isFollowing, isBlocked] = await Promise.all([
             getUserChirps(userId),
-            getUserStats(userId)
+            getUserReplies(userId),
+            getUserStats(userId),
+            currentUserId ? checkFollowStatus(currentUserId, userId) : Promise.resolve(false),
+            currentUserId ? checkBlockStatus(currentUserId, userId) : Promise.resolve(false)
           ]);
           
           setChirps(userChirps);
+          setReplies(userReplies);
           setStats(userStats);
+          setFollowStatus({
+            isFollowing: isFollowing || false,
+            isBlocked: isBlocked || false,
+            notificationsEnabled: false
+          });
           console.log('Profile data loaded successfully');
         } else {
           console.error('User not found');
@@ -95,6 +125,55 @@ export default function UserProfileScreen() {
     } catch (error) {
       console.error('Back navigation error:', error);
       router.push('/');
+    }
+  };
+
+  const handleFollow = async () => {
+    try {
+      const { followUser, unfollowUser } = await import('../../mobile-db');
+      
+      if (followStatus.isFollowing) {
+        await unfollowUser(userId);
+        setFollowStatus(prev => ({ ...prev, isFollowing: false }));
+      } else {
+        await followUser(userId);
+        setFollowStatus(prev => ({ ...prev, isFollowing: true }));
+      }
+    } catch (error) {
+      console.error('Error updating follow status:', error);
+      Alert.alert('Error', 'Failed to update follow status');
+    }
+  };
+
+  const handleBlock = async () => {
+    try {
+      const { blockUser, unblockUser } = await import('../../mobile-db');
+      
+      if (followStatus.isBlocked) {
+        await unblockUser(userId);
+        setFollowStatus(prev => ({ ...prev, isBlocked: false }));
+      } else {
+        await blockUser(userId);
+        setFollowStatus(prev => ({ ...prev, isBlocked: true, isFollowing: false }));
+      }
+    } catch (error) {
+      console.error('Error updating block status:', error);
+      Alert.alert('Error', 'Failed to update block status');
+    }
+  };
+
+  const handleNotificationToggle = async () => {
+    try {
+      const { toggleUserNotifications, getCurrentUserId } = await import('../../mobile-db');
+      
+      const currentUserId = await getCurrentUserId();
+      if (!currentUserId) return;
+      
+      await toggleUserNotifications(currentUserId, userId, !followStatus.notificationsEnabled);
+      setFollowStatus(prev => ({ ...prev, notificationsEnabled: !prev.notificationsEnabled }));
+    } catch (error) {
+      console.error('Error updating notification status:', error);
+      Alert.alert('Error', 'Failed to update notification settings');
     }
   };
 
@@ -164,90 +243,176 @@ export default function UserProfileScreen() {
 
   console.log('✅ Rendering profile for user:', user.custom_handle || user.handle);
 
+  const isOwnProfile = false; // For now, assume this is always another user's profile
+
   return (
     <View style={styles.container}>
-      {/* FORCE VISIBLE - Debug overlay */}
-      <View style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 50,
-        backgroundColor: '#ff0000',
-        zIndex: 1000,
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>
-          PROFILE PAGE LOADED! User: {user.custom_handle}
-        </Text>
-      </View>
+      {/* Header with back and options */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{displayName}</Text>
+        {!isOwnProfile && (
+          <TouchableOpacity 
+            style={styles.moreButton} 
+            onPress={() => setShowMoreOptions(true)}
+          >
+            <Text style={styles.moreButtonText}>⋯</Text>
+          </TouchableOpacity>
+        )}
       </View>
       
       <ScrollView style={styles.content}>
         {/* Banner */}
-        <View style={styles.bannerContainer}>
-          <View style={styles.banner}>
-            <View style={styles.bannerOverlay} />
-          </View>
-          
-          {/* Profile Avatar positioned on left between banner and white space */}
+        {user.banner_image_url && (
+          <Image source={{ uri: user.banner_image_url }} style={styles.banner} />
+        )}
+        
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          {/* Avatar positioned to overlap banner */}
           <View style={styles.avatarContainer}>
-            <UserAvatar user={user} size="xl" />
+            <UserAvatar 
+              user={user} 
+              size={80} 
+              style={styles.avatar}
+            />
           </View>
-        </View>
-
-        <View style={styles.profileCard}>
           
-          <Text style={styles.displayName}>{displayName}</Text>
-          <Text style={styles.handle}>@{user.custom_handle || user.handle || user.id}</Text>
-          
-          {user.is_chirp_plus && user.show_chirp_plus_badge && (
-            <View style={styles.chirpPlusBadge}>
-              <Text style={styles.chirpPlusBadgeText}>👑 Chirp+</Text>
-            </View>
+          {/* Follow button */}
+          {!isOwnProfile && !followStatus.isBlocked && (
+            <TouchableOpacity 
+              style={[styles.followButton, followStatus.isFollowing && styles.followingButton]} 
+              onPress={handleFollow}
+            >
+              <Text style={[styles.followButtonText, followStatus.isFollowing && styles.followingButtonText]}>
+                {followStatus.isFollowing ? 'Following' : 'Follow'}
+              </Text>
+            </TouchableOpacity>
           )}
           
-          {user.bio && (
-            <Text style={styles.bio}>{user.bio}</Text>
-          )}
-          
-          <View style={styles.stats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{stats.chirps}</Text>
-              <Text style={styles.statLabel}>Chirps</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{stats.following}</Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{stats.followers}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
+          {/* Profile Info */}
+          <View style={styles.profileInfo}>
+            <Text style={styles.displayName}>{displayName}</Text>
+            <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
+            
+            {user.bio && (
+              <Text style={styles.bio}>{user.bio}</Text>
+            )}
+            
+            {user.is_chirp_plus && user.show_chirp_plus_badge && (
+              <View style={styles.chirpPlusBadge}>
+                <Text style={styles.chirpPlusBadgeText}>Chirp+ Member</Text>
+              </View>
+            )}
+            
+            {/* Stats */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.chirps}</Text>
+                <Text style={styles.statLabel}>Chirps</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.following}</Text>
+                <Text style={styles.statLabel}>Following</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.followers}</Text>
+                <Text style={styles.statLabel}>Followers</Text>
+              </View>
             </View>
           </View>
         </View>
         
-        {/* Recent Chirps Section */}
-        <View style={styles.chirpsSection}>
-          <Text style={styles.sectionTitle}>Recent Chirps</Text>
-          {chirps.length === 0 ? (
-            <Text style={styles.noChirpsText}>No chirps yet</Text>
-          ) : (
-            chirps.slice(0, 3).map((chirp: any, index: number) => (
-              <View key={index} style={styles.chirpPreview}>
-                <Text style={styles.chirpContent}>{chirp.content}</Text>
-                <Text style={styles.chirpDate}>{new Date(chirp.createdAt).toLocaleDateString()}</Text>
-              </View>
-            ))
+        {/* Tabs */}
+        <View style={styles.tabs}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'chirps' && styles.activeTab]} 
+            onPress={() => setActiveTab('chirps')}
+          >
+            <Text style={[styles.tabText, activeTab === 'chirps' && styles.activeTabText]}>
+              Chirps
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'replies' && styles.activeTab]} 
+            onPress={() => setActiveTab('replies')}
+          >
+            <Text style={[styles.tabText, activeTab === 'replies' && styles.activeTabText]}>
+              Replies
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Tab Content */}
+        <View style={styles.tabContent}>
+          {activeTab === 'chirps' && (
+            <View>
+              {chirps.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>No chirps yet</Text>
+                </View>
+              ) : (
+                chirps.map((chirp: any, index: number) => (
+                  <ChirpCard key={chirp.id} chirp={chirp} />
+                ))
+              )}
+            </View>
+          )}
+          
+          {activeTab === 'replies' && (
+            <View>
+              {replies.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>No replies yet</Text>
+                </View>
+              ) : (
+                replies.map((reply: any, index: number) => (
+                  <ChirpCard key={reply.id} chirp={reply} />
+                ))
+              )}
+            </View>
           )}
         </View>
       </ScrollView>
+      
+      {/* More Options Modal */}
+      <Modal
+        visible={showMoreOptions}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMoreOptions(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          onPress={() => setShowMoreOptions(false)}
+        >
+          <View style={styles.moreOptionsMenu}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => {
+              setShowMoreOptions(false);
+              handleNotificationToggle();
+            }}>
+              <Text style={styles.menuItemText}>
+                {followStatus.notificationsEnabled ? '🔕 Turn off notifications' : '🔔 Turn on notifications'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => {
+              setShowMoreOptions(false);
+              handleBlock();
+            }}>
+              <Text style={[styles.menuItemText, styles.destructiveText]}>
+                {followStatus.isBlocked ? '✓ Unblock user' : '🚫 Block user'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => setShowMoreOptions(false)}>
+              <Text style={styles.menuItemText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
