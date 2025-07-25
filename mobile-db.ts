@@ -635,6 +635,57 @@ export async function getTrendingHashtags() {
   }
 }
 
+// Get chirps by hashtag in trending order (engagement + recency)
+export async function getChirpsByHashtag(hashtag: string): Promise<MobileChirp[]> {
+  try {
+    console.log('Fetching chirps for hashtag:', hashtag);
+    
+    // Remove # from hashtag if present and escape for regex
+    const cleanHashtag = hashtag.replace(/^#/, '');
+    const hashtagPattern = `#${cleanHashtag}`;
+    
+    const chirps = await sql`
+      SELECT 
+        c.id,
+        c.content,
+        c.created_at as "createdAt",
+        c.author_id,
+        c.reply_to_id,
+        c.repost_of_id,
+        c.is_weekly_summary,
+        u.custom_handle,
+        u.handle,
+        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle, 'User') as display_name,
+        u.profile_image_url,
+        u.banner_image_url,
+        COUNT(DISTINCT r.id) as reaction_count,
+        COUNT(DISTINCT replies.id) as reply_count,
+        COUNT(DISTINCT reposts.id) as repost_count,
+        ARRAY_AGG(DISTINCT jsonb_build_object('emoji', r.emoji, 'count', 1)) FILTER (WHERE r.emoji IS NOT NULL) as reactions
+      FROM chirps c
+      LEFT JOIN users u ON c.author_id = u.id
+      LEFT JOIN reactions r ON c.id = r.chirp_id
+      LEFT JOIN chirps replies ON c.id = replies.reply_to_id
+      LEFT JOIN reposts ON c.id = reposts.chirp_id
+      WHERE c.content ILIKE ${'%' + hashtagPattern + '%'}
+        AND c.reply_to_id IS NULL -- Only original chirps, not replies
+      GROUP BY c.id, c.content, c.created_at, c.author_id, c.reply_to_id, c.repost_of_id, c.is_weekly_summary,
+               u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.banner_image_url
+      ORDER BY 
+        -- Trending algorithm: weight recent posts with engagement
+        (COUNT(DISTINCT r.id) + COUNT(DISTINCT replies.id) + COUNT(DISTINCT reposts.id)) * 
+        EXTRACT(EPOCH FROM (NOW() - c.created_at)) / 3600 DESC,
+        c.created_at DESC
+      LIMIT 50
+    `;
+    
+    return formatChirpResults(chirps);
+  } catch (error) {
+    console.error('Error fetching chirps by hashtag:', error);
+    return [];
+  }
+}
+
 // Create subscription with specific product ID
 export async function createSubscription(productId: string = "com.kriselle.chirp.plus.monthly") {
   try {
@@ -719,45 +770,7 @@ export async function getSubscriptionStatus() {
   }
 }
 
-// Get chirps containing a specific hashtag in trending order
-export async function getChirpsByHashtag(hashtag: string): Promise<MobileChirp[]> {
-  try {
-    console.log(`Fetching chirps for hashtag: ${hashtag}`);
-    // Ensure hashtag starts with #
-    const cleanHashtag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
-    
-    const chirps = await sql`
-      SELECT 
-        c.id::text,
-        c.content,
-        c.created_at as "createdAt",
-        COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
-        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
-        COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
-        u.profile_image_url,
-        u.banner_image_url,
-        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
-        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
-      FROM chirps c
-      LEFT JOIN users u ON c.author_id = u.id
-      WHERE c.content ILIKE ${`%${cleanHashtag}%`}
-        AND c.reply_to_id IS NULL
-      ORDER BY 
-        -- Trending order: prioritize engagement and recency
-        ((SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) * 2 + 
-         (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) * 3 +
-         CASE WHEN c.created_at > NOW() - INTERVAL '1 day' THEN 10 ELSE 0 END) DESC,
-        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) DESC,
-        c.created_at DESC
-      LIMIT 50
-    `;
-    
-    return formatChirpResults(chirps);
-  } catch (error) {
-    console.error('Error fetching chirps by hashtag:', error);
-    return [];
-  }
-}
+
 
 export async function searchChirps(query: string) {
   try {

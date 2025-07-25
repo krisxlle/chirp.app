@@ -1,109 +1,94 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { getChirpsByHashtag } from '../../mobile-db';
-import type { MobileChirp } from '../../mobile-types';
 import ChirpCard from '../../components/ChirpCard';
-import ChirpLogo from '../../components/icons/ChirpLogo';
-
-// Convert mobile chirps to ChirpCard format
-const convertToChirpCard = (chirp: MobileChirp) => ({
-  id: chirp.id,
-  content: chirp.content,
-  createdAt: chirp.createdAt,
-  isWeeklySummary: chirp.isWeeklySummary || false,
-  author: {
-    id: chirp.author.id || 'anonymous',
-    firstName: chirp.author.firstName || '',
-    lastName: chirp.author.lastName || '',
-    email: chirp.author.email || 'anonymous@example.com',
-    handle: chirp.author.handle || 'anonymous',
-    customHandle: chirp.author.customHandle || 'anonymous',
-    profileImageUrl: chirp.author.profileImageUrl || undefined,
-  },
-  replyCount: chirp.replyCount || 0,
-  reactionCount: chirp.reactionCount || 0,
-  reactionCounts: chirp.reactions?.reduce((acc: any, reaction: any) => {
-    acc[reaction.emoji] = reaction.count;
-    return acc;
-  }, {}) || {},
-  replies: [],
-});
+import type { MobileChirp } from '../../mobile-types';
 
 export default function HashtagPage() {
-  const { hashtag } = useLocalSearchParams<{ hashtag: string }>();
+  const params = useLocalSearchParams();
+  const hashtag = Array.isArray(params.hashtag) ? params.hashtag[0] : params.hashtag;
   const [chirps, setChirps] = useState<MobileChirp[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (hashtag) {
+      fetchHashtagChirps();
+    }
+  }, [hashtag]);
 
   const fetchHashtagChirps = async () => {
-    if (!hashtag) return;
-    
     try {
-      console.log(`Loading chirps for hashtag: ${hashtag}`);
-      const data = await getChirpsByHashtag(hashtag);
-      console.log(`Found ${data.length} chirps for hashtag ${hashtag}`);
-      setChirps(data);
-    } catch (error) {
-      console.error('Failed to fetch hashtag chirps:', error);
+      setLoading(true);
+      setError(null);
+      console.log('Fetching chirps for hashtag:', hashtag);
+      
+      const hashtagChirps = await getChirpsByHashtag(hashtag);
+      setChirps(hashtagChirps);
+      
+      if (hashtagChirps.length === 0) {
+        setError(`No chirps found for ${hashtag}`);
+      }
+    } catch (err) {
+      console.error('Error fetching hashtag chirps:', err);
+      setError('Failed to load chirps for this hashtag');
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchHashtagChirps();
-  }, [hashtag]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchHashtagChirps();
+  const handleBack = () => {
+    router.back();
   };
 
   const displayHashtag = hashtag?.startsWith('#') ? hashtag : `#${hashtag}`;
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7c3aed" />
-        <Text style={styles.loadingText}>Loading {displayHashtag}...</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.hashtag}>{displayHashtag}</Text>
-            <Text style={styles.subtitle}>{chirps.length} chirp{chirps.length !== 1 ? 's' : ''}</Text>
-          </View>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <ArrowLeft size={24} color="#7c3aed" />
+        </TouchableOpacity>
+        <View style={styles.headerText}>
+          <Text style={styles.hashtagTitle}>{displayHashtag}</Text>
+          <Text style={styles.chirpCount}>
+            {loading ? 'Loading...' : `${chirps.length} chirp${chirps.length !== 1 ? 's' : ''}`}
+          </Text>
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {chirps.length === 0 ? (
-          <View style={styles.emptyState}>
-            <ChirpLogo size={48} color="#9ca3af" />
-            <Text style={styles.emptyTitle}>No chirps found</Text>
-            <Text style={styles.emptySubtext}>Be the first to chirp about {displayHashtag}!</Text>
+      {/* Content */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#7c3aed" />
+            <Text style={styles.loadingText}>Loading chirps...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchHashtagChirps}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : chirps.length > 0 ? (
+          <View style={styles.chirpsContainer}>
+            {chirps.map((chirp, index) => (
+              <View key={chirp.id} style={[styles.chirpWrapper, index > 0 && styles.chirpBorder]}>
+                <ChirpCard chirp={chirp} />
+              </View>
+            ))}
           </View>
         ) : (
-          chirps.map((chirp) => (
-            <ChirpCard key={chirp.id} chirp={convertToChirpCard(chirp)} />
-          ))
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>No chirps found</Text>
+            <Text style={styles.emptySubtitle}>
+              Be the first to chirp about {displayHashtag}!
+            </Text>
+          </View>
         )}
       </ScrollView>
     </View>
@@ -113,73 +98,100 @@ export default function HashtagPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#ffffff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 60, // Account for status bar
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  headerText: {
+    flex: 1,
+  },
+  hashtagTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#7c3aed',
+  },
+  chirpCount: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  content: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    paddingTop: 100,
   },
   loadingText: {
+    marginTop: 16,
     fontSize: 16,
-    color: '#657786',
-    marginTop: 12,
+    color: '#6b7280',
   },
-  header: {
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 100,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  chirpsContainer: {
+    paddingVertical: 8,
+  },
+  chirpWrapper: {
     backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
   },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  chirpBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
   },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#7c3aed',
-    fontWeight: '500',
-  },
-  titleContainer: {
+  emptyContainer: {
     flex: 1,
-  },
-  hashtag: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#7c3aed',
-    marginBottom: 2,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#657786',
-  },
-  content: {
-    flex: 1,
-    backgroundColor: '#fafafa',
-  },
-  scrollContent: {
-    paddingBottom: 100, // Space for bottom nav
-  },
-  emptyState: {
-    padding: 48,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 100,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
+    fontWeight: 'bold',
+    color: '#374151',
     marginBottom: 8,
-    marginTop: 16,
   },
-  emptySubtext: {
+  emptySubtitle: {
     fontSize: 16,
-    color: '#657786',
+    color: '#6b7280',
     textAlign: 'center',
+    lineHeight: 24,
   },
 });
