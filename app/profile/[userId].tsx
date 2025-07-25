@@ -138,8 +138,50 @@ export default function UserProfileScreen() {
     ? `${user.first_name} ${user.last_name}`.trim()
     : (user.custom_handle || user.handle || user.email?.split('@')[0] || 'User');
 
+  console.log('🔥🔥🔥 About to render UserProfileScreen with:', { user, loading, chirps: chirps.length });
+
+  if (loading) {
+    console.log('⏳ Showing loading state for profile');
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#7c3aed" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    console.log('❌ No user data found');
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>User not found</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  console.log('✅ Rendering profile for user:', user.custom_handle || user.handle);
+
   return (
     <View style={styles.container}>
+      {/* FORCE VISIBLE - Debug overlay */}
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 50,
+        backgroundColor: '#ff0000',
+        zIndex: 1000,
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>
+          PROFILE PAGE LOADED! User: {user.custom_handle}
+        </Text>
+      </View>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backButtonText}>← Back</Text>
@@ -214,6 +256,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
   },
   header: {
     flexDirection: 'row',
