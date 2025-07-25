@@ -903,9 +903,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
               
               {threadReplies.map((reply, index) => (
                 <View key={reply.id}>
-                  {/* Direct reply to original chirp - same level with individual connector */}
+                  {/* Direct reply to original chirp - same level */}
                   <View style={styles.replyWrapper}>
-                    <View style={styles.replyBranch} />
                     <ChirpCard chirp={reply} />
                   </View>
                   
@@ -916,7 +915,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
                       <View style={styles.nestedContinuousConnector} />
                       {reply.nestedReplies.map((nestedReply, nestedIndex) => (
                         <View key={nestedReply.id} style={styles.nestedReplyWrapper}>
-                          <View style={styles.nestedReplyBranch} />
                           <ChirpCard chirp={nestedReply} />
                         </View>
                       ))}
@@ -1406,15 +1404,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     zIndex: 2,
   },
-  replyBranch: {
-    position: 'absolute',
-    left: -2,
-    top: 20,
-    width: 12,
-    height: 2,
-    backgroundColor: '#7c3aed',
-    zIndex: 2,
-  },
+
   nestedRepliesContainer: {
     marginLeft: 20,
     paddingLeft: 12,
@@ -1434,15 +1424,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     zIndex: 2,
   },
-  nestedReplyBranch: {
-    position: 'absolute',
-    left: -2,
-    top: 20,
-    width: 12,
-    height: 2,
-    backgroundColor: '#7c3aed',
-    zIndex: 2,
-  },
+
   loadingText: {
     fontSize: 14,
     color: '#657786',
