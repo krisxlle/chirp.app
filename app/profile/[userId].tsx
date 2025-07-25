@@ -59,12 +59,16 @@ export default function UserProfileScreen() {
   const router = useRouter();
 
   useEffect(() => {
+    console.log('🚀 Profile useEffect triggered with userId:', userId);
+    
     const fetchUserProfile = async () => {
       if (!userId) {
+        console.log('❌ No userId provided, stopping fetch');
         setLoading(false);
         return;
       }
 
+      console.log('📥 Starting profile data fetch for user:', userId);
       try {
         setLoading(true);
 
@@ -100,6 +104,7 @@ export default function UserProfileScreen() {
         ]);
         
         // Update all state at once to minimize re-renders
+        console.log('✅ Profile data fetched successfully:', userData);
         setUser(userData);
         setChirps(userChirps);
         setReplies(userReplies);
@@ -109,10 +114,12 @@ export default function UserProfileScreen() {
           isBlocked: isBlocked || false,
           notificationsEnabled: false
         });
+        console.log('🎯 Profile state updated');
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('❌ Error fetching user profile:', error);
       } finally {
         setLoading(false);
+        console.log('⏹️ Profile loading completed');
       }
     };
 

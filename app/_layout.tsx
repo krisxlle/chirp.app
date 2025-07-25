@@ -35,6 +35,7 @@ export default function RootLayout() {
             />
             <Stack.Screen name="test-profile" />
             <Stack.Screen name="test-navigation" />
+            <Stack.Screen name="test-direct-profile" />
             <Stack.Screen name="feedback" />
             <Stack.Screen name="user-profile" />
             <Stack.Screen name="profile-page" />
