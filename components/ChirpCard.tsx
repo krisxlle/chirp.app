@@ -1167,20 +1167,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
     flexShrink: 0,
-    borderRadius: 8, // Rounded square instead of circle
+    borderRadius: 6, // Smaller rounded square
     backgroundColor: '#f8f9ff',
     borderWidth: 1,
     borderColor: '#e1e8ff',
   },
   addReactionText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#7c3aed',
     fontWeight: '700',
     textAlign: 'center',
-    lineHeight: 18, // Ensure proper vertical centering
+    lineHeight: 16, // Ensure proper vertical centering
   },
   reactionPickerContainer: {
     position: 'absolute',
