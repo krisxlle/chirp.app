@@ -8,12 +8,15 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
-  Alert
+  Alert,
+  TextInput,
+  ImageBackground
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import ChirpCard from './ChirpCard';
 import { useAuth } from './AuthContext';
-import { getUserProfile, getUserChirps, getUserReplies, getUserStats, followUser, unfollowUser, blockUser, unblockUser, checkFollowStatus } from '../mobile-db';
+import { getUserProfile, getUserChirps, getUserReplies, getUserStats, followUser, unfollowUser, blockUser, unblockUser, checkFollowStatus, updateUserProfile } from '../mobile-db';
 
 interface ProfileModalProps {
   visible: boolean;
@@ -38,8 +41,14 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
     notificationsEnabled: false
   });
   const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showAIPrompt, setShowAIPrompt] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { user: currentUser } = useAuth();
+
+  // Check if viewing own profile
+  const isOwnProfile = currentUser?.id === userId;
 
   useEffect(() => {
     if (visible && userId) {
@@ -165,6 +174,79 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
     }
   };
 
+  const handleAIProfile = () => {
+    setShowAIPrompt(true);
+    setAiPrompt('');
+  };
+
+  const generateProfile = async () => {
+    if (!aiPrompt.trim()) {
+      Alert.alert('Error', 'Please enter a description for your profile generation.');
+      return;
+    }
+
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found. Please sign in again.');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      console.log('Generating AI profile with prompt:', aiPrompt);
+      
+      // Import the AI generation function
+      const { generateAIProfile } = await import('../mobile-ai');
+      
+      // Generate AI profile using direct OpenAI integration
+      const result = await generateAIProfile(aiPrompt);
+      
+      if (!result.avatar && !result.banner) {
+        throw new Error('AI profile generation returned no images');
+      }
+      
+      // Update user profile in database with new images
+      const updateData: any = {};
+      
+      if (result.avatar) {
+        updateData.profileImageUrl = result.avatar;
+      }
+      if (result.banner) {
+        updateData.bannerImageUrl = result.banner;
+      }
+      if (result.bio) {
+        updateData.bio = result.bio;
+      }
+      
+      // Update profile in database
+      await updateUserProfile(user.id, updateData);
+      
+      setShowAIPrompt(false);
+      setAiPrompt('');
+      Alert.alert('Success!', 'Your AI profile has been generated and saved!');
+      
+      // Update local user state to show new images immediately
+      setUser(prev => prev ? {
+        ...prev,
+        profile_image_url: result.avatar || prev.profile_image_url,
+        banner_image_url: result.banner || prev.banner_image_url,
+        bio: result.bio || prev.bio
+      } : null);
+      
+    } catch (error) {
+      console.error('Error generating AI profile:', error);
+      Alert.alert('Error', `Profile generation failed: ${error.message}. Please try again.`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSettings = () => {
+    // Close modal and navigate to settings
+    onClose();
+    // TODO: Navigate to settings page
+    Alert.alert('Settings', 'Navigate to settings page');
+  };
+
   if (!visible) return null;
 
   const displayName = user?.first_name || user?.last_name 
@@ -204,80 +286,128 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
           <ScrollView style={styles.scrollView}>
             {/* Banner */}
             <View style={styles.bannerContainer}>
-              {user.banner_image_url ? (
-                <Image source={{ uri: user.banner_image_url }} style={styles.bannerImage} />
-              ) : (
-                <View style={styles.bannerPlaceholder} />
-              )}
+              <ImageBackground
+                source={{ uri: user.banner_image_url || 'https://via.placeholder.com/400x200/7c3aed/ffffff' }}
+                style={styles.banner}
+                defaultSource={{ uri: 'https://via.placeholder.com/400x200/7c3aed/ffffff' }}
+              >
+                <View style={styles.bannerOverlay} />
+              </ImageBackground>
+              
+              {/* Profile Avatar */}
+              <View style={styles.avatarContainer}>
+                <UserAvatar 
+                  user={{
+                    id: user.id,
+                    firstName: user.first_name || '',
+                    lastName: user.last_name || '',
+                    email: user.email || '',
+                    profileImageUrl: user.profile_image_url || undefined
+                  }} 
+                  size="xl" 
+                />
+              </View>
             </View>
 
-            {/* Profile Info */}
-            <View style={styles.profileSection}>
-              <View style={styles.profileHeader}>
-                <View style={styles.profileInfo}>
-                  <UserAvatar 
-                    user={{
-                      id: user.id,
-                      firstName: user.first_name || '',
-                      lastName: user.last_name || '',
-                      email: user.email || '',
-                      profileImageUrl: user.profile_image_url || undefined
-                    }} 
-                    size="xl"
-                  />
-                  
-                  <View style={styles.profileDetails}>
-                    <View style={styles.nameContainer}>
-                      <Text style={styles.displayName}>{displayName}</Text>
-                      {user.is_chirp_plus && user.show_chirp_plus_badge && (
-                        <View style={styles.chirpPlusBadge}>
-                          <Text style={styles.chirpPlusBadgeText}>Chirp+</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
-                  </View>
-                </View>
-
-                {/* Action buttons */}
-                {currentUser && currentUser.id !== userId && (
-                  <View style={styles.actionButtons}>
+            {/* User Info with Action Buttons */}
+            <View style={styles.userInfo}>
+              {/* Action Buttons positioned in white area */}
+              <View style={styles.actionButtons}>
+                {isOwnProfile ? (
+                  // Show AI Profile and Settings buttons for own profile
+                  <>
+                    <TouchableOpacity onPress={handleAIProfile}>
+                      <LinearGradient
+                        colors={['#7c3aed', '#ec4899']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.generateProfileButton}
+                      >
+                        <Text style={styles.generateProfileButtonText}>Generate Profile</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+                      <Text style={styles.settingsIcon}>⚙️</Text>
+                      <Text style={styles.settingsText}>Settings</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  // Show follow button and three dots menu for other users
+                  <>
                     <TouchableOpacity 
-                      style={[styles.followButton, followStatus.isFollowing && styles.followingButton]} 
+                      style={[
+                        styles.followButton, 
+                        followStatus.isFollowing && styles.followingButton
+                      ]} 
                       onPress={handleFollow}
                     >
-                      <Text style={[styles.followButtonText, followStatus.isFollowing && styles.followingButtonText]}>
+                      <Text style={[
+                        styles.followButtonText, 
+                        followStatus.isFollowing && styles.followingButtonText
+                      ]}>
                         {followStatus.isFollowing ? 'Following' : 'Follow'}
                       </Text>
                     </TouchableOpacity>
-                  </View>
+                    
+                    <TouchableOpacity 
+                      style={styles.moreButton} 
+                      onPress={() => setShowMoreOptions(!showMoreOptions)}
+                    >
+                      <Text style={styles.moreButtonText}>⋯</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
-
-              {/* Bio */}
-              {user.bio && (
-                <View style={styles.bioContainer}>
-                  <Text style={styles.bioText}>{user.bio}</Text>
-                </View>
-              )}
-
-              {/* Stats */}
-              <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{stats.chirps}</Text>
-                  <Text style={styles.statLabel}>Chirps</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{stats.following}</Text>
-                  <Text style={styles.statLabel}>Following</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{stats.followers}</Text>
-                  <Text style={styles.statLabel}>Followers</Text>
-                </View>
+              
+              <View style={styles.nameRow}>
+                <Text style={styles.displayName}>{displayName}</Text>
+                {user.is_chirp_plus && user.show_chirp_plus_badge && (
+                  <Text style={styles.crownIcon}>👑</Text>
+                )}
               </View>
+              <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
+              
+              {user.bio && (
+                <Text style={styles.bio}>
+                  {user.bio.split(/(@\w+)/).map((part, index) => {
+                    if (part.startsWith('@')) {
+                      return (
+                        <TouchableOpacity 
+                          key={index} 
+                          onPress={() => Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`)}
+                        >
+                          <Text style={styles.mentionText}>{part}</Text>
+                        </TouchableOpacity>
+                      );
+                    }
+                    return <Text key={index}>{part}</Text>;
+                  })}
+                </Text>
+              )}
+              
+              <View style={styles.joinedRow}>
+                <Text style={styles.calendarIcon}>📅</Text>
+                <Text style={styles.joinedText}>Joined January 2025</Text>
+              </View>
+            </View>
+
+            {/* Stats Row */}
+            <View style={styles.statsRow}>
+              <TouchableOpacity style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.following}</Text>
+                <Text style={styles.statLabel}>Following</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.followers}</Text>
+                <Text style={styles.statLabel}>Followers</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.chirps}</Text>
+                <Text style={styles.statLabel}>Chirps</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Tabs */}
@@ -335,6 +465,64 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
               )}
             </View>
           </ScrollView>
+        )}
+
+        {/* AI Profile Generation Popup */}
+        {showAIPrompt && (
+          <View style={styles.promptOverlay}>
+            <View style={styles.promptContainer}>
+              <View style={styles.promptHeader}>
+                <Text style={styles.promptTitle}>Generate AI Profile</Text>
+                <TouchableOpacity
+                  style={styles.promptCloseButton}
+                  onPress={() => setShowAIPrompt(false)}
+                >
+                  <Text style={styles.promptCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={styles.promptDescription}>
+                Describe the style you want for your avatar and banner image:
+              </Text>
+              
+              <TextInput
+                style={styles.promptInput}
+                placeholder="e.g., cartoon character with purple hair, aesthetic anime style, futuristic cyberpunk look..."
+                placeholderTextColor="#657786"
+                multiline
+                numberOfLines={4}
+                value={aiPrompt}
+                onChangeText={setAiPrompt}
+                maxLength={500}
+              />
+              
+              <View style={styles.promptButtons}>
+                <TouchableOpacity 
+                  style={styles.cancelButton}
+                  onPress={() => setShowAIPrompt(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.generateButtonContainer, isGenerating && styles.generateButtonDisabled]}
+                  onPress={generateProfile}
+                  disabled={isGenerating}
+                >
+                  <LinearGradient
+                    colors={['#7c3aed', '#ec4899']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.generateButton}
+                  >
+                    <Text style={styles.generateButtonText}>
+                      {isGenerating ? 'Generating...' : 'Generate'}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
         )}
       </View>
     </Modal>
@@ -412,20 +600,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bannerContainer: {
-    height: 100,
-    backgroundColor: '#f3f4f6',
+    position: 'relative',
+    height: 100, // Reduced by 50% from 200px
   },
-  bannerImage: {
+  banner: {
     width: '100%',
-    height: '100%',
+    height: 100, // Reduced by 50% from 200px
   },
-  bannerPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#e5e7eb',
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
   },
-  profileSection: {
-    padding: 16,
+  avatarContainer: {
+    position: 'absolute',
+    bottom: -40,
+    left: 16,
+    borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
+    borderWidth: 4,
+    borderColor: '#ffffff',
+    width: 88, // 80px avatar + 8px border (4px each side)
+    height: 88, // 80px avatar + 8px border (4px each side) 
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userInfo: {
+    paddingHorizontal: 16,
+    paddingTop: 56, // Account for avatar overlap
+    paddingBottom: 16,
+    backgroundColor: '#ffffff',
   },
   profileHeader: {
     flexDirection: 'row',
@@ -449,7 +651,7 @@ const styles = StyleSheet.create({
   displayName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#14171a',
   },
   chirpPlusBadge: {
     backgroundColor: '#7c3aed',
@@ -464,11 +666,101 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   handle: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 15,
+    color: '#657786',
+    marginBottom: 8,
   },
   actionButtons: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginBottom: 16,
+  },
+  generateProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    height: 40,
+  },
+  generateProfileButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    height: 40,
+  },
+  settingsIcon: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  settingsText: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  moreButton: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  moreButtonText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  crownIcon: {
+    fontSize: 16,
+    marginLeft: 6,
+  },
+  bio: {
+    fontSize: 15,
+    color: '#14171a',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  mentionText: {
+    color: '#7c3aed',
+  },
+  joinedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  calendarIcon: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  joinedText: {
+    fontSize: 14,
+    color: '#657786',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#e1e8ed',
   },
   followButton: {
     backgroundColor: '#7c3aed',
@@ -515,11 +807,11 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#14171a',
   },
   statLabel: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#657786',
     marginTop: 2,
   },
   tabsContainer: {
@@ -567,5 +859,105 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     paddingTop: 16,
+  },
+  // AI Prompt Modal Styles
+  promptOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  promptContainer: {
+    backgroundColor: '#ffffff',
+    margin: 20,
+    borderRadius: 16,
+    padding: 20,
+    maxWidth: 400,
+    width: '90%',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  promptHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  promptTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#14171a',
+  },
+  promptCloseButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+  },
+  promptCloseText: {
+    fontSize: 16,
+    color: '#657786',
+    fontWeight: 'bold',
+  },
+  promptDescription: {
+    fontSize: 14,
+    color: '#657786',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  promptInput: {
+    backgroundColor: '#f7f9fa',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#14171a',
+    textAlignVertical: 'top',
+    minHeight: 80,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    marginBottom: 20,
+  },
+  promptButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#f3f4f6',
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  cancelButtonText: {
+    color: '#657786',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  generateButtonContainer: {
+    flex: 1,
+  },
+  generateButtonDisabled: {
+    opacity: 0.6,
+  },
+  generateButton: {
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  generateButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
