@@ -523,18 +523,24 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   };
 
   const handleAvatarPress = () => {
-    // Simple workaround: Alert with user info since navigation isn't working
-    Alert.alert(
-      'Profile', 
-      `View ${chirp.author.customHandle || chirp.author.handle || 'User'}'s profile`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'View Profile', onPress: () => {
-          console.log('Profile view requested for:', chirp.author.id);
-          // For now, just log - can implement modal or alternative navigation
-        }}
-      ]
-    );
+    if (!chirp.author?.id) {
+      console.error('Avatar press failed: No author ID found');
+      return;
+    }
+    
+    console.log('🔥 Avatar pressed - navigating to profile:', chirp.author.id);
+    
+    try {
+      // Use router.navigate instead of router.push for better compatibility
+      router.navigate(`/profile/${chirp.author.id}`);
+      console.log('✅ Navigation initiated successfully');
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      // Fallback to direct URL navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = `/profile/${chirp.author.id}`;
+      }
+    }
   };
 
   const formatDate = (dateString: string) => {
