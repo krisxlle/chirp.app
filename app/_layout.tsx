@@ -26,7 +26,13 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="profile/[userId]" options={{ headerShown: false }} />
+            <Stack.Screen 
+              name="profile/[userId]" 
+              options={{ 
+                headerShown: false,
+                presentation: 'card'
+              }} 
+            />
             <Stack.Screen name="feedback" options={{ headerShown: false }} />
             <Stack.Screen name="user-profile" options={{ headerShown: false }} />
             <Stack.Screen name="profile-page" options={{ headerShown: false }} />
