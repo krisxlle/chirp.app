@@ -186,11 +186,10 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
                       firstName: user.first_name || '',
                       lastName: user.last_name || '',
                       email: user.email || '',
-                      customHandle: user.custom_handle || '',
                       handle: user.handle || '',
                       profileImageUrl: user.profile_image_url || undefined
                     }} 
-                    size={80}
+                    size="xl"
                   />
                   
                   <View style={styles.profileDetails}>
@@ -318,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    paddingTop: 50,
+    paddingTop: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
