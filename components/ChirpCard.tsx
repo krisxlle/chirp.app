@@ -781,6 +781,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
             <Text style={styles.addReactionText}>+</Text>
           </TouchableOpacity>
           
+          {/* Total reaction count next to mood buttons */}
+          {reactions > 0 && (
+            <Text style={styles.reactionCountText}>
+              {formatNumber(reactions)}
+            </Text>
+          )}
+          
           {/* Reaction picker for all emojis - Grid Layout */}
           {showReactionPicker && (
             <View style={styles.reactionPickerContainer}>
@@ -922,14 +929,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
         </View>
       )}
 
-      {/* Total reaction count display at bottom */}
-      {reactions > 0 && (
-        <View style={styles.totalReactionsContainer}>
-          <Text style={styles.totalReactionsText}>
-            {formatNumber(reactions)} mood reactions
-          </Text>
-        </View>
-      )}
+
       
       {/* Custom Options Modal */}
       <Modal
@@ -1373,7 +1373,12 @@ const styles = StyleSheet.create({
   },
   hashtagText: {
     color: '#7c3aed',
-    fontSize: 15,
+  },
+  reactionCountText: {
+    fontSize: 13,
+    color: '#657786',
+    marginLeft: 8,
+    alignSelf: 'center',
     fontWeight: '500',
   },
   boldText: {
