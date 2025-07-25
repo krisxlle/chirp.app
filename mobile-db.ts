@@ -597,20 +597,24 @@ export async function getUserStats(userId: string) {
       SELECT 
         (SELECT COUNT(*) FROM chirps WHERE author_id = ${userId}) as chirps,
         (SELECT COUNT(*) FROM follows WHERE following_id = ${userId}) as followers,
-        (SELECT COUNT(*) FROM follows WHERE follower_id = ${userId}) as following
+        (SELECT COUNT(*) FROM follows WHERE follower_id = ${userId}) as following,
+        (SELECT COALESCE(SUM(count), 0) FROM reactions r 
+         JOIN chirps c ON r.chirp_id = c.id 
+         WHERE c.author_id = ${userId}) as mood_reactions
     `;
     
     const userStats = {
       chirps: Number(stats[0]?.chirps || 0),
       followers: Number(stats[0]?.followers || 0), 
-      following: Number(stats[0]?.following || 0)
+      following: Number(stats[0]?.following || 0),
+      moodReactions: Number(stats[0]?.mood_reactions || 0)
     };
     
     console.log('User stats:', userStats);
     return userStats;
   } catch (error) {
     console.error('Error fetching user stats:', error);
-    return { chirps: 0, followers: 0, following: 0 };
+    return { chirps: 0, followers: 0, following: 0, moodReactions: 0 };
   }
 }
 

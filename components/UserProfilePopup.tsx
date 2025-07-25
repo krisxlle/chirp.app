@@ -34,6 +34,7 @@ interface UserStats {
   chirps: number;
   followers: number;
   following: number;
+  moodReactions: number;
 }
 
 interface UserProfilePopupProps {
@@ -45,7 +46,7 @@ interface UserProfilePopupProps {
 export default function UserProfilePopup({ visible, onClose, userId }: UserProfilePopupProps) {
   const { user: currentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [stats, setStats] = useState<UserStats>({ chirps: 0, followers: 0, following: 0 });
+  const [stats, setStats] = useState<UserStats>({ chirps: 0, followers: 0, following: 0, moodReactions: 0 });
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -233,6 +234,10 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
                     <View style={styles.statItem}>
                       <Text style={styles.statNumber}>{stats.followers}</Text>
                       <Text style={styles.statLabel}>Followers</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statNumber}>{stats.moodReactions}</Text>
+                      <Text style={styles.statLabel}>Reactions</Text>
                     </View>
                   </View>
 
@@ -424,8 +429,9 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: 20,
+    gap: 12,
     marginTop: 8,
+    justifyContent: 'space-between',
   },
   statItem: {
     alignItems: 'center',
