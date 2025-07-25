@@ -58,10 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuthState();
   }, []);
 
-  // Auto-login effect after auth state is checked
+  // Auto-login effect after auth state is checked (only once)
   useEffect(() => {
+    let hasAttemptedLogin = false;
+    
     const autoLogin = async () => {
-      if (!isLoading && !user) {
+      if (!isLoading && !user && !hasAttemptedLogin) {
+        hasAttemptedLogin = true;
         console.log('🚀 No user found - auto-signing in to @chirp for preview...');
         const success = await signIn('preview@chirp.app');
         if (success) {
