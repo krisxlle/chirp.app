@@ -56,7 +56,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
               >
                 <View style={styles.iconContainer}>
                   <item.component
-                    size={18}
+                    size={22} // Increased from 18 to 22 for larger icons to match taller nav bar
                     color='#ffffff'
                   />
                   
@@ -73,7 +73,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
             ) : (
               <View style={styles.iconContainer}>
                 <item.component
-                  size={18}
+                  size={22} // Increased from 18 to 22 for larger icons to match taller nav bar
                   color='#6b7280'
                 />
                 
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     paddingHorizontal: 1.5,
-    paddingVertical: 1.5,
+    paddingVertical: 8, // Increased from 1.5 to 8 for 25% taller nav bar
   },
   navContainer: {
     flexDirection: 'row',
@@ -114,18 +114,18 @@ const styles = StyleSheet.create({
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 7.5,
-    borderRadius: 9,
-    minWidth: 45,
+    paddingVertical: 10, // Increased from 6 to 10 for taller buttons
+    paddingHorizontal: 12, // Increased from 7.5 to 12 for wider buttons
+    borderRadius: 12, // Increased from 9 to 12 for proportional border radius
+    minWidth: 56, // Increased from 45 to 56 for larger tap targets
   },
   activeNavItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 7.5,
-    borderRadius: 9,
-    minWidth: 45,
+    paddingVertical: 10, // Increased from 6 to 10 for taller buttons
+    paddingHorizontal: 12, // Increased from 7.5 to 12 for wider buttons
+    borderRadius: 12, // Increased from 9 to 12 for proportional border radius
+    minWidth: 56, // Increased from 45 to 56 for larger tap targets
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
