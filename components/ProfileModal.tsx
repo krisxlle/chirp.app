@@ -622,6 +622,8 @@ const styles = StyleSheet.create({
     height: 88, // 80px avatar + 8px border (4px each side) 
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10, // Ensure avatar appears above banner
+    elevation: 10, // For Android
   },
   userInfo: {
     paddingHorizontal: 16,
