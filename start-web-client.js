@@ -1,34 +1,33 @@
 #!/usr/bin/env node
-// Script to start the React web client from client/ directory
+
+// Start the web client using Vite
 const { spawn } = require('child_process');
 const path = require('path');
 
-console.log('Starting React web client from client/ directory...');
+console.log('🌐 Starting Chirp Web Client...');
 
-// Run vite from the root directory but with client as the root
-const viteProcess = spawn('npx', ['vite', '--root', 'client', '--port', '5000', '--host', '0.0.0.0'], {
-  cwd: __dirname,
-  stdio: 'inherit',
-  env: { ...process.env }
+// Change to client directory and start vite dev server
+const viteProcess = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', '5000'], {
+  cwd: path.join(__dirname, 'client'),
+  stdio: 'inherit'
 });
 
-viteProcess.on('error', (err) => {
-  console.error('Failed to start client:', err);
+viteProcess.on('error', (error) => {
+  console.error('❌ Error starting web client:', error);
   process.exit(1);
 });
 
-viteProcess.on('exit', (code) => {
-  console.log(`Client process exited with code ${code}`);
+viteProcess.on('close', (code) => {
+  console.log(`Web client exited with code ${code}`);
   process.exit(code);
 });
 
 // Handle process termination
 process.on('SIGINT', () => {
-  console.log('\nShutting down React web client...');
+  console.log('\n🛑 Stopping web client...');
   viteProcess.kill('SIGINT');
 });
 
 process.on('SIGTERM', () => {
-  console.log('\nShutting down React web client...');
   viteProcess.kill('SIGTERM');
 });
