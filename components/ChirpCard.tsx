@@ -52,9 +52,10 @@ interface Chirp {
 interface ChirpCardProps {
   chirp: Chirp;
   onDeleteSuccess?: () => void;
+  onProfilePress?: (userId: string) => void;
 }
 
-export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
+export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: ChirpCardProps) {
   // Safety check for author data
   if (!chirp || !chirp.author) {
     return null;
@@ -528,18 +529,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
       return;
     }
     
-    console.log('🔥 Avatar pressed - navigating to profile:', chirp.author.id);
+    console.log('🔥 Avatar pressed - opening profile modal for:', chirp.author.id);
     
-    try {
-      // Use router.navigate instead of router.push for better compatibility
-      router.navigate(`/profile/${chirp.author.id}`);
-      console.log('✅ Navigation initiated successfully');
-    } catch (error) {
-      console.error('❌ Navigation error:', error);
-      // Fallback to direct URL navigation
-      if (typeof window !== 'undefined') {
-        window.location.href = `/profile/${chirp.author.id}`;
-      }
+    // Use the onProfilePress callback to open profile modal
+    if (onProfilePress) {
+      onProfilePress(chirp.author.id);
+    } else {
+      console.warn('No profile press handler available');
     }
   };
 

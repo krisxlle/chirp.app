@@ -7,6 +7,7 @@ import { getChirpsFromDB, getForYouChirps, getLatestChirps, getTrendingChirps } 
 import type { MobileChirp } from '../mobile-types';
 import ComposeChirp from './ComposeChirp';
 import ChirpCard from './ChirpCard';
+import ProfileModal from './ProfileModal';
 import ChirpLogo from './icons/ChirpLogo';
 
 // Convert mobile chirps to ChirpCard format
@@ -38,6 +39,10 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [feedType, setFeedType] = useState<'personalized' | 'chronological' | 'trending'>('personalized');
+  
+  // Profile modal state
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
   console.log('🏠 HomePage component mounted - chirps count:', chirps.length, 'isLoading:', isLoading);
   
@@ -99,6 +104,12 @@ export default function HomePage() {
       case 'trending': return 'Trending';
       default: return 'For You';
     }
+  };
+
+  const handleProfilePress = (userId: string) => {
+    console.log('🔥 Profile press in HomePage - opening modal for:', userId);
+    setSelectedUserId(userId);
+    setShowProfileModal(true);
   };
 
   const handleScroll = (event: any) => {
@@ -246,10 +257,21 @@ export default function HomePage() {
               key={chirp.id} 
               chirp={convertToChirpCard(chirp)} 
               onDeleteSuccess={fetchChirps}
+              onProfilePress={handleProfilePress}
             />
           ))
         )}
       </Animated.ScrollView>
+
+      {/* Profile Modal */}
+      <ProfileModal
+        visible={showProfileModal}
+        userId={selectedUserId}
+        onClose={() => {
+          setShowProfileModal(false);
+          setSelectedUserId(null);
+        }}
+      />
     </View>
   );
 }
