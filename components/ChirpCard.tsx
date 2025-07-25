@@ -1164,25 +1164,23 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   addReactionButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,
-    minWidth: 32,
-    minHeight: 32,
+    width: 32,
+    height: 32,
     flexShrink: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
+    borderRadius: 8, // Rounded square instead of circle
     backgroundColor: '#f8f9ff',
     borderWidth: 1,
     borderColor: '#e1e8ff',
   },
   addReactionText: {
-    fontSize: 18, // Much bigger plus button text
+    fontSize: 18,
     color: '#7c3aed',
     fontWeight: '700',
     textAlign: 'center',
+    lineHeight: 18, // Ensure proper vertical centering
   },
   reactionPickerContainer: {
     position: 'absolute',
@@ -1211,6 +1209,7 @@ const styles = StyleSheet.create({
   },
   reactionPickerContent: {
     padding: 16,
+    paddingTop: 40, // Extra top padding to avoid close button overlap
   },
   reactionGrid: {
     flexDirection: 'row',
