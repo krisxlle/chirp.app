@@ -20,9 +20,14 @@ interface User {
 
 export default function UserProfileScreen() {
   console.log('🔥🔥🔥 UserProfileScreen component MOUNTED!');
+  console.log('🔥🔥🔥 Component file loaded at:', new Date().toISOString());
   
-  const { userId } = useLocalSearchParams<{ userId: string }>();
-  console.log('🔥🔥🔥 Raw params from useLocalSearchParams:', { userId });
+  const params = useLocalSearchParams();
+  const userId = Array.isArray(params.userId) ? params.userId[0] : params.userId;
+  
+  console.log('🔥🔥🔥 Raw params from useLocalSearchParams:', params);
+  console.log('🔥🔥🔥 Extracted userId:', userId);
+  console.log('🔥🔥🔥 Params type:', typeof userId, 'value:', userId);
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,14 +42,16 @@ export default function UserProfileScreen() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
+      console.log('🔥🔥🔥 useEffect triggered! userId:', userId);
+      
       if (!userId) {
-        console.error('No userId provided');
+        console.error('❌ No userId provided to useEffect');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('Fetching profile for userId:', userId);
+        console.log('🔄 Fetching profile for userId:', userId);
         const { getUserById, getUserChirps, getUserStats } = await import('../../mobile-db');
         
         // Fetch user data

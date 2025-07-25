@@ -533,9 +533,24 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         const profileRoute = `/profile/${chirp.author.id}`;
         console.log('🎯 Using dynamic profile route:', profileRoute);
         
-        // Use router.push directly without delay
-        router.push(profileRoute);
-        console.log('✅ Navigation initiated successfully to:', profileRoute);
+        // Try different navigation methods
+        console.log('🚀 Attempting navigation using router.push...');
+        try {
+          router.push(profileRoute as any);
+          console.log('✅ router.push completed to:', profileRoute);
+        } catch (routerError) {
+          console.error('❌ router.push failed:', routerError);
+          
+          // Try alternative navigation
+          console.log('🔄 Trying router.navigate as fallback...');
+          try {
+            router.navigate(profileRoute as any);
+            console.log('✅ router.navigate completed to:', profileRoute);
+          } catch (navigateError) {
+            console.error('❌ router.navigate also failed:', navigateError);
+            Alert.alert('Navigation Error', 'Unable to open profile. Please try again.');
+          }
+        }
         
       } catch (error) {
         console.error('❌ Navigation error:', error);
