@@ -5,9 +5,7 @@ import UserAvatar from '../../components/UserAvatar';
 import ChirpCard from '../../components/ChirpCard';
 import { AuthContext } from '../../components/AuthContext';
 
-// Add immediate console log to verify file is being imported
-console.log('🔥🔥🔥 [UserProfileScreen] FILE LOADED - Profile page component importing');
-console.log('🔥🔥🔥 Current route in profile page:', typeof window !== 'undefined' ? window.location?.pathname : 'Server side');
+// UserProfileScreen component
 
 interface User {
   id: string;
@@ -25,15 +23,8 @@ interface User {
 }
 
 export default function UserProfileScreen() {
-  console.log('🔥🔥🔥 UserProfileScreen component MOUNTED!');
-  console.log('🔥🔥🔥 Component file loaded at:', new Date().toISOString());
-  
   const params = useLocalSearchParams();
   const userId = Array.isArray(params.userId) ? params.userId[0] : params.userId;
-  
-  console.log('🔥🔥🔥 Raw params from useLocalSearchParams:', params);
-  console.log('🔥🔥🔥 Extracted userId:', userId);
-  console.log('🔥🔥🔥 Params type:', typeof userId, 'value:', userId);
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,20 +43,14 @@ export default function UserProfileScreen() {
     followers: 0
   });
 
-  console.log('🔥🔥🔥 Profile screen initialized with userId:', userId);
-
   useEffect(() => {
     const fetchUserProfile = async () => {
-      console.log('🔥🔥🔥 useEffect triggered! userId:', userId);
-      
       if (!userId) {
-        console.error('❌ No userId provided to useEffect');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('🔄 Fetching profile for userId:', userId);
         const { 
           getUserById, 
           getUserChirps, 
@@ -76,25 +61,24 @@ export default function UserProfileScreen() {
           getCurrentUserId
         } = await import('../../mobile-db');
         
-        // Fetch user data
+        // Fast parallel loading - load user data first, then everything else
         const userData = await getUserById(userId);
-        console.log('User data fetched:', userData);
         
         if (userData) {
           setUser(userData);
           
-          // Get current user for relationship checks
+          // Load everything else in parallel for maximum speed
           const currentUserId = await getCurrentUserId();
           
-          // Fetch user's chirps, replies, stats, and relationship status
           const [userChirps, userReplies, userStats, isFollowing, isBlocked] = await Promise.all([
             getUserChirps(userId),
-            getUserReplies(userId),
+            getUserReplies(userId), 
             getUserStats(userId),
-            currentUserId ? checkFollowStatus(currentUserId, userId) : Promise.resolve(false),
-            currentUserId ? checkBlockStatus(currentUserId, userId) : Promise.resolve(false)
+            currentUserId ? checkFollowStatus(currentUserId, userId) : false,
+            currentUserId ? checkBlockStatus(currentUserId, userId) : false
           ]);
           
+          // Update all state at once to minimize re-renders
           setChirps(userChirps);
           setReplies(userReplies);
           setStats(userStats);
@@ -103,13 +87,9 @@ export default function UserProfileScreen() {
             isBlocked: isBlocked || false,
             notificationsEnabled: false
           });
-          console.log('Profile data loaded successfully');
-        } else {
-          console.error('User not found');
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
-        Alert.alert('Error', 'Failed to load user profile');
       } finally {
         setLoading(false);
       }

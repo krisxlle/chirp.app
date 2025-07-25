@@ -523,51 +523,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
   };
 
   const handleAvatarPress = () => {
-    console.log('🔥 Avatar pressed! Author data:', chirp.author);
-    console.log('🔥 Author ID:', chirp.author?.id);
+    if (!chirp.author?.id) return;
     
-    if (chirp.author?.id) {
-      console.log('✅ Navigating to user profile page for user:', chirp.author.id);
-      
-      try {
-        const profileRoute = `/profile/${chirp.author.id}`;
-        console.log('🎯 Using dynamic profile route:', profileRoute);
-        
-        // Try multiple navigation approaches
-        console.log('🚀 Attempting navigation with multiple methods...');
-        console.log('📍 Current pathname before navigation:', typeof window !== 'undefined' ? window.location?.pathname : 'server');
-        
-        try {
-          // Method 1: router.push with href
-          console.log('🔄 Method 1: router.push...');
-          router.push({ pathname: '/profile/[userId]', params: { userId: chirp.author.id } } as any);
-          
-          // Method 2: Direct URL navigation as fallback
-          setTimeout(() => {
-            console.log('🔄 Method 2: window.location fallback...');
-            if (typeof window !== 'undefined' && window.location?.pathname === '/') {
-              window.location.href = `/profile/${chirp.author.id}`;
-            }
-          }, 200);
-          
-        } catch (routerError) {
-          console.error('❌ Router navigation failed:', routerError);
-          // Direct browser navigation as last resort
-          if (typeof window !== 'undefined') {
-            console.log('🔄 Method 3: Direct browser navigation...');
-            window.location.href = `/profile/${chirp.author.id}`;
-          }
-        }
-        
-        console.log('✅ Navigation attempts initiated for user:', chirp.author.id);
-        
-      } catch (error) {
-        console.error('❌ Navigation error:', error);
-        Alert.alert('Navigation Error', 'Failed to open user profile. Please try again.');
-      }
-    } else {
-      console.log('❌ No author ID found for chirp:', chirp);
-      Alert.alert('Error', 'Unable to open profile - no user ID found');
+    try {
+      // Fast, direct navigation
+      router.push(`/profile/${chirp.author.id}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
     }
   };
 
