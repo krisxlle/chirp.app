@@ -31,8 +31,13 @@ interface User {
 }
 
 export default function UserProfileScreen() {
+  console.log('🔥🔥🔥 UserProfileScreen component loaded!');
+  
   const params = useLocalSearchParams();
   const userId = Array.isArray(params.userId) ? params.userId[0] : params.userId;
+  
+  console.log('📝 Profile screen params:', params);
+  console.log('🆔 Resolved userId:', userId);
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
