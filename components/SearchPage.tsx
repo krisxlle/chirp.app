@@ -59,7 +59,13 @@ export default function SearchPage() {
   }, [query, activeTab]);
 
   const handleUserPress = (user: any) => {
-    Alert.alert('Profile', `Navigate to ${user.firstName} ${user.lastName}'s profile`);
+    router.push(`/profile/${user.id}`);
+  };
+
+  const handleHashtagPress = (hashtag: string) => {
+    console.log('Hashtag pressed:', hashtag);
+    const cleanHashtag = hashtag.replace('#', '');
+    router.push(`/hashtag/${cleanHashtag}`);
   };
 
   return (
