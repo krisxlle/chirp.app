@@ -33,13 +33,7 @@ export default function RootLayout() {
                 animation: 'slide_from_right'
               }} 
             />
-            <Stack.Screen name="test-profile" />
-            <Stack.Screen name="test-navigation" />
-            <Stack.Screen name="test-direct-profile" />
             <Stack.Screen name="feedback" />
-            <Stack.Screen name="user-profile" />
-            <Stack.Screen name="profile-page" />
-            <Stack.Screen name="view-profile" />
             <Stack.Screen name="support" />
             <Stack.Screen name="subscription" />
             <Stack.Screen name="+not-found" />
