@@ -1166,16 +1166,23 @@ const styles = StyleSheet.create({
   addReactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 1,
-    minWidth: 0,
-    flexShrink: 1,
-    paddingHorizontal: 2,
+    justifyContent: 'center',
+    marginLeft: 4,
+    minWidth: 32,
+    minHeight: 32,
+    flexShrink: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    backgroundColor: '#f8f9ff',
+    borderWidth: 1,
+    borderColor: '#e1e8ff',
   },
   addReactionText: {
-    fontSize: 11, // Smaller plus button text
+    fontSize: 18, // Much bigger plus button text
     color: '#7c3aed',
-    fontWeight: '600',
-    marginRight: 1,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   reactionPickerContainer: {
     position: 'absolute',
