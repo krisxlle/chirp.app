@@ -116,10 +116,14 @@ export default function UserProfileScreen() {
 
   const handleBack = () => {
     try {
-      router.back();
+      console.log('Back button pressed - navigating to home');
+      router.push('/');
     } catch (error) {
       console.error('Back navigation error:', error);
-      router.push('/');
+      // Fallback: force navigation to home
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 
@@ -176,7 +180,12 @@ export default function UserProfileScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
@@ -194,7 +203,12 @@ export default function UserProfileScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
@@ -218,7 +232,12 @@ export default function UserProfileScreen() {
     <View style={styles.container}>
       {/* Header - exactly like original web client */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={handleBack}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
@@ -419,10 +438,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
   },
   backButton: {
-    padding: 8,
+    padding: 12,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backButtonText: {
-    fontSize: 20,
+    fontSize: 24,
     color: '#7c3aed',
     fontWeight: '600',
   },
