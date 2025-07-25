@@ -338,8 +338,8 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   avatarContainer: {
-    marginTop: -40,
-    marginBottom: 12,
+    marginTop: -44,
+    marginBottom: 16,
     width: 88,
     height: 88,
     borderRadius: 44,
