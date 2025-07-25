@@ -533,10 +533,19 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         const profileRoute = `/profile/${chirp.author.id}`;
         console.log('🎯 Using dynamic profile route:', profileRoute);
         
-        // Navigate directly to profile page
-        console.log('🚀 Navigating to profile page...');
-        router.push(profileRoute as any);
-        console.log('✅ Profile navigation completed for user:', chirp.author.id);
+        // Navigate directly to profile page using Expo Router
+        console.log('🚀 Navigating to profile page with Expo Router...');
+        console.log('📍 Current pathname before navigation:', typeof window !== 'undefined' ? window.location?.pathname : 'server');
+        
+        // Use router.navigate for better navigation control
+        router.navigate(profileRoute as any);
+        
+        console.log('✅ Profile navigation initiated for user:', chirp.author.id);
+        
+        // Log after a brief delay to see if navigation completed
+        setTimeout(() => {
+          console.log('📍 Current pathname after navigation:', typeof window !== 'undefined' ? window.location?.pathname : 'server');
+        }, 100);
         
       } catch (error) {
         console.error('❌ Navigation error:', error);

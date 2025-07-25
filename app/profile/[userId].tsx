@@ -4,7 +4,8 @@ import { useLocalSearchParams, router } from 'expo-router';
 import UserAvatar from '../../components/UserAvatar';
 
 // Add immediate console log to verify file is being imported
-console.log('🔥🔥🔥 [UserProfileScreen] FILE LOADED - This should appear when navigating to profile');
+console.log('🔥🔥🔥 [UserProfileScreen] FILE LOADED - Profile page component importing');
+console.log('🔥🔥🔥 Current route in profile page:', typeof window !== 'undefined' ? window.location?.pathname : 'Server side');
 
 interface User {
   id: string;
