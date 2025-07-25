@@ -1,5 +1,6 @@
 // Direct database connection for mobile app to access authentic user data
 import { neon } from '@neondatabase/serverless';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MobileChirp, MobileUser } from './mobile-types';
 
 // Get database URL for React Native/Expo environment
@@ -1207,6 +1208,27 @@ export async function createRepost(originalChirpId: string, userId: string) {
   } catch (error) {
     console.error('Error managing repost:', error);
     throw error;
+  }
+}
+
+// Get current authenticated user ID
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    console.log('🔍 Validating current user...');
+    
+    // Get current user from AsyncStorage
+    const storedUser = await AsyncStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      console.log('✅ User validation complete - ID:', user.id);
+      return user.id;
+    }
+    
+    console.log('❌ No current user found');
+    return null;
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+    return null;
   }
 }
 
