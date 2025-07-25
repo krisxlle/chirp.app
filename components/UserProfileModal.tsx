@@ -106,7 +106,7 @@ export default function UserProfileModal({ visible, onClose, userId }: UserProfi
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="none"
       presentationStyle="pageSheet"
     >
       <View style={styles.container}>

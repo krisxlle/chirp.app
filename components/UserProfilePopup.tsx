@@ -146,7 +146,7 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
     <Modal
       visible={visible}
       transparent={true}
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
@@ -253,7 +253,7 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
           <Modal
             visible={showOptionsMenu}
             transparent={true}
-            animationType="fade"
+            animationType="none"
             onRequestClose={() => setShowOptionsMenu(false)}
           >
             <View style={styles.optionsOverlay}>

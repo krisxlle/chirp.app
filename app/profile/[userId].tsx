@@ -415,7 +415,7 @@ export default function UserProfileScreen() {
       <Modal
         visible={showMoreOptions}
         transparent={true}
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setShowMoreOptions(false)}
       >
         <TouchableOpacity 

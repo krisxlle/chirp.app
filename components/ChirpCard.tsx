@@ -898,7 +898,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
       <Modal
         visible={showOptionsModal}
         transparent={true}
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setShowOptionsModal(false)}
       >
         <TouchableOpacity 
