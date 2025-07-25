@@ -15,6 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
 import ChirpCard from './ChirpCard';
+import ChirpPlusBadge from './ChirpPlusBadge';
 import { useAuth } from './AuthContext';
 import { getUserProfile, getUserChirps, getUserReplies, getUserStats, followUser, unfollowUser, blockUser, unblockUser, checkFollowStatus, updateUserProfile } from '../mobile-db';
 
@@ -363,7 +364,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
               <View style={styles.nameRow}>
                 <Text style={styles.displayName}>{displayName}</Text>
                 {user.is_chirp_plus && user.show_chirp_plus_badge && (
-                  <Text style={styles.crownIcon}>👑</Text>
+                  <ChirpPlusBadge size={18} />
                 )}
               </View>
               <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
@@ -730,10 +731,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  crownIcon: {
-    fontSize: 16,
-    marginLeft: 6,
-  },
+
   bio: {
     fontSize: 15,
     color: '#14171a',

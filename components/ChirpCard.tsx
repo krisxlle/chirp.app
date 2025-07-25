@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Modal, Scro
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
+import ChirpPlusBadge from './ChirpPlusBadge';
 import ReplyIcon from './icons/ReplyIcon';
 import RepostIcon from './icons/RepostIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -624,7 +625,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
             <TouchableOpacity onPress={handleAvatarPress} style={styles.nameContainer}>
               <Text style={styles.username}>{displayName}</Text>
               {(chirp.author as any)?.isChirpPlus && (chirp.author as any)?.showChirpPlusBadge && (
-                <Text style={styles.crownBadge}>👑</Text>
+                <ChirpPlusBadge size={16} />
               )}
             </TouchableOpacity>
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
@@ -1319,11 +1320,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  crownBadge: {
-    fontSize: 16,
-    marginLeft: 4,
-    color: '#7c3aed',
-  },
+
   speechBubble: {
     fontSize: 16,
     marginRight: 4,

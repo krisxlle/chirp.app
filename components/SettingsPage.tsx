@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import UserAvatar from './UserAvatar';
+import ChirpPlusBadge from './ChirpPlusBadge';
 import { useAuth } from './AuthContext';
 import { updateUserProfile, cancelSubscription, updateChirpPlusBadgeVisibility } from '../mobile-db';
 import Svg, { Path } from 'react-native-svg';
@@ -82,18 +83,7 @@ const LinkIcon = ({ size = 20, color = "#7c3aed" }) => (
   </Svg>
 );
 
-const CrownIcon = ({ size = 20, color = "#7c3aed" }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path 
-      d="M2 20h20l-2-6-4 2-4-4-4 4-4-2-2 6z" 
-      fill={color}
-    />
-    <Path 
-      d="M6 14l4-4 4 4 4-2-2-6H4l2 6 4 2z" 
-      fill={color}
-    />
-  </Svg>
-);
+// Replaced with consistent ChirpPlusBadge component
 
 const LogOutIcon = ({ size = 20, color = "#9ca3af" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -329,7 +319,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleContainer}>
-            <CrownIcon size={20} color="#7c3aed" />
+            <ChirpPlusBadge size={20} />
             <Text style={styles.cardTitle}>Chirp+ Subscription</Text>
           </View>
         </View>
