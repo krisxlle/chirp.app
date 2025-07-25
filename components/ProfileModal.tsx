@@ -34,7 +34,8 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
   const [stats, setStats] = useState({
     chirps: 0,
     following: 0,
-    followers: 0
+    followers: 0,
+    moodReactions: 0
   });
   const [followStatus, setFollowStatus] = useState({
     isFollowing: false,
@@ -408,6 +409,11 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
               <TouchableOpacity style={styles.statItem}>
                 <Text style={styles.statNumber}>{stats.chirps}</Text>
                 <Text style={styles.statLabel}>Chirps</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.statItem}>
+                <Text style={styles.statNumber}>{stats.moodReactions}</Text>
+                <Text style={styles.statLabel}>Reactions</Text>
               </TouchableOpacity>
             </View>
 
