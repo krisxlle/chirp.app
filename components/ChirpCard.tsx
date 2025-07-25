@@ -687,7 +687,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
             return (
               <TouchableOpacity 
                 key={index}
-                onPress={() => {
+                onPress={(e) => {
+                  e.stopPropagation();
                   Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`);
                   // TODO: Implement notification to mentioned user
                 }}
@@ -699,7 +700,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
             return (
               <TouchableOpacity 
                 key={index}
-                onPress={() => {
+                onPress={(e) => {
+                  e.stopPropagation();
                   const cleanHashtag = part.replace('#', '');
                   router.push(`/hashtag/${cleanHashtag}`);
                 }}
@@ -716,15 +718,24 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
         })}
       </Text>
 
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleReply}>
+      <View style={styles.actions} pointerEvents="box-none">
+        <TouchableOpacity 
+          style={styles.actionButton} 
+          onPress={(e) => {
+            e.stopPropagation();
+            handleReply();
+          }}
+        >
           <SpeechBubbleIcon size={18} color="#657786" />
           <Text style={styles.actionText}>{replies}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.actionButton, userHasReposted && { backgroundColor: '#f3e8ff' }]} 
-          onPress={handleRepost}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleRepost();
+          }}
         >
           <RepostIcon size={18} color={userHasReposted ? "#7c3aed" : "#657786"} />
           <Text style={[styles.actionText, userHasReposted && { color: "#7c3aed" }]}>{reposts}</Text>
@@ -735,7 +746,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
           {userReaction ? (
             <TouchableOpacity 
               style={[styles.reactionButton, styles.selectedReactionButton]} 
-              onPress={() => handleReactionPress(userReaction)}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleReactionPress(userReaction);
+              }}
             >
               <Text style={styles.reactionIcon}>{userReaction}</Text>
               <Text style={styles.reactionCount}>{userReactionCount}</Text>
@@ -746,7 +760,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
               <TouchableOpacity 
                 key={emoji}
                 style={styles.reactionButton} 
-                onPress={() => handleReactionPress(emoji)}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleReactionPress(emoji);
+                }}
               >
                 <Text style={styles.reactionIcon}>{emoji}</Text>
               </TouchableOpacity>
@@ -756,7 +773,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
           {/* Always show plus button to change/add reaction */}
           <TouchableOpacity 
             style={styles.addReactionButton} 
-            onPress={() => setShowReactionPicker(!showReactionPicker)}
+            onPress={(e) => {
+              e.stopPropagation();
+              setShowReactionPicker(!showReactionPicker);
+            }}
           >
             <Text style={styles.addReactionText}>+</Text>
           </TouchableOpacity>
@@ -768,7 +788,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
                 {/* Close button */}
                 <TouchableOpacity 
                   style={styles.reactionPickerClose}
-                  onPress={() => setShowReactionPicker(false)}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setShowReactionPicker(false);
+                  }}
                 >
                   <Text style={styles.reactionPickerCloseText}>×</Text>
                 </TouchableOpacity>
@@ -786,7 +809,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
                           styles.reactionGridOption,
                           userReaction === emoji && styles.selectedReactionOption
                         ]}
-                        onPress={() => {
+                        onPress={(e) => {
+                          e.stopPropagation();
                           handleReactionPress(emoji);
                           setShowReactionPicker(false); // Auto-close after selection
                         }}
@@ -802,7 +826,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
         </View>
 
         <View style={styles.shareButtonContainer}>
-          <TouchableOpacity style={[styles.actionButton, styles.shareButton]} onPress={handleShare}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.shareButton]} 
+            onPress={(e) => {
+              e.stopPropagation();
+              handleShare();
+            }}
+          >
             <ShareIcon size={18} color="#657786" />
           </TouchableOpacity>
         </View>
@@ -810,7 +840,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
       
       {/* Reply Input */}
       {showReplyInput && (
-        <View style={styles.replyContainer}>
+        <View style={styles.replyContainer} pointerEvents="box-none">
           <TextInput
             style={styles.replyInput}
             placeholder={`Reply to ${displayName}...`}
@@ -822,13 +852,19 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
           <View style={styles.replyButtons}>
             <TouchableOpacity 
               style={styles.cancelButton}
-              onPress={() => setShowReplyInput(false)}
+              onPress={(e) => {
+                e.stopPropagation();
+                setShowReplyInput(false);
+              }}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.submitButtonContainer, !replyText.trim() && styles.submitButtonDisabled]}
-              onPress={submitReply}
+              onPress={(e) => {
+                e.stopPropagation();
+                submitReply();
+              }}
               disabled={!replyText.trim()}
             >
               <LinearGradient
