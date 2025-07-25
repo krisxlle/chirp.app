@@ -850,6 +850,41 @@ export async function searchUsers(query: string) {
   }
 }
 
+// Add missing profile functions for ProfileModal - only add getUserProfile since others exist
+export async function getUserProfile(userId: string) {
+  console.log('📥 Fetching user profile for:', userId);
+  try {
+    const result = await sql`
+      SELECT 
+        id::text,
+        first_name,
+        last_name,
+        email,
+        handle,
+        custom_handle,
+        profile_image_url,
+        banner_image_url,
+        bio,
+        created_at,
+        updated_at
+      FROM users 
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+    
+    if (result.length === 0) {
+      console.log('❌ User not found:', userId);
+      return null;
+    }
+    
+    console.log('✅ User profile loaded:', result[0]);
+    return result[0];
+  } catch (error) {
+    console.error('❌ Error fetching user profile:', error);
+    throw error;
+  }
+}
+
 // Get user's current reaction for a chirp (single reaction system)
 export async function getUserReactionForChirp(chirpId: string, userId: string): Promise<string | null> {
   try {
