@@ -13,25 +13,37 @@ export default function ChirpApp() {
   const { isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
 
+  console.log('🔍 ChirpApp render - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
+
   if (isLoading) {
+    console.log('📱 Showing loading screen');
     return <View style={styles.loadingContainer} />;
   }
 
   if (!isAuthenticated) {
+    console.log('🔐 Showing sign in screen');
     return <SignInScreen />;
   }
 
+  console.log('✅ Showing main app with activeTab:', activeTab);
+
   const renderCurrentPage = () => {
+    console.log('🎯 Rendering page for activeTab:', activeTab);
     switch (activeTab) {
       case 'home':
+        console.log('📱 Rendering HomePage');
         return <HomePage />;
       case 'search':
+        console.log('🔍 Rendering SearchPage');
         return <SearchPage />;
       case 'notifications':
+        console.log('🔔 Rendering NotificationsPage');
         return <NotificationsPage />;
       case 'profile':
+        console.log('👤 Rendering ProfilePage');
         return <ProfilePage />;
       default:
+        console.log('🏠 Rendering default HomePage');
         return <HomePage />;
     }
   };

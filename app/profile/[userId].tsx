@@ -3,6 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator
 import { useLocalSearchParams, router } from 'expo-router';
 import UserAvatar from '../../components/UserAvatar';
 
+// Add immediate console log to verify file is being imported
+console.log('🔥🔥🔥 [UserProfileScreen] FILE LOADED - This should appear when navigating to profile');
+
 interface User {
   id: string;
   email?: string;
