@@ -24,22 +24,23 @@ export default function RootLayout() {
     <AuthProvider>
       <PushNotificationProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
             <Stack.Screen 
               name="profile/[userId]" 
               options={{ 
-                headerShown: false,
-                presentation: 'card'
+                presentation: 'card',
+                animation: 'slide_from_right'
               }} 
             />
-            <Stack.Screen name="test-profile" options={{ headerShown: false }} />
-            <Stack.Screen name="feedback" options={{ headerShown: false }} />
-            <Stack.Screen name="user-profile" options={{ headerShown: false }} />
-            <Stack.Screen name="profile-page" options={{ headerShown: false }} />
-            <Stack.Screen name="view-profile" options={{ headerShown: false }} />
-            <Stack.Screen name="support" options={{ headerShown: false }} />
-            <Stack.Screen name="subscription" options={{ headerShown: false }} />
+            <Stack.Screen name="test-profile" />
+            <Stack.Screen name="test-navigation" />
+            <Stack.Screen name="feedback" />
+            <Stack.Screen name="user-profile" />
+            <Stack.Screen name="profile-page" />
+            <Stack.Screen name="view-profile" />
+            <Stack.Screen name="support" />
+            <Stack.Screen name="subscription" />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />

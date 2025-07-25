@@ -533,19 +533,33 @@ export default function ChirpCard({ chirp, onDeleteSuccess }: ChirpCardProps) {
         const profileRoute = `/profile/${chirp.author.id}`;
         console.log('🎯 Using dynamic profile route:', profileRoute);
         
-        // Navigate directly to profile page using Expo Router
-        console.log('🚀 Navigating to profile page with Expo Router...');
+        // Try multiple navigation approaches
+        console.log('🚀 Attempting navigation with multiple methods...');
         console.log('📍 Current pathname before navigation:', typeof window !== 'undefined' ? window.location?.pathname : 'server');
         
-        // Use router.navigate for better navigation control
-        router.navigate(profileRoute as any);
+        try {
+          // Method 1: router.push with href
+          console.log('🔄 Method 1: router.push...');
+          router.push({ pathname: '/profile/[userId]', params: { userId: chirp.author.id } } as any);
+          
+          // Method 2: Direct URL navigation as fallback
+          setTimeout(() => {
+            console.log('🔄 Method 2: window.location fallback...');
+            if (typeof window !== 'undefined' && window.location?.pathname === '/') {
+              window.location.href = `/profile/${chirp.author.id}`;
+            }
+          }, 200);
+          
+        } catch (routerError) {
+          console.error('❌ Router navigation failed:', routerError);
+          // Direct browser navigation as last resort
+          if (typeof window !== 'undefined') {
+            console.log('🔄 Method 3: Direct browser navigation...');
+            window.location.href = `/profile/${chirp.author.id}`;
+          }
+        }
         
-        console.log('✅ Profile navigation initiated for user:', chirp.author.id);
-        
-        // Log after a brief delay to see if navigation completed
-        setTimeout(() => {
-          console.log('📍 Current pathname after navigation:', typeof window !== 'undefined' ? window.location?.pathname : 'server');
-        }, 100);
+        console.log('✅ Navigation attempts initiated for user:', chirp.author.id);
         
       } catch (error) {
         console.error('❌ Navigation error:', error);
