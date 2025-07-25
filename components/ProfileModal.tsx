@@ -549,7 +549,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chirpsContainer: {
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
   },
   emptyState: {
     alignItems: 'center',
