@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'absolute',
-    bottom: -40,
+    bottom: -44,
     left: 16,
     borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
     borderWidth: 4,

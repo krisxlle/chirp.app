@@ -444,7 +444,8 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Enhanced User Experience**: Users can now easily access reply threads by tapping chirp content while all interactive elements remain fully functional
 - **Mood Reaction Count Display Improvement**: Changed mood reaction count from bottom bar to small number next to reaction buttons for better UX and cleaner design
 - **Removed Horizontal Purple Lines**: Eliminated horizontal purple connector lines next to replies for cleaner visual thread display while maintaining vertical connectors
-- **Status**: ✅ Application functional and accessible with completely standardized Chirp+ badge system, tap-to-open-replies functionality, improved mood reaction count display, and cleaner reply thread design
+- **Fixed Avatar Positioning in Profile Popups**: Corrected avatar positioning in UserProfilePopup and ProfileModal so half appears on banner and half below, preventing bottom half being covered by banner
+- **Status**: ✅ Application functional and accessible with completely standardized Chirp+ badge system, tap-to-open-replies functionality, improved mood reaction count display, cleaner reply thread design, and properly positioned profile avatars
 
 ### January 23, 2025 - Preview Account Setup
 - **Created @chirp Preview Account**: Added official @chirp preview account (ID: chirp-preview-001) with Chirp+ status for testing and demonstrations
