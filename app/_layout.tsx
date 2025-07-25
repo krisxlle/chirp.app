@@ -33,6 +33,7 @@ export default function RootLayout() {
                 presentation: 'card'
               }} 
             />
+            <Stack.Screen name="test-profile" options={{ headerShown: false }} />
             <Stack.Screen name="feedback" options={{ headerShown: false }} />
             <Stack.Screen name="user-profile" options={{ headerShown: false }} />
             <Stack.Screen name="profile-page" options={{ headerShown: false }} />

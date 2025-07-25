@@ -38,6 +38,8 @@ export default function HomePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [feedType, setFeedType] = useState<'personalized' | 'chronological' | 'trending'>('personalized');
   
+  console.log('🏠 HomePage component mounted - chirps count:', chirps.length, 'isLoading:', isLoading);
+  
   // Header animation state
   const headerTranslateY = useSharedValue(0);
   const contentPaddingTop = useSharedValue(42);
