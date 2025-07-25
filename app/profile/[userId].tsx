@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, Modal } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import React, { useEffect, useState, useContext } from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ScrollView,
+  Image,
+  ActivityIndicator,
+  Modal,
+  Alert
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import UserAvatar from '../../components/UserAvatar';
 import ChirpCard from '../../components/ChirpCard';
 import { AuthContext } from '../../components/AuthContext';
-
-// UserProfileScreen component
 
 interface User {
   id: string;
@@ -14,10 +22,10 @@ interface User {
   last_name?: string;
   custom_handle?: string;
   handle?: string;
-  display_name?: string;
-  bio?: string;
   profile_image_url?: string;
   banner_image_url?: string;
+  bio?: string;
+  created_at?: string;
   is_chirp_plus?: boolean;
   show_chirp_plus_badge?: boolean;
 }
@@ -28,20 +36,22 @@ export default function UserProfileScreen() {
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [chirps, setChirps] = useState([]);
-  const [replies, setReplies] = useState([]);
-  const [activeTab, setActiveTab] = useState('chirps');
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
-  const [followStatus, setFollowStatus] = useState({
-    isFollowing: false,
-    isBlocked: false,
-    notificationsEnabled: true
-  });
+  const [chirps, setChirps] = useState<any[]>([]);
+  const [replies, setReplies] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'chirps' | 'replies'>('chirps');
   const [stats, setStats] = useState({
     chirps: 0,
     following: 0,
     followers: 0
   });
+  const [followStatus, setFollowStatus] = useState({
+    isFollowing: false,
+    isBlocked: false,
+    notificationsEnabled: false
+  });
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -51,43 +61,49 @@ export default function UserProfileScreen() {
       }
 
       try {
+        setLoading(true);
+
+        // Import all database functions
         const { 
           getUserById, 
           getUserChirps, 
+          getUserReplies, 
           getUserStats, 
-          checkFollowStatus, 
-          checkBlockStatus,
-          getUserReplies,
-          getCurrentUserId
+          getCurrentUserId,
+          checkFollowStatus,
+          checkBlockStatus
         } = await import('../../mobile-db');
+
+        // Get current user for checking relationships
+        const currentUserId = await getCurrentUserId();
+
+        // Fetch all data in parallel for optimal performance
+        const [
+          userData, 
+          userChirps, 
+          userReplies, 
+          userStats,
+          isFollowing,
+          isBlocked
+        ] = await Promise.all([
+          getUserById(userId),
+          getUserChirps(userId),
+          getUserReplies(userId), 
+          getUserStats(userId),
+          currentUserId ? checkFollowStatus(currentUserId, userId) : false,
+          currentUserId ? checkBlockStatus(currentUserId, userId) : false
+        ]);
         
-        // Fast parallel loading - load user data first, then everything else
-        const userData = await getUserById(userId);
-        
-        if (userData) {
-          setUser(userData);
-          
-          // Load everything else in parallel for maximum speed
-          const currentUserId = await getCurrentUserId();
-          
-          const [userChirps, userReplies, userStats, isFollowing, isBlocked] = await Promise.all([
-            getUserChirps(userId),
-            getUserReplies(userId), 
-            getUserStats(userId),
-            currentUserId ? checkFollowStatus(currentUserId, userId) : false,
-            currentUserId ? checkBlockStatus(currentUserId, userId) : false
-          ]);
-          
-          // Update all state at once to minimize re-renders
-          setChirps(userChirps);
-          setReplies(userReplies);
-          setStats(userStats);
-          setFollowStatus({
-            isFollowing: isFollowing || false,
-            isBlocked: isBlocked || false,
-            notificationsEnabled: false
-          });
-        }
+        // Update all state at once to minimize re-renders
+        setUser(userData);
+        setChirps(userChirps);
+        setReplies(userReplies);
+        setStats(userStats);
+        setFollowStatus({
+          isFollowing: isFollowing || false,
+          isBlocked: isBlocked || false,
+          notificationsEnabled: false
+        });
       } catch (error) {
         console.error('Error fetching user profile:', error);
       } finally {
@@ -100,7 +116,6 @@ export default function UserProfileScreen() {
 
   const handleBack = () => {
     try {
-      console.log('Navigating back from profile');
       router.back();
     } catch (error) {
       console.error('Back navigation error:', error);
@@ -162,9 +177,10 @@ export default function UserProfileScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backButtonText}>← Back</Text>
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
+          <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#7c3aed" />
@@ -179,9 +195,10 @@ export default function UserProfileScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backButtonText}>← Back</Text>
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
+          <View style={styles.headerRight} />
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>User not found</Text>
@@ -197,116 +214,101 @@ export default function UserProfileScreen() {
     ? `${user.first_name} ${user.last_name}`.trim()
     : (user.custom_handle || user.handle || user.email?.split('@')[0] || 'User');
 
-  console.log('🔥🔥🔥 About to render UserProfileScreen with:', { user, loading, chirps: chirps.length });
-
-  if (loading) {
-    console.log('⏳ Showing loading state for profile');
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7c3aed" />
-        <Text style={styles.loadingText}>Loading profile...</Text>
-      </View>
-    );
-  }
-
-  if (!user) {
-    console.log('❌ No user data found');
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>User not found</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  console.log('✅ Rendering profile for user:', user.custom_handle || user.handle);
-
-  const isOwnProfile = false; // For now, assume this is always another user's profile
-
   return (
     <View style={styles.container}>
-      {/* Header with back and options */}
+      {/* Header - exactly like original web client */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{displayName}</Text>
-        {!isOwnProfile && (
-          <TouchableOpacity 
-            style={styles.moreButton} 
-            onPress={() => setShowMoreOptions(true)}
-          >
-            <Text style={styles.moreButtonText}>⋯</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity style={styles.moreButton} onPress={() => setShowMoreOptions(true)}>
+          <Text style={styles.moreButtonText}>⋯</Text>
+        </TouchableOpacity>
       </View>
-      
-      <ScrollView style={styles.content}>
-        {/* Banner */}
-        {user.banner_image_url && (
-          <Image source={{ uri: user.banner_image_url }} style={styles.banner} />
-        )}
-        
-        {/* Profile Section */}
-        <View style={styles.profileSection}>
-          {/* Avatar positioned to overlap banner */}
-          <View style={styles.avatarContainer}>
-            <UserAvatar 
-              user={user} 
-              size={80} 
-              style={styles.avatar}
-            />
-          </View>
-          
-          {/* Follow button */}
-          {!isOwnProfile && !followStatus.isBlocked && (
-            <TouchableOpacity 
-              style={[styles.followButton, followStatus.isFollowing && styles.followingButton]} 
-              onPress={handleFollow}
-            >
-              <Text style={[styles.followButtonText, followStatus.isFollowing && styles.followingButtonText]}>
-                {followStatus.isFollowing ? 'Following' : 'Follow'}
-              </Text>
-            </TouchableOpacity>
+
+      <ScrollView style={styles.scrollView}>
+        {/* Banner Section - exactly like original */}
+        <View style={styles.bannerContainer}>
+          {user.banner_image_url ? (
+            <Image source={{ uri: user.banner_image_url }} style={styles.bannerImage} />
+          ) : (
+            <View style={styles.bannerPlaceholder} />
           )}
-          
-          {/* Profile Info */}
-          <View style={styles.profileInfo}>
-            <Text style={styles.displayName}>{displayName}</Text>
-            <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
-            
-            {user.bio && (
-              <Text style={styles.bio}>{user.bio}</Text>
-            )}
-            
-            {user.is_chirp_plus && user.show_chirp_plus_badge && (
-              <View style={styles.chirpPlusBadge}>
-                <Text style={styles.chirpPlusBadgeText}>Chirp+ Member</Text>
+        </View>
+
+        {/* Profile Info Section - exactly like original layout */}
+        <View style={styles.profileSection}>
+          <View style={styles.profileHeader}>
+            {/* Avatar and basic info */}
+            <View style={styles.profileInfo}>
+              <UserAvatar 
+                user={{
+                  id: user.id,
+                  firstName: user.first_name || '',
+                  lastName: user.last_name || '',
+                  email: user.email || '',
+                  customHandle: user.custom_handle || '',
+                  handle: user.handle || '',
+                  profileImageUrl: user.profile_image_url || undefined
+                }} 
+                size={96}
+              />
+              
+              <View style={styles.profileDetails}>
+                <View style={styles.nameContainer}>
+                  <Text style={styles.displayName}>{displayName}</Text>
+                  {user.is_chirp_plus && user.show_chirp_plus_badge && (
+                    <View style={styles.chirpPlusBadge}>
+                      <Text style={styles.chirpPlusBadgeText}>Chirp+</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
               </View>
-            )}
-            
-            {/* Stats */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{stats.chirps}</Text>
-                <Text style={styles.statLabel}>Chirps</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{stats.following}</Text>
-                <Text style={styles.statLabel}>Following</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{stats.followers}</Text>
-                <Text style={styles.statLabel}>Followers</Text>
-              </View>
+            </View>
+
+            {/* Action buttons - exactly like original */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity 
+                style={[styles.followButton, followStatus.isFollowing && styles.followingButton]} 
+                onPress={handleFollow}
+              >
+                <Text style={[styles.followButtonText, followStatus.isFollowing && styles.followingButtonText]}>
+                  {followStatus.isFollowing ? 'Following' : 'Follow'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Bio - exactly like original */}
+          {user.bio && (
+            <View style={styles.bioContainer}>
+              <Text style={styles.bioText}>{user.bio}</Text>
+            </View>
+          )}
+
+          {/* Stats - exactly like original with dividers */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.chirps}</Text>
+              <Text style={styles.statLabel}>Chirps</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.following}</Text>
+              <Text style={styles.statLabel}>Following</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.followers}</Text>
+              <Text style={styles.statLabel}>Followers</Text>
             </View>
           </View>
         </View>
-        
-        {/* Tabs */}
-        <View style={styles.tabs}>
+
+        {/* Tabs - exactly like original */}
+        <View style={styles.tabsContainer}>
           <TouchableOpacity 
             style={[styles.tab, activeTab === 'chirps' && styles.activeTab]} 
             onPress={() => setActiveTab('chirps')}
@@ -324,32 +326,36 @@ export default function UserProfileScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        
-        {/* Tab Content */}
+
+        {/* Tab Content - exactly like original with borders */}
         <View style={styles.tabContent}>
           {activeTab === 'chirps' && (
-            <View>
+            <View style={styles.chirpsContainer}>
               {chirps.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyStateText}>No chirps yet</Text>
                 </View>
               ) : (
                 chirps.map((chirp: any, index: number) => (
-                  <ChirpCard key={chirp.id} chirp={chirp} />
+                  <View key={chirp.id} style={[styles.chirpContainer, index > 0 && styles.chirpBorder]}>
+                    <ChirpCard chirp={chirp} />
+                  </View>
                 ))
               )}
             </View>
           )}
           
           {activeTab === 'replies' && (
-            <View>
+            <View style={styles.chirpsContainer}>
               {replies.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyStateText}>No replies yet</Text>
                 </View>
               ) : (
                 replies.map((reply: any, index: number) => (
-                  <ChirpCard key={reply.id} chirp={reply} />
+                  <View key={reply.id} style={[styles.chirpContainer, index > 0 && styles.chirpBorder]}>
+                    <ChirpCard chirp={reply} />
+                  </View>
                 ))
               )}
             </View>
@@ -357,7 +363,7 @@ export default function UserProfileScreen() {
         </View>
       </ScrollView>
       
-      {/* More Options Modal */}
+      {/* More Options Modal - exactly like original */}
       <Modal
         visible={showMoreOptions}
         transparent={true}
@@ -401,37 +407,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 999,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
     paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginLeft: 16,
-  },
   backButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    padding: 8,
   },
   backButtonText: {
+    fontSize: 20,
     color: '#7c3aed',
-    fontSize: 16,
     fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  headerRight: {
+    width: 36,
+  },
+  moreButton: {
+    padding: 8,
+  },
+  moreButtonText: {
+    fontSize: 20,
+    color: '#6b7280',
+    fontWeight: 'bold',
+  },
+  scrollView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -447,18 +459,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: 20,
   },
   errorText: {
     fontSize: 18,
     color: '#ef4444',
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 20,
   },
   retryButton: {
     backgroundColor: '#7c3aed',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 8,
   },
   retryButtonText: {
@@ -466,95 +477,110 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  content: {
-    flex: 1,
-  },
-  profileCard: {
-    backgroundColor: '#ffffff',
-    marginTop: 40,
-    paddingHorizontal: 16,
-    paddingTop: 40,
-    paddingBottom: 16,
-  },
-  successBanner: {
-    backgroundColor: '#10b981',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-  },
-  successText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
   bannerContainer: {
-    position: 'relative',
-    height: 100, // Reduced by 50% from 200px
-  },
-  banner: {
-    width: '100%',
-    height: 100, // Reduced by 50% from 200px
+    height: 128,
     backgroundColor: '#7c3aed',
   },
-  bannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+  bannerImage: {
+    width: '100%',
+    height: 128,
   },
-  avatarContainer: {
-    position: 'absolute',
-    bottom: -40,
-    left: 16,
-    borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
-    borderWidth: 4,
-    borderColor: '#ffffff',
-    width: 88, // 80px avatar + 8px border (4px each side)
-    height: 88, // 80px avatar + 8px border (4px each side)
+  bannerPlaceholder: {
+    width: '100%',
+    height: 128,
+    backgroundColor: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #d946ef 100%)',
+  },
+  profileSection: {
+    padding: 16,
+    backgroundColor: '#ffffff',
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileDetails: {
+    marginTop: 12,
+  },
+  nameContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 4,
   },
   displayName: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1f2937',
-    textAlign: 'center',
-    marginBottom: 4,
+    marginRight: 8,
+  },
+  chirpPlusBadge: {
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  chirpPlusBadgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   handle: {
     fontSize: 16,
     color: '#6b7280',
-    textAlign: 'center',
     marginBottom: 12,
   },
-  chirpPlusBadge: {
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  followButton: {
     backgroundColor: '#7c3aed',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    alignSelf: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginLeft: 12,
   },
-  chirpPlusBadgeText: {
+  followingButton: {
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  followButtonText: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
   },
-  bio: {
+  followingButtonText: {
+    color: '#374151',
+  },
+  bioContainer: {
+    marginBottom: 16,
+  },
+  bioText: {
     fontSize: 16,
     color: '#374151',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
+    lineHeight: 24,
   },
-  stats: {
+  statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
     paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
   },
   statItem: {
+    flex: 1,
     alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#e5e7eb',
   },
   statNumber: {
     fontSize: 20,
@@ -564,44 +590,78 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 14,
     color: '#6b7280',
-    marginTop: 4,
+    marginTop: 2,
   },
-  chirpsSection: {
-    margin: 16,
+  tabsContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
-  noChirpsText: {
+  activeTab: {
+    borderBottomColor: '#7c3aed',
+  },
+  tabText: {
     fontSize: 16,
     color: '#6b7280',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    fontWeight: '500',
   },
-  chirpPreview: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+  activeTabText: {
+    color: '#7c3aed',
+    fontWeight: '600',
   },
-  chirpContent: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
+  tabContent: {
+    backgroundColor: '#ffffff',
   },
-  chirpDate: {
-    fontSize: 12,
+  chirpsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  chirpContainer: {
+    backgroundColor: '#ffffff',
+  },
+  chirpBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
     color: '#6b7280',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreOptionsMenu: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 8,
+    margin: 20,
+    minWidth: 250,
+  },
+  menuItem: {
+    padding: 16,
+    borderRadius: 8,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#374151',
+    textAlign: 'center',
+  },
+  destructiveText: {
+    color: '#ef4444',
   },
 });
