@@ -603,7 +603,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeTabButtonContainer: {
+    borderWidth: 1, // Ensure same border width as inactive tabs
     borderColor: '#7c3aed',
+    backgroundColor: 'transparent', // Remove background since gradient handles it
   },
   activeTabButton: {
     paddingHorizontal: 20,
