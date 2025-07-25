@@ -23,9 +23,43 @@ export default function ChirpApp() {
     console.log('📍 Pathname changed to:', pathname);
     if (pathname && pathname.startsWith('/profile/')) {
       console.log('🚫 Profile route detected - ChirpApp should be hidden');
-      // Return null or handle differently for profile routes
     }
   }, [pathname]);
+
+  // Monitor URL changes to detect profile routes
+  const [currentPath, setCurrentPath] = useState('');
+  
+  useEffect(() => {
+    const updatePath = () => {
+      if (typeof window !== 'undefined') {
+        const newPath = window.location?.pathname || '';
+        console.log('🔍 URL changed to:', newPath);
+        setCurrentPath(newPath);
+      }
+    };
+    
+    // Set initial path
+    updatePath();
+    
+    // Listen for URL changes
+    window.addEventListener('popstate', updatePath);
+    
+    // Check every 100ms for URL changes (fallback)
+    const interval = setInterval(updatePath, 100);
+    
+    return () => {
+      window.removeEventListener('popstate', updatePath);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Check if we're on a profile route
+  const isProfileRoute = React.useMemo(() => {
+    const checkPath = currentPath || pathname || '';
+    const isProfile = checkPath.startsWith('/profile/');
+    console.log('🔍 Checking path:', checkPath, 'isProfile:', isProfile);
+    return isProfile;
+  }, [currentPath, pathname]);
 
   if (isLoading) {
     console.log('📱 Showing loading screen');
@@ -38,7 +72,7 @@ export default function ChirpApp() {
   }
 
   // If we're on a profile route, don't render the main app interface
-  if (pathname && pathname.startsWith('/profile/')) {
+  if (isProfileRoute) {
     console.log('🚫 Profile route detected - returning null to let Expo Router handle it');
     return null;
   }
