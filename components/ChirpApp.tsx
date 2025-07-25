@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useAuth } from './AuthContext';
+import { usePathname } from 'expo-router';
 import SignInScreen from './SignInScreen';
 import HomePage from './HomePage';
 import SearchPage from './SearchPage';
@@ -12,8 +13,19 @@ import BottomNavigation from './BottomNavigation';
 export default function ChirpApp() {
   const { isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+  const pathname = usePathname();
 
   console.log('🔍 ChirpApp render - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
+  console.log('📍 Current pathname in ChirpApp:', pathname);
+
+  // Check if we're on a profile route and should hide the ChirpApp
+  useEffect(() => {
+    console.log('📍 Pathname changed to:', pathname);
+    if (pathname && pathname.startsWith('/profile/')) {
+      console.log('🚫 Profile route detected - ChirpApp should be hidden');
+      // Return null or handle differently for profile routes
+    }
+  }, [pathname]);
 
   if (isLoading) {
     console.log('📱 Showing loading screen');
@@ -23,6 +35,12 @@ export default function ChirpApp() {
   if (!isAuthenticated) {
     console.log('🔐 Showing sign in screen');
     return <SignInScreen />;
+  }
+
+  // If we're on a profile route, don't render the main app interface
+  if (pathname && pathname.startsWith('/profile/')) {
+    console.log('🚫 Profile route detected - returning null to let Expo Router handle it');
+    return null;
   }
 
   console.log('✅ Showing main app with activeTab:', activeTab);
