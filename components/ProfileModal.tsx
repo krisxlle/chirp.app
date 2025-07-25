@@ -78,8 +78,43 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
       });
 
       setUser(profileData);
-      setChirps(chirpsData || []);
-      setReplies(repliesData || []);
+      
+      // Transform chirps data to match ChirpCard expected format
+      const transformedChirps = (chirpsData || []).map((chirp: any) => ({
+        ...chirp,
+        author: {
+          id: profileData.id,
+          firstName: profileData.first_name || '',
+          lastName: profileData.last_name || '',
+          email: profileData.email,
+          customHandle: profileData.custom_handle || profileData.handle,
+          handle: profileData.handle,
+          profileImageUrl: profileData.profile_image_url
+        },
+        replyCount: parseInt(chirp.reply_count) || 0,
+        reactionCount: parseInt(chirp.reaction_count) || 0,
+        repostCount: 0
+      }));
+      
+      // Transform replies data to match ChirpCard expected format
+      const transformedReplies = (repliesData || []).map((reply: any) => ({
+        ...reply,
+        author: {
+          id: profileData.id,
+          firstName: profileData.first_name || '',
+          lastName: profileData.last_name || '',
+          email: profileData.email,
+          customHandle: profileData.custom_handle || profileData.handle,
+          handle: profileData.handle,
+          profileImageUrl: profileData.profile_image_url
+        },
+        replyCount: parseInt(reply.reply_count) || 0,
+        reactionCount: parseInt(reply.reaction_count) || 0,
+        repostCount: 0
+      }));
+      
+      setChirps(transformedChirps);
+      setReplies(transformedReplies);
       setStats(statsData || { chirps: 0, following: 0, followers: 0 });
       
       if (followData) {
