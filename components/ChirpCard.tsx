@@ -1176,11 +1176,13 @@ const styles = StyleSheet.create({
     borderColor: '#e1e8ff',
   },
   addReactionText: {
-    fontSize: 16,
+    fontSize: 14, // Slightly smaller and thinner
     color: '#7c3aed',
-    fontWeight: '700',
+    fontWeight: '300', // Much thinner weight
     textAlign: 'center',
-    lineHeight: 16, // Ensure proper vertical centering
+    lineHeight: 14, // Match fontSize for perfect centering
+    includeFontPadding: false, // Remove extra padding on Android
+    textAlignVertical: 'center', // Ensure vertical centering on Android
   },
   reactionPickerContainer: {
     position: 'absolute',
