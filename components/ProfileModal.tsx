@@ -99,11 +99,11 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
 
     try {
       if (followStatus.isFollowing) {
-        await unfollowUser(userId);
+        await unfollowUser(currentUser.id, userId);
         setFollowStatus(prev => ({ ...prev, isFollowing: false }));
         setStats(prev => ({ ...prev, followers: prev.followers - 1 }));
       } else {
-        await followUser(userId);
+        await followUser(currentUser.id, userId);
         setFollowStatus(prev => ({ ...prev, isFollowing: true }));
         setStats(prev => ({ ...prev, followers: prev.followers + 1 }));
       }
@@ -118,10 +118,10 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
 
     try {
       if (followStatus.isBlocked) {
-        await unblockUser(userId);
+        await unblockUser(currentUser.id, userId);
         setFollowStatus(prev => ({ ...prev, isBlocked: false }));
       } else {
-        await blockUser(userId);
+        await blockUser(currentUser.id, userId);
         setFollowStatus(prev => ({ ...prev, isBlocked: true, isFollowing: false }));
       }
     } catch (error) {
@@ -186,7 +186,6 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
                       firstName: user.first_name || '',
                       lastName: user.last_name || '',
                       email: user.email || '',
-                      handle: user.handle || '',
                       profileImageUrl: user.profile_image_url || undefined
                     }} 
                     size="xl"
@@ -316,8 +315,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
