@@ -562,6 +562,34 @@ export async function getUserChirps(userId: string) {
   }
 }
 
+// Get replies by specific user
+export async function getUserReplies(userId: string) {
+  try {
+    console.log('Fetching replies for user:', userId);
+    const replies = await sql`
+      SELECT 
+        c.id::text,
+        c.content,
+        c.created_at as "createdAt",
+        c.reply_to_id,
+        COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+        (SELECT COUNT(*) FROM chirps sub_replies WHERE sub_replies.reply_to_id = c.id) as reply_count
+      FROM chirps c
+      WHERE c.author_id = ${userId}
+        AND c.reply_to_id IS NOT NULL -- Only replies
+      ORDER BY c.created_at DESC
+      LIMIT 50
+    `;
+    
+    console.log(`Found ${replies.length} replies for user`);
+    return replies;
+  } catch (error) {
+    console.error('Error fetching user replies:', error);
+    return [];
+  }
+}
+
 // Get user stats (chirp count, followers, following)
 export async function getUserStats(userId: string) {
   try {
