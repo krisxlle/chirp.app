@@ -256,7 +256,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="none"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
