@@ -598,9 +598,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent', // Remove background since gradient handles it
   },
   activeTabButton: {
-    paddingHorizontal: 20,
-    height: 40,
-    borderRadius: 20,
+    paddingHorizontal: 18, // Reduced to account for border width
+    height: 38, // Reduced to account for border width
+    borderRadius: 19, // Adjusted to match the visual appearance
     alignItems: 'center',
     justifyContent: 'center',
   },
