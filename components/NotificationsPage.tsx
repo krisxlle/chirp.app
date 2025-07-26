@@ -1,15 +1,17 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
 import HeartIcon from './icons/HeartIcon';
 import MentionIcon from './icons/MentionIcon';
 import FollowIcon from './icons/FollowIcon';
+import { useAuth } from './AuthContext';
+import { getNotifications, markNotificationAsRead } from '../mobile-db';
 
 interface Notification {
   id: string;
-  type: 'reaction' | 'mention' | 'follow';
+  type: 'reaction' | 'mention' | 'follow' | 'reply' | 'mention_bio' | 'repost' | 'weekly_summary';
   user: {
     id: string;
     name: string;
@@ -20,83 +22,146 @@ interface Notification {
   content?: string;
   timestamp: string;
   isRead: boolean;
+  chirpId?: number;
+  fromUserId?: string;
 }
 
 export default function NotificationsPage() {
-  // Mock notifications data matching the screenshot
-  const notifications: Notification[] = [
-    {
-      id: '1',
-      type: 'reaction',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      content: '"@kriselle please fix me im so buggy"',
-      timestamp: '1 day ago',
-      isRead: false
-    },
-    {
-      id: '2',
-      type: 'reaction',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      content: '"@kriselle please fix me im so buggy"',
-      timestamp: '1 day ago',
-      isRead: false
-    },
-    {
-      id: '3',
-      type: 'reaction',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      content: '"@kriselle please fix me im so buggy"',
-      timestamp: '1 day ago',
-      isRead: false
-    },
-    {
-      id: '4',
-      type: 'reaction',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      content: '"@kriselle please fix me im so buggy"',
-      timestamp: '1 day ago',
-      isRead: false
-    },
-    {
-      id: '5',
-      type: 'mention',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      timestamp: '1 day ago',
-      isRead: false
-    },
-    {
-      id: '6',
-      type: 'follow',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      timestamp: '2 days ago',
-      isRead: false
-    },
-    {
-      id: '7',
-      type: 'follow',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      timestamp: '3 days ago',
-      isRead: false
-    },
-    {
-      id: '8',
-      type: 'mention',
-      user: { id: '1', name: 'Kriselle', handle: 'kr', email: 'kr@example.com', profileImageUrl: undefined },
-      timestamp: '3 days ago',
-      isRead: false
-    },
-  ];
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [user]);
+
+  const fetchNotifications = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const dbNotifications = await getNotifications(user.id);
+      
+      // Convert database notifications to component format
+      const formattedNotifications: Notification[] = dbNotifications.map((notif: any) => ({
+        id: notif.id.toString(),
+        type: notif.type,
+        user: {
+          id: notif.fromUser?.id || '',
+          name: notif.fromUser ? `${notif.fromUser.first_name || ''} ${notif.fromUser.last_name || ''}`.trim() || notif.fromUser.custom_handle || notif.fromUser.handle : 'Unknown User',
+          handle: notif.fromUser?.custom_handle || notif.fromUser?.handle || '',
+          email: notif.fromUser?.email || '',
+          profileImageUrl: notif.fromUser?.profile_image_url || undefined,
+        },
+        content: notif.chirp?.content,
+        timestamp: formatTimeAgo(notif.createdAt),
+        isRead: notif.read,
+        chirpId: notif.chirpId,
+        fromUserId: notif.fromUserId,
+      }));
+      
+      setNotifications(formattedNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      Alert.alert('Error', 'Failed to load notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const handleNotificationPress = async (notification: Notification) => {
+    try {
+      // Mark notification as read
+      if (!notification.isRead) {
+        await markNotificationAsRead(Number(notification.id));
+        // Update local state
+        setNotifications(prev => 
+          prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+        );
+      }
+
+      // Navigate based on notification type
+      switch (notification.type) {
+        case 'follow':
+          // Navigate to the follower's profile
+          if (notification.fromUserId) {
+            // For now, show an alert as profile navigation is still being worked on
+            Alert.alert('Profile Navigation', `Navigating to @${notification.user.handle}'s profile`);
+            // TODO: Implement profile navigation when profile routes are fixed
+            // router.push(`/profile/${notification.fromUserId}`);
+          }
+          break;
+          
+        case 'reaction':
+        case 'reply':
+        case 'mention':
+          // Navigate to the specific chirp (home feed for now)
+          if (notification.chirpId) {
+            Alert.alert('Chirp Navigation', `Navigating to chirp with ${notification.type}`);
+            router.push('/(tabs)/home');
+          }
+          break;
+          
+        case 'mention_bio':
+          // Navigate to the user's profile who mentioned them
+          if (notification.fromUserId) {
+            Alert.alert('Profile Navigation', `Navigating to @${notification.user.handle}'s profile`);
+            // TODO: Implement profile navigation when profile routes are fixed
+            // router.push(`/profile/${notification.fromUserId}`);
+          }
+          break;
+          
+        case 'repost':
+          // Navigate to home feed to see the repost
+          router.push('/(tabs)/home');
+          break;
+          
+        case 'weekly_summary':
+          // Navigate to home feed to see weekly summary
+          router.push('/(tabs)/home');
+          break;
+          
+        default:
+          // Default to home feed
+          router.push('/(tabs)/home');
+          break;
+      }
+    } catch (error) {
+      console.error('Error handling notification press:', error);
+      Alert.alert('Error', 'Failed to process notification');
+    }
+  };
 
   const getNotificationText = (notification: Notification) => {
     switch (notification.type) {
       case 'reaction':
         return 'reacted to your chirp';
       case 'mention':
+        return 'mentioned you in a chirp';
+      case 'mention_bio':
         return 'mentioned you in their bio';
       case 'follow':
         return 'started following you';
+      case 'reply':
+        return 'replied to your chirp';
+      case 'repost':
+        return 'reposted your chirp';
+      case 'weekly_summary':
+        return 'your weekly summary is ready';
       default:
-        return '';
+        return 'sent you a notification';
     }
   };
 
@@ -126,14 +191,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleNotificationPress = (notification: any) => {
-    if (notification.type === 'mention' || notification.type === 'reply') {
-      Alert.alert('Navigate to Chirp', `Go to chirp: "${notification.content}"`);
-    } else {
-      Alert.alert('Navigate to Profile', `Go to ${notification.user.name}'s profile`);
-    }
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -145,45 +202,57 @@ export default function NotificationsPage() {
       </View>
 
       {/* Notifications List */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {notifications.map((notification) => (
-          <TouchableOpacity 
-            key={notification.id} 
-            style={styles.notificationItem}
-            onPress={() => handleNotificationPress(notification)}
-          >
-            <View style={styles.notificationContent}>
-              {/* User Avatar */}
-              <View style={styles.avatarContainer}>
-                <UserAvatar user={notification.user} size="md" />
-              </View>
-
-              {/* Notification Text */}
-              <View style={styles.textContainer}>
-                <View style={styles.notificationTextRow}>
-                  <Text style={styles.notificationText}>
-                    <Text style={styles.userName}>{notification.user.name}</Text>
-                    <Text style={styles.actionText}> {getNotificationText(notification)}</Text>
-                  </Text>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7c3aed" />
+          <Text style={styles.loadingText}>Loading notifications...</Text>
+        </View>
+      ) : notifications.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No notifications yet</Text>
+          <Text style={styles.emptySubtext}>When someone interacts with your chirps, you'll see it here</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {notifications.map((notification) => (
+            <TouchableOpacity 
+              key={notification.id} 
+              style={styles.notificationItem}
+              onPress={() => handleNotificationPress(notification)}
+            >
+              <View style={styles.notificationContent}>
+                {/* User Avatar */}
+                <View style={styles.avatarContainer}>
+                  <UserAvatar user={notification.user} size="md" />
                 </View>
 
-                {/* Content preview for reactions */}
-                {notification.content && (
-                  <Text style={styles.contentPreview}>{notification.content}</Text>
-                )}
+                {/* Notification Text */}
+                <View style={styles.textContainer}>
+                  <View style={styles.notificationTextRow}>
+                    <Text style={styles.notificationText}>
+                      <Text style={styles.userName}>{notification.user.name}</Text>
+                      <Text style={styles.actionText}> {getNotificationText(notification)}</Text>
+                    </Text>
+                  </View>
 
-                {/* Timestamp */}
-                <Text style={styles.timestamp}>{notification.timestamp}</Text>
-              </View>
+                  {/* Content preview for reactions */}
+                  {notification.content && (
+                    <Text style={styles.contentPreview}>{notification.content}</Text>
+                  )}
 
-              {/* Action Icon */}
-              <View style={styles.actionIconContainer}>
-                {getNotificationIcon(notification.type, getNotificationIconColor(notification.type))}
+                  {/* Timestamp */}
+                  <Text style={styles.timestamp}>{notification.timestamp}</Text>
+                </View>
+
+                {/* Action Icon */}
+                <View style={styles.actionIconContainer}>
+                  {getNotificationIcon(notification.type, getNotificationIconColor(notification.type))}
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
       
       {/* Feedback Button */}
       <TouchableOpacity 
@@ -320,5 +389,36 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#657786',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+    paddingHorizontal: 32,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#14171a',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: '#657786',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
