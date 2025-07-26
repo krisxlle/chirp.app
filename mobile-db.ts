@@ -1981,3 +1981,86 @@ export async function triggerRepostNotification(originalAuthorId: string, repost
   }
 }
 
+// Get notifications for a user
+export async function getNotifications(userId: string): Promise<any[]> {
+  try {
+    console.log(`Fetching notifications for user: ${userId}`);
+    
+    const result = await sql`
+      SELECT 
+        n.id,
+        n.type,
+        n.from_user_id as "fromUserId",
+        n.chirp_id as "chirpId",
+        n.read,
+        n.created_at as "createdAt",
+        -- From user data
+        fu.id as "fromUser.id",
+        fu.first_name as "fromUser.first_name",
+        fu.last_name as "fromUser.last_name",
+        fu.custom_handle as "fromUser.custom_handle",
+        fu.handle as "fromUser.handle",
+        fu.email as "fromUser.email",
+        fu.profile_image_url as "fromUser.profile_image_url",
+        -- Chirp data
+        c.id as "chirp.id",
+        c.content as "chirp.content",
+        c.created_at as "chirp.created_at"
+      FROM notifications n
+      LEFT JOIN users fu ON n.from_user_id = fu.id
+      LEFT JOIN chirps c ON n.chirp_id = c.id
+      WHERE n.user_id = ${userId}
+      ORDER BY n.created_at DESC
+      LIMIT 100
+    `;
+
+    // Transform the flat result into nested objects
+    const notifications = result.map((row: any) => ({
+      id: row.id,
+      type: row.type,
+      fromUserId: row.fromUserId,
+      chirpId: row.chirpId,
+      read: row.read,
+      createdAt: row.createdAt,
+      fromUser: row['fromUser.id'] ? {
+        id: row['fromUser.id'],
+        first_name: row['fromUser.first_name'],
+        last_name: row['fromUser.last_name'],
+        custom_handle: row['fromUser.custom_handle'],
+        handle: row['fromUser.handle'],
+        email: row['fromUser.email'],
+        profile_image_url: row['fromUser.profile_image_url'],
+      } : null,
+      chirp: row['chirp.id'] ? {
+        id: row['chirp.id'],
+        content: row['chirp.content'],
+        created_at: row['chirp.created_at'],
+      } : null,
+    }));
+
+    console.log(`Found ${notifications.length} notifications for user ${userId}`);
+    return notifications;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    throw error;
+  }
+}
+
+// Mark a notification as read
+export async function markNotificationAsRead(notificationId: number): Promise<void> {
+  try {
+    console.log(`Marking notification ${notificationId} as read`);
+    
+    await sql`
+      UPDATE notifications 
+      SET read = true 
+      WHERE id = ${notificationId}
+    `;
+    
+    console.log(`Successfully marked notification ${notificationId} as read`);
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    throw error;
+  }
+}
+
