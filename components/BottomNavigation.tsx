@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     paddingHorizontal: 1.5,
-    paddingVertical: 8, // Increased from 1.5 to 8 for 25% taller nav bar
+    paddingVertical: 4, // Reduced from 8 to 4 (50% reduction in white space)
   },
   navContainer: {
     flexDirection: 'row',
@@ -114,18 +114,18 @@ const styles = StyleSheet.create({
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10, // Increased from 6 to 10 for taller buttons
-    paddingHorizontal: 12, // Increased from 7.5 to 12 for wider buttons
-    borderRadius: 12, // Increased from 9 to 12 for proportional border radius
-    minWidth: 56, // Increased from 45 to 56 for larger tap targets
+    paddingVertical: 5, // Reduced from 10 to 5 (50% reduction in button vertical padding)
+    paddingHorizontal: 12, // Keep horizontal padding the same
+    borderRadius: 12, // Keep border radius the same
+    minWidth: 56, // Keep minimum width the same
   },
   activeNavItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10, // Increased from 6 to 10 for taller buttons
-    paddingHorizontal: 12, // Increased from 7.5 to 12 for wider buttons
-    borderRadius: 12, // Increased from 9 to 12 for proportional border radius
-    minWidth: 56, // Increased from 45 to 56 for larger tap targets
+    paddingVertical: 5, // Reduced from 10 to 5 (50% reduction in button vertical padding)
+    paddingHorizontal: 12, // Keep horizontal padding the same
+    borderRadius: 12, // Keep border radius the same
+    minWidth: 56, // Keep minimum width the same
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
