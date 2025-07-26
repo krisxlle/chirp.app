@@ -441,6 +441,13 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Consistent UI Design**: Both search and notifications pages now have matching pink gradient feedback buttons with identical positioning and shadows
 - **Database Query Updates**: Added isChirpPlus and showChirpPlusBadge field retrieval to Latest feed queries for authentic badge display
 
+### January 26, 2025 - Settings Button Border Width Fix
+- **Fixed Button Border Dimensions**: Corrected activeTabButton styling in SettingsPage to match border container dimensions
+- **Proper Border Alignment**: Reduced activeTabButton height from 40px to 38px to account for 1px border width
+- **Adjusted Button Padding**: Updated horizontal padding from 20px to 18px for visual balance within borders
+- **Border Radius Correction**: Modified border radius from 20px to 19px to maintain smooth appearance with adjusted dimensions
+- **Consistent Button Appearance**: Tab buttons now display with properly fitted borders that don't extend beyond button backgrounds
+
 ### January 25, 2025 - Application Successfully Running and Navigation Issues Addressed
 - **RESOLVED Authentication Issues**: Fixed infinite loading loops and circular dependencies in auth flow
 - **Code Cleanup Completed**: Removed complex route detection logic and simplified ChirpApp component structure per user request
