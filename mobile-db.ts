@@ -162,6 +162,8 @@ export async function getLatestChirps(): Promise<MobileChirp[]> {
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         u.profile_image_url,
         u.banner_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge,
         -- Original chirp data for reposts
         oc.id as original_chirp_id,
         oc.content as original_content,
@@ -172,6 +174,8 @@ export async function getLatestChirps(): Promise<MobileChirp[]> {
         ou.profile_image_url as original_profile_image_url,
         ou.banner_image_url as original_banner_image_url,
         COALESCE(oc.is_weekly_summary, false) as original_is_weekly_summary,
+        ou.is_chirp_plus as original_is_chirp_plus,
+        ou.show_chirp_plus_badge as original_show_chirp_plus_badge,
         -- Counts based on original chirp for reposts, current chirp for regular posts
         (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = COALESCE(c.repost_of_id, c.id)) as reaction_count,
         (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = COALESCE(c.repost_of_id, c.id)) as reply_count,
@@ -254,6 +258,8 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         u.profile_image_url,
         u.banner_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge,
         NULL as original_chirp_id,
         NULL as original_content,
         NULL as original_created_at,
@@ -263,6 +269,8 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
         NULL as original_profile_image_url,
         NULL as original_banner_image_url,
         false as original_is_weekly_summary,
+        NULL as original_is_chirp_plus,
+        NULL as original_show_chirp_plus_badge,
         (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
         (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
         (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
@@ -521,7 +529,9 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
         customHandle: String(chirp.username || 'user'),
         handle: String(chirp.username || 'user'),
         profileImageUrl: chirp.profile_image_url || null,
-        bannerImageUrl: chirp.banner_image_url || null
+        bannerImageUrl: chirp.banner_image_url || null,
+        isChirpPlus: Boolean(chirp.is_chirp_plus),
+        showChirpPlusBadge: Boolean(chirp.show_chirp_plus_badge)
       },
       replyCount: parseInt(chirp.reply_count) || 0,
       reactionCount: parseInt(chirp.reaction_count) || 0,
@@ -545,6 +555,8 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
           customHandle: String(chirp.original_username || 'user'),
           handle: String(chirp.original_username || 'user'),
           profileImageUrl: chirp.original_profile_image_url || null,
+          isChirpPlus: Boolean(chirp.original_is_chirp_plus),
+          showChirpPlusBadge: Boolean(chirp.original_show_chirp_plus_badge)
         },
         isWeeklySummary: Boolean(chirp.original_is_weekly_summary)
       } : undefined
