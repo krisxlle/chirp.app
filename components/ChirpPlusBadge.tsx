@@ -11,14 +11,20 @@ export default function ChirpPlusBadge({ size = 16, color = "#7c3aed" }: ChirpPl
   return (
     <View style={{ marginLeft: 4 }}>
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        {/* Crown base */}
         <Path 
-          d="M5 16L3 14V9l5.5-1L12 2l3.5 6L21 9v5l-2 2-7 3-7-3z" 
-          stroke={color} 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-          fill="none"
+          d="M4 18h16v2H4z" 
+          fill={color}
         />
+        {/* Crown body */}
+        <Path 
+          d="M5 16l2-8 3 4 2-6 2 6 3-4 2 8H5z" 
+          fill={color}
+        />
+        {/* Crown gems/jewels */}
+        <circle cx="8" cy="10" r="1" fill="white" />
+        <circle cx="12" cy="6" r="1" fill="white" />
+        <circle cx="16" cy="10" r="1" fill="white" />
       </Svg>
     </View>
   );
