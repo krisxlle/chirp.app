@@ -202,10 +202,17 @@ export default function SearchPage() {
       
       {/* Feedback Button */}
       <TouchableOpacity 
-        style={styles.feedbackButton}
+        style={styles.feedbackButtonContainer}
         onPress={() => router.push('/feedback')}
       >
-        <Text style={styles.feedbackButtonText}>Feedback</Text>
+        <LinearGradient
+          colors={['#7c3aed', '#ec4899']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.feedbackButton}
+        >
+          <Text style={styles.feedbackButtonText}>Feedback</Text>
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
@@ -386,13 +393,10 @@ const styles = StyleSheet.create({
     color: '#657786',
     lineHeight: 18,
   },
-  feedbackButton: {
+  feedbackButtonContainer: {
     position: 'absolute',
     bottom: 100,
     right: 20,
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -400,9 +404,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  feedbackButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
   feedbackButtonText: {
     color: '#ffffff',
-    fontSize: 14,
     fontWeight: '600',
+    fontSize: 14,
   },
 });
