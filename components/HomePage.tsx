@@ -19,7 +19,7 @@ const convertToChirpCard = (chirp: MobileChirp) => ({
   author: {
     id: chirp.author.id || 'anonymous',
     firstName: chirp.author.firstName || '',
-    lastName: chirp.author.lastName || '',
+    lastName: chirp.author.lastName || chirp.author.firstName || '',
     email: chirp.author.email || 'anonymous@example.com',
     handle: chirp.author.handle || 'anonymous',
     customHandle: chirp.author.customHandle || 'anonymous',

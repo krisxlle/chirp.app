@@ -26,11 +26,15 @@ interface Chirp {
   id: string;
   content: string;
   createdAt: string;
+  replyToId?: string | null;
   author: User;
   replyCount: number;
   reactionCount: number;
   repostCount?: number;
   isWeeklySummary?: boolean;
+  // Reply identification fields
+  isDirectReply?: boolean;
+  isNestedReply?: boolean;
   // Repost-related fields
   isRepost?: boolean;
   repostOfId?: string | null;
@@ -612,7 +616,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
 
   return (
     <TouchableOpacity 
-      style={[styles.container, chirp.isWeeklySummary && styles.weeklySummaryContainer]}
+      style={[
+        styles.container, 
+        chirp.isWeeklySummary && styles.weeklySummaryContainer,
+        chirp.isDirectReply && styles.replyContainer
+      ]}
       onPress={handleChirpPress}
       activeOpacity={0.95}
     >
@@ -1055,6 +1063,13 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
+  replyContainer: {
+    marginLeft: 32,
+    borderLeftWidth: 2,
+    borderLeftColor: '#7c3aed',
+    paddingLeft: 20,
+    backgroundColor: '#fafafa',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1298,13 +1313,7 @@ const styles = StyleSheet.create({
   reactionEmoji: {
     fontSize: 20,
   },
-  replyContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e1e8ed',
-    backgroundColor: '#f8f9fa',
-  },
+
   replyInput: {
     backgroundColor: '#ffffff',
     borderRadius: 12,

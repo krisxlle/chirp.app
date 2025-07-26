@@ -50,7 +50,9 @@ sql = initializeDatabase();
 export async function getForYouChirps(): Promise<MobileChirp[]> {
   try {
     console.log('Fetching For You feed with personalized ranking...');
-    const chirps = await sql`
+    
+    // First get parent chirps
+    const parentChirps = await sql`
       SELECT 
         c.id::text,
         c.content,
@@ -91,7 +93,52 @@ export async function getForYouChirps(): Promise<MobileChirp[]> {
       LIMIT 20
     `;
     
-    return formatChirpResults(chirps);
+    // Get replies for each parent chirp
+    const allChirps: any[] = [];
+    for (const parentChirp of parentChirps) {
+      // Add parent chirp
+      allChirps.push(parentChirp);
+      
+      // Get replies for this parent chirp
+      const replies = await sql`
+        SELECT 
+          c.id::text,
+          c.content,
+          c.created_at as "createdAt",
+          c.author_id::text,
+          c.reply_to_id,
+          NULL as repost_of_id,
+          COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
+          COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
+          COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+          u.profile_image_url,
+          u.banner_image_url,
+          NULL as original_chirp_id,
+          NULL as original_content,
+          NULL as original_created_at,
+          NULL as original_author_id,
+          NULL as original_username,
+          NULL as original_display_name,
+          NULL as original_profile_image_url,
+          NULL as original_banner_image_url,
+          false as original_is_weekly_summary,
+          (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+          (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
+          (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
+        FROM chirps c
+        LEFT JOIN users u ON c.author_id = u.id
+        WHERE c.reply_to_id = ${parentChirp.id}
+        ORDER BY c.created_at ASC
+        LIMIT 3
+      `;
+      
+      // Add replies after parent chirp
+      for (const reply of replies) {
+        allChirps.push(reply);
+      }
+    }
+    
+    return formatChirpResults(allChirps);
   } catch (error) {
     console.error('For You feed error:', error);
     return [];
@@ -101,7 +148,9 @@ export async function getForYouChirps(): Promise<MobileChirp[]> {
 export async function getLatestChirps(): Promise<MobileChirp[]> {
   try {
     console.log('Fetching Latest feed in chronological order...');
-    const chirps = await sql`
+    
+    // First get parent chirps
+    const parentChirps = await sql`
       SELECT 
         c.id::text,
         c.content,
@@ -136,7 +185,52 @@ export async function getLatestChirps(): Promise<MobileChirp[]> {
       LIMIT 20
     `;
     
-    return formatChirpResults(chirps);
+    // Get replies for each parent chirp
+    const allChirps: any[] = [];
+    for (const parentChirp of parentChirps) {
+      // Add parent chirp
+      allChirps.push(parentChirp);
+      
+      // Get replies for this parent chirp
+      const replies = await sql`
+        SELECT 
+          c.id::text,
+          c.content,
+          c.created_at as "createdAt",
+          c.author_id::text,
+          c.reply_to_id,
+          NULL as repost_of_id,
+          COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
+          COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
+          COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+          u.profile_image_url,
+          u.banner_image_url,
+          NULL as original_chirp_id,
+          NULL as original_content,
+          NULL as original_created_at,
+          NULL as original_author_id,
+          NULL as original_username,
+          NULL as original_display_name,
+          NULL as original_profile_image_url,
+          NULL as original_banner_image_url,
+          false as original_is_weekly_summary,
+          (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+          (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
+          (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
+        FROM chirps c
+        LEFT JOIN users u ON c.author_id = u.id
+        WHERE c.reply_to_id = ${parentChirp.id}
+        ORDER BY c.created_at ASC
+        LIMIT 3
+      `;
+      
+      // Add replies after parent chirp
+      for (const reply of replies) {
+        allChirps.push(reply);
+      }
+    }
+    
+    return formatChirpResults(allChirps);
   } catch (error) {
     console.error('Latest feed error:', error);
     return [];
@@ -146,19 +240,32 @@ export async function getLatestChirps(): Promise<MobileChirp[]> {
 export async function getTrendingChirps(): Promise<MobileChirp[]> {
   try {
     console.log('Fetching Trending feed with engagement metrics...');
-    const chirps = await sql`
+    
+    // First get parent chirps
+    const parentChirps = await sql`
       SELECT 
         c.id::text,
         c.content,
         c.created_at as "createdAt",
         c.author_id::text,
+        NULL as repost_of_id,
         COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
         COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         u.profile_image_url,
         u.banner_image_url,
+        NULL as original_chirp_id,
+        NULL as original_content,
+        NULL as original_created_at,
+        NULL as original_author_id,
+        NULL as original_username,
+        NULL as original_display_name,
+        NULL as original_profile_image_url,
+        NULL as original_banner_image_url,
+        false as original_is_weekly_summary,
         (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
-        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
+        (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
       FROM chirps c
       LEFT JOIN users u ON c.author_id = u.id
       WHERE c.reply_to_id IS NULL 
@@ -171,7 +278,52 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
       LIMIT 20
     `;
     
-    return formatChirpResults(chirps);
+    // Get replies for each parent chirp
+    const allChirps: any[] = [];
+    for (const parentChirp of parentChirps) {
+      // Add parent chirp
+      allChirps.push(parentChirp);
+      
+      // Get replies for this parent chirp
+      const replies = await sql`
+        SELECT 
+          c.id::text,
+          c.content,
+          c.created_at as "createdAt",
+          c.author_id::text,
+          c.reply_to_id,
+          NULL as repost_of_id,
+          COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
+          COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
+          COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+          u.profile_image_url,
+          u.banner_image_url,
+          NULL as original_chirp_id,
+          NULL as original_content,
+          NULL as original_created_at,
+          NULL as original_author_id,
+          NULL as original_username,
+          NULL as original_display_name,
+          NULL as original_profile_image_url,
+          NULL as original_banner_image_url,
+          false as original_is_weekly_summary,
+          (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+          (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
+          (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
+        FROM chirps c
+        LEFT JOIN users u ON c.author_id = u.id
+        WHERE c.reply_to_id = ${parentChirp.id}
+        ORDER BY c.created_at ASC
+        LIMIT 3
+      `;
+      
+      // Add replies after parent chirp
+      for (const reply of replies) {
+        allChirps.push(reply);
+      }
+    }
+    
+    return formatChirpResults(allChirps);
   } catch (error) {
     console.error('Trending feed error:', error);
     return [];
@@ -353,12 +505,13 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
   console.log(`Successfully loaded ${chirps.length} authentic chirps`);
   return chirps.map(chirp => {
     const isRepost = Boolean(chirp.repost_of_id);
+    const isReply = Boolean(chirp.reply_to_id);
     
     return {
       id: String(chirp.id),
       content: isRepost ? String(chirp.original_content || '') : String(chirp.content),
       createdAt: chirp.createdAt ? new Date(chirp.createdAt).toISOString() : new Date().toISOString(),
-      replyToId: chirp.replyToId || null,
+      replyToId: chirp.reply_to_id ? String(chirp.reply_to_id) : null,
       // For reposts, show the reposter's info in the header
       author: {
         id: String(chirp.author_id),
@@ -375,6 +528,9 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
       repostCount: parseInt(chirp.repost_count) || 0,
       reactions: [],
       isWeeklySummary: Boolean(isRepost ? chirp.original_is_weekly_summary : chirp.isWeeklySummary),
+      // Reply identification
+      isDirectReply: isReply,
+      isNestedReply: false,
       // Repost-specific fields
       isRepost,
       repostOfId: chirp.repost_of_id ? String(chirp.repost_of_id) : null,
