@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'absolute',
-    bottom: -40,
+    bottom: -20, // Moved down from -40 to -20 (20px closer to banner)
     left: 16,
     borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
     borderWidth: 4,
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingTop: 20, // Reduced from 40 to 20 (moved buttons up by 20px)
     paddingBottom: 16,
   },
   nameRow: {
