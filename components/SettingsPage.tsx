@@ -601,12 +601,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   activeTabButton: {
-    paddingHorizontal: 18, // Slightly less to account for 1px border on each side
-    height: 38, // Slightly less to account for 1px border on top/bottom
-    borderRadius: 19, // Slightly less to maintain rounded appearance with border
+    paddingHorizontal: 20,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    margin: 1, // Creates 1px space between gradient and border for proper alignment
   },
   tabButtonText: {
     fontSize: 14,
