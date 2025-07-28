@@ -95,10 +95,42 @@ export default function ProfilePage() {
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [summaryPosted, setSummaryPosted] = useState(false);
+  const [isPostingSummary, setIsPostingSummary] = useState(false);
 
   const handleAIProfile = () => {
     setShowAIPrompt(true);
     setAiPrompt('');
+  };
+
+  const handlePostSummary = async () => {
+    if (!user?.id || summaryPosted) return;
+
+    try {
+      setIsPostingSummary(true);
+      
+      const summaryContent = "This week the @chirp account posted **5 chirps** showcasing all the platform features! From welcome messages to thread demonstrations - giving **main character energy** with that premium Chirp+ flex 👑 Those reaction tutorials and hashtag tips? **Pure educational vibes** helping users master the app ✨ Official account but make it relatable";
+      
+      // Import createChirp function
+      const { createChirp } = await import('../mobile-db');
+      
+      // Post the weekly summary as a chirp
+      const result = await createChirp(summaryContent, undefined, user.id);
+      
+      if (result) {
+        setSummaryPosted(true);
+        Alert.alert('Success', 'Weekly summary posted as a chirp!');
+        // Refresh user chirps to show the new post
+        fetchUserChirps();
+      } else {
+        throw new Error('Failed to post summary');
+      }
+    } catch (error) {
+      console.error('Error posting weekly summary:', error);
+      Alert.alert('Error', 'Failed to post weekly summary. Please try again.');
+    } finally {
+      setIsPostingSummary(false);
+    }
   };
 
   const generateProfile = async () => {
@@ -347,6 +379,29 @@ export default function ProfilePage() {
               <Text style={styles.tag}>reactions</Text>
             </View>
           </View>
+        </View>
+        
+        {/* Post as Chirp Button */}
+        <View style={styles.summaryActionContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.postSummaryButton, 
+              (summaryPosted || isPostingSummary) && styles.postSummaryButtonDisabled
+            ]}
+            onPress={handlePostSummary}
+            disabled={summaryPosted || isPostingSummary}
+          >
+            <LinearGradient
+              colors={summaryPosted ? ['#9ca3af', '#6b7280'] : ['#7c3aed', '#a855f7']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.postSummaryGradient}
+            >
+              <Text style={styles.postSummaryButtonText}>
+                {isPostingSummary ? 'Posting...' : summaryPosted ? 'Posted ✓' : 'Post as Chirp'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -1052,5 +1107,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e8ed',
     marginLeft: 8,
+  },
+  summaryActionContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e1e8ed',
+    alignItems: 'center',
+  },
+  postSummaryButton: {
+    borderRadius: 12,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  postSummaryButtonDisabled: {
+    opacity: 0.6,
+  },
+  postSummaryGradient: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  postSummaryButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
