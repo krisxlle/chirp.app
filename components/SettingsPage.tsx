@@ -601,11 +601,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   activeTabButton: {
-    paddingHorizontal: 20,
-    height: 40,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    margin: 2,
   },
   tabButtonText: {
     fontSize: 14,
