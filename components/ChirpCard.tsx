@@ -641,6 +641,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
               {chirp.author?.isChirpPlus && chirp.author?.showChirpPlusBadge && (
                 <ChirpPlusBadge size={16} />
               )}
+
             </TouchableOpacity>
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>

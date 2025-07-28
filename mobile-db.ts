@@ -64,6 +64,8 @@ export async function getForYouChirps(): Promise<MobileChirp[]> {
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         u.profile_image_url,
         u.banner_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge,
         -- Original chirp data for reposts
         oc.id as original_chirp_id,
         oc.content as original_content,
@@ -74,6 +76,8 @@ export async function getForYouChirps(): Promise<MobileChirp[]> {
         ou.profile_image_url as original_profile_image_url,
         ou.banner_image_url as original_banner_image_url,
         COALESCE(oc.is_weekly_summary, false) as original_is_weekly_summary,
+        ou.is_chirp_plus as original_is_chirp_plus,
+        ou.show_chirp_plus_badge as original_show_chirp_plus_badge,
         -- Counts based on original chirp for reposts, current chirp for regular posts
         (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = COALESCE(c.repost_of_id, c.id)) as reaction_count,
         (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = COALESCE(c.repost_of_id, c.id)) as reply_count,
@@ -426,6 +430,8 @@ export async function createChirp(content: string, authorId?: string, replyToId?
         handle: author.username,
         customHandle: author.username,
         profileImageUrl: author.profile_image_url,
+        isChirpPlus: false,
+        showChirpPlusBadge: false,
       },
       replyCount: 0,
       reactionCount: 0,
@@ -523,6 +529,16 @@ export async function getChirpsByUserId(userId: string): Promise<MobileChirp[]> 
 
 function formatChirpResults(chirps: any[]): MobileChirp[] {
   console.log(`Successfully loaded ${chirps.length} authentic chirps`);
+  
+  // Debug: Log first chirp's raw data to check Chirp+ fields
+  if (chirps.length > 0) {
+    console.log('🔍 Raw first chirp data:', {
+      username: chirps[0].username,
+      is_chirp_plus: chirps[0].is_chirp_plus,
+      show_chirp_plus_badge: chirps[0].show_chirp_plus_badge
+    });
+  }
+  
   return chirps.map(chirp => {
     const isRepost = Boolean(chirp.repost_of_id);
     const isReply = Boolean(chirp.reply_to_id);
@@ -1306,6 +1322,8 @@ export async function createReply(content: string, replyToId: string, authorId: 
         handle: author.username,
         customHandle: author.username,
         profileImageUrl: author.profile_image_url,
+        isChirpPlus: false,
+        showChirpPlusBadge: false,
       },
       replyCount: 0,
       reactionCount: 0,
