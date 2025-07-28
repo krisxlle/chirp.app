@@ -636,7 +636,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <View style={styles.nameRow}>
-            <TouchableOpacity onPress={handleAvatarPress} style={styles.nameContainer}>
+            <TouchableOpacity onPress={(e) => {
+              e.stopPropagation();
+              handleAvatarPress();
+            }} style={styles.nameContainer}>
               <Text style={styles.username}>{displayName}</Text>
             </TouchableOpacity>
             {chirp.author?.isChirpPlus && chirp.author?.showChirpPlusBadge && (
@@ -646,7 +649,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
           </View>
           
           {/* Show handle under the display name */}
-          <TouchableOpacity onPress={handleAvatarPress} style={styles.handleContainer}>
+          <TouchableOpacity onPress={(e) => {
+            e.stopPropagation();
+            handleAvatarPress();
+          }} style={styles.handleContainer}>
             <Text style={styles.handle}>
               @{chirp.author?.customHandle || chirp.author?.handle || 'user'}
             </Text>
@@ -669,7 +675,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
         
         <TouchableOpacity 
           style={styles.moreButton} 
-          onPress={() => {
+          onPress={(e) => {
+            e.stopPropagation();
             console.log('🚀 More button touched!');
             handleMoreOptions();
           }}
