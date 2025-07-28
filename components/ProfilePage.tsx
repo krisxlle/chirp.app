@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'absolute',
-    bottom: -20, // Moved down from -40 to -20 (20px closer to banner)
+    bottom: -44, // Centers avatar vertically on bottom edge of banner (half avatar height)
     left: 16,
     borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
     borderWidth: 4,
