@@ -27,6 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password?: string) => Promise<boolean>;
   signOut: () => Promise<void>;
+  updateUser: (updates: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -205,6 +206,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUser = async (updates: Partial<User>) => {
+    if (!user) return;
+    
+    try {
+      const updatedUser = { ...user, ...updates };
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      console.log('✅ User updated successfully:', updates);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  };
+
   // Force clear stored data and login to @chirp account
   const forceLoginToChirp = async () => {
     try {
@@ -236,6 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     signIn,
     signOut,
+    updateUser,
     isAuthenticated: !!user
   };
 
