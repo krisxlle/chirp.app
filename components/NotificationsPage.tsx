@@ -97,44 +97,48 @@ export default function NotificationsPage() {
         case 'follow':
           // Navigate to the follower's profile
           if (notification.fromUserId) {
-            // For now, show an alert as profile navigation is still being worked on
-            Alert.alert('Profile Navigation', `Navigating to @${notification.user.handle}'s profile`);
-            // TODO: Implement profile navigation when profile routes are fixed
-            // router.push(`/profile/${notification.fromUserId}`);
+            console.log('Navigating to follower profile:', notification.fromUserId);
+            router.push(`/profile/${notification.fromUserId}`);
           }
           break;
           
         case 'reaction':
         case 'reply':
         case 'mention':
-          // Navigate to the specific chirp (home feed for now)
+          // Navigate to home feed with chirp ID parameter for highlighting
           if (notification.chirpId) {
-            Alert.alert('Chirp Navigation', `Navigating to chirp with ${notification.type}`);
+            console.log(`Navigating to chirp for ${notification.type}:`, notification.chirpId);
+            // Use URL parameters to pass the target chirp ID
+            router.push(`/(tabs)/home?targetChirp=${notification.chirpId}`);
+          } else {
+            // Fallback to home feed
             router.push('/(tabs)/home');
           }
           break;
           
         case 'mention_bio':
-          // Navigate to the user's profile who mentioned them
+          // Navigate to the user's profile who mentioned them in their bio
           if (notification.fromUserId) {
-            Alert.alert('Profile Navigation', `Navigating to @${notification.user.handle}'s profile`);
-            // TODO: Implement profile navigation when profile routes are fixed
-            // router.push(`/profile/${notification.fromUserId}`);
+            console.log('Navigating to profile that mentioned in bio:', notification.fromUserId);
+            router.push(`/profile/${notification.fromUserId}`);
           }
           break;
           
         case 'repost':
           // Navigate to home feed to see the repost
+          console.log('Navigating to home for repost notification');
           router.push('/(tabs)/home');
           break;
           
         case 'weekly_summary':
           // Navigate to home feed to see weekly summary
+          console.log('Navigating to home for weekly summary');
           router.push('/(tabs)/home');
           break;
           
         default:
           // Default to home feed
+          console.log('Default navigation to home feed');
           router.push('/(tabs)/home');
           break;
       }

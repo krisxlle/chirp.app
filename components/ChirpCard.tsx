@@ -62,9 +62,10 @@ interface ChirpCardProps {
   chirp: Chirp;
   onDeleteSuccess?: () => void;
   onProfilePress?: (userId: string) => void;
+  isHighlighted?: boolean;
 }
 
-export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: ChirpCardProps) {
+export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHighlighted = false }: ChirpCardProps) {
   // Safety check for author data
   if (!chirp || !chirp.author) {
     return null;
@@ -623,7 +624,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
       style={[
         styles.container, 
         chirp.isWeeklySummary && styles.weeklySummaryContainer,
-        chirp.isDirectReply && styles.replyContainer
+        chirp.isDirectReply && styles.replyContainer,
+        isHighlighted && styles.highlightedContainer
       ]}
       onPress={handleChirpPress}
       activeOpacity={0.95}
@@ -1066,6 +1068,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 6,
+  },
+  highlightedContainer: {
+    backgroundColor: '#fef3e8',
+    borderColor: '#f59e0b',
+    borderWidth: 2,
+    shadowColor: '#f59e0b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
   replyContainer: {
     marginLeft: 32,
