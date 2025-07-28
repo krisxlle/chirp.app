@@ -598,11 +598,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   activeTabButton: {
-    paddingHorizontal: 20, // Match inactive button padding
-    height: 40, // Match inactive button height
-    borderRadius: 20, // Match inactive button border radius
+    paddingHorizontal: 19, // Slightly less to account for border
+    height: 38, // Slightly less to account for border
+    borderRadius: 19, // Slightly less to account for border
     alignItems: 'center',
     justifyContent: 'center',
+    margin: 1, // Add margin to create space between gradient and border
   },
   tabButtonText: {
     fontSize: 14,
