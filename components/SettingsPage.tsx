@@ -186,7 +186,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
 
   const TabButton = ({ id, title, active }: { id: string; title: string; active: boolean }) => (
     <TouchableOpacity
-      style={[styles.tabButton, active && styles.activeTabButtonContainer]}
+      style={styles.tabButton}
       onPress={() => setActiveTab(id)}
     >
       {active ? (
@@ -595,19 +595,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeTabButtonContainer: {
-    borderWidth: 1,
-    borderColor: '#7c3aed',
-    backgroundColor: 'transparent',
-    alignSelf: 'flex-start',
-  },
   activeTabButton: {
-    paddingHorizontal: 19,
-    height: 38,
-    borderRadius: 19,
+    paddingHorizontal: 20,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    margin: 1,
+    borderWidth: 1,
+    borderColor: '#7c3aed',
   },
   tabButtonText: {
     fontSize: 14,
