@@ -423,7 +423,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     <View style={styles.tabContent}>
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>🔐 Account</Text>
+          <View style={styles.cardTitleContainer}>
+            <UserIcon size={20} color="#7c3aed" />
+            <Text style={styles.cardTitle}>Account</Text>
+          </View>
         </View>
         <View style={styles.cardContent}>
           <Text style={styles.currentInfo}>
