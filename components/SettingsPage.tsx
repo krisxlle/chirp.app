@@ -124,7 +124,7 @@ const SupportIcon = ({ size = 20, color = "#7c3aed" }) => (
 );
 
 export default function SettingsPage({ onClose }: SettingsPageProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUser } = useAuth();
   
   // State for profile editing
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -394,7 +394,8 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
                   setIsBadgeToggling(true);
                   try {
                     await updateChirpPlusBadgeVisibility(user.id, value);
-                    // Update user context - for now just show success
+                    // Update local user state immediately
+                    await updateUser({ showChirpPlusBadge: value });
                     Alert.alert(
                       'Success',
                       value 
