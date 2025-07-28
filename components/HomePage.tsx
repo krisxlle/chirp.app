@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { getChirpsFromDB, getForYouChirps, getLatestChirps, getTrendingChirps } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
@@ -39,12 +39,16 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [feedType, setFeedType] = useState<'personalized' | 'chronological' | 'trending'>('personalized');
+  const [highlightedChirpId, setHighlightedChirpId] = useState<string | null>(null);
+  
+  // Get URL parameters for notification navigation
+  const { targetChirp } = useLocalSearchParams();
   
   // Profile modal state
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
-  console.log('🏠 HomePage component mounted - chirps count:', chirps.length, 'isLoading:', isLoading);
+  console.log('🏠 HomePage component mounted - chirps count:', chirps.length, 'isLoading:', isLoading, 'targetChirp:', targetChirp);
   
   // Header animation state
   const headerTranslateY = useSharedValue(0);
@@ -82,6 +86,18 @@ export default function HomePage() {
   useEffect(() => {
     fetchChirps();
   }, [feedType]);
+
+  // Handle notification target chirp highlighting
+  useEffect(() => {
+    if (targetChirp) {
+      console.log('🎯 Highlighting target chirp from notification:', targetChirp);
+      setHighlightedChirpId(String(targetChirp));
+      // Auto-clear highlight after 5 seconds
+      setTimeout(() => {
+        setHighlightedChirpId(null);
+      }, 5000);
+    }
+  }, [targetChirp]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -258,6 +274,7 @@ export default function HomePage() {
               chirp={convertToChirpCard(chirp)} 
               onDeleteSuccess={fetchChirps}
               onProfilePress={handleProfilePress}
+              isHighlighted={highlightedChirpId === String(chirp.id)}
             />
           ))
         )}
