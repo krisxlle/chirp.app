@@ -60,7 +60,12 @@ export default function SignInScreenNew() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.content} 
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        bounces={true}
+      >
         {/* Logo and Header */}
         <View style={styles.logoContainer}>
           <View style={styles.logoBackground}>
@@ -137,12 +142,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#a855f7',
   },
+  scrollView: {
+    flex: 1,
+  },
   content: {
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 80,
     paddingBottom: 40,
     alignItems: 'center',
+    minHeight: '100%',
   },
   logoContainer: {
     alignItems: 'center',
