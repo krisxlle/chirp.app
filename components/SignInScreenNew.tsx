@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from './AuthContext';
 import Svg, { Path } from 'react-native-svg';
 
@@ -59,7 +60,12 @@ export default function SignInScreenNew() {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient 
+      colors={['#ec4899', '#a855f7']} 
+      start={{ x: 0, y: 0 }} 
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
       <ScrollView 
         contentContainerStyle={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -135,14 +141,13 @@ export default function SignInScreenNew() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#a855f7',
   },
   scrollView: {
     flex: 1,
