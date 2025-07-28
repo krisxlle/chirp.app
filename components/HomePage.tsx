@@ -24,6 +24,8 @@ const convertToChirpCard = (chirp: MobileChirp) => ({
     handle: chirp.author.handle || 'anonymous',
     customHandle: chirp.author.customHandle || 'anonymous',
     profileImageUrl: chirp.author.profileImageUrl || undefined,
+    isChirpPlus: chirp.author.isChirpPlus || false,
+    showChirpPlusBadge: chirp.author.showChirpPlusBadge || false,
   },
   replyCount: chirp.replyCount || 0,
   reactionCount: chirp.reactionCount || 0,

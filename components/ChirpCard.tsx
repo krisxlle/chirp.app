@@ -638,11 +638,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
           <View style={styles.nameRow}>
             <TouchableOpacity onPress={handleAvatarPress} style={styles.nameContainer}>
               <Text style={styles.username}>{displayName}</Text>
-              {chirp.author?.isChirpPlus && chirp.author?.showChirpPlusBadge && (
-                <ChirpPlusBadge size={16} />
-              )}
-
             </TouchableOpacity>
+            {chirp.author?.isChirpPlus && chirp.author?.showChirpPlusBadge && (
+              <ChirpPlusBadge size={16} />
+            )}
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>
           
