@@ -68,8 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if user explicitly signed out
       const userSignedOut = await AsyncStorage.getItem('userSignedOut');
       
-      // Auto-login should trigger after auth check completes AND no user was found AND user didn't sign out
-      if (!user && !hasAttemptedLogin && !userSignedOut) {
+      // Auto-login should only trigger when: no user exists, haven't attempted login, user didn't sign out, and initial loading is complete
+      if (!user && !hasAttemptedLogin && !userSignedOut && !isLoading) {
         setHasAttemptedLogin(true);
         console.log('🚀 No user found - auto-signing in to @chirp for preview...');
         try {
@@ -89,8 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     
     // Only trigger auto-login when conditions are met
-    autoLogin();
-  }, [isLoading, user, hasAttemptedLogin]);
+    if (!isLoading) {
+      autoLogin();
+    }
+  }, [user, hasAttemptedLogin, isLoading]);
 
   const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
@@ -186,12 +188,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       console.log('🚪 Signing out user...');
+      console.log('🔍 Current user before signOut:', user?.customHandle || user?.handle || user?.id);
       await AsyncStorage.removeItem('user');
-      // Also set a flag to prevent auto-login after sign out
+      // Set flag to prevent auto-login after sign out
       await AsyncStorage.setItem('userSignedOut', 'true');
+      console.log('🔒 Set userSignedOut flag to prevent auto-login');
+      // Reset auto-login attempt state to prevent race conditions
+      setHasAttemptedLogin(false);
+      console.log('🔄 Reset hasAttemptedLogin to false');
       setUser(null);
       setIsLoading(false);
-      console.log('✅ User signed out successfully');
+      console.log('✅ User signed out successfully - state cleared');
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
