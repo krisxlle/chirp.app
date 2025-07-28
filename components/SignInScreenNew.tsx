@@ -65,6 +65,8 @@ export default function SignInScreenNew() {
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}
         bounces={true}
+        scrollEnabled={true}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Logo and Header */}
         <View style={styles.logoContainer}>
@@ -146,12 +148,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 80,
     paddingBottom: 40,
     alignItems: 'center',
-    minHeight: '100%',
   },
   logoContainer: {
     alignItems: 'center',
