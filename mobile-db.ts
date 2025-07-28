@@ -535,7 +535,8 @@ function formatChirpResults(chirps: any[]): MobileChirp[] {
     console.log('🔍 Raw first chirp data:', {
       username: chirps[0].username,
       is_chirp_plus: chirps[0].is_chirp_plus,
-      show_chirp_plus_badge: chirps[0].show_chirp_plus_badge
+      show_chirp_plus_badge: chirps[0].show_chirp_plus_badge,
+      all_fields: Object.keys(chirps[0])
     });
   }
   
