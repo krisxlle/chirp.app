@@ -530,19 +530,13 @@ export async function getChirpsByUserId(userId: string): Promise<MobileChirp[]> 
 function formatChirpResults(chirps: any[]): MobileChirp[] {
   console.log(`Successfully loaded ${chirps.length} authentic chirps`);
   
-  // Debug: Log first chirp's raw data to check Chirp+ fields
-  if (chirps.length > 0) {
-    console.log('🔍 Raw first chirp data:', {
-      username: chirps[0].username,
-      is_chirp_plus: chirps[0].is_chirp_plus,
-      show_chirp_plus_badge: chirps[0].show_chirp_plus_badge,
-      all_fields: Object.keys(chirps[0])
-    });
-  }
+
   
   return chirps.map(chirp => {
     const isRepost = Boolean(chirp.repost_of_id);
     const isReply = Boolean(chirp.reply_to_id);
+    
+
     
     return {
       id: String(chirp.id),
