@@ -65,8 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const autoLogin = async () => {
-      // Auto-login should trigger after auth check completes AND no user was found
-      if (!user && !hasAttemptedLogin) {
+      // Check if user explicitly signed out
+      const userSignedOut = await AsyncStorage.getItem('userSignedOut');
+      
+      // Auto-login should trigger after auth check completes AND no user was found AND user didn't sign out
+      if (!user && !hasAttemptedLogin && !userSignedOut) {
         setHasAttemptedLogin(true);
         console.log('🚀 No user found - auto-signing in to @chirp for preview...');
         try {
@@ -128,6 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         
         await AsyncStorage.setItem('user', JSON.stringify(user));
+        // Clear sign out flag when user successfully signs in
+        await AsyncStorage.removeItem('userSignedOut');
         setUser(user);
         setIsLoading(false);
         console.log('✅ Signed in as user:', user.customHandle || user.handle || user.id);
@@ -159,6 +164,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
           
           await AsyncStorage.setItem('user', JSON.stringify(user));
+          // Clear sign out flag when user successfully signs in
+          await AsyncStorage.removeItem('userSignedOut');
           setUser(user);
           setIsLoading(false);
           console.log('✅ Demo mode - signed in as user:', user.customHandle || user.handle || user.id);
@@ -180,6 +187,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🚪 Signing out user...');
       await AsyncStorage.removeItem('user');
+      // Also set a flag to prevent auto-login after sign out
+      await AsyncStorage.setItem('userSignedOut', 'true');
       setUser(null);
       setIsLoading(false);
       console.log('✅ User signed out successfully');
