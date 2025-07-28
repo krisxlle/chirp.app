@@ -186,7 +186,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
 
   const TabButton = ({ id, title, active }: { id: string; title: string; active: boolean }) => (
     <TouchableOpacity
-      style={[styles.tabButton, active && styles.activeTabButtonContainer]}
+      style={styles.tabButton}
       onPress={() => setActiveTab(id)}
     >
       {active ? (
@@ -518,9 +518,11 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       {/* Tabs */}
       <View style={styles.tabsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScrollView}>
-          <TabButton id="profile" title="Profile" active={activeTab === 'profile'} />
-          <TabButton id="chirpplus" title="Chirp+" active={activeTab === 'chirpplus'} />
-          <TabButton id="account" title="Account" active={activeTab === 'account'} />
+          <View style={styles.tabsButtonContainer}>
+            <TabButton id="profile" title="Profile" active={activeTab === 'profile'} />
+            <TabButton id="chirpplus" title="Chirp+" active={activeTab === 'chirpplus'} />
+            <TabButton id="account" title="Account" active={activeTab === 'account'} />
+          </View>
         </ScrollView>
       </View>
 
@@ -579,41 +581,48 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   tabsScrollView: {
     paddingHorizontal: 16,
   },
-  tabButton: {
-    paddingHorizontal: 20,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
+  tabsButtonContainer: {
+    flexDirection: 'row',
     backgroundColor: '#f7f9fa',
-    borderWidth: 1,
-    borderColor: '#e1e8ed',
+    borderRadius: 12,
+    padding: 3,
+  },
+  tabButton: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  activeTabButtonContainer: {
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
+    marginRight: 2,
+    flex: 1,
   },
   activeTabButton: {
-    paddingHorizontal: 20,
-    height: 40,
-    borderRadius: 20,
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#7c3aed',
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   tabButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: '#657786',
   },
   activeTabButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
     color: '#ffffff',
   },
   content: {
