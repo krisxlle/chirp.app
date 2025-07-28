@@ -439,40 +439,42 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           
           <TouchableOpacity 
             style={styles.signOutButton}
-            onPress={() => {
+            onPress={async () => {
               console.log('🔥 Sign out button pressed!');
-              Alert.alert(
-                "Sign Out",
-                "Are you sure you want to sign out?",
-                [
-                  {
-                    text: "Cancel",
-                    style: "cancel",
-                    onPress: () => console.log('❌ Sign out cancelled')
-                  },
-                  {
-                    text: "Sign Out",
-                    style: "destructive",
-                    onPress: async () => {
-                      try {
-                        console.log('🚪 User confirmed sign out');
-                        await signOut();
-                        console.log('✅ Sign out completed from AuthContext');
-                        
-                        // Close settings modal first
-                        onClose();
-                        console.log('📱 Settings modal closed');
-                        
-                        // For React Native/Expo environment, no window.location available
-                        console.log('🔄 Sign out process completed - user should see login screen');
-                      } catch (error) {
-                        console.error('❌ Sign out error:', error);
-                        Alert.alert("Error", "Failed to sign out. Please try again.");
-                      }
-                    }
-                  }
-                ]
-              );
+              
+              // For web environment, use window.confirm instead of Alert
+              if (typeof window !== 'undefined' && window.confirm) {
+                const confirmed = window.confirm("Are you sure you want to sign out?");
+                if (!confirmed) {
+                  console.log('❌ Sign out cancelled by user');
+                  return;
+                }
+              }
+              
+              try {
+                console.log('🚪 User confirmed sign out, starting process...');
+                await signOut();
+                console.log('✅ Sign out completed from AuthContext');
+                
+                // Close settings modal first
+                onClose();
+                console.log('📱 Settings modal closed');
+                
+                // Force refresh for web environment
+                if (typeof window !== 'undefined' && window.location) {
+                  console.log('🔄 Forcing page refresh to show login screen');
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 500);
+                } else {
+                  console.log('🔄 Sign out process completed - user should see login screen');
+                }
+              } catch (error) {
+                console.error('❌ Sign out error:', error);
+                if (typeof window !== 'undefined' && window.alert) {
+                  window.alert("Failed to sign out. Please try again.");
+                }
+              }
             }}
           >
             <LogOutIcon size={20} color="#9ca3af" />
