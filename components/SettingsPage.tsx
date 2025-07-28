@@ -593,14 +593,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeTabButtonContainer: {
-    borderWidth: 1, // Ensure same border width as inactive tabs
+    borderWidth: 1,
     borderColor: '#7c3aed',
-    backgroundColor: 'transparent', // Remove background since gradient handles it
+    backgroundColor: 'transparent',
   },
   activeTabButton: {
-    paddingHorizontal: 18, // Reduced to account for border width
-    height: 38, // Reduced to account for border width
-    borderRadius: 19, // Adjusted to match the visual appearance
+    paddingHorizontal: 20, // Match inactive button padding
+    height: 40, // Match inactive button height
+    borderRadius: 20, // Match inactive button border radius
     alignItems: 'center',
     justifyContent: 'center',
   },
