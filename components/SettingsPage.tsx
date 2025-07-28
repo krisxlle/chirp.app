@@ -440,36 +440,33 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           <TouchableOpacity 
             style={styles.signOutButton}
             onPress={() => {
+              console.log('🔥 Sign out button pressed!');
               Alert.alert(
                 "Sign Out",
                 "Are you sure you want to sign out?",
                 [
                   {
                     text: "Cancel",
-                    style: "cancel"
+                    style: "cancel",
+                    onPress: () => console.log('❌ Sign out cancelled')
                   },
                   {
                     text: "Sign Out",
                     style: "destructive",
                     onPress: async () => {
                       try {
-                        console.log('🚪 User requested sign out');
+                        console.log('🚪 User confirmed sign out');
                         await signOut();
-                        console.log('✅ Sign out successful');
+                        console.log('✅ Sign out completed from AuthContext');
                         
-                        Alert.alert("Signed Out", "You have been signed out successfully. The app will refresh to show the login screen.");
-                        
-                        // Close settings and refresh the app
+                        // Close settings modal first
                         onClose();
+                        console.log('📱 Settings modal closed');
                         
-                        // Force app refresh to show login screen
-                        if (typeof window !== 'undefined' && window.location) {
-                          setTimeout(() => {
-                            window.location.reload();
-                          }, 1000);
-                        }
+                        // For React Native/Expo environment, no window.location available
+                        console.log('🔄 Sign out process completed - user should see login screen');
                       } catch (error) {
-                        console.error('Sign out error:', error);
+                        console.error('❌ Sign out error:', error);
                         Alert.alert("Error", "Failed to sign out. Please try again.");
                       }
                     }
