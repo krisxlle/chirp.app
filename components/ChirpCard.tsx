@@ -20,6 +20,8 @@ interface User {
   handle?: string;
   profileImageUrl?: string;
   avatarUrl?: string;
+  isChirpPlus?: boolean;
+  showChirpPlusBadge?: boolean;
 }
 
 interface Chirp {
@@ -49,6 +51,8 @@ interface Chirp {
       customHandle: string;
       handle: string;
       profileImageUrl?: string | null;
+      isChirpPlus?: boolean;
+      showChirpPlusBadge?: boolean;
     };
     isWeeklySummary?: boolean;
   };
@@ -632,7 +636,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress }: Ch
           <View style={styles.nameRow}>
             <TouchableOpacity onPress={handleAvatarPress} style={styles.nameContainer}>
               <Text style={styles.username}>{displayName}</Text>
-              {(chirp.author as any)?.isChirpPlus && (chirp.author as any)?.showChirpPlusBadge && (
+              {chirp.author?.isChirpPlus && chirp.author?.showChirpPlusBadge && (
                 <ChirpPlusBadge size={16} />
               )}
             </TouchableOpacity>

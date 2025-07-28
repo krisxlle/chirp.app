@@ -113,6 +113,8 @@ export async function getForYouChirps(): Promise<MobileChirp[]> {
           COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
           u.profile_image_url,
           u.banner_image_url,
+          u.is_chirp_plus,
+          u.show_chirp_plus_badge,
           NULL as original_chirp_id,
           NULL as original_content,
           NULL as original_created_at,
@@ -122,6 +124,8 @@ export async function getForYouChirps(): Promise<MobileChirp[]> {
           NULL as original_profile_image_url,
           NULL as original_banner_image_url,
           false as original_is_weekly_summary,
+          NULL as original_is_chirp_plus,
+          NULL as original_show_chirp_plus_badge,
           (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
           (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
           (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
@@ -209,6 +213,8 @@ export async function getLatestChirps(): Promise<MobileChirp[]> {
           COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
           u.profile_image_url,
           u.banner_image_url,
+          u.is_chirp_plus,
+          u.show_chirp_plus_badge,
           NULL as original_chirp_id,
           NULL as original_content,
           NULL as original_created_at,
@@ -218,6 +224,8 @@ export async function getLatestChirps(): Promise<MobileChirp[]> {
           NULL as original_profile_image_url,
           NULL as original_banner_image_url,
           false as original_is_weekly_summary,
+          NULL as original_is_chirp_plus,
+          NULL as original_show_chirp_plus_badge,
           (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
           (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
           (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
@@ -306,6 +314,8 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
           COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
           u.profile_image_url,
           u.banner_image_url,
+          u.is_chirp_plus,
+          u.show_chirp_plus_badge,
           NULL as original_chirp_id,
           NULL as original_content,
           NULL as original_created_at,
@@ -315,6 +325,8 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
           NULL as original_profile_image_url,
           NULL as original_banner_image_url,
           false as original_is_weekly_summary,
+          NULL as original_is_chirp_plus,
+          NULL as original_show_chirp_plus_badge,
           (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
           (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
           (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
@@ -857,6 +869,8 @@ export async function getChirpsByHashtag(hashtag: string): Promise<MobileChirp[]
         COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle, 'User') as display_name,
         u.profile_image_url,
         u.banner_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge,
         COUNT(DISTINCT r.id) as reaction_count,
         COUNT(DISTINCT replies.id) as reply_count,
         COUNT(DISTINCT reposts.id) as repost_count,
@@ -869,7 +883,7 @@ export async function getChirpsByHashtag(hashtag: string): Promise<MobileChirp[]
       WHERE c.content ILIKE ${'%' + hashtagPattern + '%'}
         AND c.reply_to_id IS NULL -- Only original chirps, not replies
       GROUP BY c.id, c.content, c.created_at, c.author_id, c.reply_to_id, c.repost_of_id, c.is_weekly_summary,
-               u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.banner_image_url
+               u.custom_handle, u.handle, u.first_name, u.last_name, u.profile_image_url, u.banner_image_url, u.is_chirp_plus, u.show_chirp_plus_badge
       ORDER BY 
         -- Trending algorithm: weight recent posts with engagement
         (COUNT(DISTINCT r.id) + COUNT(DISTINCT replies.id) + COUNT(DISTINCT reposts.id)) * 
@@ -978,10 +992,30 @@ export async function searchChirps(query: string) {
         c.id::text,
         c.content,
         c.created_at as "createdAt",
+        c.author_id::text,
         COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
         COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
         u.profile_image_url,
-        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count
+        u.banner_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge,
+        NULL as reply_to_id,
+        NULL as repost_of_id,
+        COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+        NULL as original_chirp_id,
+        NULL as original_content,
+        NULL as original_created_at,
+        NULL as original_author_id,
+        NULL as original_username,
+        NULL as original_display_name,
+        NULL as original_profile_image_url,
+        NULL as original_banner_image_url,
+        false as original_is_weekly_summary,
+        NULL as original_is_chirp_plus,
+        NULL as original_show_chirp_plus_badge,
+        (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
+        (SELECT COUNT(*) FROM reposts rp WHERE rp.chirp_id = c.id) as repost_count
       FROM chirps c
       LEFT JOIN users u ON c.author_id = u.id
       WHERE c.content ILIKE ${`%${query}%`}
