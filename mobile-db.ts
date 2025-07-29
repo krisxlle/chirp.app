@@ -1913,12 +1913,28 @@ export async function submitFeedback(feedback: {
   message: string;
 }): Promise<void> {
   try {
-    console.log('Submitting feedback to database...');
-    await sql`
-      INSERT INTO feedback (name, email, category, message, created_at)
-      VALUES (${feedback.name}, ${feedback.email}, ${feedback.category}, ${feedback.message}, NOW())
-    `;
-    console.log('Feedback submitted successfully');
+    console.log('Submitting feedback via API to send email...');
+    
+    // Use the server API route which handles both database storage AND email sending
+    const response = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: feedback.name,
+        email: feedback.email,
+        category: feedback.category,
+        message: feedback.message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Failed to submit feedback' }));
+      throw new Error(errorData.message || 'Failed to submit feedback');
+    }
+
+    console.log('Feedback submitted successfully - email sent to joinchirp@gmail.com');
   } catch (error) {
     console.error('Error submitting feedback:', error);
     throw error;
