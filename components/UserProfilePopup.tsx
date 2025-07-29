@@ -12,7 +12,8 @@ import {
   blockUser, 
   unblockUser, 
   checkBlockStatus,
-  getUserNotificationStatus
+  getUserNotificationStatus,
+  toggleUserNotifications
 } from '../mobile-db';
 
 interface User {
@@ -64,17 +65,19 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-      const userData = await getUserById(userId);
-      const userStats = { chirps: 0, followers: 0, following: 0, moodReactions: 0 };
-      const followStatus = false;
-      const blockStatus = false;
-      const notificationStatus = false;
+      const [userData, userStats, followStatus, blockStatus, notificationStatus] = await Promise.all([
+        getUserById(userId),
+        Promise.resolve({ chirps: 0, followers: 0, following: 0, moodReactions: 0 }),
+        currentUser?.id ? checkFollowStatus(currentUser.id, userId) : Promise.resolve(false),
+        currentUser?.id ? checkBlockStatus(currentUser.id, userId) : Promise.resolve(false),
+        currentUser?.id ? getUserNotificationStatus(currentUser.id, userId) : Promise.resolve(false),
+      ]);
 
       setUser(userData);
       setStats(userStats);
-      setIsFollowing(followStatus);
-      setIsBlocked(blockStatus);
-      setNotificationsOn(notificationStatus);
+      setIsFollowing(!!followStatus);
+      setIsBlocked(!!blockStatus);
+      setNotificationsOn(!!notificationStatus);
     } catch (error) {
       console.error('Error fetching user profile popup:', error);
     } finally {
@@ -122,10 +125,10 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
     if (!currentUser?.id) return;
     
     try {
-      const newStatus = !notificationsOn;
-      // Note: updateUserNotificationStatus function needs to be implemented in mobile-db.ts
+      const newStatus = await toggleUserNotifications(currentUser.id, userId);
       setNotificationsOn(newStatus);
       setShowOptionsMenu(false);
+      console.log(`Notifications ${newStatus ? 'enabled' : 'disabled'} for user ${userId}`);
     } catch (error) {
       console.error('Error toggling notifications:', error);
     }
