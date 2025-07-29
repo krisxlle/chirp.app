@@ -271,17 +271,26 @@ export default function NotificationsPage() {
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {notifications.map((notification) => (
-            <TouchableOpacity 
-              key={notification.id} 
-              style={[styles.notificationItem, { borderWidth: 1, borderColor: 'red' }]} // Debug border
-              onPress={() => {
-                console.log('🚨🚨🚨 NOTIFICATION CLICKED:', notification.type, notification.fromUserId);
-                console.log('🚨🚨🚨 CLICK EVENT FIRED FOR:', notification.id);
-                alert(`Clicked notification: ${notification.type}`); // Visual confirmation
-                handleNotificationPress(notification);
-              }}
-              activeOpacity={0.7}
-            >
+            <View key={notification.id} style={{ marginHorizontal: 12, marginVertical: 4 }}>
+              <TouchableOpacity 
+                style={[
+                  styles.notificationItem, 
+                  { 
+                    borderWidth: 3, 
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255,0,0,0.1)', // Debug background
+                    minHeight: 80 // Ensure touchable area
+                  }
+                ]} 
+                onPress={() => {
+                  console.log('🚨🚨🚨 NOTIFICATION CLICKED:', notification.type, notification.fromUserId);
+                  console.log('🚨🚨🚨 CLICK EVENT FIRED FOR:', notification.id);
+                  alert(`Clicked notification: ${notification.type}`); // Visual confirmation
+                  handleNotificationPress(notification);
+                }}
+                activeOpacity={0.5}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
               <View style={styles.notificationContent}>
                 {/* User Avatar */}
                 <View style={styles.avatarContainer}>
@@ -311,7 +320,8 @@ export default function NotificationsPage() {
                   {getNotificationIcon(notification.type, getNotificationIconColor(notification.type))}
                 </View>
               </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
       )}
@@ -371,8 +381,6 @@ const styles = StyleSheet.create({
   },
   notificationItem: {
     backgroundColor: '#ffffff',
-    marginHorizontal: 12,
-    marginVertical: 4,
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderRadius: 12,
@@ -381,6 +389,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
+    flex: 1,
   },
   notificationContent: {
     flexDirection: 'row',
