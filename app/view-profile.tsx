@@ -113,7 +113,7 @@ export default function ViewProfile() {
           </View>
           
           <View style={styles.avatarContainer}>
-            <UserAvatar user={user} size="lg" />
+            <UserAvatar user={user} size="xl" />
           </View>
           
           <Text style={styles.displayName}>{displayName}</Text>
@@ -209,11 +209,13 @@ const styles = StyleSheet.create({
     margin: 16,
     borderRadius: 16,
     padding: 20,
+    paddingTop: 30, // Extra top padding for avatar space
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+    overflow: 'visible', // Ensure content doesn't get clipped
   },
   successBanner: {
     backgroundColor: '#dcfce7',
@@ -232,6 +234,8 @@ const styles = StyleSheet.create({
   avatarContainer: {
     alignItems: 'center',
     marginBottom: 16,
+    paddingVertical: 10, // Add vertical padding to prevent clipping
+    minHeight: 100, // Ensure container has enough height
   },
   displayName: {
     fontSize: 24,

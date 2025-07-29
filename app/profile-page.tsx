@@ -110,7 +110,7 @@ export default function ProfilePage() {
           
           <UserAvatar 
             user={user} 
-            size="lg"
+            size="xl"
           />
           <Text style={styles.userName}>{displayName}</Text>
           <Text style={styles.userHandle}>@{user.customHandle || user.handle || user.id}</Text>
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+    overflow: 'visible', // Prevent content clipping
   },
   header: {
     flexDirection: 'row',
@@ -171,10 +172,13 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    paddingTop: 10, // Add padding at top of scroll view
   },
   profileSection: {
     alignItems: 'center',
     padding: 20,
+    paddingTop: 40, // Extra padding at top to ensure avatar is visible
+    minHeight: 200, // Ensure minimum height for avatar visibility
   },
   successText: {
     fontSize: 18,

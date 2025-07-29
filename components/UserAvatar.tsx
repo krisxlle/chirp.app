@@ -20,8 +20,8 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
   const sizeStyles = {
     sm: { width: 32, height: 32 },
     md: { width: 40, height: 40 }, 
-    lg: { width: 48, height: 48 },
-    xl: { width: 80, height: 80 },
+    lg: { width: 64, height: 64 }, // Increased size for better profile visibility
+    xl: { width: 96, height: 96 }, // Increased size for profile headers
   };
 
   const textSizeStyles = {

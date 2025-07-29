@@ -99,7 +99,7 @@ export default function UserProfile() {
         <View style={styles.profileSection}>
           <UserAvatar 
             user={user} 
-            size="lg"
+            size="xl"
           />
           <Text style={styles.userName}>{displayName}</Text>
           <Text style={styles.userHandle}>@{user.customHandle || user.handle || user.id}</Text>
@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+    overflow: 'visible', // Prevent content clipping
   },
   header: {
     flexDirection: 'row',
@@ -164,6 +165,8 @@ const styles = StyleSheet.create({
   profileSection: {
     alignItems: 'center',
     padding: 20,
+    paddingTop: 40, // Extra padding at top to ensure avatar is visible
+    minHeight: 200, // Ensure minimum height for avatar visibility
   },
   userName: {
     fontSize: 24,
