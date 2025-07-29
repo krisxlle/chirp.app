@@ -61,16 +61,17 @@ export default function ProfilePage() {
     try {
       if (!authUser?.id) return;
       
-      console.log('Fetching chirps for user:', authUser.id);
-      const { getChirpsByUserId } = await import('../mobile-db');
-      const allChirps = await getChirpsByUserId(authUser.id);
+      console.log('Fetching chirps and replies for user:', authUser.id);
+      const { getUserChirps, getUserReplies } = await import('../mobile-db');
       
-      // Separate original chirps from replies
-      const originalChirps = allChirps.filter(chirp => !chirp.replyToId);
-      const replies = allChirps.filter(chirp => chirp.replyToId);
+      // Fetch chirps and replies separately using proper functions
+      const [originalChirps, userRepliesData] = await Promise.all([
+        getUserChirps(authUser.id),
+        getUserReplies(authUser.id)
+      ]);
       
       setUserChirps(originalChirps);
-      setUserReplies(replies);
+      setUserReplies(userRepliesData);
       
       // Update stats based on actual data
       setStats(prev => ({
