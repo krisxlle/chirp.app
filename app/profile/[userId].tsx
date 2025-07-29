@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import UserAvatar from '../../components/UserAvatar';
 import ChirpCard from '../../components/ChirpCard';
+import FollowersFollowingModal from '../../components/FollowersFollowingModal';
 import { AuthContext } from '../../components/AuthContext';
 
 interface User {
@@ -72,6 +73,8 @@ export default function UserProfileScreen() {
     notificationsEnabled: false
   });
   const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
 
   const router = useRouter();
 
@@ -343,15 +346,15 @@ export default function UserProfileScreen() {
               <Text style={styles.statLabel}>Chirps</Text>
             </View>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
               <Text style={styles.statNumber}>{stats.following}</Text>
               <Text style={styles.statLabel}>Following</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.statDivider} />
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
               <Text style={styles.statNumber}>{stats.followers}</Text>
               <Text style={styles.statLabel}>Followers</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -447,6 +450,23 @@ export default function UserProfileScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Followers/Following Modals */}
+      <FollowersFollowingModal
+        visible={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        userId={userId}
+        type="followers"
+        title="Followers"
+      />
+
+      <FollowersFollowingModal
+        visible={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        userId={userId}
+        type="following"
+        title="Following"
+      />
     </View>
   );
 }

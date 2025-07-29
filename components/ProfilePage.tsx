@@ -15,6 +15,7 @@ import UserAvatar from './UserAvatar';
 import ChirpCard from './ChirpCard';
 import ChirpPlusBadge from './ChirpPlusBadge';
 import SettingsPage from './SettingsPage';
+import FollowersFollowingModal from './FollowersFollowingModal';
 import { useAuth } from './AuthContext';
 import { getChirpsFromDB } from '../mobile-db';
 
@@ -56,6 +57,8 @@ export default function ProfilePage() {
     chirps: 6,
     reactions: 3
   });
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
 
   const fetchUserChirps = async () => {
     try {
@@ -306,12 +309,12 @@ export default function ProfilePage() {
 
       {/* Stats Row */}
       <View style={styles.statsRow}>
-        <TouchableOpacity style={styles.statItem} onPress={() => Alert.alert('Following', 'Show list of people you follow')}>
+        <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
           <Text style={styles.statNumber}>{stats.following}</Text>
           <Text style={styles.statLabel}>Following</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.statItem} onPress={() => Alert.alert('Followers', 'Show list of your followers')}>
+        <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
           <Text style={styles.statNumber}>{stats.followers}</Text>
           <Text style={styles.statLabel}>Followers</Text>
         </TouchableOpacity>
@@ -543,6 +546,23 @@ export default function ProfilePage() {
           </View>
         </View>
       )}
+
+      {/* Followers/Following Modals */}
+      <FollowersFollowingModal
+        visible={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        userId={authUser?.id || ''}
+        type="followers"
+        title="Followers"
+      />
+
+      <FollowersFollowingModal
+        visible={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        userId={authUser?.id || ''}
+        type="following"
+        title="Following"
+      />
     </ScrollView>
   );
 }

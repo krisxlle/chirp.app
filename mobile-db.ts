@@ -1849,6 +1849,84 @@ export async function unfollowUser(followerId: string, followingId: string): Pro
   }
 }
 
+// Get followers list for a user
+export async function getFollowers(userId: string) {
+  try {
+    console.log('Fetching followers for user:', userId);
+    const followers = await sql`
+      SELECT 
+        u.id::text,
+        u.first_name,
+        u.last_name,
+        u.custom_handle,
+        u.handle,
+        u.profile_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge,
+        u.bio
+      FROM follows f
+      INNER JOIN users u ON f.follower_id = u.id
+      WHERE f.following_id = ${userId}
+      ORDER BY f.created_at DESC
+    `;
+    
+    console.log(`Found ${followers.length} followers for user`);
+    return followers.map(follower => ({
+      id: follower.id,
+      firstName: follower.first_name,
+      lastName: follower.last_name,
+      customHandle: follower.custom_handle,
+      handle: follower.handle,
+      profileImageUrl: follower.profile_image_url,
+      isChirpPlus: follower.is_chirp_plus,
+      showChirpPlusBadge: follower.show_chirp_plus_badge,
+      bio: follower.bio
+    }));
+  } catch (error) {
+    console.error('Error fetching followers:', error);
+    return [];
+  }
+}
+
+// Get following list for a user
+export async function getFollowing(userId: string) {
+  try {
+    console.log('Fetching following for user:', userId);
+    const following = await sql`
+      SELECT 
+        u.id::text,
+        u.first_name,
+        u.last_name,
+        u.custom_handle,
+        u.handle,
+        u.profile_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge,
+        u.bio
+      FROM follows f
+      INNER JOIN users u ON f.following_id = u.id
+      WHERE f.follower_id = ${userId}
+      ORDER BY f.created_at DESC
+    `;
+    
+    console.log(`Found ${following.length} following for user`);
+    return following.map(follow => ({
+      id: follow.id,
+      firstName: follow.first_name,
+      lastName: follow.last_name,
+      customHandle: follow.custom_handle,
+      handle: follow.handle,
+      profileImageUrl: follow.profile_image_url,
+      isChirpPlus: follow.is_chirp_plus,
+      showChirpPlusBadge: follow.show_chirp_plus_badge,
+      bio: follow.bio
+    }));
+  } catch (error) {
+    console.error('Error fetching following:', error);
+    return [];
+  }
+}
+
 // Block functionality
 export async function blockUser(blockerId: string, blockedId: string): Promise<boolean> {
   try {
