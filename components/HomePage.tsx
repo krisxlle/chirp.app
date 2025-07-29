@@ -37,8 +37,27 @@ const convertToChirpCard = (chirp: MobileChirp) => ({
 });
 
 export default function HomePage() {
-  const [chirps, setChirps] = useState<MobileChirp[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Cache all feed types to avoid re-fetching
+  const [chirpsCache, setChirpsCache] = useState<{
+    personalized: MobileChirp[],
+    chronological: MobileChirp[],
+    trending: MobileChirp[]
+  }>({
+    personalized: [],
+    chronological: [],
+    trending: []
+  });
+  
+  const [loadingStates, setLoadingStates] = useState<{
+    personalized: boolean,
+    chronological: boolean,
+    trending: boolean
+  }>({
+    personalized: true,
+    chronological: false,
+    trending: false
+  });
+  
   const [refreshing, setRefreshing] = useState(false);
   const [feedType, setFeedType] = useState<'personalized' | 'chronological' | 'trending'>('personalized');
   const [highlightedChirpId, setHighlightedChirpId] = useState<string | null>(null);
@@ -50,7 +69,11 @@ export default function HomePage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
-  console.log('🏠 HomePage component mounted - chirps count:', chirps.length, 'isLoading:', isLoading, 'targetChirp:', targetChirp);
+  // Current feed data and loading state
+  const currentChirps = chirpsCache[feedType];
+  const isLoading = loadingStates[feedType];
+  
+  console.log('🏠 HomePage component mounted - chirps count:', currentChirps.length, 'isLoading:', isLoading, 'targetChirp:', targetChirp);
   
   // Header animation state
   const headerTranslateY = useSharedValue(0);
@@ -58,11 +81,11 @@ export default function HomePage() {
   const lastScrollY = useRef(0);
   const isHeaderVisible = useRef(true);
 
-  const fetchChirps = async () => {
+  const fetchChirpsForType = async (type: 'personalized' | 'chronological' | 'trending') => {
     try {
-      console.log(`Fetching ${feedType} chirps from database...`);
+      console.log(`Fetching ${type} chirps from database...`);
       let data;
-      switch (feedType) {
+      switch (type) {
         case 'chronological':
           data = await getLatestChirps();
           break;
@@ -74,20 +97,66 @@ export default function HomePage() {
           data = await getForYouChirps();
           break;
       }
-      console.log('Successfully loaded authentic chirps:', data.length);
-      setChirps(data);
+      console.log(`Successfully loaded ${data.length} authentic chirps for ${type}`);
+      
+      // Update cache and loading state
+      setChirpsCache(prev => ({ ...prev, [type]: data }));
+      setLoadingStates(prev => ({ ...prev, [type]: false }));
     } catch (error) {
-      console.error('Database connection failed:', error);
+      console.error(`Database connection failed for ${type}:`, error);
+      setLoadingStates(prev => ({ ...prev, [type]: false }));
       Alert.alert('Connection Error', 'Unable to load your chirps. Please check your internet connection.');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
     }
   };
 
+  const fetchChirps = () => fetchChirpsForType(feedType);
+
+  // Function to refresh all cached feeds (used when a new chirp is posted)
+  const refreshAllFeeds = async () => {
+    // Reset all caches
+    setChirpsCache({
+      personalized: [],
+      chronological: [],
+      trending: []
+    });
+    setLoadingStates({
+      personalized: feedType === 'personalized',
+      chronological: feedType === 'chronological', 
+      trending: feedType === 'trending'
+    });
+    
+    // Fetch current feed
+    await fetchChirpsForType(feedType);
+  };
+
+  // Load initial feed on mount
   useEffect(() => {
-    fetchChirps();
-  }, [feedType]);
+    fetchChirpsForType('personalized');
+  }, []);
+
+  // Preload other feeds when switching tabs
+  const handleFeedTypeChange = (newType: 'personalized' | 'chronological' | 'trending') => {
+    setFeedType(newType);
+    
+    // If we don't have data for this feed type, fetch it
+    if (chirpsCache[newType].length === 0 && !loadingStates[newType]) {
+      setLoadingStates(prev => ({ ...prev, [newType]: true }));
+      fetchChirpsForType(newType);
+    }
+    
+    // Preload other feeds in the background for smoother switching
+    const otherFeeds = (['personalized', 'chronological', 'trending'] as const).filter(type => 
+      type !== newType && chirpsCache[type].length === 0 && !loadingStates[type]
+    );
+    
+    // Small delay to prioritize current feed loading
+    setTimeout(() => {
+      otherFeeds.forEach(feedType => {
+        setLoadingStates(prev => ({ ...prev, [feedType]: true }));
+        fetchChirpsForType(feedType);
+      });
+    }, 500);
+  };
 
   // Handle notification target chirp highlighting
   useEffect(() => {
@@ -103,7 +172,10 @@ export default function HomePage() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchChirps();
+    // Clear current feed cache and refetch
+    setChirpsCache(prev => ({ ...prev, [feedType]: [] }));
+    setLoadingStates(prev => ({ ...prev, [feedType]: true }));
+    fetchChirpsForType(feedType).finally(() => setRefreshing(false));
   };
 
   const getFeedIcon = (type: string) => {
@@ -197,7 +269,7 @@ export default function HomePage() {
           <View style={styles.feedControls}>
             <TouchableOpacity 
               style={styles.feedButton}
-              onPress={() => setFeedType('personalized')}
+              onPress={() => handleFeedTypeChange('personalized')}
             >
               {feedType === 'personalized' ? (
                 <LinearGradient
@@ -215,7 +287,7 @@ export default function HomePage() {
             
             <TouchableOpacity 
               style={styles.feedButton}
-              onPress={() => setFeedType('chronological')}
+              onPress={() => handleFeedTypeChange('chronological')}
             >
               {feedType === 'chronological' ? (
                 <LinearGradient
@@ -233,7 +305,7 @@ export default function HomePage() {
             
             <TouchableOpacity 
               style={styles.feedButton}
-              onPress={() => setFeedType('trending')}
+              onPress={() => handleFeedTypeChange('trending')}
             >
               {feedType === 'trending' ? (
                 <LinearGradient
@@ -261,16 +333,16 @@ export default function HomePage() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <ComposeChirp onPost={fetchChirps} />
+        <ComposeChirp onPost={refreshAllFeeds} />
         
-        {chirps.length === 0 ? (
+        {currentChirps.length === 0 ? (
           <View style={styles.emptyState}>
             <ChirpLogo size={48} color="#9ca3af" />
             <Text style={styles.emptyTitle}>No chirps yet</Text>
             <Text style={styles.emptySubtext}>Start by posting your first chirp above!</Text>
           </View>
         ) : (
-          chirps.map((chirp) => (
+          currentChirps.map((chirp) => (
             <ChirpCard 
               key={chirp.id} 
               chirp={convertToChirpCard(chirp)} 
