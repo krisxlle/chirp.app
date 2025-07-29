@@ -22,16 +22,19 @@ export default function ChirpScreen() {
     try {
       setLoading(true);
       const chirpId = Array.isArray(id) ? id[0] : id;
+      console.log('🔍 ChirpScreen: Loading chirp data for ID:', chirpId);
       
       // Load the main chirp
       const chirpData = await getChirpById(chirpId);
+      console.log('📋 ChirpScreen: Retrieved chirp data:', chirpData);
       setChirp(chirpData);
       
       // Load replies
       const repliesData = await getChirpReplies(chirpId);
+      console.log('💬 ChirpScreen: Retrieved replies:', repliesData.length);
       setReplies(repliesData);
     } catch (error) {
-      console.error('Error loading chirp:', error);
+      console.error('❌ ChirpScreen: Error loading chirp:', error);
     } finally {
       setLoading(false);
     }
