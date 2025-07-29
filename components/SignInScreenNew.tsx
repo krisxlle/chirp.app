@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useAuth } from './AuthContext';
 import Svg, { Path } from 'react-native-svg';
 
@@ -46,17 +47,18 @@ const BotIcon = ({ size = 28, color = "#ffffff" }) => (
 
 export default function SignInScreenNew() {
   const { signIn } = useAuth();
+  const router = useRouter();
 
   const handleSignIn = async () => {
     await signIn('demo-user', 'password');
   };
 
   const openTermsOfService = () => {
-    Linking.openURL('https://chirp.com/terms');
+    router.push('/terms-of-service');
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL('https://chirp.com/privacy');
+    router.push('/privacy-policy');
   };
 
   return (

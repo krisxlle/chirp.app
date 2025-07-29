@@ -309,7 +309,12 @@ The application is designed to be scalable and maintainable, with clear separati
 - **Welcome Page Text Update**: Changed "vibe reactions" to "react to any post in any way" for better clarity
 - **Feedback Form Validation Fix**: Fixed email validation error by making email field properly optional in feedback schema
 - **Enhanced Blocking System**: Fixed blocking logic so when user A blocks user B, user B cannot see follow/unfollow button or profile content
-- **Bidirectional Block Enforcement**: Added proper checks to prevent blocked users from accessing profile content and interaction buttons
+- **Bidirectional Block Enforcement**: Added proper checks to prevent blocked users from accessing profile content and interactions
+- **Legal Pages Implementation**: Created comprehensive Terms of Service and Privacy Policy pages for mobile app
+  - Added `/terms-of-service` and `/privacy-policy` routes with complete legal coverage
+  - Updated login screen to navigate to mobile-friendly legal pages
+  - Comprehensive coverage of AI usage, data protection, subscription terms, and liability limitations
+  - GDPR and CCPA compliant privacy practices with user rights and contact informationtion buttons
 
 ### January 23, 2025 - UI Improvements and Thread Mode Implementation
 - **Landing Page Logo Update**: Changed landing page image to use assets/icon.png (purple/pink bird logo) instead of logo.jpg for consistent branding
