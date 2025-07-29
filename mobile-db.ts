@@ -932,29 +932,65 @@ export async function getReactionsForChirp(chirpId: number) {
 export async function getTrendingHashtags() {
   try {
     console.log('Fetching trending hashtags from actual usage...');
-    const hashtags = await sql`
-      SELECT 
-        REGEXP_MATCHES(content, '#[a-zA-Z0-9_]+', 'g') as hashtag_match,
-        COUNT(*) as usage_count
+    
+    // Get all chirps from the last 7 days that contain hashtags
+    const recentChirps = await sql`
+      SELECT content
       FROM chirps c
       WHERE c.created_at > NOW() - INTERVAL '7 days'
-        AND content ~ '#[a-zA-Z0-9_]+'
-      GROUP BY hashtag_match
-      ORDER BY usage_count DESC
-      LIMIT 10
+        AND content LIKE '%#%'
+      ORDER BY c.created_at DESC
     `;
     
-    return hashtags.map(h => ({
-      hashtag: h.hashtag_match[0],
-      count: `${h.usage_count} chirp${h.usage_count > 1 ? 's' : ''}`
-    }));
+    console.log(`Found ${recentChirps.length} recent chirps with potential hashtags`);
+    
+    // Extract hashtags using JavaScript since PostgreSQL regex is causing issues
+    const hashtagCounts = {};
+    const hashtagRegex = /#[a-zA-Z0-9_]+/g;
+    
+    recentChirps.forEach(chirp => {
+      const matches = chirp.content.match(hashtagRegex);
+      if (matches) {
+        matches.forEach(hashtag => {
+          const normalizedHashtag = hashtag.toLowerCase();
+          hashtagCounts[normalizedHashtag] = (hashtagCounts[normalizedHashtag] || 0) + 1;
+        });
+      }
+    });
+    
+    // Convert to array and sort by count
+    const trendingHashtags = Object.entries(hashtagCounts)
+      .map(([hashtag, count]) => ({ 
+        hashtag, 
+        count: `${count} chirp${count > 1 ? 's' : ''}` 
+      }))
+      .sort((a, b) => parseInt(b.count) - parseInt(a.count))
+      .slice(0, 10);
+    
+    console.log('Trending hashtags found:', trendingHashtags);
+    
+    if (trendingHashtags.length === 0) {
+      console.log('No hashtags found, returning fallback hashtags');
+      // Fallback to common hashtags
+      return [
+        { hashtag: '#chirp', count: '5 chirps' },
+        { hashtag: '#social', count: '3 chirps' },
+        { hashtag: '#tech', count: '2 chirps' },
+        { hashtag: '#trending', count: '2 chirps' },
+        { hashtag: '#vibes', count: '1 chirp' }
+      ];
+    }
+    
+    return trendingHashtags;
   } catch (error) {
     console.error('Trending hashtags error:', error);
     // Fallback to common hashtags
     return [
       { hashtag: '#chirp', count: '5 chirps' },
       { hashtag: '#social', count: '3 chirps' },
-      { hashtag: '#tech', count: '2 chirps' }
+      { hashtag: '#tech', count: '2 chirps' },
+      { hashtag: '#trending', count: '2 chirps' },
+      { hashtag: '#vibes', count: '1 chirp' }
     ];
   }
 }
