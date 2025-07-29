@@ -735,17 +735,50 @@ export async function getUserChirps(userId: string) {
         c.id::text,
         c.content,
         c.created_at as "createdAt",
+        c.reply_to_id,
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
-        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count
+        (SELECT COUNT(*) FROM chirps replies WHERE replies.reply_to_id = c.id) as reply_count,
+        -- Author information
+        u.id::text as author_id,
+        u.first_name as author_first_name,
+        u.last_name as author_last_name,
+        u.custom_handle as author_custom_handle,
+        u.handle as author_handle,
+        u.profile_image_url as author_profile_image_url,
+        u.is_chirp_plus as author_is_chirp_plus,
+        u.show_chirp_plus_badge as author_show_chirp_plus_badge
       FROM chirps c
+      INNER JOIN users u ON c.author_id = u.id
       WHERE c.author_id = ${userId}
+        AND c.reply_to_id IS NULL -- Only original chirps, not replies
       ORDER BY c.created_at DESC
       LIMIT 10
     `;
     
-    console.log(`Found ${chirps.length} chirps for user`);
-    return chirps;
+    // Transform the data to match ChirpCard expectations
+    const transformedChirps = chirps.map(chirp => ({
+      id: chirp.id,
+      content: chirp.content,
+      createdAt: chirp.createdAt,
+      replyToId: chirp.reply_to_id,
+      isWeeklySummary: chirp.isWeeklySummary,
+      reactionCount: chirp.reaction_count,
+      replyCount: chirp.reply_count,
+      author: {
+        id: chirp.author_id,
+        firstName: chirp.author_first_name,
+        lastName: chirp.author_last_name,
+        customHandle: chirp.author_custom_handle,
+        handle: chirp.author_handle,
+        profileImageUrl: chirp.author_profile_image_url,
+        isChirpPlus: chirp.author_is_chirp_plus,
+        showChirpPlusBadge: chirp.author_show_chirp_plus_badge
+      }
+    }));
+    
+    console.log(`Found ${transformedChirps.length} chirps for user`);
+    return transformedChirps;
   } catch (error) {
     console.error('Error fetching user chirps:', error);
     return [];
@@ -764,16 +797,47 @@ export async function getUserReplies(userId: string) {
         c.reply_to_id,
         COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
         (SELECT COUNT(*) FROM reactions r WHERE r.chirp_id = c.id) as reaction_count,
-        (SELECT COUNT(*) FROM chirps sub_replies WHERE sub_replies.reply_to_id = c.id) as reply_count
+        (SELECT COUNT(*) FROM chirps sub_replies WHERE sub_replies.reply_to_id = c.id) as reply_count,
+        -- Author information
+        u.id::text as author_id,
+        u.first_name as author_first_name,
+        u.last_name as author_last_name,
+        u.custom_handle as author_custom_handle,
+        u.handle as author_handle,
+        u.profile_image_url as author_profile_image_url,
+        u.is_chirp_plus as author_is_chirp_plus,
+        u.show_chirp_plus_badge as author_show_chirp_plus_badge
       FROM chirps c
+      INNER JOIN users u ON c.author_id = u.id
       WHERE c.author_id = ${userId}
         AND c.reply_to_id IS NOT NULL -- Only replies
       ORDER BY c.created_at DESC
       LIMIT 50
     `;
     
-    console.log(`Found ${replies.length} replies for user`);
-    return replies;
+    // Transform the data to match ChirpCard expectations
+    const transformedReplies = replies.map(reply => ({
+      id: reply.id,
+      content: reply.content,
+      createdAt: reply.createdAt,
+      replyToId: reply.reply_to_id,
+      isWeeklySummary: reply.isWeeklySummary,
+      reactionCount: reply.reaction_count,
+      replyCount: reply.reply_count,
+      author: {
+        id: reply.author_id,
+        firstName: reply.author_first_name,
+        lastName: reply.author_last_name,
+        customHandle: reply.author_custom_handle,
+        handle: reply.author_handle,
+        profileImageUrl: reply.author_profile_image_url,
+        isChirpPlus: reply.author_is_chirp_plus,
+        showChirpPlusBadge: reply.author_show_chirp_plus_badge
+      }
+    }));
+    
+    console.log(`Found ${transformedReplies.length} replies for user`);
+    return transformedReplies;
   } catch (error) {
     console.error('Error fetching user replies:', error);
     return [];
