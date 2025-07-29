@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, Image } from 'react-native';
 import { router } from 'expo-router';
 import UserAvatar from './UserAvatar';
+import FollowersFollowingModal from './FollowersFollowingModal';
 import { useAuth } from './AuthContext';
 import { 
   getUserById, 
@@ -53,6 +54,8 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
   const [isBlocked, setIsBlocked] = useState(false);
   const [notificationsOn, setNotificationsOn] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
 
   const isOwnProfile = currentUser?.id === userId;
 
@@ -228,14 +231,14 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
                       <Text style={styles.statNumber}>{stats.chirps}</Text>
                       <Text style={styles.statLabel}>Chirps</Text>
                     </View>
-                    <View style={styles.statItem}>
+                    <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
                       <Text style={styles.statNumber}>{stats.following}</Text>
                       <Text style={styles.statLabel}>Following</Text>
-                    </View>
-                    <View style={styles.statItem}>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
                       <Text style={styles.statNumber}>{stats.followers}</Text>
                       <Text style={styles.statLabel}>Followers</Text>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.statItem}>
                       <Text style={styles.statNumber}>{stats.moodReactions}</Text>
                       <Text style={styles.statLabel}>Reactions</Text>
@@ -281,6 +284,23 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
               </View>
             </View>
           </Modal>
+
+          {/* Followers/Following Modals */}
+          <FollowersFollowingModal
+            visible={showFollowersModal}
+            onClose={() => setShowFollowersModal(false)}
+            userId={userId}
+            type="followers"
+            title="Followers"
+          />
+
+          <FollowersFollowingModal
+            visible={showFollowingModal}
+            onClose={() => setShowFollowingModal(false)}
+            userId={userId}
+            type="following"
+            title="Following"
+          />
         </View>
       </View>
     </Modal>
