@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Image, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from './AuthContext';
@@ -48,9 +48,47 @@ const BotIcon = ({ size = 28, color = "#ffffff" }) => (
 export default function SignInScreenNew() {
   const { signIn } = useAuth();
   const router = useRouter();
+  const [showSignInForm, setShowSignInForm] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  const handleEnterChirp = () => {
+    setShowSignInForm(true);
+  };
 
   const handleSignIn = async () => {
-    await signIn('demo-user', 'password');
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    setIsSigningIn(true);
+    try {
+      const success = await signIn(email);
+      if (!success) {
+        Alert.alert('Sign In Failed', 'Unable to sign in. Please try again or use preview@chirp.app for demo access.');
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleDemoAccess = async () => {
+    setIsSigningIn(true);
+    try {
+      const success = await signIn('preview@chirp.app');
+      if (!success) {
+        Alert.alert('Demo Access Failed', 'Unable to access demo. Please try again.');
+      }
+    } catch (error) {
+      console.error('Demo access error:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsSigningIn(false);
+    }
   };
 
   const openTermsOfService = () => {
@@ -124,12 +162,59 @@ export default function SignInScreenNew() {
           </View>
         </View>
 
-        {/* Sign In Button */}
-        <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
-          <Text style={styles.signInButtonText}>Enter Chirp</Text>
-        </TouchableOpacity>
+        {/* Sign In Section */}
+        {!showSignInForm ? (
+          <>
+            <TouchableOpacity style={styles.signInButton} onPress={handleEnterChirp}>
+              <Text style={styles.signInButtonText}>Enter Chirp</Text>
+            </TouchableOpacity>
+            <Text style={styles.signInSubtext}>sign in to claim your handle</Text>
+          </>
+        ) : (
+          <View style={styles.signInFormContainer}>
+            <Text style={styles.formTitle}>Sign In to Chirp</Text>
+            
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.emailInput}
+                placeholder="Enter your email"
+                placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!isSigningIn}
+              />
+            </View>
 
-        <Text style={styles.signInSubtext}>sign in to claim your handle</Text>
+            <TouchableOpacity 
+              style={[styles.signInButton, isSigningIn && styles.signInButtonDisabled]} 
+              onPress={handleSignIn}
+              disabled={isSigningIn}
+            >
+              <Text style={styles.signInButtonText}>
+                {isSigningIn ? 'Signing In...' : 'Sign In'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.demoButton} 
+              onPress={handleDemoAccess}
+              disabled={isSigningIn}
+            >
+              <Text style={styles.demoButtonText}>Try Demo (preview@chirp.app)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => setShowSignInForm(false)}
+              disabled={isSigningIn}
+            >
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Legal Agreement */}
         <View style={styles.legalContainer}>
@@ -218,6 +303,32 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     lineHeight: 20,
   },
+  signInFormContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  inputContainer: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  emailInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
   signInButton: {
     backgroundColor: '#ffffff',
     borderRadius: 25,
@@ -233,6 +344,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  signInButtonDisabled: {
+    opacity: 0.6,
+  },
   signInButtonText: {
     color: '#a855f7',
     fontSize: 18,
@@ -244,6 +358,32 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     opacity: 0.8,
     marginBottom: 32,
+  },
+  demoButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 25,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  demoButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  backButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    opacity: 0.8,
   },
   legalContainer: {
     flexDirection: 'row',

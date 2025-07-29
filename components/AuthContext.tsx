@@ -63,39 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuthState();
   }, []);
 
-  // Auto-login effect after auth state is checked (only once)
-  const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
-  
-  useEffect(() => {
-    const autoLogin = async () => {
-      // Check if user explicitly signed out
-      const userSignedOut = await AsyncStorage.getItem('userSignedOut');
-      
-      // Auto-login should only trigger when: no user exists, haven't attempted login, user didn't sign out, and initial loading is complete
-      if (!user && !hasAttemptedLogin && !userSignedOut && !isLoading) {
-        setHasAttemptedLogin(true);
-        console.log('🚀 No user found - auto-signing in to @chirp for preview...');
-        try {
-          const success = await signIn('preview@chirp.app');
-          if (success) {
-            console.log('🎉 Auto-login successful!');
-          } else {
-            console.log('❌ Auto-login failed, trying fallback...');
-            // If auto-login fails, just stop loading to show sign-in screen
-            setIsLoading(false);
-          }
-        } catch (error) {
-          console.error('Auto-login error:', error);
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    // Only trigger auto-login when conditions are met
-    if (!isLoading) {
-      autoLogin();
-    }
-  }, [user, hasAttemptedLogin, isLoading]);
+  // Removed auto-login functionality - users must explicitly sign in
 
   const signIn = async (email: string, password?: string): Promise<boolean> => {
     try {
@@ -193,12 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🚪 Signing out user...');
       console.log('🔍 Current user before signOut:', user?.customHandle || user?.handle || user?.id);
       await AsyncStorage.removeItem('user');
-      // Set flag to prevent auto-login after sign out
+      // Set flag to indicate user explicitly signed out
       await AsyncStorage.setItem('userSignedOut', 'true');
-      console.log('🔒 Set userSignedOut flag to prevent auto-login');
-      // Reset auto-login attempt state to prevent race conditions
-      setHasAttemptedLogin(false);
-      console.log('🔄 Reset hasAttemptedLogin to false');
+      console.log('🔒 Set userSignedOut flag');
       setUser(null);
       setIsLoading(false);
       console.log('✅ User signed out successfully - state cleared');
