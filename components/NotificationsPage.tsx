@@ -82,11 +82,13 @@ export default function NotificationsPage() {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
+    console.log('🔔🔔🔔 HANDLER CALLED:', notification.type);
     try {
       console.log('🔔 Notification pressed:', {
         type: notification.type,
         fromUserId: notification.fromUserId,
-        chirpId: notification.chirpId
+        chirpId: notification.chirpId,
+        routerAvailable: !!router
       });
 
       // Mark notification as read
@@ -103,14 +105,24 @@ export default function NotificationsPage() {
         case 'follow':
           // Navigate to the follower's profile
           if (notification.fromUserId) {
-            console.log('🔄 Navigating to follower profile:', notification.fromUserId);
-            try {
-              router.push(`/profile/${notification.fromUserId}`);
-              console.log('✅ Profile navigation attempted');
-            } catch (navError) {
-              console.error('❌ Profile navigation failed:', navError);
-              router.push('/');
-            }
+            console.log('🔄 Trying to navigate to profile:', notification.fromUserId);
+            console.log('🔄 Router object:', router);
+            console.log('🔄 Router push function:', typeof router.push);
+            
+            // Test if basic navigation works first
+            console.log('🔄 Testing basic home navigation...');
+            router.push('/');
+            
+            // Then try profile navigation after a small delay
+            setTimeout(() => {
+              console.log('🔄 Now trying profile navigation...');
+              try {
+                router.push(`/profile/${notification.fromUserId}`);
+                console.log('✅ Profile navigation call completed');
+              } catch (navError) {
+                console.error('❌ Profile navigation error:', navError);
+              }
+            }, 100);
           } else {
             console.log('⚠️ No fromUserId, navigating to home');
             router.push('/');
@@ -247,7 +259,10 @@ export default function NotificationsPage() {
             <TouchableOpacity 
               key={notification.id} 
               style={styles.notificationItem}
-              onPress={() => handleNotificationPress(notification)}
+              onPress={() => {
+                console.log('🚨 NOTIFICATION CLICKED:', notification.type, notification.fromUserId);
+                handleNotificationPress(notification);
+              }}
             >
               <View style={styles.notificationContent}>
                 {/* User Avatar */}
