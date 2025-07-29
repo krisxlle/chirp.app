@@ -103,10 +103,16 @@ export default function NotificationsPage() {
         case 'follow':
           // Navigate to the follower's profile
           if (notification.fromUserId) {
-            console.log('Navigating to follower profile:', notification.fromUserId);
-            router.push(`/profile/${notification.fromUserId}`);
+            console.log('🔄 Navigating to follower profile:', notification.fromUserId);
+            try {
+              router.push(`/profile/${notification.fromUserId}`);
+              console.log('✅ Profile navigation attempted');
+            } catch (navError) {
+              console.error('❌ Profile navigation failed:', navError);
+              router.push('/');
+            }
           } else {
-            // Fallback to home feed if no user ID
+            console.log('⚠️ No fromUserId, navigating to home');
             router.push('/');
           }
           break;
@@ -123,10 +129,16 @@ export default function NotificationsPage() {
         case 'mention_bio':
           // Navigate to the user's profile who mentioned them in their bio
           if (notification.fromUserId) {
-            console.log('Navigating to profile that mentioned in bio:', notification.fromUserId);
-            router.push(`/profile/${notification.fromUserId}`);
+            console.log('🔄 Navigating to profile that mentioned in bio:', notification.fromUserId);
+            try {
+              router.push(`/profile/${notification.fromUserId}`);
+              console.log('✅ Profile navigation attempted');
+            } catch (navError) {
+              console.error('❌ Profile navigation failed:', navError);
+              router.push('/');
+            }
           } else {
-            // Fallback to home feed if no user ID
+            console.log('⚠️ No fromUserId, navigating to home');
             router.push('/');
           }
           break;
@@ -150,8 +162,14 @@ export default function NotificationsPage() {
           break;
       }
     } catch (error) {
-      console.error('Error handling notification press:', error);
-      Alert.alert('Error', 'Failed to process notification');
+      console.error('❌ Error handling notification press:', error);
+      console.error('Navigation error details:', {
+        notificationType: notification.type,
+        fromUserId: notification.fromUserId,
+        chirpId: notification.chirpId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
+      Alert.alert('Navigation Error', `Failed to navigate: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
