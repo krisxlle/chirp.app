@@ -1101,6 +1101,46 @@ export async function getUserProfile(userId: string) {
   }
 }
 
+// Find user by handle/mention (for bio mention navigation)
+export async function getUserByHandle(handle: string): Promise<any | null> {
+  try {
+    console.log('🔍 Finding user by handle:', handle);
+    
+    // Remove @ symbol if present
+    const cleanHandle = handle.replace('@', '');
+    
+    const result = await sql`
+      SELECT 
+        id::text,
+        first_name,
+        last_name,
+        email,
+        handle,
+        custom_handle,
+        profile_image_url,
+        banner_image_url,
+        bio,
+        created_at,
+        updated_at
+      FROM users 
+      WHERE LOWER(custom_handle) = LOWER(${cleanHandle}) 
+         OR LOWER(handle) = LOWER(${cleanHandle})
+      LIMIT 1
+    `;
+    
+    if (result.length === 0) {
+      console.log('❌ User not found with handle:', cleanHandle);
+      return null;
+    }
+    
+    console.log('✅ User found by handle:', result[0]);
+    return result[0];
+  } catch (error) {
+    console.error('❌ Error finding user by handle:', error);
+    return null;
+  }
+}
+
 // Get user's current reaction for a chirp (single reaction system)
 export async function getUserReactionForChirp(chirpId: string, userId: string): Promise<string | null> {
   try {

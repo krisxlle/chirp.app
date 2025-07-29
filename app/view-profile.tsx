@@ -120,7 +120,35 @@ export default function ViewProfile() {
           <Text style={styles.handle}>@{user.customHandle || user.handle || user.id}</Text>
           
           {user.bio && (
-            <Text style={styles.bio}>{user.bio}</Text>
+            <Text style={styles.bio}>
+              {user.bio.split(/(@\w+)/).map((part, index) => {
+                if (part.startsWith('@')) {
+                  return (
+                    <TouchableOpacity 
+                      key={index} 
+                      onPress={async () => {
+                        try {
+                          const { getUserByHandle } = await import('../mobile-db');
+                          const mentionedUser = await getUserByHandle(part);
+                          if (mentionedUser) {
+                            const { router } = await import('expo-router');
+                            router.push(`/view-profile?userId=${mentionedUser.id}`);
+                          } else {
+                            Alert.alert('User Not Found', `User ${part} could not be found.`);
+                          }
+                        } catch (error) {
+                          console.error('Error navigating to mentioned user:', error);
+                          Alert.alert('Error', 'Failed to navigate to user profile.');
+                        }
+                      }}
+                    >
+                      <Text style={styles.mentionText}>{part}</Text>
+                    </TouchableOpacity>
+                  );
+                }
+                return <Text key={index}>{part}</Text>;
+              })}
+            </Text>
           )}
           
           <View style={styles.stats}>
@@ -276,5 +304,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     marginTop: 4,
+  },
+  mentionText: {
+    color: '#7c3aed',
+    fontWeight: '600',
   },
 });
