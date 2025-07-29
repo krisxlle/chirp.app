@@ -11,6 +11,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getUserById } from '../mobile-db';
 import UserAvatar from '../components/UserAvatar';
+import ChirpPlusBadge from '../components/ChirpPlusBadge';
 
 export default function UserProfile() {
   console.log('🔥 USER PROFILE PAGE LOADED SUCCESSFULLY!');
@@ -101,7 +102,12 @@ export default function UserProfile() {
             user={user} 
             size="xl"
           />
-          <Text style={styles.userName}>{displayName}</Text>
+          <View style={styles.nameContainer}>
+            <Text style={styles.userName}>{displayName}</Text>
+            {user.is_chirp_plus && user.show_chirp_plus_badge && (
+              <ChirpPlusBadge size={20} />
+            )}
+          </View>
           <Text style={styles.userHandle}>@{user.customHandle || user.handle || user.id}</Text>
           
           {user.bio && (
@@ -258,5 +264,11 @@ const styles = StyleSheet.create({
   mentionTextStyle: {
     color: '#7c3aed',
     fontWeight: '600',
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
   },
 });
