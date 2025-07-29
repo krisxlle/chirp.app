@@ -2101,6 +2101,9 @@ export async function submitFeedback(feedback: {
   try {
     console.log('Submitting feedback via API to send email...');
     
+    // Create a subject line from the category and truncated message
+    const subject = `${feedback.category}: ${feedback.message.substring(0, 50)}${feedback.message.length > 50 ? '...' : ''}`;
+    
     // Use the server API route which handles both database storage AND email sending
     const response = await fetch('/api/feedback', {
       method: 'POST',
@@ -2108,15 +2111,17 @@ export async function submitFeedback(feedback: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: feedback.name,
-        email: feedback.email,
+        email: feedback.email || undefined, // Convert empty string to undefined
         category: feedback.category,
+        subject: subject,
         message: feedback.message,
+        location: 'mobile_app', // Indicate this came from mobile app
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Failed to submit feedback' }));
+      console.error('Feedback submission failed:', errorData);
       throw new Error(errorData.message || 'Failed to submit feedback');
     }
 
