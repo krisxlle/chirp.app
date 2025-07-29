@@ -135,7 +135,7 @@ export default function FeedbackForm({ onClose }: FeedbackFormProps) {
                 key={cat}
                 style={[
                   styles.categoryButton,
-                  category === cat && styles.categoryButtonSelectedContainer
+                  category === cat && styles.categoryButtonSelected
                 ]}
                 onPress={() => setCategory(cat)}
               >
@@ -144,9 +144,9 @@ export default function FeedbackForm({ onClose }: FeedbackFormProps) {
                     colors={['#7c3aed', '#ec4899']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
-                    style={styles.categoryButtonSelected}
+                    style={styles.categoryButtonGradient}
                   >
-                    <Text style={[styles.categoryButtonText, styles.categoryButtonTextSelected]}>
+                    <Text style={styles.categoryButtonTextSelected}>
                       {cat}
                     </Text>
                   </LinearGradient>
@@ -272,14 +272,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e8ed',
     marginRight: 8,
-  },
-  categoryButtonSelectedContainer: {
-    borderColor: '#7c3aed',
+    overflow: 'hidden', // Prevent gradient from bleeding outside border radius
   },
   categoryButtonSelected: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+  },
+  categoryButtonGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 19, // Slightly smaller to fit perfectly inside button
+    margin: -1, // Offset the parent button's border
   },
   categoryButtonText: {
     fontSize: 14,
