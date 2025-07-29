@@ -933,24 +933,27 @@ export async function getTrendingHashtags() {
   try {
     console.log('Fetching trending hashtags from actual usage...');
     
-    // Get all chirps from the last 7 days that contain hashtags
+    // Get all chirps that contain hashtags (expand time range to find existing chirps)
     const recentChirps = await sql`
-      SELECT content
+      SELECT content, created_at
       FROM chirps c
-      WHERE c.created_at > NOW() - INTERVAL '7 days'
-        AND content LIKE '%#%'
+      WHERE content LIKE '%#%'
+        AND reply_to_id IS NULL
       ORDER BY c.created_at DESC
+      LIMIT 100
     `;
     
-    console.log(`Found ${recentChirps.length} recent chirps with potential hashtags`);
+    console.log(`Found ${recentChirps.length} chirps with potential hashtags`);
     
-    // Extract hashtags using JavaScript since PostgreSQL regex is causing issues
+    // Extract hashtags using JavaScript 
     const hashtagCounts = {};
-    const hashtagRegex = /#[a-zA-Z0-9_]+/g;
+    const hashtagRegex = /#[a-zA-Z0-9_]+/gi;
     
     recentChirps.forEach(chirp => {
+      console.log('Processing chirp content:', chirp.content);
       const matches = chirp.content.match(hashtagRegex);
       if (matches) {
+        console.log('Found hashtags:', matches);
         matches.forEach(hashtag => {
           const normalizedHashtag = hashtag.toLowerCase();
           hashtagCounts[normalizedHashtag] = (hashtagCounts[normalizedHashtag] || 0) + 1;
@@ -958,40 +961,27 @@ export async function getTrendingHashtags() {
       }
     });
     
+    console.log('Hashtag counts:', hashtagCounts);
+    
     // Convert to array and sort by count
     const trendingHashtags = Object.entries(hashtagCounts)
       .map(([hashtag, count]) => ({ 
         hashtag, 
-        count: `${count} chirp${count > 1 ? 's' : ''}` 
+        count: `${count as number} chirp${(count as number) > 1 ? 's' : ''}` 
       }))
-      .sort((a, b) => parseInt(b.count) - parseInt(a.count))
+      .sort((a, b) => {
+        const aCount = parseInt(a.count.split(' ')[0]);
+        const bCount = parseInt(b.count.split(' ')[0]);
+        return bCount - aCount;
+      })
       .slice(0, 10);
     
     console.log('Trending hashtags found:', trendingHashtags);
     
-    if (trendingHashtags.length === 0) {
-      console.log('No hashtags found, returning fallback hashtags');
-      // Fallback to common hashtags
-      return [
-        { hashtag: '#chirp', count: '5 chirps' },
-        { hashtag: '#social', count: '3 chirps' },
-        { hashtag: '#tech', count: '2 chirps' },
-        { hashtag: '#trending', count: '2 chirps' },
-        { hashtag: '#vibes', count: '1 chirp' }
-      ];
-    }
-    
     return trendingHashtags;
   } catch (error) {
     console.error('Trending hashtags error:', error);
-    // Fallback to common hashtags
-    return [
-      { hashtag: '#chirp', count: '5 chirps' },
-      { hashtag: '#social', count: '3 chirps' },
-      { hashtag: '#tech', count: '2 chirps' },
-      { hashtag: '#trending', count: '2 chirps' },
-      { hashtag: '#vibes', count: '1 chirp' }
-    ];
+    return [];
   }
 }
 
