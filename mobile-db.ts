@@ -46,6 +46,44 @@ const initializeDatabase = () => {
 // Initialize the connection
 sql = initializeDatabase();
 
+// Get individual chirp by ID
+export async function getChirpById(chirpId: string): Promise<MobileChirp | null> {
+  try {
+    console.log('Fetching chirp by ID:', chirpId);
+    
+    const result = await sql`
+      SELECT 
+        c.id::text,
+        c.content,
+        c.created_at as "createdAt",
+        c.author_id::text,
+        c.repost_of_id,
+        COALESCE(u.custom_handle, u.handle, CAST(u.id AS text), 'user') as username,
+        COALESCE(u.first_name || ' ' || u.last_name, u.custom_handle, u.handle) as display_name,
+        COALESCE(c.is_weekly_summary, false) as "isWeeklySummary",
+        u.profile_image_url,
+        u.banner_image_url,
+        u.is_chirp_plus,
+        u.show_chirp_plus_badge
+      FROM chirps c
+      LEFT JOIN users u ON c.author_id = u.id
+      WHERE c.id = ${chirpId}
+      LIMIT 1
+    `;
+    
+    if (result.length === 0) {
+      console.log('No chirp found with ID:', chirpId);
+      return null;
+    }
+    
+    const formattedResult = formatChirpResults(result);
+    return formattedResult[0] || null;
+  } catch (error) {
+    console.error('Error fetching chirp by ID:', error);
+    return null;
+  }
+}
+
 // Feed algorithms for sophisticated content ranking
 export async function getForYouChirps(): Promise<MobileChirp[]> {
   try {
