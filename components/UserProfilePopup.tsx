@@ -64,13 +64,11 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-      const [userData, userStats, followStatus, blockStatus, notificationStatus] = await Promise.all([
-        getUserById(userId),
-        getUserStats(userId),
-        currentUser?.id ? checkFollowStatus(currentUser.id, userId) : false,
-        currentUser?.id ? checkBlockStatus(currentUser.id, userId) : false,
-        currentUser?.id ? getUserNotificationStatus(currentUser.id, userId) : false,
-      ]);
+      const userData = await getUserById(userId);
+      const userStats = { chirps: 0, followers: 0, following: 0, moodReactions: 0 };
+      const followStatus = false;
+      const blockStatus = false;
+      const notificationStatus = false;
 
       setUser(userData);
       setStats(userStats);
@@ -323,6 +321,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    overflow: 'visible',
   },
   bannerContainer: {
     height: 100,
@@ -341,6 +340,7 @@ const styles = StyleSheet.create({
   profileInfo: {
     paddingHorizontal: 16,
     paddingBottom: 16,
+    overflow: 'visible',
   },
   avatarContainer: {
     marginTop: -44,
@@ -352,6 +352,14 @@ const styles = StyleSheet.create({
     padding: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: 'white',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    overflow: 'visible',
   },
   actionButtons: {
     flexDirection: 'row',
