@@ -41,6 +41,7 @@ export default function FeedbackForm({ onClose }: FeedbackFormProps) {
     setIsSubmitting(true);
 
     try {
+      console.log('Starting feedback submission...');
       await submitFeedback({
         name: name.trim() || 'Anonymous',
         email: email.trim() || '',
@@ -72,9 +73,22 @@ export default function FeedbackForm({ onClose }: FeedbackFormProps) {
       setMessage('');
     } catch (error) {
       console.error('Feedback submission error:', error);
+      
+      // Show more detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       Alert.alert(
-        'Error',
-        'Failed to send feedback. Please try again later or contact support directly at joinchirp@gmail.com'
+        'Feedback Submission Failed',
+        `We encountered an issue: ${errorMessage}\n\nYou can also reach us directly at joinchirp@gmail.com`,
+        [
+          {
+            text: 'Retry',
+            onPress: handleSubmit,
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
       );
     } finally {
       setIsSubmitting(false);
