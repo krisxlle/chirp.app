@@ -272,6 +272,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e8ed',
     marginRight: 8,
+    minHeight: 36, // Ensure consistent height
+    justifyContent: 'center',
     overflow: 'hidden', // Prevent gradient from bleeding outside border radius
   },
   categoryButtonSelected: {
@@ -281,8 +283,9 @@ const styles = StyleSheet.create({
   categoryButtonGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 19, // Slightly smaller to fit perfectly inside button
-    margin: -1, // Offset the parent button's border
+    borderRadius: 20,
+    minHeight: 36, // Match parent button height
+    justifyContent: 'center',
   },
   categoryButtonText: {
     fontSize: 14,
