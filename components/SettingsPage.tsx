@@ -15,6 +15,7 @@ import UserAvatar from './UserAvatar';
 import ChirpPlusBadge from './ChirpPlusBadge';
 import { useAuth } from './AuthContext';
 import { updateUserProfile, cancelSubscription, updateChirpPlusBadgeVisibility } from '../mobile-db';
+import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 interface SettingsPageProps {
@@ -123,8 +124,49 @@ const SupportIcon = ({ size = 20, color = "#7c3aed" }) => (
   </Svg>
 );
 
+const LegalIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M14 2v6h6" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M16 13H8" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M16 17H8" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M10 9H8" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 export default function SettingsPage({ onClose }: SettingsPageProps) {
   const { user, signOut, updateUser } = useAuth();
+  const router = useRouter();
   
   // State for profile editing
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -488,13 +530,29 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
               if (typeof window !== 'undefined' && window.location) {
                 window.location.href = '/support';
               } else {
-                const { router } = require('expo-router');
                 router.push('/support');
               }
             }}
           >
             <SupportIcon size={20} color="#7c3aed" />
             <Text style={styles.supportButtonText}>Contact Support</Text>
+          </TouchableOpacity>
+
+          {/* Legal Links */}
+          <TouchableOpacity 
+            style={styles.supportButton}
+            onPress={() => router.push('/terms-of-service')}
+          >
+            <LegalIcon size={20} color="#7c3aed" />
+            <Text style={styles.supportButtonText}>Terms of Service</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.supportButton}
+            onPress={() => router.push('/privacy-policy')}
+          >
+            <LegalIcon size={20} color="#7c3aed" />
+            <Text style={styles.supportButtonText}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
       </View>
