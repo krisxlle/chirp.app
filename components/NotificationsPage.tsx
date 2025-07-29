@@ -82,13 +82,11 @@ export default function NotificationsPage() {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
-    console.log('🔔🔔🔔 HANDLER CALLED:', notification.type);
     try {
       console.log('🔔 Notification pressed:', {
         type: notification.type,
         fromUserId: notification.fromUserId,
-        chirpId: notification.chirpId,
-        routerAvailable: !!router
+        chirpId: notification.chirpId
       });
 
       // Mark notification as read
@@ -130,25 +128,38 @@ export default function NotificationsPage() {
           break;
           
         case 'reaction':
+          // For mood reactions, navigate to the specific chirp page
+          console.log(`🔄 Processing ${notification.type} notification:`, {
+            chirpId: notification.chirpId,
+            fromUserId: notification.fromUserId,
+            content: notification.content
+          });
+          
+          if (notification.chirpId) {
+            console.log(`🔄 Navigating to individual chirp page: /chirp/${notification.chirpId}`);
+            router.push(`/chirp/${notification.chirpId}`);
+          } else {
+            console.log(`🔄 No chirp ID found, navigating to home`);
+            router.push('/');
+          }
+          break;
+          
         case 'reply':
         case 'mention':
-          // For chirp-related notifications, navigate to specific chirp or user profile
+          // For replies and mentions, also navigate to the specific chirp page
           console.log(`🔄 Processing ${notification.type} notification:`, {
             chirpId: notification.chirpId,
             fromUserId: notification.fromUserId
           });
           
           if (notification.chirpId) {
-            // If we have a chirp ID, go to home feed (chirp highlighting can be added later)
-            console.log(`🔄 Navigating to home for chirp ${notification.chirpId}`);
-            router.push('/');
+            console.log(`🔄 Navigating to chirp page for ${notification.type}: /chirp/${notification.chirpId}`);
+            router.push(`/chirp/${notification.chirpId}`);
           } else if (notification.fromUserId) {
-            // If no chirp ID but we have a user ID, go to their profile
-            console.log(`🔄 Navigating to user profile: ${notification.fromUserId}`);
+            console.log(`🔄 No chirp ID, navigating to user profile: ${notification.fromUserId}`);
             router.push(`/profile/${notification.fromUserId}`);
           } else {
-            // Fallback to home
-            console.log(`🔄 Fallback navigation to home`);
+            console.log(`🔄 Fallback navigation to home for ${notification.type}`);
             router.push('/');
           }
           break;
@@ -257,22 +268,7 @@ export default function NotificationsPage() {
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>
 
-      {/* TEST BUTTON - REMOVE AFTER DEBUGGING */}
-      <TouchableOpacity 
-        style={{ 
-          backgroundColor: 'blue', 
-          padding: 20, 
-          margin: 10, 
-          borderRadius: 10 
-        }}
-        onPress={() => {
-          console.log('🔵 TEST BUTTON CLICKED');
-          alert('Test button works!');
-          router.push('/profile/45185401');
-        }}
-      >
-        <Text style={{ color: 'white', textAlign: 'center' }}>TEST NAVIGATION</Text>
-      </TouchableOpacity>
+
 
       {/* Notifications List */}
       {loading ? (
@@ -289,40 +285,11 @@ export default function NotificationsPage() {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {notifications.map((notification, index) => (
             <View key={notification.id} style={{ marginHorizontal: 12, marginVertical: 4 }}>
-              {/* Simple test for this specific notification */}
+
               <TouchableOpacity 
-                style={{ 
-                  backgroundColor: 'green', 
-                  padding: 10, 
-                  marginBottom: 5,
-                  borderRadius: 5
-                }}
-                onPress={() => {
-                  console.log('🟢 SIMPLE TEST CLICKED FOR:', notification.type);
-                  alert(`Simple test: ${notification.type}`);
-                }}
-              >
-                <Text style={{ color: 'white' }}>SIMPLE TEST - {notification.type}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.notificationItem, 
-                  { 
-                    borderWidth: 3, 
-                    borderColor: 'red',
-                    backgroundColor: 'rgba(255,0,0,0.1)', // Debug background
-                    minHeight: 80 // Ensure touchable area
-                  }
-                ]} 
-                onPress={() => {
-                  console.log('🚨🚨🚨 NOTIFICATION CLICKED:', notification.type, notification.fromUserId);
-                  console.log('🚨🚨🚨 CLICK EVENT FIRED FOR:', notification.id);
-                  alert(`Clicked notification: ${notification.type}`); // Visual confirmation
-                  handleNotificationPress(notification);
-                }}
-                activeOpacity={0.5}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.notificationItem}
+                onPress={() => handleNotificationPress(notification)}
+                activeOpacity={0.7}
               >
               <View style={styles.notificationContent}>
                 {/* User Avatar */}
@@ -422,7 +389,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
-    flex: 1,
   },
   notificationContent: {
     flexDirection: 'row',
