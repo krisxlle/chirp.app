@@ -273,7 +273,21 @@ export default function ProfilePage() {
               return (
                 <TouchableOpacity 
                   key={index} 
-                  onPress={() => Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`)}
+                  onPress={async () => {
+                    try {
+                      const { getUserByHandle } = await import('../mobile-db');
+                      const mentionedUser = await getUserByHandle(part);
+                      if (mentionedUser) {
+                        const { router } = await import('expo-router');
+                        router.push(`/view-profile?userId=${mentionedUser.id}`);
+                      } else {
+                        Alert.alert('User Not Found', `User ${part} could not be found.`);
+                      }
+                    } catch (error) {
+                      console.error('Error navigating to mentioned user:', error);
+                      Alert.alert('Error', 'Failed to navigate to user profile.');
+                    }
+                  }}
                 >
                   <Text style={styles.mentionText}>{part}</Text>
                 </TouchableOpacity>
