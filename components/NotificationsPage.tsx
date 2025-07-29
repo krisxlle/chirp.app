@@ -257,6 +257,23 @@ export default function NotificationsPage() {
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>
 
+      {/* TEST BUTTON - REMOVE AFTER DEBUGGING */}
+      <TouchableOpacity 
+        style={{ 
+          backgroundColor: 'blue', 
+          padding: 20, 
+          margin: 10, 
+          borderRadius: 10 
+        }}
+        onPress={() => {
+          console.log('🔵 TEST BUTTON CLICKED');
+          alert('Test button works!');
+          router.push('/profile/45185401');
+        }}
+      >
+        <Text style={{ color: 'white', textAlign: 'center' }}>TEST NAVIGATION</Text>
+      </TouchableOpacity>
+
       {/* Notifications List */}
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -270,8 +287,24 @@ export default function NotificationsPage() {
         </View>
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notifications.map((notification) => (
+          {notifications.map((notification, index) => (
             <View key={notification.id} style={{ marginHorizontal: 12, marginVertical: 4 }}>
+              {/* Simple test for this specific notification */}
+              <TouchableOpacity 
+                style={{ 
+                  backgroundColor: 'green', 
+                  padding: 10, 
+                  marginBottom: 5,
+                  borderRadius: 5
+                }}
+                onPress={() => {
+                  console.log('🟢 SIMPLE TEST CLICKED FOR:', notification.type);
+                  alert(`Simple test: ${notification.type}`);
+                }}
+              >
+                <Text style={{ color: 'white' }}>SIMPLE TEST - {notification.type}</Text>
+              </TouchableOpacity>
+              
               <TouchableOpacity 
                 style={[
                   styles.notificationItem, 
