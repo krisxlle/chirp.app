@@ -132,10 +132,25 @@ export default function NotificationsPage() {
         case 'reaction':
         case 'reply':
         case 'mention':
-          // For chirp-related notifications, go to home feed
-          // The target chirp highlighting can be implemented later if needed
-          console.log(`Navigating to home for ${notification.type} notification`);
-          router.push('/');
+          // For chirp-related notifications, navigate to specific chirp or user profile
+          console.log(`🔄 Processing ${notification.type} notification:`, {
+            chirpId: notification.chirpId,
+            fromUserId: notification.fromUserId
+          });
+          
+          if (notification.chirpId) {
+            // If we have a chirp ID, go to home feed (chirp highlighting can be added later)
+            console.log(`🔄 Navigating to home for chirp ${notification.chirpId}`);
+            router.push('/');
+          } else if (notification.fromUserId) {
+            // If no chirp ID but we have a user ID, go to their profile
+            console.log(`🔄 Navigating to user profile: ${notification.fromUserId}`);
+            router.push(`/profile/${notification.fromUserId}`);
+          } else {
+            // Fallback to home
+            console.log(`🔄 Fallback navigation to home`);
+            router.push('/');
+          }
           break;
           
         case 'mention_bio':
@@ -258,11 +273,14 @@ export default function NotificationsPage() {
           {notifications.map((notification) => (
             <TouchableOpacity 
               key={notification.id} 
-              style={styles.notificationItem}
+              style={[styles.notificationItem, { borderWidth: 1, borderColor: 'red' }]} // Debug border
               onPress={() => {
-                console.log('🚨 NOTIFICATION CLICKED:', notification.type, notification.fromUserId);
+                console.log('🚨🚨🚨 NOTIFICATION CLICKED:', notification.type, notification.fromUserId);
+                console.log('🚨🚨🚨 CLICK EVENT FIRED FOR:', notification.id);
+                alert(`Clicked notification: ${notification.type}`); // Visual confirmation
                 handleNotificationPress(notification);
               }}
+              activeOpacity={0.7}
             >
               <View style={styles.notificationContent}>
                 {/* User Avatar */}
