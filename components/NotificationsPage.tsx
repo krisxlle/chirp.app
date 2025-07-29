@@ -83,6 +83,12 @@ export default function NotificationsPage() {
 
   const handleNotificationPress = async (notification: Notification) => {
     try {
+      console.log('🔔 Notification pressed:', {
+        type: notification.type,
+        fromUserId: notification.fromUserId,
+        chirpId: notification.chirpId
+      });
+
       // Mark notification as read
       if (!notification.isRead) {
         await markNotificationAsRead(Number(notification.id));
@@ -99,21 +105,19 @@ export default function NotificationsPage() {
           if (notification.fromUserId) {
             console.log('Navigating to follower profile:', notification.fromUserId);
             router.push(`/profile/${notification.fromUserId}`);
+          } else {
+            // Fallback to home feed if no user ID
+            router.push('/');
           }
           break;
           
         case 'reaction':
         case 'reply':
         case 'mention':
-          // Navigate to home feed with chirp ID parameter for highlighting
-          if (notification.chirpId) {
-            console.log(`Navigating to chirp for ${notification.type}:`, notification.chirpId);
-            // Use URL parameters to pass the target chirp ID
-            router.push(`/(tabs)/home?targetChirp=${notification.chirpId}`);
-          } else {
-            // Fallback to home feed
-            router.push('/(tabs)/home');
-          }
+          // For chirp-related notifications, go to home feed
+          // The target chirp highlighting can be implemented later if needed
+          console.log(`Navigating to home for ${notification.type} notification`);
+          router.push('/');
           break;
           
         case 'mention_bio':
@@ -121,25 +125,28 @@ export default function NotificationsPage() {
           if (notification.fromUserId) {
             console.log('Navigating to profile that mentioned in bio:', notification.fromUserId);
             router.push(`/profile/${notification.fromUserId}`);
+          } else {
+            // Fallback to home feed if no user ID
+            router.push('/');
           }
           break;
           
         case 'repost':
           // Navigate to home feed to see the repost
           console.log('Navigating to home for repost notification');
-          router.push('/(tabs)/home');
+          router.push('/');
           break;
           
         case 'weekly_summary':
           // Navigate to home feed to see weekly summary
           console.log('Navigating to home for weekly summary');
-          router.push('/(tabs)/home');
+          router.push('/');
           break;
           
         default:
           // Default to home feed
           console.log('Default navigation to home feed');
-          router.push('/(tabs)/home');
+          router.push('/');
           break;
       }
     } catch (error) {
