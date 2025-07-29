@@ -108,7 +108,9 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
       
       try {
         const { checkUserReposted } = await import('../mobile-db');
-        const hasReposted = await checkUserReposted(user.id, chirp.id);
+        const userIdStr = String(user.id);
+        const chirpIdStr = String(chirp.id);
+        const hasReposted = await checkUserReposted(userIdStr, chirpIdStr);
         setUserHasReposted(hasReposted);
       } catch (error) {
         console.error('Error checking repost status:', error);
@@ -157,12 +159,15 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
   const loadUserReaction = async () => {
     try {
       const { getUserReactionForChirp, getEmojiReactionCount } = await import('../mobile-db');
-      const reaction = await getUserReactionForChirp(chirp.id, user?.id || '');
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user?.id || '');
+      
+      const reaction = await getUserReactionForChirp(chirpIdStr, userIdStr);
       setUserReaction(reaction);
       
       // If user has a reaction, get the count for that specific emoji
       if (reaction) {
-        const count = await getEmojiReactionCount(chirp.id, reaction);
+        const count = await getEmojiReactionCount(chirpIdStr, reaction);
         setUserReactionCount(count);
       } else {
         setUserReactionCount(0);
@@ -175,7 +180,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
   const loadUserRepostStatus = async () => {
     try {
       const { getUserRepostStatus } = await import('../mobile-db');
-      const hasReposted = await getUserRepostStatus(chirp.id, user?.id || '');
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user?.id || '');
+      
+      const hasReposted = await getUserRepostStatus(chirpIdStr, userIdStr);
       setUserHasReposted(hasReposted);
     } catch (error) {
       console.error('Error loading user repost status:', error);
@@ -197,13 +205,16 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
     try {
       const { createReply } = await import('../mobile-db');
       
-      console.log('Creating reply to chirp:', chirp.id, 'by user:', user.id);
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user.id);
       
-      const newReply = await createReply(replyText.trim(), chirp.id, user.id);
+      console.log('Creating reply to chirp:', chirpIdStr, 'by user:', userIdStr);
+      
+      const newReply = await createReply(replyText.trim(), chirpIdStr, userIdStr);
       
       // Trigger push notification for reply
       const { triggerReplyNotification } = await import('../mobile-db');
-      await triggerReplyNotification(chirp.author.id, user.id, parseInt(chirp.id));
+      await triggerReplyNotification(String(chirp.author.id), userIdStr, parseInt(chirpIdStr));
       
       // Update local state
       setReplies(prev => prev + 1);
@@ -213,7 +224,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
       // If thread is currently shown, refresh replies
       if (showReplies) {
         const { getChirpReplies } = await import('../mobile-db');
-        const updatedReplies = await getChirpReplies(chirp.id);
+        const updatedReplies = await getChirpReplies(chirpIdStr);
         setThreadReplies(updatedReplies);
       }
       
@@ -233,9 +244,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
 
       const { createRepost } = await import('../mobile-db');
       
-      console.log('Creating repost of chirp:', chirp.id, 'by user:', user.id);
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user.id);
       
-      const repostResult = await createRepost(chirp.id, user.id);
+      console.log('Creating repost of chirp:', chirpIdStr, 'by user:', userIdStr);
+      
+      const repostResult = await createRepost(chirpIdStr, userIdStr);
       
       if (repostResult.reposted) {
         // User added a new repost
@@ -265,9 +279,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
 
       const { addReaction, getEmojiReactionCount } = await import('../mobile-db');
       
-      console.log('Adding reaction:', emoji, 'to chirp:', chirp.id, 'by user:', user.id);
+      // Ensure proper string conversion for database constraints
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user.id);
       
-      const result = await addReaction(chirp.id, emoji, user.id);
+      console.log('Adding reaction:', emoji, 'to chirp:', chirpIdStr, 'by user:', userIdStr);
+      
+      const result = await addReaction(chirpIdStr, emoji, userIdStr);
       
       if (result.added) {
         // User added a new reaction
@@ -278,13 +296,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
         
         // Get accurate count for the specific emoji
         if (result.emoji) {
-          const emojiCount = await getEmojiReactionCount(chirp.id, result.emoji);
+          const emojiCount = await getEmojiReactionCount(chirpIdStr, result.emoji);
           setUserReactionCount(emojiCount);
         }
         
         // Trigger push notification for reaction
         const { triggerReactionNotification } = await import('../mobile-db');
-        await triggerReactionNotification(chirp.author.id, user.id, parseInt(chirp.id));
+        await triggerReactionNotification(String(chirp.author.id), userIdStr, parseInt(chirpIdStr));
         
         console.log('Reaction added successfully');
       } else {
