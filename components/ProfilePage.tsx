@@ -52,10 +52,10 @@ export default function ProfilePage() {
   const [userChirps, setUserChirps] = useState<any[]>([]);
   const [userReplies, setUserReplies] = useState<any[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
-    following: 1,
-    followers: 1,
-    chirps: 6,
-    reactions: 3
+    following: 0,
+    followers: 0,
+    chirps: 0,
+    reactions: 0
   });
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -65,22 +65,25 @@ export default function ProfilePage() {
       if (!authUser?.id) return;
       
       console.log('Fetching chirps and replies for user:', authUser.id);
-      const { getUserChirps, getUserReplies } = await import('../mobile-db');
+      const { getUserChirps, getUserReplies, getUserStats } = await import('../mobile-db');
       
-      // Fetch chirps and replies separately using proper functions
-      const [originalChirps, userRepliesData] = await Promise.all([
+      // Fetch chirps, replies and stats in parallel
+      const [originalChirps, userRepliesData, userStats] = await Promise.all([
         getUserChirps(authUser.id),
-        getUserReplies(authUser.id)
+        getUserReplies(authUser.id),
+        getUserStats(authUser.id)
       ]);
       
       setUserChirps(originalChirps);
       setUserReplies(userRepliesData);
       
-      // Update stats based on actual data
-      setStats(prev => ({
-        ...prev,
-        chirps: originalChirps.length
-      }));
+      // Update stats with real data from database
+      setStats({
+        chirps: userStats.chirps,
+        followers: userStats.followers,
+        following: userStats.following,
+        reactions: userStats.moodReactions
+      });
     } catch (error) {
       console.error('Error fetching user chirps:', error);
     }

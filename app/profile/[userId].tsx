@@ -65,7 +65,8 @@ export default function UserProfileScreen() {
   const [stats, setStats] = useState({
     chirps: 0,
     following: 0,
-    followers: 0
+    followers: 0,
+    moodReactions: 0
   });
   const [followStatus, setFollowStatus] = useState({
     isFollowing: false,

@@ -50,7 +50,7 @@ export default function UserProfileModal({ visible, onClose, userId }: UserProfi
       setLoading(true);
       
       // Import database functions
-      const { getUserById, getChirpsByUserId } = await import('../mobile-db');
+      const { getUserById, getChirpsByUserId, getUserStats } = await import('../mobile-db');
       
       // Fetch user data
       const userData = await getUserById(id);
@@ -71,16 +71,19 @@ export default function UserProfileModal({ visible, onClose, userId }: UserProfi
           showChirpPlusBadge: (userData as any).show_chirp_plus_badge
         });
 
-        // Fetch user's chirps
-        const chirps = await getChirpsByUserId(id);
+        // Fetch user's chirps and stats
+        const [chirps, userStats] = await Promise.all([
+          getChirpsByUserId(id),
+          getUserStats(id)
+        ]);
         setUserChirps(chirps || []);
         
-        // Set basic stats (these would come from real queries in a full implementation)
+        // Set real stats from database
         setStats({
-          following: 1,
-          followers: 1,
-          chirps: chirps?.length || 0,
-          reactions: Math.floor(Math.random() * 50) + 1
+          following: userStats.following,
+          followers: userStats.followers,
+          chirps: userStats.chirps,
+          reactions: userStats.moodReactions
         });
       }
     } catch (error) {

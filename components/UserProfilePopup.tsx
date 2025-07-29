@@ -70,7 +70,7 @@ export default function UserProfilePopup({ visible, onClose, userId }: UserProfi
       setLoading(true);
       const [userData, userStats, followStatus, blockStatus, notificationStatus] = await Promise.all([
         getUserById(userId),
-        Promise.resolve({ chirps: 0, followers: 0, following: 0, moodReactions: 0 }),
+        getUserStats(userId),
         currentUser?.id ? checkFollowStatus(currentUser.id, userId) : Promise.resolve(false),
         currentUser?.id ? checkBlockStatus(currentUser.id, userId) : Promise.resolve(false),
         currentUser?.id ? getUserNotificationStatus(currentUser.id, userId) : Promise.resolve(false),
