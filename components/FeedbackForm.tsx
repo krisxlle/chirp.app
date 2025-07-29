@@ -274,18 +274,25 @@ const styles = StyleSheet.create({
     marginRight: 8,
     minHeight: 36, // Ensure consistent height
     justifyContent: 'center',
+    alignItems: 'center',
     overflow: 'hidden', // Prevent gradient from bleeding outside border radius
   },
   categoryButtonSelected: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
+    // Remove padding to avoid double padding with gradient
+    padding: 0,
   },
   categoryButtonGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    // Use absolute positioning to fill the entire button
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: 20,
-    minHeight: 36, // Match parent button height
     justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryButtonText: {
     fontSize: 14,
@@ -293,7 +300,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   categoryButtonTextSelected: {
+    fontSize: 14,
     color: '#ffffff',
+    fontWeight: '500',
   },
   submitButtonContainer: {
     marginTop: 8,
