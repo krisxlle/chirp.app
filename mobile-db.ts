@@ -1081,6 +1081,8 @@ export async function getUserProfile(userId: string) {
         profile_image_url,
         banner_image_url,
         bio,
+        is_chirp_plus,
+        show_chirp_plus_badge,
         created_at,
         updated_at
       FROM users 
@@ -1120,6 +1122,8 @@ export async function getUserByHandle(handle: string): Promise<any | null> {
         profile_image_url,
         banner_image_url,
         bio,
+        is_chirp_plus,
+        show_chirp_plus_badge,
         created_at,
         updated_at
       FROM users 
