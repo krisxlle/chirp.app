@@ -66,25 +66,10 @@ export default function SignInScreenNew() {
     try {
       const success = await signIn(email);
       if (!success) {
-        Alert.alert('Sign In Failed', 'Unable to sign in. Please try again or use preview@chirp.app for demo access.');
+        Alert.alert('Sign In Failed', 'Unable to sign in. Please try again.');
       }
     } catch (error) {
       console.error('Sign in error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    } finally {
-      setIsSigningIn(false);
-    }
-  };
-
-  const handleDemoAccess = async () => {
-    setIsSigningIn(true);
-    try {
-      const success = await signIn('preview@chirp.app');
-      if (!success) {
-        Alert.alert('Demo Access Failed', 'Unable to access demo. Please try again.');
-      }
-    } catch (error) {
-      console.error('Demo access error:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setIsSigningIn(false);
@@ -196,14 +181,6 @@ export default function SignInScreenNew() {
               <Text style={styles.signInButtonText}>
                 {isSigningIn ? 'Signing In...' : 'Sign In'}
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.demoButton} 
-              onPress={handleDemoAccess}
-              disabled={isSigningIn}
-            >
-              <Text style={styles.demoButtonText}>Try Demo (preview@chirp.app)</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -359,21 +336,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginBottom: 32,
   },
-  demoButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 25,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  demoButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+
   backButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
