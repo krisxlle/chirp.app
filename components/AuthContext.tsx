@@ -44,13 +44,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedUser) {
         const user = JSON.parse(storedUser);
         console.log('✅ Found stored user:', user.customHandle || user.handle || user.id);
+        
+        // For now, trust stored user data to avoid authentication loops
         setUser(user);
         setIsLoading(false);
         return; // Exit early if user found
-      } else {
-        console.log('❌ No stored user found - will trigger auto-login');
-        setIsLoading(false); // Enable auto-login by setting loading to false
       }
+      
+      console.log('❌ No valid stored user found - will trigger auto-login');
+      setIsLoading(false); // Enable auto-login by setting loading to false
     } catch (error) {
       console.error('Error checking auth state:', error);
       setIsLoading(false);
