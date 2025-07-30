@@ -41,18 +41,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔍 Checking authentication state...');
       const storedUser = await AsyncStorage.getItem('user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        console.log('✅ Found stored user:', user.customHandle || user.handle || user.id);
-        
-        // For now, trust stored user data to avoid authentication loops
-        setUser(user);
+      const userSignedOut = await AsyncStorage.getItem('userSignedOut');
+      
+      // If user explicitly signed out, don't restore session
+      if (userSignedOut === 'true') {
+        console.log('🚪 User explicitly signed out - requiring fresh login');
+        setUser(null);
         setIsLoading(false);
-        return; // Exit early if user found
+        return;
       }
       
-      console.log('❌ No valid stored user found - will trigger auto-login');
-      setIsLoading(false); // Enable auto-login by setting loading to false
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        console.log('✅ Found stored user session:', user.customHandle || user.handle || user.id);
+        setUser(user);
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('❌ No stored user session found - showing login screen');
+      setIsLoading(false);
     } catch (error) {
       console.error('Error checking auth state:', error);
       setIsLoading(false);
@@ -70,12 +78,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔐 Attempting sign in for:', email);
       setIsLoading(true);
       
-      // Get actual user from database based on email
-      const { getUserByEmail, getFirstUser } = await import('../mobile-db');
-      let dbUser = await getUserByEmail(email);
+      // Require password for security
+      if (!password) {
+        console.log('❌ Password is required for authentication');
+        setIsLoading(false);
+        return false;
+      }
       
-      // If user not found by email, try to get @chirp preview user for demo
-      if (!dbUser && email === 'preview@chirp.app') {
+      // Authenticate user with email and password
+      const { authenticateUser, getFirstUser } = await import('../mobile-db');
+      let dbUser = await authenticateUser(email, password);
+      
+      // If user not found by credentials, try to get @chirp preview user for demo with specific credentials
+      if (!dbUser && email === 'preview@chirp.app' && password === 'password123') {
         console.log('🎯 Loading @chirp preview user for demo...');
         dbUser = await getFirstUser();
       }
@@ -110,40 +125,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
         console.log('✅ Signed in as user:', user.customHandle || user.handle || user.id);
         return true;
-      } else {
-        // Fallback for demo - use first available user
-        const { getFirstUser } = await import('../mobile-db');
-        const fallbackUser = await getFirstUser();
-        
-        if (fallbackUser) {
-          const user = {
-            id: fallbackUser.id,
-            email: fallbackUser.email || email,
-            name: fallbackUser.display_name || email.split('@')[0],
-            firstName: fallbackUser.first_name,
-            lastName: fallbackUser.last_name,
-            customHandle: fallbackUser.custom_handle,
-            handle: fallbackUser.handle,
-            profileImageUrl: fallbackUser.profile_image_url,
-            avatarUrl: fallbackUser.profile_image_url,
-            bannerImageUrl: fallbackUser.banner_image_url,
-            bio: fallbackUser.bio,
-            // Include Chirp+ subscription data
-            isChirpPlus: fallbackUser.is_chirp_plus,
-            chirpPlusExpiresAt: fallbackUser.chirp_plus_expires_at,
-            showChirpPlusBadge: fallbackUser.show_chirp_plus_badge,
-            stripeCustomerId: fallbackUser.stripe_customer_id,
-            stripeSubscriptionId: fallbackUser.stripe_subscription_id
-          };
-          
-          await AsyncStorage.setItem('user', JSON.stringify(user));
-          // Clear sign out flag when user successfully signs in
-          await AsyncStorage.removeItem('userSignedOut');
-          setUser(user);
-          setIsLoading(false);
-          console.log('✅ Demo mode - signed in as user:', user.customHandle || user.handle || user.id);
-          return true;
-        }
       }
       
       console.log('❌ No users found in database');

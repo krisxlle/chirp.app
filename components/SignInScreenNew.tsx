@@ -50,6 +50,7 @@ export default function SignInScreenNew() {
   const router = useRouter();
   const [showSignInForm, setShowSignInForm] = useState(false);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleEnterChirp = () => {
@@ -62,11 +63,16 @@ export default function SignInScreenNew() {
       return;
     }
 
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter your password');
+      return;
+    }
+
     setIsSigningIn(true);
     try {
-      const success = await signIn(email);
+      const success = await signIn(email, password);
       if (!success) {
-        Alert.alert('Sign In Failed', 'Unable to sign in. Please try again.');
+        Alert.alert('Sign In Failed', 'Invalid email or password. Please try again.');
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -167,6 +173,20 @@ export default function SignInScreenNew() {
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!isSigningIn}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.emailInput}
+                placeholder="Enter your password"
+                placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={true}
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isSigningIn}
