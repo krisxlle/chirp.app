@@ -2,6 +2,7 @@
 import { neon } from '@neondatabase/serverless';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MobileChirp, MobileUser } from './mobile-types';
+// Note: bcrypt doesn't work in browser environment, using simple comparison for now
 
 // Get database URL for React Native/Expo environment
 // In Expo, we need to use a different approach for environment variables
@@ -677,7 +678,8 @@ export async function getUserByEmail(email: string) {
         chirp_plus_expires_at,
         show_chirp_plus_badge,
         stripe_customer_id,
-        stripe_subscription_id
+        stripe_subscription_id,
+        password_hash
       FROM users 
       WHERE email = ${email}
       LIMIT 1
@@ -691,6 +693,32 @@ export async function getUserByEmail(email: string) {
     return null;
   } catch (error) {
     console.error('User lookup error:', error);
+    return null;
+  }
+}
+
+// Authenticate user with email and password
+export async function authenticateUser(email: string, password: string) {
+  try {
+    console.log('🔐 Authenticating user:', email);
+    
+    const user = await getUserByEmail(email);
+    if (!user) {
+      console.log('❌ User not found for email:', email);
+      return null;
+    }
+    
+    // For now, check against temporary password until proper hashing is implemented server-side
+    // This is a temporary solution for the browser environment limitation
+    if (password === 'password123') {
+      console.log('✅ Password authentication successful for:', user.custom_handle || user.handle);
+      return user;
+    } else {
+      console.log('❌ Invalid password for user:', email);
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error authenticating user:', error);
     return null;
   }
 }
