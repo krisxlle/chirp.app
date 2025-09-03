@@ -2,7 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { getNotifications, markNotificationAsRead } from '../mobile-db';
+// TEMPORARILY DISABLED: Database calls
+// import { getNotifications, markNotificationAsRead } from '../mobile-db';
 import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
 import FollowIcon from './icons/FollowIcon';
@@ -43,28 +44,60 @@ export default function NotificationsPage() {
     
     try {
       setLoading(true);
-      console.log('NotificationsPage: Fetching notifications for user:', user.id);
-      const dbNotifications = await getNotifications(user.id);
+      console.log('NotificationsPage: Using mock notifications (database calls disabled)');
       
-      // Convert database notifications to component format
-      const formattedNotifications: Notification[] = dbNotifications.map((notif: any) => ({
-        id: notif.id.toString(),
-        type: notif.type,
-        user: {
-          id: notif.fromUser?.id || '',
-          name: notif.fromUser ? `${notif.fromUser.first_name || ''} ${notif.fromUser.last_name || ''}`.trim() || notif.fromUser.custom_handle || notif.fromUser.handle : 'Unknown User',
-          handle: notif.fromUser?.custom_handle || notif.fromUser?.handle || '',
-          email: notif.fromUser?.email || '',
-          profileImageUrl: notif.fromUser?.profile_image_url || undefined,
+      // TEMPORARILY DISABLED: Database calls
+      // const dbNotifications = await getNotifications(user.id);
+      
+      // Mock notifications for testing
+      const mockNotifications: Notification[] = [
+        {
+          id: '1',
+          type: 'reaction',
+          user: {
+            id: 'user-1',
+            name: 'Alex Chen',
+            handle: 'alex_chen',
+            email: 'alex@example.com',
+          },
+          content: 'Welcome to Chirp! This is a test chirp to get you started. 🐦✨',
+          timestamp: '2m',
+          isRead: false,
+          chirpId: 1,
+          fromUserId: 'user-1',
         },
-        content: notif.chirp?.content,
-        timestamp: formatTimeAgo(notif.createdAt),
-        isRead: notif.read,
-        chirpId: notif.chirpId,
-        fromUserId: notif.fromUserId,
-      }));
+        {
+          id: '2',
+          type: 'follow',
+          user: {
+            id: 'user-2',
+            name: 'Maya Rodriguez',
+            handle: 'maya_rodriguez',
+            email: 'maya@example.com',
+          },
+          content: '',
+          timestamp: '5m',
+          isRead: false,
+          fromUserId: 'user-2',
+        },
+        {
+          id: '3',
+          type: 'mention',
+          user: {
+            id: 'user-3',
+            name: 'Jordan Kim',
+            handle: 'jordan_kim',
+            email: 'jordan@example.com',
+          },
+          content: 'Hey @kriselle, check out this new feature!',
+          timestamp: '10m',
+          isRead: true,
+          chirpId: 2,
+          fromUserId: 'user-3',
+        }
+      ];
       
-      setNotifications(formattedNotifications);
+      setNotifications(mockNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       Alert.alert('Error', 'Failed to load notifications');
@@ -95,7 +128,9 @@ export default function NotificationsPage() {
 
       // Mark notification as read
       if (!notification.isRead) {
-        await markNotificationAsRead(Number(notification.id));
+        // TEMPORARILY DISABLED: Database calls
+        // await markNotificationAsRead(Number(notification.id));
+        console.log('🔔 Marking notification as read (database call disabled)');
         // Update local state
         setNotifications(prev => 
           prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)

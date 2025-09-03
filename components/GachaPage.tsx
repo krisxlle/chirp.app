@@ -4,14 +4,15 @@ import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 import AnalyticsPage from './AnalyticsPage';
 import { useAuth } from './AuthContext';
 import ChirpCrystalIcon from './icons/ChirpCrystalIcon';
-import ProfileModal from './ProfileModal';
+import PhotocardProfileModal from './PhotocardProfileModal';
+import UserProfileView from './UserProfileView';
 
 interface ProfileCard {
   id: string;
   name: string;
   handle: string;
   rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
-  imageUrl?: string;
+  imageUrl?: any; // Changed from string to any to support require()
   bio: string;
   followers: number;
   chirps: number;
@@ -124,30 +125,54 @@ const rarityNames = {
 };
 
 export default function GachaPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [collection, setCollection] = useState<ProfileCard[]>([]);
   const [isRolling, setIsRolling] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [pulledCard, setPulledCard] = useState<ProfileCard | null>(null);
   const [showPulledCard, setShowPulledCard] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [showPhotocardProfile, setShowPhotocardProfile] = useState(false);
+  const [selectedPhotocard, setSelectedPhotocard] = useState<ProfileCard | null>(null);
+  const [showUserProfileView, setShowUserProfileView] = useState(false);
 
   // Simulate loading user's collection
   useEffect(() => {
     // In a real app, this would load from the database
     const userCollection = mockProfileCards.slice(0, 2); // User has first 2 profile cards
     setCollection(userCollection);
+    console.log('🎮 GachaPage mounted, loaded collection');
   }, []);
 
-  const handleProfileCardPress = (profileCard: ProfileCard) => {
-    // Convert the profile card ID to a user ID for the ProfileModal
-    // In a real app, this would be the actual user ID from the database
-    setSelectedProfileId(profileCard.id);
-    setShowProfileModal(true);
+  // Refresh crystal balance from database
+  const refreshCrystalBalance = async () => {
+    if (user?.id) {
+      try {
+        // TEMPORARILY DISABLED: Load crystal balance from database
+        // This will be re-enabled once the crystal_balance column is added to Supabase
+        console.log('💎 Using default crystal balance until column is added to Supabase');
+        /*
+        const { getUserCrystalBalance } = await import('../mobile-db');
+        const crystalBalance = await getUserCrystalBalance(user.id);
+        // Update the user object in AuthContext
+        if (user.crystalBalance !== crystalBalance) {
+          // We need to trigger a re-render by updating the user state
+          // This will be handled by the AuthContext when it detects the change
+          console.log('💎 Refreshed crystal balance:', crystalBalance);
+        }
+        */
+      } catch (error) {
+        console.error('Error refreshing crystal balance:', error);
+      }
+    }
   };
 
-  const rollForProfile = (rollCount: number = 1) => {
+  const handleProfileCardPress = (profileCard: ProfileCard) => {
+    console.log('📱 Opening photocard profile:', profileCard.name);
+    setSelectedPhotocard(profileCard);
+    setShowPhotocardProfile(true);
+  };
+
+    const rollForProfile = async (rollCount: number = 1) => {
     if (isRolling) return;
     
     const cost = rollCount === 10 ? 950 : 100;
@@ -160,50 +185,83 @@ export default function GachaPage() {
 
     setIsRolling(true);
     
-              // Simulate capsule opening animation
-     setTimeout(() => {
-       const results: ProfileCard[] = [];
-       
-               for (let i = 0; i < rollCount; i++) {
-          const capsuleResult = openCapsule();
-          console.log('🎲 Capsule result:', capsuleResult);
-          const newProfile = mockProfileCards.find(p => p.id === capsuleResult.toString());
-          console.log('📱 Found profile:', newProfile);
-          
-          if (newProfile) {
-            const profileWithTimestamp = {
-              ...newProfile,
-              obtainedAt: new Date().toISOString(),
-            };
-            results.push(profileWithTimestamp);
-          } else {
-            console.log('❌ No profile found for result:', capsuleResult);
-          }
-        }
-      
-             // Add all results to collection
-       setCollection(prev => [...prev, ...results]);
-       
-       // Set the first result as the pulled card to show
-       if (results.length > 0) {
-         console.log('🎉 Setting pulled card:', results[0]);
-         setPulledCard(results[0]);
-         setShowPulledCard(true);
-       } else {
-         console.log('❌ No results to show');
+                  // Simulate capsule opening animation
+     setTimeout(async () => {
+       try {
+         console.log('🎲 Starting capsule opening animation...');
+         const results: ProfileCard[] = [];
+         
+         for (let i = 0; i < rollCount; i++) {
+           const capsuleResult = openCapsule();
+           console.log('🎲 Capsule result:', capsuleResult);
+           const newProfile = mockProfileCards.find(p => p.id === capsuleResult.toString());
+           console.log('📱 Found profile:', newProfile);
+           
+           if (newProfile) {
+             const profileWithTimestamp = {
+               ...newProfile,
+               obtainedAt: new Date().toISOString(),
+             };
+             results.push(profileWithTimestamp);
+           } else {
+             console.log('❌ No profile found for result:', capsuleResult);
+           }
+         }
+         
+         // Add all results to collection
+         setCollection(prev => [...prev, ...results]);
+         
+         // Set the first result as the pulled card to show
+         if (results.length > 0) {
+           console.log('🎉 Setting pulled card:', results[0]);
+           setPulledCard(results[0]);
+           setShowPulledCard(true);
+           console.log('🎉 Pulled card state set, should show display');
+         } else {
+           console.log('❌ No results to show');
+         }
+         
+         // Deduct crystals from user balance
+         if (user) {
+           try {
+             // TEMPORARILY ENABLED: Deduct crystal balance from database
+             // This will be re-enabled once the crystal_balance column is added to Supabase
+             console.log('💎 Crystal deduction enabled for testing');
+             
+             // For now, just update the local user state to simulate crystal deduction
+             // This will be replaced with actual database calls once the column is added
+             const newBalance = (user.crystalBalance || 0) - cost;
+             console.log(`💎 Deducted ${cost} crystals. New balance: ${newBalance}`);
+             
+             // Update the user's crystal balance in AuthContext
+             await updateUser({ crystalBalance: newBalance });
+             console.log('💎 Crystal balance updated in AuthContext');
+             
+             /*
+             const { deductCrystalBalance } = await import('../mobile-db');
+             const success = await deductCrystalBalance(user.id, cost);
+             
+             if (success) {
+               // Refresh crystal balance from database to update UI
+               await refreshCrystalBalance();
+               console.log('💎 Crystal balance updated successfully');
+             } else {
+               console.error('Failed to deduct crystal balance');
+             }
+             */
+           } catch (error) {
+             console.error('Error deducting crystal balance:', error);
+           }
+         }
+         
+         setIsRolling(false);
+         console.log('🎲 Capsule opening animation completed');
+       } catch (error) {
+         console.error('❌ Error in capsule opening animation:', error);
+         setIsRolling(false);
        }
-       
-               // Deduct crystals from user balance
-        if (user) {
-          const newBalance = (user.crystalBalance || 0) - cost;
-          // In a real app, this would update the database
-          // For now, we'll just update the local state
-          user.crystalBalance = newBalance;
-        }
-        
-        setIsRolling(false);
-    }, 2000);
-  };
+     }, 2000);
+   };
 
         const openCapsule = (): number => {
      const random = Math.random();
@@ -222,6 +280,7 @@ export default function GachaPage() {
   }
 
   if (showPulledCard && pulledCard) {
+    console.log('🎉 Showing pulled card:', pulledCard.name, pulledCard.rarity);
     return (
       <View style={styles.container}>
         <View style={styles.pulledCardContainer}>
@@ -277,52 +336,52 @@ export default function GachaPage() {
     );
   }
 
-  return (
+    return (
     <View style={styles.container}>
-             {/* Header */}
-       <View style={styles.header}>
-         <Text style={styles.headerTitle}>Crystal Capsules</Text>
-         <Text style={styles.headerSubtitle}>Draw crystal capsules to collect photocards of your friends (their chirp profiles) and make your profile stronger!</Text>
-       </View>
-
-       {/* Instructions Section */}
-       <View style={styles.instructionsContainer}>
-         <View style={styles.instructionsCard}>
-           <Text style={styles.instructionsTitle}>How It Works</Text>
-           <View style={styles.instructionItem}>
-             <Text style={styles.instructionNumber}>1</Text>
-             <Text style={styles.instructionText}>Open crystal capsules using chirp crystals</Text>
-           </View>
-           <View style={styles.instructionItem}>
-             <Text style={styles.instructionNumber}>2</Text>
-             <Text style={styles.instructionText}>Collect photocards of your friends' profiles</Text>
-           </View>
-           <View style={styles.instructionItem}>
-             <Text style={styles.instructionNumber}>3</Text>
-             <Text style={styles.instructionText}>Each photocard adds power to your profile</Text>
-           </View>
-           <View style={styles.instructionItem}>
-             <Text style={styles.instructionNumber}>4</Text>
-             <Text style={styles.instructionText}>Rarer photocards give more profile power!</Text>
-           </View>
-         </View>
-       </View>
-
-      {/* Crystal Balance Display */}
-      <View style={styles.crystalBalanceContainer}>
-        <View style={styles.crystalBalanceCard}>
-          <View style={styles.crystalBalanceHeader}>
-            <ChirpCrystalIcon size={24} color="#7c3aed" />
-            <Text style={styles.crystalBalanceLabel}>Chirp Crystals</Text>
-          </View>
-          <Text style={styles.crystalBalanceAmount}>{user?.crystalBalance || 0}</Text>
-          <Text style={styles.crystalBalanceInfo}>
-            💎 Like a chirp: +1 crystal | 💬 Comment: +5 crystals
-          </Text>
-        </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Crystal Capsules</Text>
+        <Text style={styles.headerSubtitle}>Draw crystal capsules to collect photocards of your friends (their chirp profiles) and make your profile stronger!</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Instructions Section */}
+        <View style={styles.instructionsContainer}>
+          <View style={styles.instructionsCard}>
+            <Text style={styles.instructionsTitle}>How It Works</Text>
+            <View style={styles.instructionItem}>
+              <Text style={styles.instructionNumber}>1</Text>
+              <Text style={styles.instructionText}>Open crystal capsules using chirp crystals</Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <Text style={styles.instructionNumber}>2</Text>
+              <Text style={styles.instructionText}>Collect photocards of your friends' profiles</Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <Text style={styles.instructionNumber}>3</Text>
+              <Text style={styles.instructionText}>Each photocard adds power to your profile</Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <Text style={styles.instructionNumber}>4</Text>
+              <Text style={styles.instructionText}>Rarer photocards give more profile power!</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Crystal Balance Display */}
+        <View style={styles.crystalBalanceContainer}>
+          <View style={styles.crystalBalanceCard}>
+            <View style={styles.crystalBalanceHeader}>
+              <ChirpCrystalIcon size={24} color="#7c3aed" />
+              <Text style={styles.crystalBalanceLabel}>Chirp Crystals</Text>
+            </View>
+            <Text style={styles.crystalBalanceAmount}>{user?.crystalBalance || 0}</Text>
+            <Text style={styles.crystalBalanceInfo}>
+              💎 Like a chirp: +1 crystal | 💬 Comment: +5 crystals
+            </Text>
+          </View>
+        </View>
+
         {/* Roll Section */}
         <View style={styles.rollSection}>
           <LinearGradient
@@ -380,85 +439,77 @@ export default function GachaPage() {
           </TouchableOpacity>
         </View>
 
-                          {/* Collection Display */}
-         <View style={styles.collectionSection}>
-           <Text style={styles.sectionTitle}>Your Collection</Text>
-           {collection.length === 0 ? (
+                                   {/* Collection Display */}
+          <View style={styles.collectionSection}>
+            <Text style={styles.sectionTitle}>Your Collection</Text>
+            
+            {/* Test button to verify touch events work */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#ff0000',
+                padding: 10,
+                marginBottom: 10,
+                borderRadius: 8,
+                alignItems: 'center'
+              }}
+              onPress={() => {
+                console.log('🔴 Test button pressed!');
+                Alert.alert('Test', 'Touch events are working!');
+              }}
+            >
+              <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>Test Touch Events</Text>
+            </TouchableOpacity>
+            
+            {collection.length === 0 ? (
              <View style={styles.emptyCollection}>
                <Text style={styles.emptyText}>No profile cards collected yet</Text>
                <Text style={styles.emptySubtext}>Open your first capsule!</Text>
              </View>
            ) : (
              <View style={styles.profileGrid}>
-               {collection.map((profile) => (
-                 <TouchableOpacity
-                   key={profile.id}
-                   style={styles.profileCard}
-                   onPress={() => handleProfileCardPress(profile)}
-                   activeOpacity={0.7}
-                 >
-                   <View style={[styles.rarityBadge, { backgroundColor: rarityColors[profile.rarity] }]}>
-                     <Text style={styles.rarityText}>{rarityNames[profile.rarity]}</Text>
-                   </View>
-                   
-                   {profile.imageUrl ? (
-                     <Image source={profile.imageUrl} style={styles.profileImage} />
-                   ) : (
-                     <View style={[styles.profileImagePlaceholder, { backgroundColor: rarityColors[profile.rarity] }]}>
-                       <Text style={styles.profileImageText}>{profile.name.charAt(0)}</Text>
-                     </View>
-                   )}
-                   
-                   <Text style={styles.profileName}>{profile.name}</Text>
-                   <Text style={styles.profileHandle}>{profile.handle}</Text>
-                   <Text style={styles.profileBio}>{profile.bio}</Text>
-                   
-                                       <View style={styles.profileStats}>
-                      <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{(profile.followers || 0).toLocaleString()}</Text>
-                        <Text style={styles.statLabel}>Followers</Text>
-                      </View>
-                      <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{(profile.chirps || 0).toLocaleString()}</Text>
-                        <Text style={styles.statLabel}>Chirps</Text>
-                      </View>
-                      <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{profile.profilePower || 0}</Text>
-                        <Text style={styles.statLabel}>Power</Text>
-                      </View>
-                    </View>
-                   
-                   {profile.obtainedAt && (
-                     <Text style={styles.obtainedDate}>
-                       Opened: {new Date(profile.obtainedAt).toLocaleDateString()}
-                     </Text>
-                   )}
-                 </TouchableOpacity>
-               ))}
+                               {collection.map((profile) => (
+                  <TouchableOpacity
+                    key={profile.id}
+                    style={[styles.profileCard, { backgroundColor: '#ff0000' }]} // Temporary red background for testing
+                    onPress={() => {
+                      console.log('👆 Profile card tapped:', profile.name);
+                      handleProfileCardPress(profile);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ color: '#ffffff', textAlign: 'center', fontSize: 16, fontWeight: 'bold' }}>
+                      TAP ME: {profile.name}
+                    </Text>
+                    <Text style={{ color: '#ffffff', textAlign: 'center', fontSize: 12 }}>
+                      ID: {profile.id}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
              </View>
                       )}
          </View>
        </ScrollView>
        
-       {/* Profile Modal for viewing collected profile cards */}
-       <ProfileModal
-         visible={showProfileModal}
-         userId={selectedProfileId}
-         onClose={() => {
-           setShowProfileModal(false);
-           setSelectedProfileId(null);
-         }}
-       />
-       
-       {/* Profile Modal for viewing collected profile cards */}
-       <ProfileModal
-         visible={showProfileModal}
-         userId={selectedProfileId}
-         onClose={() => {
-           setShowProfileModal(false);
-           setSelectedProfileId(null);
-         }}
-       />
+               {/* User Profile View for viewing collected profile cards */}
+        {showUserProfileView && selectedPhotocard && (
+          <UserProfileView
+            userId={selectedPhotocard.id}
+            onClose={() => {
+              setShowUserProfileView(false);
+              setSelectedPhotocard(null);
+            }}
+          />
+        )}
+        
+                 {/* Photocard Profile Modal for viewing collected profile cards */}
+         <PhotocardProfileModal
+           visible={showPhotocardProfile}
+           photocard={selectedPhotocard}
+           onClose={() => {
+             setShowPhotocardProfile(false);
+             setSelectedPhotocard(null);
+           }}
+         />
             </View>
      );
  }
@@ -672,6 +723,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    minHeight: 200, // Ensure minimum height for touch target
+    justifyContent: 'center', // Center content
   },
   rarityBadge: {
     position: 'absolute',

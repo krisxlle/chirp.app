@@ -52,26 +52,54 @@ export default function ProfilePage() {
     try {
       if (!authUser?.id) return;
       
-      console.log('Fetching chirps and replies for user:', authUser.id);
-      const { getUserChirps, getUserReplies, getUserStats } = await import('../mobile-db');
+      console.log('ProfilePage: Using mock data (database calls disabled)');
       
-      // Fetch chirps, replies and stats in parallel
-      const [originalChirps, userRepliesData, userStats] = await Promise.all([
-        getUserChirps(authUser.id),
-        getUserReplies(authUser.id),
-        getUserStats(authUser.id)
-      ]);
+      // TEMPORARILY DISABLED: Database calls
+      // const { getUserChirps, getUserReplies, getUserStats } = await import('../mobile-db');
       
-      setUserChirps(originalChirps);
-      setUserReplies(userRepliesData);
+      // Mock data for testing
+      const mockChirps = [
+        {
+          id: '1',
+          content: 'Welcome to Chirp! This is a test chirp to get you started. 🐦✨',
+          createdAt: new Date().toISOString(),
+          reactionCount: 5,
+          replyCount: 2,
+        },
+        {
+          id: '2',
+          content: 'Testing the app with authentication disabled. Everything should work smoothly now! 🚀',
+          createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          reactionCount: 12,
+          replyCount: 3,
+        }
+      ];
       
-      // Calculate profile power based on engagement algorithm
-      const profilePower = calculateProfilePower(originalChirps, userRepliesData, userStats);
+      const mockReplies = [
+        {
+          id: '1',
+          content: 'Great post!',
+          createdAt: new Date().toISOString(),
+          reactionCount: 2,
+          replyCount: 1,
+        }
+      ];
       
-      // Update stats with real data from database
+      const mockStats = {
+        followers: 125,
+        following: 89,
+      };
+      
+      setUserChirps(mockChirps);
+      setUserReplies(mockReplies);
+      
+      // Calculate profile power based on mock data
+      const profilePower = calculateProfilePower(mockChirps, mockReplies, mockStats);
+      
+      // Update stats with mock data
       setStats({
-        followers: userStats.followers,
-        following: userStats.following,
+        followers: mockStats.followers,
+        following: mockStats.following,
         profilePower: profilePower
       });
     } catch (error) {
@@ -200,35 +228,25 @@ export default function ProfilePage() {
             <Text style={styles.settingsText}>Settings</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.bio}>
-          {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
-            if (part.startsWith('@')) {
-              return (
-                <TouchableOpacity 
-                  key={index} 
-                  onPress={async () => {
-                    try {
-                      const { getUserByHandle } = await import('../mobile-db');
-                      const mentionedUser = await getUserByHandle(part);
-                      if (mentionedUser) {
-                        const { router } = await import('expo-router');
-                        router.push(`/view-profile?userId=${mentionedUser.id}`);
-                      } else {
-                        Alert.alert('User Not Found', `User ${part} could not be found.`);
-                      }
-                    } catch (error) {
-                      console.error('Error navigating to mentioned user:', error);
-                      Alert.alert('Error', 'Failed to navigate to user profile.');
-                    }
-                  }}
-                >
-                  <Text style={styles.mentionText}>{part}</Text>
-                </TouchableOpacity>
-              );
-            }
-            return <Text key={index}>{part}</Text>;
-          })}
-        </Text>
+                 <Text style={styles.bio}>
+           {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
+             if (part.startsWith('@')) {
+               return (
+                 <TouchableOpacity 
+                   key={index} 
+                   onPress={() => {
+                     // TEMPORARILY DISABLED: Database calls
+                     console.log('🔗 Mention clicked (database call disabled):', part);
+                     Alert.alert('Feature Disabled', 'User profile navigation is temporarily disabled while database calls are disabled.');
+                   }}
+                 >
+                   <Text style={styles.mentionText}>{part}</Text>
+                 </TouchableOpacity>
+               );
+             }
+             return <Text key={index}>{part}</Text>;
+           })}
+         </Text>
       </View>
 
       {/* Profile Power */}

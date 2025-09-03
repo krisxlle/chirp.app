@@ -70,7 +70,9 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   // Real-time timestamp updates
   const [currentTime, setCurrentTime] = useState(Date.now());
   
+  // TEMPORARILY DISABLED: Real-time timestamp updates to prevent looping
   // Update timestamp every minute for real-time display
+  /*
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
@@ -78,6 +80,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     
     return () => clearInterval(interval);
   }, []);
+  */
   
   // States for user interaction options
   const [isFollowing, setIsFollowing] = useState(false);
@@ -125,12 +128,18 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     }
     
     try {
+      // TEMPORARILY DISABLED: Database calls
+      console.log('ChirpCard: Using mock like status (database calls disabled)');
+      setUserHasLiked(false); // Default to not liked
+      
+      /*
       const { getUserReactionForChirp } = await import('../mobile-db');
       const chirpIdStr = String(chirp.id);
       const userIdStr = String(user.id);
       
       const reaction = await getUserReactionForChirp(chirpIdStr, userIdStr);
       setUserHasLiked(!!reaction);
+      */
     } catch (error) {
       console.error('Error loading user like status:', error);
     }
@@ -149,6 +158,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     }
 
     try {
+      // TEMPORARILY DISABLED: Database calls
+      console.log('ChirpCard: Reply functionality disabled (database calls disabled)');
+      Alert.alert('Feature Disabled', 'Reply functionality is temporarily disabled while database calls are disabled.');
+      
+      /*
       const { createReply } = await import('../mobile-db');
       
       const chirpIdStr = String(chirp.id);
@@ -175,6 +189,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       }
       
       console.log('Reply posted successfully');
+      */
     } catch (error) {
       console.error('Error posting reply:', error);
       Alert.alert('Error', 'Failed to post reply. Please try again.');
@@ -188,6 +203,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         return;
       }
 
+      // TEMPORARILY DISABLED: Database calls
+      console.log('ChirpCard: Like functionality disabled (database calls disabled)');
+      Alert.alert('Feature Disabled', 'Like functionality is temporarily disabled while database calls are disabled.');
+      
+      /*
       console.log('🔴 Like button pressed!');
       console.log('Chirp ID:', chirp.id, 'Type:', typeof chirp.id);
       console.log('User ID:', user.id, 'Type:', typeof user.id);
@@ -234,6 +254,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         
         console.log('✅ Chirp unliked successfully');
       }
+      */
     } catch (error) {
       console.error('❌ Error handling like:', error);
       Alert.alert('Error', 'Failed to like chirp. Please try again.');
@@ -262,6 +283,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     console.log('User details:', { id: user?.id, type: typeof user?.id });
     
     try {
+      // TEMPORARILY DISABLED: Database calls
+      console.log('ChirpCard: Delete functionality disabled (database calls disabled)');
+      Alert.alert('Feature Disabled', 'Delete functionality is temporarily disabled while database calls are disabled.');
+      
+      /*
       console.log('🗑️ Proceeding with deletion...');
       console.log('Deleting chirp:', chirp.id, 'by user:', user?.id);
       
@@ -284,6 +310,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           window.location.reload();
         }
       }
+      */
     } catch (error) {
       console.error('❌ Delete error:', error);
       console.error('Error details:', {
@@ -302,6 +329,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     
     setLoadingUserActions(true);
     try {
+      // TEMPORARILY DISABLED: Database calls
+      console.log('ChirpCard: Follow functionality disabled (database calls disabled)');
+      Alert.alert('Feature Disabled', 'Follow functionality is temporarily disabled while database calls are disabled.');
+      
+      /*
       const { followUser, unfollowUser } = await import('../mobile-db');
       
       if (isFollowing) {
@@ -313,6 +345,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         setIsFollowing(true);
         Alert.alert('Followed', `You are now following ${displayName}`);
       }
+      */
     } catch (error) {
       console.error('Error toggling follow:', error);
       Alert.alert('Error', 'Failed to update follow status. Please try again.');
