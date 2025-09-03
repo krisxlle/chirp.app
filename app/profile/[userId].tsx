@@ -1,20 +1,19 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  Modal,
-  Alert
-} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import UserAvatar from '../../components/UserAvatar';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import ChirpCard from '../../components/ChirpCard';
 import FollowersFollowingModal from '../../components/FollowersFollowingModal';
-import { AuthContext } from '../../components/AuthContext';
+import UserAvatar from '../../components/UserAvatar';
 
 interface User {
   id: string;
@@ -27,12 +26,10 @@ interface User {
   banner_image_url?: string;
   bio?: string;
   created_at?: string;
-  is_chirp_plus?: boolean;
-  show_chirp_plus_badge?: boolean;
 }
 
 export default function UserProfileScreen() {
-  console.log('🔥🔥🔥 UserProfileScreen MOUNTING - Component loaded!');
+  console.log('🔥🔥🔥 UserProfileScreen MOUNTING - Component loaded! HOT RELOAD TEST - PROFILE POWER VERSION 2.0');
   
   const params = useLocalSearchParams();
   const userId = Array.isArray(params.userId) ? params.userId[0] : params.userId;
@@ -63,10 +60,9 @@ export default function UserProfileScreen() {
   const [replies, setReplies] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'chirps' | 'replies'>('chirps');
   const [stats, setStats] = useState({
-    chirps: 0,
+    profilePower: 0,
     following: 0,
-    followers: 0,
-    moodReactions: 0
+    followers: 0
   });
   const [followStatus, setFollowStatus] = useState({
     isFollowing: false,
@@ -113,14 +109,14 @@ export default function UserProfileScreen() {
           userChirps, 
           userReplies, 
           userStats,
-          isFollowing,
+          followStatusData,
           isBlocked
         ] = await Promise.all([
           getUserById(userId),
           getUserChirps(userId),
           getUserReplies(userId), 
           getUserStats(userId),
-          currentUserId ? checkFollowStatus(currentUserId, userId) : false,
+          currentUserId ? checkFollowStatus(userId) : Promise.resolve({ isFollowing: false, isBlocked: false, notificationsEnabled: false }),
           currentUserId ? checkBlockStatus(currentUserId, userId) : false
         ]);
         
@@ -129,11 +125,22 @@ export default function UserProfileScreen() {
         setUser(userData);
         setChirps(userChirps);
         setReplies(userReplies);
-        setStats(userStats);
+        setStats({
+          profilePower: Math.floor((userStats.chirps * 10) + (userStats.moodReactions * 5) + (userStats.followers * 2) + (userStats.following * 1)),
+          following: userStats.following,
+          followers: userStats.followers
+        });
+        console.log('🎯 Profile Power calculation V2.0:', {
+          chirps: userStats.chirps,
+          moodReactions: userStats.moodReactions,
+          followers: userStats.followers,
+          following: userStats.following,
+          profilePower: Math.floor((userStats.chirps * 10) + (userStats.moodReactions * 5) + (userStats.followers * 2) + (userStats.following * 1))
+        });
         setFollowStatus({
-          isFollowing: isFollowing || false,
+          isFollowing: followStatusData.isFollowing || false,
           isBlocked: isBlocked || false,
-          notificationsEnabled: false
+          notificationsEnabled: followStatusData.notificationsEnabled || false
         });
         console.log('🎯 Profile state updated');
       } catch (error) {
@@ -162,13 +169,16 @@ export default function UserProfileScreen() {
 
   const handleFollow = async () => {
     try {
-      const { followUser, unfollowUser } = await import('../../mobile-db');
+      const { followUser, unfollowUser, getCurrentUserId } = await import('../../mobile-db');
+      
+      const currentUserId = await getCurrentUserId();
+      if (!currentUserId) return;
       
       if (followStatus.isFollowing) {
-        await unfollowUser(userId);
+        await unfollowUser(currentUserId, userId);
         setFollowStatus(prev => ({ ...prev, isFollowing: false }));
       } else {
-        await followUser(userId);
+        await followUser(currentUserId, userId);
         setFollowStatus(prev => ({ ...prev, isFollowing: true }));
       }
     } catch (error) {
@@ -179,13 +189,16 @@ export default function UserProfileScreen() {
 
   const handleBlock = async () => {
     try {
-      const { blockUser, unblockUser } = await import('../../mobile-db');
+      const { blockUser, unblockUser, getCurrentUserId } = await import('../../mobile-db');
+      
+      const currentUserId = await getCurrentUserId();
+      if (!currentUserId) return;
       
       if (followStatus.isBlocked) {
-        await unblockUser(userId);
+        await unblockUser(currentUserId, userId);
         setFollowStatus(prev => ({ ...prev, isBlocked: false }));
       } else {
-        await blockUser(userId);
+        await blockUser(currentUserId, userId);
         setFollowStatus(prev => ({ ...prev, isBlocked: true, isFollowing: false }));
       }
     } catch (error) {
@@ -201,7 +214,7 @@ export default function UserProfileScreen() {
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
       
-      await toggleUserNotifications(currentUserId, userId, !followStatus.notificationsEnabled);
+      await toggleUserNotifications(currentUserId, userId);
       setFollowStatus(prev => ({ ...prev, notificationsEnabled: !prev.notificationsEnabled }));
     } catch (error) {
       console.error('Error updating notification status:', error);
@@ -300,21 +313,14 @@ export default function UserProfileScreen() {
                   firstName: user.first_name || '',
                   lastName: user.last_name || '',
                   email: user.email || '',
-                  customHandle: user.custom_handle || '',
-                  handle: user.handle || '',
                   profileImageUrl: user.profile_image_url || undefined
                 }} 
-                size={96}
+                size="xl"
               />
               
               <View style={styles.profileDetails}>
                 <View style={styles.nameContainer}>
                   <Text style={styles.displayName}>{displayName}</Text>
-                  {user.is_chirp_plus && user.show_chirp_plus_badge && (
-                    <View style={styles.chirpPlusBadge}>
-                      <Text style={styles.chirpPlusBadgeText}>Chirp+</Text>
-                    </View>
-                  )}
                 </View>
                 <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
               </View>
@@ -343,8 +349,8 @@ export default function UserProfileScreen() {
           {/* Stats - exactly like original with dividers */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{stats.chirps}</Text>
-              <Text style={styles.statLabel}>Chirps</Text>
+              <Text style={styles.statNumber}>{stats.profilePower}</Text>
+              <Text style={styles.statLabel}>⚡ PROFILE POWER V2.0 ⚡</Text>
             </View>
             <View style={styles.statDivider} />
             <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
@@ -577,7 +583,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileDetails: {
-    marginTop: 12,
+    marginTop: 16, // Increased from 12 to 16 for better spacing
+    marginLeft: 12, // Added left margin to separate from avatar
   },
   nameContainer: {
     flexDirection: 'row',
@@ -590,17 +597,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1f2937',
     marginRight: 8,
-  },
-  chirpPlusBadge: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  chirpPlusBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
   },
   handle: {
     fontSize: 16,

@@ -1,14 +1,17 @@
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
 
-import passport from "passport";
-import session from "express-session";
-import type { Express, RequestHandler } from "express";
-import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
+import type { Express, RequestHandler } from "express";
+import session from "express-session";
+import memoize from "memoizee";
+import passport from "passport";
 import { storage } from "./storage";
 
-if (!process.env.REPLIT_DOMAINS) {
+// Make REPLIT_DOMAINS optional for local development
+const isReplitEnvironment = process.env.REPLIT_DOMAINS && process.env.NODE_ENV === 'production';
+
+if (isReplitEnvironment && !process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
@@ -32,7 +35,7 @@ export function getSession() {
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'dev-secret-key',
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -73,6 +76,17 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Only setup Replit authentication if we're in a Replit environment
+  if (!isReplitEnvironment) {
+    console.log('🔧 Development mode: Skipping Replit authentication setup');
+    
+    // Setup basic session handling for development
+    passport.serializeUser((user: Express.User, cb) => cb(null, user));
+    passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+    
+    return;
+  }
+
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -103,6 +117,12 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // In development mode, just redirect to home
+    if (!isReplitEnvironment) {
+      console.log('🔧 Development mode: Skipping login, redirecting to home');
+      return res.redirect("/");
+    }
+
     // Get the correct hostname - use the first domain from REPLIT_DOMAINS for localhost
     const hostname = req.hostname === 'localhost' 
       ? process.env.REPLIT_DOMAINS!.split(",")[0]
@@ -126,6 +146,12 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
+    // In development mode, just redirect to home
+    if (!isReplitEnvironment) {
+      console.log('🔧 Development mode: Skipping callback, redirecting to home');
+      return res.redirect("/");
+    }
+
     // Get the correct hostname - use the first domain from REPLIT_DOMAINS for localhost
     const hostname = req.hostname === 'localhost' 
       ? process.env.REPLIT_DOMAINS!.split(",")[0]
@@ -156,6 +182,12 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    // In development mode, just redirect to home
+    if (!isReplitEnvironment) {
+      console.log('🔧 Development mode: Skipping logout, redirecting to home');
+      return res.redirect("/");
+    }
+
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
@@ -168,6 +200,12 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // In development mode, always allow access
+  if (!isReplitEnvironment) {
+    console.log('🔧 Development mode: Bypassing authentication check');
+    return next();
+  }
+
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {

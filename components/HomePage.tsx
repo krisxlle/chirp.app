@@ -1,14 +1,71 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, Image, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
-import { getChirpsFromDB, getForYouChirps, getLatestChirps, getTrendingChirps } from '../mobile-db';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+// Use API instead of direct database connection
+import { useResponsive } from '../hooks/useResponsive';
 import type { MobileChirp } from '../mobile-types';
-import ComposeChirp from './ComposeChirp';
+import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
+import ComposeChirp from './ComposeChirp';
 import ProfileModal from './ProfileModal';
-import ChirpLogo from './icons/ChirpLogo';
+
+// Mock data for when API is not available
+const createMockChirps = () => [
+  {
+    id: '1',
+    content: 'Welcome to Chirp! This is a test chirp to get you started. 🐦✨',
+    createdAt: new Date().toISOString(),
+    author: {
+      id: 'test-user-123',
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
+      customHandle: 'testuser',
+      handle: 'testuser',
+      profileImageUrl: undefined,
+    },
+    replyCount: 0,
+    reactionCount: 5,
+    reactions: [],
+    isWeeklySummary: false,
+  },
+  {
+    id: '2',
+    content: 'Testing the app with authentication disabled. Everything should work smoothly now! 🚀',
+    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+    author: {
+      id: 'test-user-123',
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
+      customHandle: 'testuser',
+      handle: 'testuser',
+      profileImageUrl: undefined,
+    },
+    replyCount: 2,
+    reactionCount: 12,
+    reactions: [],
+    isWeeklySummary: false,
+  },
+  {
+    id: '3',
+    content: 'The white screen issue should be resolved now. Let me know if you see this chirp! 👀',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
+    author: {
+      id: 'test-user-123',
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
+      customHandle: 'testuser',
+      handle: 'testuser',
+      profileImageUrl: undefined,
+    },
+    replyCount: 1,
+    reactionCount: 8,
+    reactions: [],
+    isWeeklySummary: false,
+  }
+];
 
 // Convert mobile chirps to ChirpCard format
 const convertToChirpCard = (chirp: MobileChirp) => ({
@@ -24,8 +81,6 @@ const convertToChirpCard = (chirp: MobileChirp) => ({
     handle: chirp.author.handle || 'anonymous',
     customHandle: chirp.author.customHandle || 'anonymous',
     profileImageUrl: chirp.author.profileImageUrl || undefined,
-    isChirpPlus: chirp.author.isChirpPlus || false,
-    showChirpPlusBadge: chirp.author.showChirpPlusBadge || false,
   },
   replyCount: chirp.replyCount || 0,
   reactionCount: chirp.reactionCount || 0,
@@ -37,340 +92,205 @@ const convertToChirpCard = (chirp: MobileChirp) => ({
 });
 
 export default function HomePage() {
-  // Cache all feed types to avoid re-fetching
-  const [chirpsCache, setChirpsCache] = useState<{
-    personalized: MobileChirp[],
-    chronological: MobileChirp[],
-    trending: MobileChirp[]
-  }>({
-    personalized: [],
-    chronological: [],
-    trending: []
-  });
+  // Get user from AuthContext
+  const { user } = useAuth();
+  const { padding, spacing } = useResponsive();
   
-  const [loadingStates, setLoadingStates] = useState<{
-    personalized: boolean,
-    chronological: boolean,
-    trending: boolean
-  }>({
-    personalized: true,
-    chronological: false,
-    trending: false
-  });
+  // State for feed type
+  const [feedType, setFeedType] = useState<'forYou' | 'collection'>('forYou');
   
-  const [refreshing, setRefreshing] = useState(false);
-  const [feedType, setFeedType] = useState<'personalized' | 'chronological' | 'trending'>('personalized');
-  const [highlightedChirpId, setHighlightedChirpId] = useState<string | null>(null);
-  
-  // Get URL parameters for notification navigation
-  const { targetChirp } = useLocalSearchParams();
-  
-  // Profile modal state
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  
-  // Current feed data and loading state
-  const currentChirps = chirpsCache[feedType];
-  const isLoading = loadingStates[feedType];
-  
-  console.log('🏠 HomePage component mounted - chirps count:', currentChirps.length, 'isLoading:', isLoading, 'targetChirp:', targetChirp);
-  
-  // Header animation state
-  const headerTranslateY = useSharedValue(0);
-  const contentPaddingTop = useSharedValue(42);
-  const lastScrollY = useRef(0);
-  const isHeaderVisible = useRef(true);
-
-  const fetchChirpsForType = async (type: 'personalized' | 'chronological' | 'trending') => {
-    try {
-      console.log(`Fetching ${type} chirps from database...`);
-      let data;
-      switch (type) {
-        case 'chronological':
-          data = await getLatestChirps();
-          break;
-        case 'trending':
-          data = await getTrendingChirps();
-          break;
-        case 'personalized':
-        default:
-          data = await getForYouChirps();
-          break;
-      }
-      console.log(`Successfully loaded ${data.length} authentic chirps for ${type}`);
-      
-      // Update cache and loading state
-      setChirpsCache(prev => ({ ...prev, [type]: data }));
-      setLoadingStates(prev => ({ ...prev, [type]: false }));
-    } catch (error) {
-      console.error(`Database connection failed for ${type}:`, error);
-      setLoadingStates(prev => ({ ...prev, [type]: false }));
-      Alert.alert('Connection Error', 'Unable to load your chirps. Please check your internet connection.');
+  // State for chirps - start with mock data
+  const [forYouChirps, setForYouChirps] = useState(createMockChirps());
+  const [collectionChirps, setCollectionChirps] = useState([
+    {
+      id: '4',
+      content: 'Just pulled a rare character from the gacha! 🎉✨',
+      createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
+      author: {
+        id: 'gacha-user-1',
+        firstName: 'Gacha',
+        lastName: 'Player',
+        email: 'gacha@example.com',
+        customHandle: 'gachamaster',
+        handle: 'gachamaster',
+        profileImageUrl: undefined,
+      },
+      replyCount: 3,
+      reactionCount: 15,
+      reactions: [],
+      isWeeklySummary: false,
+    },
+    {
+      id: '5',
+      content: 'Finally completed my collection! This took forever but totally worth it 🏆',
+      createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 minutes ago
+      author: {
+        id: 'gacha-user-2',
+        firstName: 'Collection',
+        lastName: 'Hunter',
+        email: 'hunter@example.com',
+        customHandle: 'hunter',
+        handle: 'hunter',
+        profileImageUrl: undefined,
+      },
+      replyCount: 8,
+      reactionCount: 25,
+      reactions: [],
+      isWeeklySummary: false,
     }
-  };
-
-  const fetchChirps = () => fetchChirpsForType(feedType);
-
-  // Function to refresh all cached feeds (used when a new chirp is posted)
-  const refreshAllFeeds = async () => {
-    // Reset all caches
-    setChirpsCache({
-      personalized: [],
-      chronological: [],
-      trending: []
-    });
-    setLoadingStates({
-      personalized: feedType === 'personalized',
-      chronological: feedType === 'chronological', 
-      trending: feedType === 'trending'
-    });
-    
-    // Fetch current feed
-    await fetchChirpsForType(feedType);
-  };
-
-  // Load initial feed on mount
-  useEffect(() => {
-    fetchChirpsForType('personalized');
-  }, []);
-
-  // Preload other feeds when switching tabs
-  const handleFeedTypeChange = (newType: 'personalized' | 'chronological' | 'trending') => {
-    setFeedType(newType);
-    
-    // If we don't have data for this feed type, fetch it
-    if (chirpsCache[newType].length === 0 && !loadingStates[newType]) {
-      setLoadingStates(prev => ({ ...prev, [newType]: true }));
-      fetchChirpsForType(newType);
-    }
-    
-    // Preload other feeds in the background for smoother switching
-    const otherFeeds = (['personalized', 'chronological', 'trending'] as const).filter(type => 
-      type !== newType && chirpsCache[type].length === 0 && !loadingStates[type]
+  ]);
+  
+  // Function to update chirp like count
+  const handleChirpLikeUpdate = (chirpId: string, newLikeCount: number) => {
+    setForYouChirps(prevChirps => 
+      prevChirps.map(chirp => 
+        chirp.id === chirpId 
+          ? { ...chirp, reactionCount: newLikeCount }
+          : chirp
+      )
     );
     
-    // Small delay to prioritize current feed loading
-    setTimeout(() => {
-      otherFeeds.forEach(feedType => {
-        setLoadingStates(prev => ({ ...prev, [feedType]: true }));
-        fetchChirpsForType(feedType);
-      });
-    }, 500);
+    setCollectionChirps(prevChirps => 
+      prevChirps.map(chirp => 
+        chirp.id === chirpId 
+          ? { ...chirp, reactionCount: newLikeCount }
+          : chirp
+      )
+    );
   };
-
-  // Handle notification target chirp highlighting
-  useEffect(() => {
-    if (targetChirp) {
-      console.log('🎯 Highlighting target chirp from notification:', targetChirp);
-      setHighlightedChirpId(String(targetChirp));
-      // Auto-clear highlight after 5 seconds
-      setTimeout(() => {
-        setHighlightedChirpId(null);
-      }, 5000);
-    }
-  }, [targetChirp]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Clear current feed cache and refetch
-    setChirpsCache(prev => ({ ...prev, [feedType]: [] }));
-    setLoadingStates(prev => ({ ...prev, [feedType]: true }));
-    fetchChirpsForType(feedType).finally(() => setRefreshing(false));
-  };
-
-  const getFeedIcon = (type: string) => {
-    switch (type) {
-      case 'personalized': return '✨';
-      case 'chronological': return '🕐';
-      case 'trending': return '📈';
-      default: return '✨';
-    }
-  };
-
-  const getFeedTitle = (type: string) => {
-    switch (type) {
-      case 'personalized': return 'For You';
-      case 'chronological': return 'Latest';
-      case 'trending': return 'Trending';
-      default: return 'For You';
-    }
-  };
-
-  const handleProfilePress = (userId: string) => {
-    console.log('🔥 Profile press in HomePage - opening modal for:', userId);
-    setSelectedUserId(userId);
-    setShowProfileModal(true);
-  };
-
-  const handleScroll = (event: any) => {
-    const currentScrollY = event.nativeEvent.contentOffset.y;
-    const scrollDifference = currentScrollY - lastScrollY.current;
-    
-    // Only hide/show if we've scrolled enough and are past initial scroll
-    if (Math.abs(scrollDifference) > 5 && currentScrollY > 50) {
-      if (scrollDifference > 0 && isHeaderVisible.current) {
-        // Scrolling down - hide header
-        headerTranslateY.value = withTiming(-100);
-        contentPaddingTop.value = withTiming(0);
-        isHeaderVisible.current = false;
-      } else if (scrollDifference < 0 && !isHeaderVisible.current) {
-        // Scrolling up - show header
-        headerTranslateY.value = withTiming(0);
-        contentPaddingTop.value = withTiming(42);
-        isHeaderVisible.current = true;
-      }
-    }
-    
-    // Always show header when at top
-    if (currentScrollY <= 50 && !isHeaderVisible.current) {
-      headerTranslateY.value = withTiming(0);
-      contentPaddingTop.value = withTiming(42);
-      isHeaderVisible.current = true;
-    }
-    
-    lastScrollY.current = currentScrollY;
-  };
-
-  const animatedHeaderStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: headerTranslateY.value }],
+  // Function to add a new chirp to the For You feed
+  const handleNewChirp = (content: string) => {
+    const newChirp = {
+      id: `chirp-${Date.now()}`, // Generate unique ID
+      content: content,
+      createdAt: new Date().toISOString(),
+      author: {
+        id: user?.id || 'current-user',
+        firstName: user?.firstName || 'Current',
+        lastName: user?.lastName || 'User',
+        email: user?.email || 'current@example.com',
+        customHandle: user?.customHandle || 'currentuser',
+        handle: user?.handle || 'currentuser',
+        profileImageUrl: undefined, // Keep consistent with mock data type
+      },
+      replyCount: 0,
+      reactionCount: 0,
+      reactions: [],
+      isWeeklySummary: false,
     };
-  });
-
-  const animatedContentStyle = useAnimatedStyle(() => {
-    return {
-      paddingTop: contentPaddingTop.value,
-    };
-  });
-
-  if (isLoading) {
+    
+    // Add the new chirp to the beginning of the For You feed
+    setForYouChirps(prevChirps => [newChirp, ...prevChirps]);
+    console.log('New chirp added to For You feed:', newChirp);
+  };
+  
+  // Get current chirps based on feed type
+  const currentChirps = feedType === 'forYou' ? forYouChirps : collectionChirps;
+  
+  // Safety check - if user is not available, show a loading state
+  if (!user) {
+    console.log('HomePage: User not available, showing loading state');
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7c3aed" />
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
-
+  
+  console.log('HomePage: User available, rendering full component - user ID:', user.id);
+  
   return (
-    <View style={styles.container}>
-      {/* Animated Header */}
-      <Animated.View style={[styles.header, animatedHeaderStyle]}>
-        <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../attached_assets/ChatGPT Image Jul 11, 2025, 11_38_45 AM_1753223521868.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <Text style={styles.logoText}>Chirp</Text>
-          </View>
-          
-          {/* Feed Type Selector - compact on same line */}
-          <View style={styles.feedControls}>
-            <TouchableOpacity 
-              style={styles.feedButton}
-              onPress={() => handleFeedTypeChange('personalized')}
-            >
-              {feedType === 'personalized' ? (
-                <LinearGradient
-                  colors={['#7c3aed', '#ec4899']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.activeFeedButton}
-                >
-                  <Text style={styles.activeFeedButtonText}>For You</Text>
-                </LinearGradient>
-              ) : (
-                <Text style={styles.feedButtonText}>For You</Text>
-              )}
-            </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={[styles.header, { paddingHorizontal: padding.header.horizontal, paddingVertical: padding.header.vertical }]}>
+          <View style={styles.headerContent}>
+            <View style={styles.logoContainer}>
+              <Text style={styles.logoText}>Chirp</Text>
+            </View>
             
-            <TouchableOpacity 
-              style={styles.feedButton}
-              onPress={() => handleFeedTypeChange('chronological')}
-            >
-              {feedType === 'chronological' ? (
-                <LinearGradient
-                  colors={['#7c3aed', '#ec4899']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.activeFeedButton}
-                >
-                  <Text style={styles.activeFeedButtonText}>Latest</Text>
-                </LinearGradient>
-              ) : (
-                <Text style={styles.feedButtonText}>Latest</Text>
-              )}
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.feedButton}
-              onPress={() => handleFeedTypeChange('trending')}
-            >
-              {feedType === 'trending' ? (
-                <LinearGradient
-                  colors={['#7c3aed', '#ec4899']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.activeFeedButton}
-                >
-                  <Text style={styles.activeFeedButtonText}>Trending</Text>
-                </LinearGradient>
-              ) : (
-                <Text style={styles.feedButtonText}>Trending</Text>
-              )}
-            </TouchableOpacity>
+            <View style={styles.feedControls}>
+              <TouchableOpacity 
+                style={[styles.feedButton, feedType === 'forYou' && styles.activeFeedButton]}
+                onPress={() => setFeedType('forYou')}
+              >
+                <Text style={feedType === 'forYou' ? styles.activeFeedButtonText : styles.feedButtonText}>
+                  For You
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.feedButton, feedType === 'collection' && styles.activeFeedButton]}
+                onPress={() => setFeedType('collection')}
+              >
+                <Text style={feedType === 'collection' ? styles.activeFeedButtonText : styles.feedButtonText}>
+                  Collection
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </Animated.View>
 
-      <Animated.ScrollView 
-        style={[styles.content, animatedContentStyle]}
-        contentContainerStyle={styles.scrollContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <ComposeChirp onPost={refreshAllFeeds} />
-        
-        {currentChirps.length === 0 ? (
-          <View style={styles.emptyState}>
-            <ChirpLogo size={48} color="#9ca3af" />
-            <Text style={styles.emptyTitle}>No chirps yet</Text>
-            <Text style={styles.emptySubtext}>Start by posting your first chirp above!</Text>
+        {/* Content */}
+        <ScrollView style={[styles.content, { paddingHorizontal: padding.content.horizontal }]}>
+          <View style={[styles.composeContainer, { paddingTop: spacing.lg, paddingBottom: spacing.md }]}>
+            <ComposeChirp onPost={handleNewChirp} />
           </View>
-        ) : (
-          currentChirps.map((chirp) => (
-            <ChirpCard 
-              key={chirp.id} 
-              chirp={convertToChirpCard(chirp)} 
-              onDeleteSuccess={fetchChirps}
-              onProfilePress={handleProfilePress}
-              isHighlighted={highlightedChirpId === String(chirp.id)}
-            />
-          ))
-        )}
-      </Animated.ScrollView>
+          
+                                {currentChirps.map((chirp) => (
+                        <ChirpCard 
+                          key={chirp.id} 
+                          chirp={convertToChirpCard(chirp)} 
+                          onDeleteSuccess={() => console.log('Chirp deleted')}
+                          onProfilePress={(userId) => console.log('Profile pressed:', userId)}
+                          onLikeUpdate={handleChirpLikeUpdate}
+                        />
+                      ))}
+        </ScrollView>
 
-      {/* Profile Modal */}
-      <ProfileModal
-        visible={showProfileModal}
-        userId={selectedUserId}
-        onClose={() => {
-          setShowProfileModal(false);
-          setSelectedUserId(null);
-        }}
-      />
-    </View>
+        <ProfileModal
+          visible={false}
+          userId={null}
+          onClose={() => console.log('Profile modal closed')}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fafafa',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fafafa',
+  },
+  header: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#7c3aed',
+  },
+  content: {
+    flex: 1,
+  },
+  composeContainer: {
+    // Padding will be applied dynamically
   },
   loadingContainer: {
     flex: 1,
@@ -382,106 +302,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#657786',
   },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    zIndex: 50,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  logoImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    marginRight: 8,
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
-  },
   feedControls: {
     flexDirection: 'row',
-    backgroundColor: '#f7f9fa',
-    borderRadius: 12,
-    padding: 3,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 20,
+    padding: 2,
   },
   feedButton: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 50,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 15,
   },
   activeFeedButton: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 50,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  feedButtonIcon: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  feedButtonText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#657786',
+    backgroundColor: '#7c3aed',
   },
   activeFeedButtonText: {
+    fontWeight: 'bold',
     color: '#ffffff',
   },
-  content: {
-    flex: 1,
-    backgroundColor: '#fafafa',
-    // paddingTop now animated via useAnimatedStyle
-  },
-  scrollContent: {
-    paddingBottom: 100, // Space for bottom nav
-  },
-  emptyState: {
-    padding: 48,
-    alignItems: 'center',
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 16,
+  feedButtonText: {
     color: '#657786',
-    textAlign: 'center',
   },
 });

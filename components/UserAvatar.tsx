@@ -60,7 +60,7 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
 
   // Safe color calculation with proper fallbacks
   let colorIndex = 0;
-  if (user.id) {
+  if (user?.id) {
     const numericId = user.id.replace(/\D/g, '');
     if (numericId && numericId.length > 0) {
       colorIndex = parseInt(numericId, 10) % colors.length;

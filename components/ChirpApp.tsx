@@ -1,37 +1,63 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from './AuthContext';
 
-import SignInScreenNew from './SignInScreenNew';
-import HomePage from './HomePage';
-import SearchPage from './SearchPage';
-import ProfilePage from './ProfilePage';
-import SettingsPage from './SettingsPage';
-import NotificationsPage from './NotificationsPage';
 import BottomNavigation from './BottomNavigation';
+import CollectionPage from './CollectionPage';
+import GachaPage from './GachaPage';
+import HomePage from './HomePage';
+import NotificationsPage from './NotificationsPage';
+import ProfilePage from './ProfilePage';
 
 export default function ChirpApp() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
 
+  // Check if user is authenticated
+  const isAuthenticated = !!user;
+
+  console.log('ChirpApp render:', { 
+    isLoading, 
+    isAuthenticated, 
+    userId: user?.id,
+    userExists: !!user 
+  });
+
+  // Show loading state while auth is being checked
   if (isLoading) {
-    return <View style={styles.loadingContainer} />;
+    console.log('ChirpApp: Auth is loading, showing loading state');
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ fontSize: 16, color: '#657786' }}>Loading...</Text>
+      </View>
+    );
   }
 
-  if (!isAuthenticated) {
-    return <SignInScreenNew />;
+  // Safety check - ensure user is available before rendering
+  if (!user) {
+    console.log('ChirpApp: User not available, showing fallback');
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ fontSize: 16, color: '#657786' }}>Setting up your account...</Text>
+      </View>
+    );
   }
 
+  console.log('ChirpApp: User available, rendering main app - user ID:', user.id);
+
+  // Render the appropriate page based on active tab
   const renderCurrentPage = () => {
     switch (activeTab) {
       case 'home':
         return <HomePage />;
-      case 'search':
-        return <SearchPage />;
       case 'notifications':
         return <NotificationsPage />;
       case 'profile':
         return <ProfilePage />;
+      case 'collection':
+        return <CollectionPage />;
+      case 'gacha':
+        return <GachaPage />;
       default:
         return <HomePage />;
     }
@@ -39,7 +65,9 @@ export default function ChirpApp() {
 
   return (
     <View style={styles.container}>
-      {renderCurrentPage()}
+      <View style={{ flex: 1 }}>
+        {renderCurrentPage()}
+      </View>
       <BottomNavigation 
         activeTab={activeTab} 
         onTabChange={setActiveTab}
@@ -57,6 +85,8 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   placeholderContainer: {
     flex: 1,

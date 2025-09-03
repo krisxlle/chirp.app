@@ -1,22 +1,20 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  TextInput, 
-  Switch,
-  Alert,
-  ActivityIndicator 
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import UserAvatar from './UserAvatar';
-import ChirpPlusBadge from './ChirpPlusBadge';
-import { useAuth } from './AuthContext';
-import { updateUserProfile, cancelSubscription, updateChirpPlusBadgeVisibility } from '../mobile-db';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { updateUserProfile } from '../mobile-db';
+import { useAuth } from './AuthContext';
+import GearIcon from './icons/GearIcon';
 
 interface SettingsPageProps {
   onClose: () => void;
@@ -175,7 +173,6 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
   const [linkInBio, setLinkInBio] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
-  const [isBadgeToggling, setIsBadgeToggling] = useState(false);
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -197,33 +194,6 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     } finally {
       setIsUpdating(false);
     }
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!user?.isChirpPlus) return;
-    
-    Alert.alert(
-      'Cancel Subscription',
-      'Are you sure you want to cancel your Chirp+ subscription? You will lose access to premium features.',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cancelSubscription(user.id);
-              // Update user state to reflect cancelled subscription
-              // updateUser({ ...user, isChirpPlus: false }); // TODO: Add updateUser method to AuthContext
-              Alert.alert('Subscription Cancelled', 'Your Chirp+ subscription has been cancelled.');
-            } catch (error) {
-              console.error('Error cancelling subscription:', error);
-              Alert.alert('Error', 'Failed to cancel subscription. Please try again.');
-            }
-          }
-        }
-      ]
-    );
   };
 
   const TabButton = ({ id, title, active }: { id: string; title: string; active: boolean }) => (
@@ -356,112 +326,6 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     </View>
   );
 
-  const renderChirpPlusTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardTitleContainer}>
-            <ChirpPlusBadge size={20} />
-            <Text style={styles.cardTitle}>Chirp+ Subscription</Text>
-          </View>
-        </View>
-        <View style={styles.cardContent}>
-          {user?.isChirpPlus ? (
-            <View>
-              <Text style={styles.subscriptionStatus}>✅ Active Chirp+ Member</Text>
-              <Text style={styles.subscriptionBenefits}>
-                You have access to premium features including unlimited AI generations and premium models.
-              </Text>
-              
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancelSubscription}
-              >
-                <Text style={styles.cancelButtonText}>Cancel Subscription</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View>
-              <Text style={styles.subscriptionStatus}>❌ Not a Chirp+ Member</Text>
-              <Text style={styles.subscriptionBenefits}>
-                Upgrade to Chirp+ for unlimited AI generations, premium models, and exclusive features.
-              </Text>
-              
-              <TouchableOpacity 
-                onPress={() => {
-                  // Navigate to subscription page
-                  if (typeof window !== 'undefined' && window.location) {
-                    // Browser environment
-                    window.location.href = '/subscription';
-                  } else {
-                    // React Native environment
-                    const { router } = require('expo-router');
-                    router.push('/subscription');
-                  }
-                }}
-              >
-                <LinearGradient
-                  colors={['#7c3aed', '#ec4899']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.upgradeButton}
-                >
-                  <Text style={styles.upgradeButtonText}>Upgrade to Chirp+</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
-      
-      {/* Badge Visibility */}
-      {user?.isChirpPlus && (
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>🏆 Badge Visibility</Text>
-          </View>
-          <View style={styles.cardContent}>
-            <View style={styles.switchRow}>
-              <View style={styles.switchTextContainer}>
-                <Text style={styles.switchLabel}>Show Chirp+ Badge</Text>
-                <Text style={styles.switchDescription}>
-                  Display your premium status on your profile and posts
-                </Text>
-              </View>
-              <Switch
-                value={user?.showChirpPlusBadge !== false}
-                onValueChange={async (value) => {
-                  if (!user || isBadgeToggling) return;
-                  
-                  setIsBadgeToggling(true);
-                  try {
-                    await updateChirpPlusBadgeVisibility(user.id, value);
-                    // Update local user state immediately
-                    await updateUser({ showChirpPlusBadge: value });
-                    Alert.alert(
-                      'Success',
-                      value 
-                        ? 'Chirp+ badge will now be visible on your profile and posts' 
-                        : 'Chirp+ badge has been hidden from your profile and posts'
-                    );
-                  } catch (error) {
-                    console.error('Error updating badge visibility:', error);
-                    Alert.alert('Error', 'Failed to update badge visibility. Please try again.');
-                  } finally {
-                    setIsBadgeToggling(false);
-                  }
-                }}
-                trackColor={{ false: '#d1d5db', true: '#7c3aed' }}
-                thumbColor="#ffffff"
-                disabled={isBadgeToggling}
-              />
-            </View>
-          </View>
-        </View>
-      )}
-    </View>
-  );
-
   const renderAccountTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.card}>
@@ -477,6 +341,9 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           </Text>
           <Text style={styles.currentInfo}>
             Handle: @{user?.customHandle || user?.handle}
+          </Text>
+          <Text style={styles.currentInfo}>
+            Joined: January 2025
           </Text>
           
           <TouchableOpacity 
@@ -567,7 +434,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerIcon}>⚙️</Text>
+          <GearIcon size={20} color="#7c3aed" />
           <Text style={styles.headerTitle}>Settings</Text>
         </View>
         <View style={styles.headerSpacer} />
@@ -578,7 +445,6 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScrollView}>
           <View style={styles.tabsButtonContainer}>
             <TabButton id="profile" title="Profile" active={activeTab === 'profile'} />
-            <TabButton id="chirpplus" title="Chirp+" active={activeTab === 'chirpplus'} />
             <TabButton id="account" title="Account" active={activeTab === 'account'} />
           </View>
         </ScrollView>
@@ -587,7 +453,6 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === 'profile' && renderProfileTab()}
-        {activeTab === 'chirpplus' && renderChirpPlusTab()}
         {activeTab === 'account' && renderAccountTab()}
       </ScrollView>
     </View>

@@ -73,6 +73,7 @@ export interface IStorage {
   getFollowers(userId: string): Promise<Array<User>>;
   getFollowing(userId: string): Promise<Array<User>>;
   getFollowCounts(userId: string): Promise<{ followers: number; following: number }>;
+  getUserStats(userId: string): Promise<{ chirps: number; followers: number; following: number; reactions: number }>;
 
   // Push token operations
   addPushToken(userId: string, token: string, platform: string): Promise<void>;
@@ -1068,6 +1069,35 @@ export class DatabaseStorage implements IStorage {
     return {
       followers: followersCount.count,
       following: followingCount.count,
+    };
+  }
+
+  async getUserStats(userId: string): Promise<{ chirps: number; followers: number; following: number; reactions: number }> {
+    const [chirpsCount] = await db
+      .select({ count: count() })
+      .from(chirps)
+      .where(eq(chirps.authorId, userId));
+
+    const [followersCount] = await db
+      .select({ count: count() })
+      .from(follows)
+      .where(eq(follows.followingId, userId));
+
+    const [followingCount] = await db
+      .select({ count: count() })
+      .from(follows)
+      .where(eq(follows.followerId, userId));
+
+    const [reactionsCount] = await db
+      .select({ count: count() })
+      .from(reactions)
+      .where(eq(reactions.userId, userId));
+
+    return {
+      chirps: chirpsCount.count,
+      followers: followersCount.count,
+      following: followingCount.count,
+      reactions: reactionsCount.count,
     };
   }
 
