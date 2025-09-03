@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getNotifications, markNotificationAsRead } from '../mobile-db';
+import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
+import FollowIcon from './icons/FollowIcon';
 import HeartIcon from './icons/HeartIcon';
 import MentionIcon from './icons/MentionIcon';
-import FollowIcon from './icons/FollowIcon';
-import { useAuth } from './AuthContext';
-import { getNotifications, markNotificationAsRead } from '../mobile-db';
 
 interface Notification {
   id: string;
@@ -36,10 +36,14 @@ export default function NotificationsPage() {
   }, [user]);
 
   const fetchNotifications = async () => {
-    if (!user) return;
+    if (!user?.id) {
+      console.log('NotificationsPage: User not available, skipping notification fetch');
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('NotificationsPage: Fetching notifications for user:', user.id);
       const dbNotifications = await getNotifications(user.id);
       
       // Convert database notifications to component format
@@ -348,13 +352,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fafafa',
+    paddingTop: 20, // Add top padding
+    paddingBottom: 40, // Increased bottom padding to avoid iPhone home indicator
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    paddingTop: 20, // Reduced top padding to fix spacing issue
+    paddingTop: 60, // Increased to avoid iPhone 16 dynamic island
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
     backgroundColor: '#ffffff',

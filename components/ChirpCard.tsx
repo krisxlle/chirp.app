@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Modal, ScrollView, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import UserAvatar from './UserAvatar';
-import ChirpPlusBadge from './ChirpPlusBadge';
-import ReplyIcon from './icons/ReplyIcon';
-import RepostIcon from './icons/RepostIcon';
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import HeartIcon from './icons/HeartIcon';
 import ShareIcon from './icons/ShareIcon';
 import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
+import UserAvatar from './UserAvatar';
 // Removed UserProfileModal import - using page navigation instead
 import { useAuth } from './AuthContext';
 
@@ -20,8 +18,6 @@ interface User {
   handle?: string;
   profileImageUrl?: string;
   avatarUrl?: string;
-  isChirpPlus?: boolean;
-  showChirpPlusBadge?: boolean;
 }
 
 interface Chirp {
@@ -32,55 +28,44 @@ interface Chirp {
   author: User;
   replyCount: number;
   reactionCount: number;
-  repostCount?: number;
   isWeeklySummary?: boolean;
   // Reply identification fields
   isDirectReply?: boolean;
   isNestedReply?: boolean;
-  // Repost-related fields
-  isRepost?: boolean;
-  repostOfId?: string | null;
-  originalChirp?: {
-    id: string;
-    content: string;
-    createdAt: string;
-    author: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      customHandle: string;
-      handle: string;
-      profileImageUrl?: string | null;
-      isChirpPlus?: boolean;
-      showChirpPlusBadge?: boolean;
-    };
-    isWeeklySummary?: boolean;
-  };
 }
 
 interface ChirpCardProps {
   chirp: Chirp;
   onDeleteSuccess?: () => void;
   onProfilePress?: (userId: string) => void;
+  onLikeUpdate?: (chirpId: string, newLikeCount: number) => void;
   isHighlighted?: boolean;
 }
 
-export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHighlighted = false }: ChirpCardProps) {
+export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLikeUpdate, isHighlighted = false }: ChirpCardProps) {
   // Safety check for author data
   if (!chirp || !chirp.author) {
     return null;
   }
 
   const { user } = useAuth();
-  const [reactions, setReactions] = useState(chirp.reactionCount || 0);
+  
+  // Safety check for user - if user is not available, show a loading state
+  if (!user) {
+    console.log('ChirpCard: User not available, showing loading state');
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </View>
+    );
+  }
+  
+  console.log('ChirpCard: User available, rendering chirp:', user.id);
+  const [likes, setLikes] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
-  const [reposts, setReposts] = useState(chirp.repostCount || 0);
-  const [userHasReposted, setUserHasReposted] = useState(false);
-  // Removed modal state - using page navigation instead
-
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [userReaction, setUserReaction] = useState<string | null>(null);
-  const [userReactionCount, setUserReactionCount] = useState<number>(0);
+  const [userHasLiked, setUserHasLiked] = useState(false);
   
   // Real-time timestamp updates
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -101,45 +86,21 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
   const [loadingUserActions, setLoadingUserActions] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   
-  // Check if user has already reposted this chirp
+  // Update counts when chirp data changes
   useEffect(() => {
-    const checkRepostStatus = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { checkUserReposted } = await import('../mobile-db');
-        const userIdStr = String(user.id);
-        const chirpIdStr = String(chirp.id);
-        const hasReposted = await checkUserReposted(userIdStr, chirpIdStr);
-        setUserHasReposted(hasReposted);
-      } catch (error) {
-        console.error('Error checking repost status:', error);
-      }
-    };
-    
-    checkRepostStatus();
+    setLikes(chirp.reactionCount || 0);
+    setReplies(chirp.replyCount || 0);
+  }, [chirp.reactionCount, chirp.replyCount]);
+
+  // Check if user has already liked this chirp
+  useEffect(() => {
+    if (user?.id) {
+      loadUserLikeStatus();
+    } else {
+      console.log('ChirpCard: User not available for like status check');
+    }
   }, [user?.id, chirp.id]);
   
-  // Comprehensive mood reactions for Chirp - Organized by categories for better UX
-  const reactionEmojis = [
-    // Popular emotions & expressions
-    '😀', '😂', '🥰', '😍', '🤔', '😢', '😭', '😡', '🤩', '😱',
-    '🤯', '😴', '🤤', '🫶🏼', '💀', '👀', '💪', '🤡', '👏', '🔥',
-    // Hearts & love
-    '❤️', '💜', '🤍', '💙', '💚', '💛', '🧡', '🖤', '💖', '💕',
-    // Sparkles & magic  
-    '✨', '💫', '⭐', '🌟', '🔆', '💎', '🔮', '🪩', '🎭', '🎪',
-    // Nature & aesthetic
-    '🦋', '🌸', '🌺', '🌻', '🍃', '🌙', '🌈', '🦄', '🧚‍♀️', '☕',
-    // Celebration & vibes
-    '🎉', '💯', '🎵', '🎨', '📸', '💌', '🍯', '🧸', '💝', '🎀',
-    // Extra expressions
-    '🫧', '📚', '🎬', '🧩', '👻', '🥳', '😇', '🤪', '😎', '🥺'
-  ];
-
-  // Quick access mood buttons - most popular reactions
-  const quickMoodReactions = ['🫶🏼', '😭', '💀'];
-
   // Calculate display name for the chirp author (remove lastName functionality)
   const displayName = chirp.author.firstName 
     ? chirp.author.firstName
@@ -148,45 +109,30 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
   
-  // Load user's current reaction and repost status on component mount
+  // Load user's current like status on component mount
   useEffect(() => {
     if (user?.id) {
-      loadUserReaction();
-      loadUserRepostStatus();
+      loadUserLikeStatus();
+    } else {
+      console.log('ChirpCard: User not available for status loading');
     }
   }, [chirp.id, user?.id]);
   
-  const loadUserReaction = async () => {
+  const loadUserLikeStatus = async () => {
+    if (!user?.id) {
+      console.log('ChirpCard: User not available for like status loading');
+      return;
+    }
+    
     try {
-      const { getUserReactionForChirp, getEmojiReactionCount } = await import('../mobile-db');
+      const { getUserReactionForChirp } = await import('../mobile-db');
       const chirpIdStr = String(chirp.id);
-      const userIdStr = String(user?.id || '');
+      const userIdStr = String(user.id);
       
       const reaction = await getUserReactionForChirp(chirpIdStr, userIdStr);
-      setUserReaction(reaction);
-      
-      // If user has a reaction, get the count for that specific emoji
-      if (reaction) {
-        const count = await getEmojiReactionCount(chirpIdStr, reaction);
-        setUserReactionCount(count);
-      } else {
-        setUserReactionCount(0);
-      }
+      setUserHasLiked(!!reaction);
     } catch (error) {
-      console.error('Error loading user reaction:', error);
-    }
-  };
-
-  const loadUserRepostStatus = async () => {
-    try {
-      const { getUserRepostStatus } = await import('../mobile-db');
-      const chirpIdStr = String(chirp.id);
-      const userIdStr = String(user?.id || '');
-      
-      const hasReposted = await getUserRepostStatus(chirpIdStr, userIdStr);
-      setUserHasReposted(hasReposted);
-    } catch (error) {
-      console.error('Error loading user repost status:', error);
+      console.error('Error loading user like status:', error);
     }
   };
 
@@ -235,88 +181,62 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
     }
   };
 
-  const handleRepost = async () => {
+  const handleLike = async () => {
     try {
       if (!user?.id) {
-        Alert.alert('Sign in required', 'Please sign in to repost chirps.');
+        Alert.alert('Sign in required', 'Please sign in to like chirps.');
         return;
       }
 
-      const { createRepost } = await import('../mobile-db');
-      
-      const chirpIdStr = String(chirp.id);
-      const userIdStr = String(user.id);
-      
-      console.log('Creating repost of chirp:', chirpIdStr, 'by user:', userIdStr);
-      
-      const repostResult = await createRepost(chirpIdStr, userIdStr);
-      
-      if (repostResult.reposted) {
-        // User added a new repost
-        setReposts(prev => prev + 1);
-        setUserHasReposted(true);
-        console.log('Repost added successfully - new chirp ID:', repostResult.repostChirpId);
-        Alert.alert('Reposted!', 'This chirp has been shared to your timeline and will appear in feeds.');
-      } else {
-        // User removed their repost
-        setReposts(prev => Math.max(0, prev - 1));
-        setUserHasReposted(false);
-        console.log('Repost removed from timeline');
-        Alert.alert('Unreposted', 'This chirp has been removed from your timeline.');
-      }
-    } catch (error) {
-      console.error('Error handling repost:', error);
-      Alert.alert('Error', 'Failed to repost. Please try again.');
-    }
-  };
+      console.log('🔴 Like button pressed!');
+      console.log('Chirp ID:', chirp.id, 'Type:', typeof chirp.id);
+      console.log('User ID:', user.id, 'Type:', typeof user.id);
+      console.log('Current likes:', likes);
+      console.log('User has liked:', userHasLiked);
 
-  const handleReactionPress = async (emoji: string) => {
-    try {
-      if (!user?.id) {
-        Alert.alert('Sign in required', 'Please sign in to react to chirps.');
-        return;
-      }
-
-      const { addReaction, getEmojiReactionCount } = await import('../mobile-db');
+      const { addReaction, triggerReactionNotification } = await import('../mobile-db');
       
       // Ensure proper string conversion for database constraints
       const chirpIdStr = String(chirp.id);
       const userIdStr = String(user.id);
       
-      console.log('Adding reaction:', emoji, 'to chirp:', chirpIdStr, 'by user:', userIdStr);
+      console.log('Toggling like for chirp:', chirpIdStr, 'by user:', userIdStr);
       
-      const result = await addReaction(chirpIdStr, emoji, userIdStr);
+      const result = await addReaction(chirpIdStr, '❤️', userIdStr);
+      
+      console.log('AddReaction result:', result);
       
       if (result.added) {
-        // User added a new reaction
-        if (!userReaction) {
-          setReactions(prev => prev + 1);
-        }
-        setUserReaction(result.emoji);
+        // User liked the chirp
+        const newLikeCount = likes + 1;
+        setLikes(newLikeCount);
+        setUserHasLiked(true);
         
-        // Get accurate count for the specific emoji
-        if (result.emoji) {
-          const emojiCount = await getEmojiReactionCount(chirpIdStr, result.emoji);
-          setUserReactionCount(emojiCount);
+        // Notify parent component of like count update
+        if (onLikeUpdate) {
+          onLikeUpdate(chirp.id, newLikeCount);
         }
         
-        // Trigger push notification for reaction
-        const { triggerReactionNotification } = await import('../mobile-db');
+        // Trigger push notification for like
         await triggerReactionNotification(String(chirp.author.id), userIdStr, parseInt(chirpIdStr));
         
-        console.log('Reaction added successfully');
+        console.log('✅ Chirp liked successfully');
       } else {
-        // User removed their reaction
-        setReactions(prev => Math.max(0, prev - 1));
-        setUserReaction(null);
-        setUserReactionCount(0);
-        console.log('Reaction removed');
+        // User unliked the chirp
+        const newLikeCount = Math.max(0, likes - 1);
+        setLikes(newLikeCount);
+        setUserHasLiked(false);
+        
+        // Notify parent component of like count update
+        if (onLikeUpdate) {
+          onLikeUpdate(chirp.id, newLikeCount);
+        }
+        
+        console.log('✅ Chirp unliked successfully');
       }
-      
-      setShowReactionPicker(false);
     } catch (error) {
-      console.error('Error handling reaction:', error);
-      Alert.alert('Error', 'Failed to add reaction. Please try again.');
+      console.error('❌ Error handling like:', error);
+      Alert.alert('Error', 'Failed to like chirp. Please try again.');
     }
   };
 
@@ -375,7 +295,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
   };
 
   const handleFollowToggle = async () => {
-    if (loadingUserActions || !user?.id || !chirp.author.id) return;
+    if (loadingUserActions || !user?.id || !chirp.author.id) {
+      console.log('ChirpCard: Cannot toggle follow - missing user or author ID');
+      return;
+    }
     
     setLoadingUserActions(true);
     try {
@@ -418,7 +341,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
   };
 
   const handleBlockToggle = async () => {
-    if (loadingUserActions || !user?.id || !chirp.author.id) return;
+    if (loadingUserActions || !user?.id || !chirp.author.id) {
+      console.log('ChirpCard: Cannot toggle block - missing user or author ID');
+      return;
+    }
     
     if (isBlocked) {
       // Unblock user
@@ -478,7 +404,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
   };
 
   const handleNotificationToggle = async () => {
-    if (loadingUserActions || !user?.id || !chirp.author.id) return;
+    if (loadingUserActions || !user?.id || !chirp.author.id) {
+      console.log('ChirpCard: Cannot toggle notifications - missing user or author ID');
+      return;
+    }
     
     setLoadingUserActions(true);
     try {
@@ -660,9 +589,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
             }} style={styles.nameContainer}>
               <Text style={styles.username}>{displayName}</Text>
             </TouchableOpacity>
-            {chirp.author?.isChirpPlus && chirp.author?.showChirpPlusBadge && (
-              <ChirpPlusBadge size={16} />
-            )}
             <Text style={styles.timestamp}>{formatDate(chirp.createdAt)}</Text>
           </View>
           
@@ -705,16 +631,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
         </TouchableOpacity>
       </View>
 
-      {chirp.isRepost && chirp.originalChirp && (
-        <View style={styles.repostIndicator}>
-          <RepostIcon size={16} color="#7c3aed" />
-          <Text style={styles.repostText}>
-            {displayName} reposted
-          </Text>
-        </View>
-      )}
-
-      {(chirp.isWeeklySummary || (chirp.isRepost && chirp.originalChirp?.isWeeklySummary)) && (
+      {chirp.isWeeklySummary && (
         <Text style={styles.weeklySummaryTitle}>
           Weekly Summary (2025-07-13 - 2025-07-19)
         </Text>
@@ -770,106 +687,21 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, isHi
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.actionButton, userHasReposted && { backgroundColor: '#f3e8ff' }]} 
+          style={styles.likeButton} 
           onPress={(e) => {
             e.stopPropagation();
-            handleRepost();
+            handleLike();
           }}
         >
-          <RepostIcon size={18} color={userHasReposted ? "#7c3aed" : "#657786"} />
-          <Text style={[styles.actionText, userHasReposted && { color: "#7c3aed" }]}>{reposts}</Text>
+          <HeartIcon 
+            size={18} 
+            color={userHasLiked ? "#e31b23" : "#657786"} 
+            filled={userHasLiked}
+          />
+          <Text style={[styles.actionText, userHasLiked && { color: "#e31b23" }]}>
+            {likes}
+          </Text>
         </TouchableOpacity>
-
-        <View style={styles.reactionsContainer}>
-          {/* Show user's selected reaction with purple background */}
-          {userReaction ? (
-            <TouchableOpacity 
-              style={[styles.reactionButton, styles.selectedReactionButton]} 
-              onPress={(e) => {
-                e.stopPropagation();
-                handleReactionPress(userReaction);
-              }}
-            >
-              <Text style={styles.reactionIcon}>{userReaction}</Text>
-              <Text style={styles.reactionCount}>{userReactionCount}</Text>
-            </TouchableOpacity>
-          ) : (
-            /* Show quick access reactions when no reaction is selected */
-            quickMoodReactions.map((emoji) => (
-              <TouchableOpacity 
-                key={emoji}
-                style={styles.reactionButton} 
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleReactionPress(emoji);
-                }}
-              >
-                <Text style={styles.reactionIcon}>{emoji}</Text>
-              </TouchableOpacity>
-            ))
-          )}
-          
-          {/* Always show plus button to change/add reaction */}
-          <TouchableOpacity 
-            style={styles.addReactionButton} 
-            onPress={(e) => {
-              e.stopPropagation();
-              setShowReactionPicker(!showReactionPicker);
-            }}
-          >
-            <Text style={styles.addReactionText}>+</Text>
-          </TouchableOpacity>
-          
-          {/* Total reaction count next to mood buttons */}
-          {reactions > 0 && (
-            <Text style={styles.reactionCountText}>
-              {formatNumber(reactions)}
-            </Text>
-          )}
-          
-          {/* Reaction picker for all emojis - Grid Layout */}
-          {showReactionPicker && (
-            <View style={styles.reactionPickerContainer}>
-              <View style={styles.reactionPickerWrapper}>
-                {/* Close button */}
-                <TouchableOpacity 
-                  style={styles.reactionPickerClose}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    setShowReactionPicker(false);
-                  }}
-                >
-                  <Text style={styles.reactionPickerCloseText}>×</Text>
-                </TouchableOpacity>
-                
-                <ScrollView 
-                  showsVerticalScrollIndicator={false}
-                  style={styles.reactionPicker}
-                  contentContainerStyle={styles.reactionPickerContent}
-                >
-                  <View style={styles.reactionGrid}>
-                    {reactionEmojis.map((emoji, index) => (
-                      <TouchableOpacity 
-                        key={index}
-                        style={[
-                          styles.reactionGridOption,
-                          userReaction === emoji && styles.selectedReactionOption
-                        ]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleReactionPress(emoji);
-                          setShowReactionPicker(false); // Auto-close after selection
-                        }}
-                      >
-                        <Text style={styles.reactionEmoji}>{emoji}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
-              </View>
-            </View>
-          )}
-        </View>
 
         <View style={styles.shareButtonContainer}>
           <TouchableOpacity 
@@ -1173,18 +1005,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 52, // Align with content below avatar
   },
-  repostIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 52,
-    marginBottom: 8,
-  },
-  repostText: {
-    fontSize: 13,
-    color: '#7c3aed',
-    fontWeight: '500',
-    marginLeft: 6,
-  },
   moreButton: {
     padding: 8,
   },
@@ -1229,30 +1049,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 4,
   },
-  reactionsContainer: {
+  likeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
     marginRight: 8,
-    overflow: 'visible',
-  },
-  reactionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 3, // Reduced margin for tighter spacing
-    minWidth: 0,
-    flexShrink: 1,
-    paddingHorizontal: 2, // Added small padding to prevent touching
-  },
-  reactionIcon: {
-    fontSize: 13, // Slightly smaller icon
-    marginRight: 1,
-  },
-  reactionCount: {
-    fontSize: 10, // Smaller count text
-    color: '#657786',
-    fontWeight: '500',
-    minWidth: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   addReactionButton: {
     alignItems: 'center',
@@ -1560,5 +1363,13 @@ const styles = StyleSheet.create({
     color: '#657786',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 16,
+    padding: 20,
   },
 });

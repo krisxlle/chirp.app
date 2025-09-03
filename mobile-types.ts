@@ -13,8 +13,6 @@ export interface MobileChirp {
     customHandle: string;
     handle: string;
     profileImageUrl?: string | null;
-    isChirpPlus: boolean;
-    showChirpPlusBadge: boolean;
   };
   replyCount: number;
   reactionCount: number;
@@ -38,8 +36,6 @@ export interface MobileChirp {
       customHandle: string;
       handle: string;
       profileImageUrl?: string | null;
-      isChirpPlus: boolean;
-      showChirpPlusBadge: boolean;
     };
     isWeeklySummary?: boolean;
   };
@@ -58,4 +54,5 @@ export interface MobileUser {
   avatarUrl?: string;
   bannerUrl?: string;
   linkInBio?: string;
+  crystalBalance?: number;
 }

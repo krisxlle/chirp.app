@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import UserAvatar from './UserAvatar';
-import { useAuth } from './AuthContext';
+import React, { useState } from 'react';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useAuth } from './AuthContext';
+import UserAvatar from './UserAvatar';
 
 interface ComposeChirpProps {
-  onPost?: () => void;
+  onPost?: (content: string) => void;
 }
 
 // Thread Icon Component
@@ -25,13 +25,27 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [isPosting, setIsPosting] = useState(false);
   const [threadChirps, setThreadChirps] = useState<string[]>([]);
   
-  const { user: authUser } = useAuth();
+  const { user: authUser, isLoading } = useAuth();
   
   const maxLength = 280;
   const remainingChars = maxLength - content.length;
 
+  console.log('ComposeChirp: authUser available:', !!authUser, 'authUser.id:', authUser?.id);
+
+  // Safety check - if user is not available, show a loading state
+  if (!authUser) {
+    console.log('ComposeChirp: User not available, showing loading state');
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading compose...</Text>
+        </View>
+      </View>
+    );
+  }
+
   // Convert auth user to expected User format for UserAvatar component
-  const user = authUser ? {
+  const user = {
     id: authUser.id,
     firstName: authUser.firstName || authUser.name || authUser.email?.split('@')[0] || 'User',
     lastName: authUser.lastName || '',
@@ -40,13 +54,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     customHandle: authUser.customHandle,
     handle: authUser.handle,
     bio: authUser.bio,
-  } : {
-    id: "1",
-    firstName: "User",
-    lastName: "",
-    email: "user@example.com",
-    profileImageUrl: undefined,
   };
+
+  console.log('ComposeChirp: Final user object:', user.id);
 
   const addToThread = () => {
     if (!content.trim()) {
@@ -64,6 +74,12 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   };
 
   const handleSubmit = async () => {
+    // Check if user is available
+    if (!user?.id) {
+      Alert.alert("Authentication Error", "Please sign in to post a chirp.");
+      return;
+    }
+
     if (isThreadMode) {
       // In thread mode, we're posting the entire thread
       // First check if we have any content at all
@@ -96,13 +112,12 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     setIsPosting(true);
     
     try {
+      // Use API instead of direct database connection
+      console.log('Creating chirp via API...');
+      console.log('User ID for chirp creation:', user.id);
+      
       // Import the createChirp function from mobile-db
       const { createChirp } = await import('../mobile-db');
-      
-      // Get authenticated user's ID
-      if (!user?.id) {
-        throw new Error('You must be signed in to post a chirp');
-      }
       
       if (isThreadMode) {
         // Create the complete thread content array
@@ -131,7 +146,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       }
       
       setContent("");
-      onPost?.();
+              // Call the onPost callback with the content
+        onPost?.(content.trim());
     } catch (error) {
       console.error('Error posting chirp:', error);
       Alert.alert("Error", error instanceof Error ? error.message : "Failed to post. Please try again.");
@@ -455,5 +471,16 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#6b7280',
+    fontWeight: '600',
   },
 });

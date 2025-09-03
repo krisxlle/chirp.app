@@ -6,13 +6,46 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Add request parsing middleware
-app.use(express.json());
+// Add request parsing middleware with better error handling
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      console.error('Invalid JSON received:', buf.toString());
+      throw new Error('Invalid JSON');
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: false }));
 
 // API routes - define these early
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Application server is running', timestamp: new Date().toISOString() });
+});
+
+// Push token management (for mobile push notifications)
+app.post('/api/push-tokens', async (req, res) => {
+  try {
+    console.log('Received push token request:', req.body);
+    
+    const userId = 'chirp-preview-001'; // Default to @chirp account for demo
+    
+    // Simple validation
+    const { token, platform } = req.body;
+    if (!token || !platform) {
+      console.log('Missing required fields:', { token: !!token, platform: !!platform });
+      return res.status(400).json({ error: 'Token and platform are required' });
+    }
+
+    // For now, just log the token registration
+    console.log('Push token registered successfully:', { userId, token, platform });
+    res.json({ success: true, message: 'Push token registered' });
+  } catch (error) {
+    console.error('Error registering push token:', error);
+    res.status(500).json({ error: 'Failed to register push token' });
+  }
 });
 
 async function startServer() {
@@ -99,7 +132,11 @@ async function startServer() {
     // Error handling middleware - must be at the end
     app.use((err, req, res, next) => {
       console.error('Server error:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
+      if (err.type === 'entity.parse.failed') {
+        res.status(400).json({ error: 'Invalid JSON in request body' });
+      } else {
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
     });
 
     console.log(`Starting application server on http://localhost:${port}`);
@@ -108,6 +145,7 @@ async function startServer() {
     const server = app.listen(port, '0.0.0.0', () => {
       console.log(`✓ Application server is running on port ${port}`);
       console.log(`✓ Visit http://localhost:${port} to view the app`);
+      console.log(`✓ Push tokens API available at http://localhost:${port}/api/push-tokens`);
     });
 
     // Graceful shutdown handling

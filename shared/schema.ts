@@ -1,18 +1,18 @@
+import { relations } from "drizzle-orm";
 import {
-  pgTable,
-  text,
-  varchar,
-  timestamp,
-  jsonb,
-  index,
-  serial,
-  integer,
-  boolean,
-  unique,
+    boolean,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    serial,
+    text,
+    timestamp,
+    unique,
+    varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
 
 // Session storage table (required for Replit Auth)
 export const sessions = pgTable(
@@ -43,12 +43,6 @@ export const users = pgTable("users", {
   hasCustomHandle: boolean("has_custom_handle").default(false),
   linkShares: integer("link_shares").default(0), // Number of people who clicked their shared link
   vipCodeUsed: boolean("vip_code_used").default(false),
-  // Chirp+ premium features
-  isChirpPlus: boolean("is_chirp_plus").default(false),
-  chirpPlusExpiresAt: timestamp("chirp_plus_expires_at"),
-  showChirpPlusBadge: boolean("show_chirp_plus_badge").default(true),
-  stripeCustomerId: varchar("stripe_customer_id"),
-  stripeSubscriptionId: varchar("stripe_subscription_id"),
   // AI generation tracking
   lastAiGenerationDate: timestamp("last_ai_generation_date"),
   aiGenerationsToday: integer("ai_generations_today").default(0),

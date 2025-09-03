@@ -53,11 +53,16 @@ export default function SignInScreenNew() {
   const [password, setPassword] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
 
+  console.log('SignInScreenNew: Component rendered');
+
   const handleEnterChirp = () => {
+    console.log('SignInScreenNew: Enter Chirp button pressed');
     setShowSignInForm(true);
   };
 
   const handleSignIn = async () => {
+    console.log('SignInScreenNew: Sign in attempt with email:', email);
+    
     if (!email.trim()) {
       Alert.alert('Error', 'Please enter your email address');
       return;
@@ -71,6 +76,7 @@ export default function SignInScreenNew() {
     setIsSigningIn(true);
     try {
       const success = await signIn(email, password);
+      console.log('SignInScreenNew: Sign in result:', success);
       if (!success) {
         Alert.alert('Sign In Failed', 'Invalid email or password. Please try again.');
       }

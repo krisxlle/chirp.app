@@ -1,23 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ScrollView, 
-  Image,
-  ImageBackground,
-  Alert,
-  TextInput
+import React, { useEffect, useState } from 'react';
+import {
+    Alert,
+    ImageBackground,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import UserAvatar from './UserAvatar';
-import ChirpCard from './ChirpCard';
-import ChirpPlusBadge from './ChirpPlusBadge';
-import SettingsPage from './SettingsPage';
-import FollowersFollowingModal from './FollowersFollowingModal';
 import { useAuth } from './AuthContext';
-import { getChirpsFromDB } from '../mobile-db';
+import ChirpCard from './ChirpCard';
+import FollowersFollowingModal from './FollowersFollowingModal';
+import GearIcon from './icons/GearIcon';
+import SettingsPage from './SettingsPage';
+import UserAvatar from './UserAvatar';
 
 interface User {
   id: string;
@@ -30,32 +26,24 @@ interface User {
   bannerImageUrl?: string;
   bio?: string;
   joinedAt?: string;
-  // Chirp+ subscription fields
-  isChirpPlus?: boolean;
-  chirpPlusExpiresAt?: string;
-  showChirpPlusBadge?: boolean;
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
 }
 
 interface ProfileStats {
   following: number;
   followers: number;
-  chirps: number;
-  reactions: number;
+  profilePower: number;
 }
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'chirps' | 'replies' | 'reactions'>('chirps');
+  const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
   const [userReplies, setUserReplies] = useState<any[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
     following: 0,
     followers: 0,
-    chirps: 0,
-    reactions: 0
+    profilePower: 0
   });
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -77,16 +65,68 @@ export default function ProfilePage() {
       setUserChirps(originalChirps);
       setUserReplies(userRepliesData);
       
+      // Calculate profile power based on engagement algorithm
+      const profilePower = calculateProfilePower(originalChirps, userRepliesData, userStats);
+      
       // Update stats with real data from database
       setStats({
-        chirps: userStats.chirps,
         followers: userStats.followers,
         following: userStats.following,
-        reactions: userStats.moodReactions
+        profilePower: profilePower
       });
     } catch (error) {
       console.error('Error fetching user chirps:', error);
     }
+  };
+
+  // Algorithm to calculate profile power based on engagement
+  const calculateProfilePower = (chirps: any[], replies: any[], stats: any) => {
+    let totalPower = 0;
+    
+    // Base power from followers (each follower = 10 points)
+    totalPower += (stats.followers || 0) * 10;
+    
+    // Power from chirps (each chirp = 5 points)
+    totalPower += chirps.length * 5;
+    
+    // Power from replies (each reply = 3 points)
+    totalPower += replies.length * 3;
+    
+    // Power from engagement on chirps
+    chirps.forEach(chirp => {
+      // Reaction power (each reaction = 1 point)
+      totalPower += (chirp.reactionCount || 0) * 1;
+      
+      // Reply power (each reply = 2 points)
+      totalPower += (chirp.replyCount || 0) * 2;
+    });
+    
+    // Power from engagement on replies
+    replies.forEach(reply => {
+      // Reaction power (each reaction = 1 point)
+      totalPower += (reply.reactionCount || 0) * 1;
+      
+      // Reply power (each reply = 2 points)
+      totalPower += (reply.replyCount || 0) * 2;
+    });
+    
+    // Activity bonus (more active users get bonus)
+    const totalPosts = chirps.length + replies.length;
+    if (totalPosts >= 10) totalPower += 100; // Active user bonus
+    if (totalPosts >= 25) totalPower += 200; // Very active user bonus
+    if (totalPosts >= 50) totalPower += 300; // Power user bonus
+    
+    // Engagement rate bonus (high engagement rate = more power)
+    const totalEngagement = chirps.reduce((sum, chirp) => 
+      sum + (chirp.reactionCount || 0) + (chirp.replyCount || 0), 0
+    );
+    const engagementRate = totalPosts > 0 ? totalEngagement / totalPosts : 0;
+    
+    if (engagementRate >= 5) totalPower += 150; // High engagement bonus
+    if (engagementRate >= 10) totalPower += 300; // Very high engagement bonus
+    
+    // Minimum power of 100, maximum reasonable power of 2000
+    return Math.max(100, Math.min(2000, Math.round(totalPower)));
   };
 
   useEffect(() => {
@@ -99,106 +139,7 @@ export default function ProfilePage() {
 
   const displayName = user?.firstName || user?.customHandle || user?.handle || 'User';
 
-  const [showAIPrompt, setShowAIPrompt] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [summaryPosted, setSummaryPosted] = useState(false);
-  const [isPostingSummary, setIsPostingSummary] = useState(false);
-
-  const handleAIProfile = () => {
-    setShowAIPrompt(true);
-    setAiPrompt('');
-  };
-
-  const handlePostSummary = async () => {
-    if (!user?.id || summaryPosted) return;
-
-    try {
-      setIsPostingSummary(true);
-      
-      const summaryContent = "This week the @chirp account posted **5 chirps** showcasing all the platform features! From welcome messages to thread demonstrations - giving **main character energy** with that premium Chirp+ flex 👑 Those reaction tutorials and hashtag tips? **Pure educational vibes** helping users master the app ✨ Official account but make it relatable";
-      
-      // Import createChirp function
-      const { createChirp } = await import('../mobile-db');
-      
-      // Post the weekly summary as a chirp
-      const result = await createChirp(summaryContent, undefined, user.id);
-      
-      if (result) {
-        setSummaryPosted(true);
-        Alert.alert('Success', 'Weekly summary posted as a chirp!');
-        // Refresh user chirps to show the new post
-        fetchUserChirps();
-      } else {
-        throw new Error('Failed to post summary');
-      }
-    } catch (error) {
-      console.error('Error posting weekly summary:', error);
-      Alert.alert('Error', 'Failed to post weekly summary. Please try again.');
-    } finally {
-      setIsPostingSummary(false);
-    }
-  };
-
-  const generateProfile = async () => {
-    if (!aiPrompt.trim()) {
-      Alert.alert('Error', 'Please enter a description for your profile generation.');
-      return;
-    }
-
-    if (!user?.id) {
-      Alert.alert('Error', 'User not found. Please sign in again.');
-      return;
-    }
-
-    try {
-      setIsGenerating(true);
-      console.log('Generating AI profile with prompt:', aiPrompt);
-      
-      // Import the AI generation function
-      const { generateAIProfile } = await import('../mobile-ai');
-      
-      // Generate AI profile using direct OpenAI integration
-      const result = await generateAIProfile(aiPrompt);
-      
-      if (!result.avatar && !result.banner) {
-        throw new Error('AI profile generation returned no images');
-      }
-      
-      // Update user profile in database with new images
-      const { updateUserProfile } = await import('../mobile-db');
-      const updateData: any = {};
-      
-      if (result.avatar) {
-        updateData.profileImageUrl = result.avatar;
-      }
-      if (result.banner) {
-        updateData.bannerImageUrl = result.banner;
-      }
-      if (result.bio) {
-        updateData.bio = result.bio;
-      }
-      
-      // Update profile in database
-      await updateUserProfile(user.id, updateData);
-      
-      setShowAIPrompt(false);
-      setAiPrompt('');
-      Alert.alert('Success!', 'Your AI profile has been generated and saved!');
-      
-      // Update local user state to show new images immediately
-      setUser(prev => prev ? {
-        ...prev,
-        ...updateData
-      } : null);
-      
-    } catch (error) {
-      console.error('Error generating AI profile:', error);
-      Alert.alert('Error', `Profile generation failed: ${error.message}. Please try again.`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  // Removed weekly summary and AI profile generation functionality
 
   const [showSettings, setShowSettings] = useState(false);
 
@@ -227,7 +168,7 @@ export default function ProfilePage() {
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Profile</Text>
-          <Text style={styles.headerSubtitle}>{stats.chirps} chirps</Text>
+          <Text style={styles.headerSubtitle}>{userChirps.length} chirps</Text>
         </View>
       </View>
 
@@ -247,33 +188,18 @@ export default function ProfilePage() {
         </View>
       </View>
 
-      {/* User Info with Action Buttons */}
+            {/* User Info */}
       <View style={styles.userInfo}>
-        {/* Action Buttons positioned in white area */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity onPress={handleAIProfile}>
-            <LinearGradient
-              colors={['#7c3aed', '#ec4899']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.generateProfileButton}
-            >
-              <Text style={styles.generateProfileButtonText}>Generate Profile</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          
+        <View style={styles.nameRow}>
+          <View style={styles.nameContainer}>
+            <Text style={styles.displayName}>{displayName}</Text>
+            <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
+          </View>
           <TouchableOpacity style={styles.settingsButtonRounded} onPress={handleSettings}>
-            <Text style={styles.settingsIcon}>⚙️</Text>
+            <GearIcon size={16} color="#7c3aed" />
             <Text style={styles.settingsText}>Settings</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.nameRow}>
-          <Text style={styles.displayName}>{displayName}</Text>
-          {user.isChirpPlus && user.showChirpPlusBadge && (
-            <ChirpPlusBadge size={18} />
-          )}
-        </View>
-        <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
         <Text style={styles.bio}>
           {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
             if (part.startsWith('@')) {
@@ -303,11 +229,12 @@ export default function ProfilePage() {
             return <Text key={index}>{part}</Text>;
           })}
         </Text>
-        
-        <View style={styles.joinedRow}>
-          <Text style={styles.calendarIcon}>📅</Text>
-          <Text style={styles.joinedText}>Joined January 2025</Text>
-        </View>
+      </View>
+
+      {/* Profile Power */}
+      <View style={styles.profilePowerContainer}>
+        <Text style={styles.profilePowerLabel}>Profile Power</Text>
+        <Text style={styles.profilePowerNumber}>{stats.profilePower}</Text>
       </View>
 
       {/* Stats Row */}
@@ -321,121 +248,18 @@ export default function ProfilePage() {
           <Text style={styles.statNumber}>{stats.followers}</Text>
           <Text style={styles.statLabel}>Followers</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.chirps}</Text>
-          <Text style={styles.statLabel}>Chirps</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.statItem}>
-          <Text style={styles.statNumber}>{stats.reactions}</Text>
-          <Text style={styles.statLabel}>Reactions</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Weekly Summary Card */}
-      <View style={styles.weeklySummaryCard}>
-        <View style={styles.weeklySummaryHeader}>
-          <Text style={styles.weeklySummaryIcon}>✨</Text>
-          <Text style={styles.weeklySummaryTitle}>Weekly Summary</Text>
-          <View style={styles.weeklySummaryDate}>
-            <Text style={styles.summaryDateText}>Jul 12 - Jul 18</Text>
-            <Text style={styles.nextUpdateText}>⏰ Next: 4d 0h 38m</Text>
-          </View>
-        </View>
-        
-        <Text style={styles.weeklySummaryContent}>
-          This week the @chirp account posted **5 chirps** showcasing all the platform features! From welcome messages to thread demonstrations - giving **main character energy** with that premium Chirp+ flex 👑 Those reaction tutorials and hashtag tips? **Pure educational vibes** helping users master the app ✨ Official account but make it relatable
-        </Text>
-
-        {/* Analytics within Weekly Summary */}
-        <View style={styles.analyticsContainer}>
-          <View style={styles.analyticsRow}>
-            <View style={styles.analyticItem}>
-              <Text style={styles.analyticIcon}>📊</Text>
-              <Text style={styles.analyticValue}>5</Text>
-              <Text style={styles.analyticLabel}>Chirps Posted</Text>
-            </View>
-            
-            <View style={styles.analyticItem}>
-              <Text style={styles.analyticIcon}>✨</Text>
-              <Text style={styles.analyticLabel}>Weekly Vibe</Text>
-              <Text style={styles.analyticSubtitle}>Tech-Savvy Chaos</Text>
-            </View>
-          </View>
-
-          <View style={styles.topChirpCard}>
-            <Text style={styles.topChirpIcon}>🏆</Text>
-            <Text style={styles.topChirpTitle}>Top Chirp</Text>
-            <Text style={styles.topChirpContent}>
-              "Welcome to Chirp! 🐤 This is the official preview account. Explore all the features and discover your authentic social voice."
-            </Text>
-          </View>
-
-          <View style={styles.reactionsAnalytics}>
-            <Text style={styles.reactionsTitle}>🔥 Top Reactions</Text>
-            <View style={styles.reactionsRow}>
-              <View style={styles.reactionItem}>
-                <Text style={styles.reactionIcon}>🔥</Text>
-                <Text style={styles.reactionCount}>1</Text>
-              </View>
-              <View style={styles.reactionItem}>
-                <Text style={styles.reactionIcon}>👏</Text>
-                <Text style={styles.reactionCount}>1</Text>
-              </View>
-              <View style={styles.reactionItem}>
-                <Text style={styles.reactionIcon}>❤️</Text>
-                <Text style={styles.reactionCount}>1</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.commonWordsCard}>
-            <Text style={styles.commonWordsTitle}>📈 Common Words</Text>
-            <View style={styles.tagsContainer}>
-              <Text style={styles.tag}>chirp</Text>
-              <Text style={styles.tag}>features</Text>
-              <Text style={styles.tag}>premium</Text>
-              <Text style={styles.tag}>welcome</Text>
-              <Text style={styles.tag}>reactions</Text>
-            </View>
-          </View>
-        </View>
-        
-        {/* Post as Chirp Button */}
-        <View style={styles.summaryActionContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.postSummaryButton, 
-              (summaryPosted || isPostingSummary) && styles.postSummaryButtonDisabled
-            ]}
-            onPress={handlePostSummary}
-            disabled={summaryPosted || isPostingSummary}
-          >
-            <LinearGradient
-              colors={summaryPosted ? ['#9ca3af', '#6b7280'] : ['#7c3aed', '#a855f7']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.postSummaryGradient}
-            >
-              <Text style={styles.postSummaryButtonText}>
-                {isPostingSummary ? 'Posting...' : summaryPosted ? 'Posted ✓' : 'Post as Chirp'}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Profile Tabs */}
       <View style={styles.tabsContainer}>
-        {(['chirps', 'replies', 'reactions'] as const).map((tab) => (
+        {(['chirps', 'comments', 'collection'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab === 'chirps' ? 'Chirps' : tab === 'replies' ? 'Replies' : 'Reactions'}
+              {tab === 'chirps' ? 'Chirps' : tab === 'comments' ? 'Comments' : 'Collection'}
             </Text>
           </TouchableOpacity>
         ))}
@@ -463,13 +287,13 @@ export default function ProfilePage() {
           </View>
         )}
         
-        {activeTab === 'replies' && (
+        {activeTab === 'comments' && (
           <View style={styles.repliesContainer}>
             {userReplies.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyIcon}>↩️</Text>
-                <Text style={styles.emptyTitle}>No replies yet</Text>
-                <Text style={styles.emptySubtext}>Your replies will appear here</Text>
+                <Text style={styles.emptyIcon}>💬</Text>
+                <Text style={styles.emptyTitle}>No comments yet</Text>
+                <Text style={styles.emptySubtext}>Your comments will appear here</Text>
               </View>
             ) : (
               userReplies.map((reply) => (
@@ -482,74 +306,18 @@ export default function ProfilePage() {
             )}
           </View>
         )}
-        
-        {activeTab === 'reactions' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>❤️</Text>
-            <Text style={styles.emptyTitle}>No reactions yet</Text>
-            <Text style={styles.emptySubtext}>Posts you've reacted to will appear here</Text>
+
+        {activeTab === 'collection' && (
+          <View style={styles.collectionContainer}>
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🎮</Text>
+              <Text style={styles.emptyTitle}>Collection Feed</Text>
+              <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
+            </View>
           </View>
         )}
       </View>
       
-      {/* AI Prompt Overlay */}
-      {showAIPrompt && (
-        <View style={styles.promptOverlay}>
-          <View style={styles.promptContainer}>
-            <View style={styles.promptHeader}>
-              <Text style={styles.promptTitle}>AI Profile Generation</Text>
-              <TouchableOpacity 
-                style={styles.promptCloseButton}
-                onPress={() => setShowAIPrompt(false)}
-              >
-                <Text style={styles.promptCloseText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <Text style={styles.promptDescription}>
-              Describe the style you want for your avatar and banner image:
-            </Text>
-            
-            <TextInput
-              style={styles.promptInput}
-              placeholder="e.g., cartoon character with purple hair, aesthetic anime style, futuristic cyberpunk look..."
-              placeholderTextColor="#657786"
-              multiline
-              numberOfLines={4}
-              value={aiPrompt}
-              onChangeText={setAiPrompt}
-              maxLength={500}
-            />
-            
-            <View style={styles.promptButtons}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => setShowAIPrompt(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.generateButtonContainer, isGenerating && styles.generateButtonDisabled]}
-                onPress={generateProfile}
-                disabled={isGenerating}
-              >
-                <LinearGradient
-                  colors={['#7c3aed', '#ec4899']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.generateButton}
-                >
-                  <Text style={styles.generateButtonText}>
-                    {isGenerating ? 'Generating...' : 'Generate'}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
-
       {/* Followers/Following Modals */}
       <FollowersFollowingModal
         visible={showFollowersModal}
@@ -574,6 +342,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fafafa',
+    paddingTop: 20, // Add top padding
+    paddingBottom: 40, // Increased bottom padding to avoid iPhone home indicator
   },
   loadingContainer: {
     flex: 1,
@@ -590,6 +360,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    paddingTop: 60, // Increased to avoid iPhone 16 dynamic island
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
@@ -704,6 +475,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  nameContainer: {
+    flex: 1,
+    marginLeft: 100, // Add left margin to account for the avatar
+  },
   displayName: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -737,6 +512,28 @@ const styles = StyleSheet.create({
   joinedText: {
     fontSize: 15,
     color: '#657786',
+  },
+  profilePowerContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
+  },
+  profilePowerLabel: {
+    fontSize: 16,
+    color: '#657786',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  profilePowerNumber: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#7c3aed',
+    textShadowColor: 'rgba(124, 58, 237, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   statsRow: {
     flexDirection: 'row',
@@ -945,6 +742,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   repliesContainer: {
+    paddingHorizontal: 8,
+  },
+  collectionContainer: {
     paddingHorizontal: 8,
   },
   analyticsContainer: {

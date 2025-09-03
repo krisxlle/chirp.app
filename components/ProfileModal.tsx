@@ -1,23 +1,22 @@
-import React, { useState, useEffect, useContext } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  StyleSheet,
-  Alert,
-  TextInput,
-  ImageBackground
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import UserAvatar from './UserAvatar';
-import ChirpCard from './ChirpCard';
-import ChirpPlusBadge from './ChirpPlusBadge';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    ImageBackground,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { blockUser, checkFollowStatus, followUser, getUserChirps, getUserProfile, getUserReplies, getUserStats, unblockUser, unfollowUser, updateUserProfile } from '../mobile-db';
 import { useAuth } from './AuthContext';
-import { getUserProfile, getUserChirps, getUserReplies, getUserStats, followUser, unfollowUser, blockUser, unblockUser, checkFollowStatus, updateUserProfile } from '../mobile-db';
+import ChirpCard from './ChirpCard';
+import GearIcon from './icons/GearIcon';
+import UserAvatar from './UserAvatar';
 
 interface ProfileModalProps {
   visible: boolean;
@@ -330,7 +329,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
                     </TouchableOpacity>
                     
                     <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-                      <Text style={styles.settingsIcon}>⚙️</Text>
+                      <GearIcon size={16} color="#7c3aed" />
                       <Text style={styles.settingsText}>Settings</Text>
                     </TouchableOpacity>
                   </>
@@ -364,9 +363,6 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
               
               <View style={styles.nameRow}>
                 <Text style={styles.displayName}>{displayName}</Text>
-                {user.is_chirp_plus && user.show_chirp_plus_badge && (
-                  <ChirpPlusBadge size={18} />
-                )}
               </View>
               <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
               
@@ -675,18 +671,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#14171a',
-  },
-  chirpPlusBadge: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    marginLeft: 8,
-  },
-  chirpPlusBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
   },
   handle: {
     fontSize: 15,

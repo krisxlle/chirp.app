@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CollectionIcon from './icons/CollectionIcon';
+import GachaIcon from './icons/GachaIcon';
 import HomeIcon from './icons/HomeIcon';
-import SearchIcon from './icons/SearchIcon';
 import NotificationIcon from './icons/NotificationIcon';
 import ProfileIcon from './icons/ProfileIcon';
 
@@ -20,11 +21,6 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       component: HomeIcon,
     },
     {
-      key: "search",
-      isActive: activeTab === "search",
-      component: SearchIcon,
-    },
-    {
       key: "notifications",
       isActive: activeTab === "notifications",
       badge: unreadCount && unreadCount > 0 ? unreadCount : null,
@@ -34,6 +30,16 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       key: "profile",
       isActive: activeTab === "profile",
       component: ProfileIcon,
+    },
+    {
+      key: "collection",
+      isActive: activeTab === "collection",
+      component: CollectionIcon,
+    },
+    {
+      key: "gacha",
+      isActive: activeTab === "gacha",
+      component: GachaIcon,
     },
   ];
 
@@ -105,6 +111,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#e5e7eb',
     paddingHorizontal: 1.5,
     paddingVertical: 4, // Reduced from 8 to 4 (50% reduction in white space)
+    paddingBottom: 20, // Add bottom padding to avoid iPhone home indicator
   },
   navContainer: {
     flexDirection: 'row',

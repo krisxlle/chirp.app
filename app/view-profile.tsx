@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ScrollView,
-  ActivityIndicator,
-  Alert
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getUserById } from '../mobile-db';
 import UserAvatar from '../components/UserAvatar';
-import ChirpPlusBadge from '../components/ChirpPlusBadge';
+import { getUserById } from '../mobile-db';
 
 export default function ViewProfile() {
   console.log('🎯🎯🎯 VIEW PROFILE COMPONENT SUCCESSFULLY LOADED! 🎯🎯🎯');
@@ -119,9 +118,6 @@ export default function ViewProfile() {
           
           <View style={styles.nameContainer}>
             <Text style={styles.displayName}>{displayName}</Text>
-            {user.is_chirp_plus && user.show_chirp_plus_badge && (
-              <ChirpPlusBadge size={20} />
-            )}
           </View>
           <Text style={styles.handle}>@{user.customHandle || user.handle || user.id}</Text>
           
