@@ -1922,3 +1922,62 @@ export async function getFirstUser(): Promise<any | null> {
 
 // Initialize database on module load
 initializeDatabase();
+
+// Crystal Balance Functions
+export async function getUserCrystalBalance(userId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('crystal_balance')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error getting user crystal balance:', error);
+      return 500000; // Default fallback
+    }
+
+    return data?.crystal_balance || 500000;
+  } catch (error) {
+    console.error('Error getting user crystal balance:', error);
+    return 500000; // Default fallback
+  }
+}
+
+export async function updateUserCrystalBalance(userId: string, newBalance: number): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ crystal_balance: newBalance })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating user crystal balance:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating user crystal balance:', error);
+    return false;
+  }
+}
+
+export async function deductCrystalBalance(userId: string, amount: number): Promise<boolean> {
+  try {
+    // First get current balance
+    const currentBalance = await getUserCrystalBalance(userId);
+    
+    if (currentBalance < amount) {
+      console.error('Insufficient crystal balance');
+      return false;
+    }
+
+    // Update with new balance
+    const newBalance = currentBalance - amount;
+    return await updateUserCrystalBalance(userId, newBalance);
+  } catch (error) {
+    console.error('Error deducting crystal balance:', error);
+    return false;
+  }
+}

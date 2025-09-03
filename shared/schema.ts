@@ -55,6 +55,7 @@ export const users = pgTable("users", {
   weeklyAnalyticsEnabled: boolean("weekly_analytics_enabled").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  crystalBalance: integer("crystal_balance").default(500000),
 });
 
 export const chirps = pgTable("chirps", {

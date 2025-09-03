@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         avatarUrl: '/generated-images/avatar_45265332_1753135628516_57g6f04rq.png',
         bannerImageUrl: undefined,
         bio: 'founder of @Chirp',
-        crystalBalance: 500000 // Starting crystal balance for testing
+        crystalBalance: 500000 // Will be updated from database
       };
       
       console.log('🧪 AUTH DISABLED - Using mock user for testing:', mockUser.customHandle);
@@ -62,14 +62,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Set user immediately to prevent undefined errors
       setUser(mockUser);
+      setIsLoading(false); // Set loading to false immediately
       
-      // Add a small delay to ensure user is fully set before components render
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // TEMPORARILY DISABLED: Load crystal balance from database
+      // This will be re-enabled once the crystal_balance column is added to Supabase
+      /*
+      try {
+        const { getUserCrystalBalance } = await import('../mobile-db');
+        const crystalBalance = await getUserCrystalBalance(mockUser.id);
+        setUser(prev => prev ? { ...prev, crystalBalance } : prev);
+        console.log('💎 Loaded crystal balance from database:', crystalBalance);
+      } catch (error) {
+        console.error('Error loading crystal balance:', error);
+      }
       
+      // Set up periodic crystal balance refresh
+      const refreshInterval = setInterval(async () => {
+        try {
+          const { getUserCrystalBalance } = await import('../mobile-db');
+          const crystalBalance = await getUserCrystalBalance(mockUser.id);
+          setUser(prev => prev ? { ...prev, crystalBalance } : prev);
+        } catch (error) {
+          console.error('Error refreshing crystal balance:', error);
+        }
+      }, 5000); // Refresh every 5 seconds
+      
+      // Cleanup interval on unmount
+      return () => clearInterval(refreshInterval);
+      */
+      
+      console.log('💎 Using default crystal balance (500000) until column is added to Supabase');
+      
+      // Ensure loading is set to false
       setIsLoading(false);
-      
-      console.log('✅ Auth state initialized successfully');
-      return;
       
       // ORIGINAL AUTH CODE (commented out for testing):
       /*
@@ -103,7 +128,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log('🚀 AuthProvider: Starting auth state check...');
-    checkAuthState();
+    checkAuthState().catch(error => {
+      console.error('Error in checkAuthState:', error);
+      setIsLoading(false);
+    });
   }, []);
 
   // Removed auto-login functionality - users must explicitly sign in
