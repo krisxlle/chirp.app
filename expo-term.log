@@ -1,0 +1,30 @@
+nohup: ignoring input
+Starting project at /workspace
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Tunnel connected.
+Tunnel ready.
+The following packages should be updated for best compatibility with the installed expo version:
+  expo@53.0.20 - expected version: 53.0.22
+  expo-router@5.1.4 - expected version: ~5.1.5
+  expo-system-ui@5.0.10 - expected version: ~5.0.11
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8085
+Logs for your project will appear below.
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 44.4% (200/330)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.1% (449/584)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓░░░░░░░░ 53.7% (378/516)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.1% (2202/2333)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.4% (1412/2381)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.3% (2362/2481)
+λ Bundled 13929ms node_modules/expo-router/node/render.js (2630 modules)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.0% (2706/2745)
+λ  WARN  "shadow*" style props are deprecated. Use "boxShadow". 
+λ  LOG  ⚠️ Using hardcoded fallback database URL for Expo environment
+λ  WARN  [expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect. 
+λ  LOG  🔌 Initializing database connection...
+λ  LOG  ✅ Database connection initialized successfully
+λ  LOG  🔥🔥🔥 INDEX SCREEN LOADED - Main entry point
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.0% (2709/2745)
+Web Bundled 15719ms node_modules/expo-router/entry.js (2753 modules)
