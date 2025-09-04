@@ -6,7 +6,7 @@ import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
 
 interface ComposeChirpProps {
-  onPost?: (content: string) => void;
+  onPost?: (content: string) => Promise<void> | void;
 }
 
 // Thread Icon Component
@@ -33,7 +33,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   console.log('ComposeChirp: authUser available:', !!authUser, 'authUser.id:', authUser?.id);
 
   // Safety check - if user is not available, show a loading state
-  if (!authUser) {
+  if (!authUser || !authUser.id) {
     console.log('ComposeChirp: User not available, showing loading state');
     return (
       <View style={styles.container}>
@@ -119,6 +119,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       // Import the createChirp function from mobile-db
       const { createChirp } = await import('../mobile-db');
       
+      console.log('🔍 Debug: User object for chirp creation:', {
+        userId: user.id,
+        userEmail: user.email,
+        userType: typeof user.id,
+        isUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)
+      });
+      
       if (isThreadMode) {
         // Create the complete thread content array
         const allThreadContent = [...threadChirps];
@@ -146,8 +153,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       }
       
       setContent("");
-              // Call the onPost callback with the content
-        onPost?.(content.trim());
+      // Call the onPost callback with the content
+      await onPost?.(content.trim());
     } catch (error) {
       console.error('Error posting chirp:', error);
       Alert.alert("Error", error instanceof Error ? error.message : "Failed to post. Please try again.");

@@ -1,17 +1,18 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  Image
+  View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from './AuthContext';
 import Svg, { Path } from 'react-native-svg';
+import { useAuth } from './AuthContext';
 
 // Custom Icon Components
 const SparklesIcon = ({ size = 24, color = "#7c3aed" }) => (
@@ -66,8 +67,12 @@ const BotIcon = ({ size = 24, color = "#7c3aed" }) => (
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [customHandle, setCustomHandle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { signIn, clearSession } = useAuth();
 
   const handleSignIn = async () => {
     if (!email.trim()) {
@@ -75,16 +80,21 @@ export default function SignInScreen() {
       return;
     }
 
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter a password');
+      return;
+    }
+
     setIsLoading(true);
     try {
       console.log('🔐 Attempting to sign in with email:', email);
-      const success = await signIn(email);
+      const success = await signIn(email, password);
       
       if (success) {
         console.log('✅ Sign in successful');
         // AuthContext will handle the state update
       } else {
-        Alert.alert('Sign In Failed', 'Unable to find an account with that email. For demo purposes, try any email or leave blank to use the preview account.');
+        Alert.alert('Sign In Failed', 'Invalid email or password.');
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -94,22 +104,115 @@ export default function SignInScreen() {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleSignUp = async () => {
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter an email address');
+      return;
+    }
+
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter a password');
+      return;
+    }
+
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+
+    if (!customHandle.trim()) {
+      Alert.alert('Error', 'Please enter a custom handle');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    // Custom handle validation
+    if (customHandle.length < 3) {
+      Alert.alert('Error', 'Custom handle must be at least 3 characters long');
+      return;
+    }
+
+    if (customHandle.length > 20) {
+      Alert.alert('Error', 'Custom handle must be less than 20 characters');
+      return;
+    }
+
+    // Check for valid characters in handle (alphanumeric, hyphen, period)
+    const handleRegex = /^[a-zA-Z0-9.-]+$/;
+    if (!handleRegex.test(customHandle.replace('@', ''))) {
+      Alert.alert('Error', 'Custom handle can only contain letters, numbers, hyphens, and periods');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      console.log('🎭 Using demo login');
-      const success = await signIn('preview@chirp.app');
+      console.log('📝 Attempting to sign up with email:', email);
       
-      if (success) {
-        console.log('✅ Demo login successful');
+      // Call the sign-up API
+      const apiUrl = __DEV__ ? '/api/auth/signup' : 'http://192.168.1.194:4000/api/auth/signup';
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+          customHandle
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        Alert.alert('Sign Up Failed', errorData.error || 'Failed to create account');
+        return;
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Sign up successful, now automatically signing in...');
+        
+        // Automatically sign in the user after successful sign-up
+        const signInSuccess = await signIn(email, password);
+        
+        if (signInSuccess) {
+          console.log('✅ Auto sign-in successful after sign-up');
+          // No need to show alert - user is now signed in and will be redirected
+        } else {
+          console.log('⚠️ Auto sign-in failed after sign-up, showing manual sign-in prompt');
+          Alert.alert('Account Created', 'Account created successfully! Please sign in with your credentials.', [
+            {
+              text: 'OK',
+              onPress: () => setIsSignUp(false)
+            }
+          ]);
+        }
       } else {
-        Alert.alert('Demo Login Failed', 'Unable to load demo account. Please try again.');
+        Alert.alert('Sign Up Failed', 'Failed to create account. Please try again.');
       }
     } catch (error) {
-      console.error('Demo login error:', error);
-      Alert.alert('Error', 'Demo login failed. Please try again.');
+      console.error('Sign up error:', error);
+      Alert.alert('Error', 'Sign up failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleClearSession = async () => {
+    try {
+      await clearSession();
+      Alert.alert('Session Cleared', 'All stored session data has been cleared. Please sign in again.');
+    } catch (error) {
+      console.error('Error clearing session:', error);
+      Alert.alert('Error', 'Failed to clear session');
     }
   };
 
@@ -123,7 +226,12 @@ export default function SignInScreen() {
         style={styles.backgroundGradient}
       />
       
-      <View style={styles.content}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image 
@@ -132,31 +240,35 @@ export default function SignInScreen() {
             resizeMode="contain"
           />
           <Text style={styles.appName}>Chirp</Text>
-          <Text style={styles.tagline}>Express yourself authentically</Text>
+          <Text style={styles.tagline}>The social media gacha app.</Text>
         </View>
 
         {/* Features */}
         <View style={styles.featuresContainer}>
           <View style={styles.feature}>
             <SparklesIcon size={24} color="#ffffff" />
-            <Text style={styles.featureText}>AI-powered profiles and content</Text>
+            <Text style={styles.featureText}>Pull for your friends from the gacha</Text>
           </View>
           
           <View style={styles.feature}>
             <HeartIcon size={24} color="#ffffff" />
-            <Text style={styles.featureText}>Express with unlimited mood reactions</Text>
+            <Text style={styles.featureText}>Engage with posts to earn crystals</Text>
           </View>
           
           <View style={styles.feature}>
             <BotIcon size={24} color="#ffffff" />
-            <Text style={styles.featureText}>Connect through authentic conversations</Text>
+            <Text style={styles.featureText}>Raise your profile power</Text>
           </View>
         </View>
 
         {/* Sign In Form */}
         <View style={styles.signInContainer}>
-          <Text style={styles.signInTitle}>Welcome back</Text>
-          <Text style={styles.signInSubtitle}>Sign in to continue to Chirp</Text>
+          <Text style={styles.signInTitle}>
+            {isSignUp ? 'Create Account' : 'Welcome back'}
+          </Text>
+          <Text style={styles.signInSubtitle}>
+            {isSignUp ? 'Sign up to join Chirp' : 'Sign in to continue to Chirp'}
+          </Text>
           
           <TextInput
             style={styles.emailInput}
@@ -169,38 +281,83 @@ export default function SignInScreen() {
             autoCorrect={false}
           />
           
+          <TextInput
+            style={styles.emailInput}
+            placeholder="Enter your password"
+            placeholderTextColor="#9ca3af"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          {isSignUp && (
+            <>
+              <TextInput
+                style={styles.emailInput}
+                placeholder="Full name"
+                placeholderTextColor="#9ca3af"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              
+              <TextInput
+                style={styles.emailInput}
+                placeholder="Custom handle (e.g., @username)"
+                placeholderTextColor="#9ca3af"
+                value={customHandle}
+                onChangeText={setCustomHandle}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </>
+          )}
+          
           <TouchableOpacity
             style={styles.signInButton}
-            onPress={handleSignIn}
+            onPress={isSignUp ? handleSignUp : handleSignIn}
             disabled={isLoading}
           >
             {isLoading ? (
               <ActivityIndicator color="#ffffff" size="small" />
             ) : (
-              <Text style={styles.signInButtonText}>Sign In</Text>
+              <Text style={styles.signInButtonText}>
+                {isSignUp ? 'Create Account' : 'Sign In'}
+              </Text>
             )}
           </TouchableOpacity>
           
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-          
           <TouchableOpacity
-            style={styles.demoButton}
-            onPress={handleDemoLogin}
+            style={styles.switchModeButton}
+            onPress={() => setIsSignUp(!isSignUp)}
             disabled={isLoading}
           >
-            <Text style={styles.demoButtonText}>Continue with Demo Account</Text>
+            <Text style={styles.switchModeText}>
+              {isSignUp ? 'Already have an account? Sign In' : 'New to Chirp? Create Account'}
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Debug: Clear Session Button */}
+          <TouchableOpacity
+            style={[styles.switchModeButton, { marginTop: 8 }]}
+            onPress={handleClearSession}
+            disabled={isLoading}
+          >
+            <Text style={[styles.switchModeText, { color: '#ef4444' }]}>
+              Clear Session (Debug)
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Footer */}
         <Text style={styles.footerText}>
-          New to Chirp? Experience authentic social media powered by AI
+          New to Chirp? Start building your profile collection now.
         </Text>
       </View>
+      </ScrollView>
     </View>
   );
 }
@@ -222,6 +379,13 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
     justifyContent: 'space-between',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   logoContainer: {
     alignItems: 'center',
@@ -303,34 +467,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  demoButton: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    height: 48,
+  switchModeButton: {
+    marginTop: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
   },
-  demoButtonText: {
-    color: '#374151',
+  switchModeText: {
+    color: '#7c3aed',
     fontSize: 16,
     fontWeight: '500',
+    textDecorationLine: 'underline',
   },
   footerText: {
     fontSize: 14,

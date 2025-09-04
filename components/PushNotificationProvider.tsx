@@ -14,18 +14,13 @@ const getApiBaseUrl = () => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
   
-  // For Android emulator, use 10.0.2.2 to access host machine
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5000';
-  }
-  
-  // For iOS simulator, use localhost
-  if (Platform.OS === 'ios') {
-    return 'http://localhost:5000';
+  // For physical device testing, use the computer's IP address
+  if (Platform.OS === 'android' || Platform.OS === 'ios') {
+    return 'http://192.168.1.194:4000';
   }
   
   // For web, use localhost (default fallback)
-  return 'http://localhost:5000';
+  return 'http://localhost:4000';
 };
 
 const API_BASE_URL = getApiBaseUrl();

@@ -1363,7 +1363,7 @@ export async function getForYouChirps(): Promise<any[]> {
       .from('chirps')
       .select(`
         *,
-        users!inner(
+        users(
           id,
           first_name,
           last_name,
@@ -1392,6 +1392,12 @@ export async function getForYouChirps(): Promise<any[]> {
 export async function createChirp(content: string, authorId?: string, replyToId?: string | null): Promise<any> {
   try {
     console.log('Creating chirp:', { content, authorId, replyToId });
+    console.log('🔍 Debug: AuthorId details:', {
+      authorId,
+      type: typeof authorId,
+      isUUID: authorId ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(authorId) : 'undefined',
+      length: authorId ? authorId.length : 'undefined'
+    });
     
     // Ensure database is initialized
     await ensureDatabaseInitialized();
@@ -1855,28 +1861,32 @@ export async function authenticateUser(email: string, password: string): Promise
   try {
     console.log('Authenticating user:', email);
     
-    // Ensure database is initialized
-    await ensureDatabaseInitialized();
+    // Use relative URL in development to leverage Metro proxy
+    const apiUrl = __DEV__ ? '/api/auth/login' : 'http://192.168.1.194:4000/api/auth/login';
     
-    if (!isDatabaseConnected) {
-      console.log('🔄 Database not connected, mock authentication');
-      return {
-        id: 'mock_user_1',
-        email: email,
-        first_name: 'Mock',
-        last_name: 'User',
-        custom_handle: 'mockuser'
-      };
+    // Call the authentication API
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    if (!response.ok) {
+      console.error('Authentication API error:', response.status);
+      return null;
     }
     
-    // For now, return mock data - would need proper auth implementation
-    return {
-      id: 'mock_user_1',
-      email: email,
-      first_name: 'Mock',
-      last_name: 'User',
-      custom_handle: 'mockuser'
-    };
+    const result = await response.json();
+    
+    if (result.success && result.user) {
+      console.log('✅ User authenticated successfully:', result.user.email);
+      return result.user;
+    }
+    
+    console.log('❌ Authentication failed');
+    return null;
   } catch (error) {
     console.error('Error authenticating user:', error);
     return null;

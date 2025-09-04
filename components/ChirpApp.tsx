@@ -8,6 +8,7 @@ import GachaPage from './GachaPage';
 import HomePage from './HomePage';
 import NotificationsPage from './NotificationsPage';
 import ProfilePage from './ProfilePage';
+import SignInScreen from './SignInScreen';
 
 export default function ChirpApp() {
   const { user, isLoading } = useAuth();
@@ -33,17 +34,13 @@ export default function ChirpApp() {
     );
   }
 
-  // Safety check - ensure user is available before rendering
-  if (!user) {
-    console.log('ChirpApp: User not available, showing fallback');
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={{ fontSize: 16, color: '#657786' }}>Setting up your account...</Text>
-      </View>
-    );
+  // Show sign-in screen if user is not authenticated
+  if (!isAuthenticated) {
+    console.log('ChirpApp: User not authenticated, showing sign-in screen');
+    return <SignInScreen />;
   }
 
-  console.log('ChirpApp: User available, rendering main app - user ID:', user.id);
+  console.log('ChirpApp: User authenticated, rendering main app - user ID:', user?.id);
 
   // Render the appropriate page based on active tab
   const renderCurrentPage = () => {

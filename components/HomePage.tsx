@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Use API instead of direct database connection
 import { useResponsive } from '../hooks/useResponsive';
+import { getForYouChirps } from '../mobile-db';
 import type { MobileChirp } from '../mobile-types';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
@@ -68,28 +69,36 @@ const createMockChirps = () => [
 ];
 
 // Convert mobile chirps to ChirpCard format
-const convertToChirpCard = (chirp: MobileChirp) => ({
-  id: chirp.id,
-  content: chirp.content,
-  createdAt: chirp.createdAt,
-  isWeeklySummary: chirp.isWeeklySummary || false,
-  author: {
-    id: chirp.author.id || 'anonymous',
-    firstName: chirp.author.firstName || '',
-    lastName: chirp.author.lastName || chirp.author.firstName || '',
-    email: chirp.author.email || 'anonymous@example.com',
-    handle: chirp.author.handle || 'anonymous',
-    customHandle: chirp.author.customHandle || 'anonymous',
-    profileImageUrl: chirp.author.profileImageUrl || undefined,
-  },
-  replyCount: chirp.replyCount || 0,
-  reactionCount: chirp.reactionCount || 0,
-  reactionCounts: chirp.reactions?.reduce((acc: any, reaction: any) => {
-    acc[reaction.emoji] = reaction.count;
-    return acc;
-  }, {}) || {},
-  replies: [],
-});
+const convertToChirpCard = (chirp: MobileChirp) => {
+  // Safety check for chirp and author
+  if (!chirp || !chirp.author) {
+    console.log('HomePage: Invalid chirp data, skipping conversion');
+    return null;
+  }
+
+  return {
+    id: chirp.id,
+    content: chirp.content,
+    createdAt: chirp.createdAt,
+    isWeeklySummary: chirp.isWeeklySummary || false,
+    author: {
+      id: chirp.author.id || 'anonymous',
+      firstName: chirp.author.firstName || chirp.author.first_name || '',
+      lastName: chirp.author.lastName || chirp.author.last_name || chirp.author.firstName || chirp.author.first_name || '',
+      email: chirp.author.email || 'anonymous@example.com',
+      handle: chirp.author.handle || 'anonymous',
+      customHandle: chirp.author.customHandle || chirp.author.custom_handle || 'anonymous',
+      profileImageUrl: chirp.author.profileImageUrl || chirp.author.profile_image_url || undefined,
+    },
+    replyCount: chirp.replyCount || 0,
+    reactionCount: chirp.reactionCount || 0,
+    reactionCounts: chirp.reactions?.reduce((acc: any, reaction: any) => {
+      acc[reaction.emoji] = reaction.count;
+      return acc;
+    }, {}) || {},
+    replies: [],
+  };
+};
 
 export default function HomePage() {
   // Get user from AuthContext
@@ -140,6 +149,36 @@ export default function HomePage() {
     }
   ]);
   
+    // Fetch real chirps from database when component mounts
+  useEffect(() => {
+    const loadChirps = async () => {
+      try {
+        console.log('🔄 Loading chirps from database...');
+        const realChirps = await getForYouChirps();
+        console.log(`✅ Loaded ${realChirps.length} chirps from database`);
+        setForYouChirps(realChirps);
+      } catch (error) {
+        console.error('❌ Error loading chirps from database:', error);
+        console.log('🔄 Falling back to mock chirps');
+        // Keep the mock chirps if database fails
+      }
+    };
+    
+    loadChirps();
+  }, []);
+  
+  // Function to refresh chirps
+  const refreshChirps = async () => {
+    try {
+      console.log('🔄 Refreshing chirps...');
+      const realChirps = await getForYouChirps();
+      console.log(`✅ Refreshed ${realChirps.length} chirps from database`);
+      setForYouChirps(realChirps);
+    } catch (error) {
+      console.error('❌ Error refreshing chirps:', error);
+    }
+  };
+  
   // Function to update chirp like count
   const handleChirpLikeUpdate = (chirpId: string, newLikeCount: number) => {
     setForYouChirps(prevChirps => 
@@ -159,18 +198,24 @@ export default function HomePage() {
     );
   };
   // Function to add a new chirp to the For You feed
-  const handleNewChirp = (content: string) => {
+  const handleNewChirp = async (content: string) => {
+    // Safety check - if user is not available, don't create chirp
+    if (!user) {
+      console.log('HomePage: Cannot create chirp - user not available');
+      return;
+    }
+    
     const newChirp = {
       id: `chirp-${Date.now()}`, // Generate unique ID
       content: content,
       createdAt: new Date().toISOString(),
       author: {
-        id: user?.id || 'current-user',
-        firstName: user?.firstName || 'Current',
-        lastName: user?.lastName || 'User',
-        email: user?.email || 'current@example.com',
-        customHandle: user?.customHandle || 'currentuser',
-        handle: user?.handle || 'currentuser',
+        id: user.id,
+        firstName: user.firstName || 'Current',
+        lastName: user.lastName || 'User',
+        email: user.email || 'current@example.com',
+        customHandle: user.customHandle || 'currentuser',
+        handle: user.handle || 'currentuser',
         profileImageUrl: undefined, // Keep consistent with mock data type
       },
       replyCount: 0,
@@ -179,9 +224,13 @@ export default function HomePage() {
       isWeeklySummary: false,
     };
     
-    // Add the new chirp to the beginning of the For You feed
+    // Add the new chirp to the beginning of the For You feed immediately
     setForYouChirps(prevChirps => [newChirp, ...prevChirps]);
     console.log('New chirp added to For You feed:', newChirp);
+    
+    // Don't refresh immediately - let the user see their chirp
+    // The chirp will be persisted in the database and will appear on next app load
+    console.log('✅ Chirp added to local feed - will persist in database');
   };
   
   // Get current chirps based on feed type
@@ -237,15 +286,21 @@ export default function HomePage() {
             <ComposeChirp onPost={handleNewChirp} />
           </View>
           
-                                {currentChirps.map((chirp) => (
-                        <ChirpCard 
-                          key={chirp.id} 
-                          chirp={convertToChirpCard(chirp)} 
-                          onDeleteSuccess={() => console.log('Chirp deleted')}
-                          onProfilePress={(userId) => console.log('Profile pressed:', userId)}
-                          onLikeUpdate={handleChirpLikeUpdate}
-                        />
-                      ))}
+          {currentChirps.map((chirp) => {
+            const convertedChirp = convertToChirpCard(chirp);
+            if (!convertedChirp) {
+              return null; // Skip invalid chirps
+            }
+            return (
+              <ChirpCard 
+                key={chirp.id} 
+                chirp={convertedChirp} 
+                onDeleteSuccess={() => console.log('Chirp deleted')}
+                onProfilePress={(userId) => console.log('Profile pressed:', userId)}
+                onLikeUpdate={handleChirpLikeUpdate}
+              />
+            );
+          })}
         </ScrollView>
 
         <ProfileModal

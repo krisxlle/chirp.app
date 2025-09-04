@@ -1,0 +1,9 @@
+---
+description: social media gacha app developed using marketing expertise and game theory
+globs:
+alwaysApply: true
+---
+
+- Previews for testing is done on a physical iPhone 16 using Expo Go. Rememer to consider this as a possible error source.
+    - Use computer IP instead of localhost.
+- Use Supabase for all database related concepts.

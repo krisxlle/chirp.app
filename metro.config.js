@@ -16,7 +16,7 @@ config.server.enhanceMiddleware = (middleware, server) => {
       const http = require('http');
       const options = {
         hostname: 'localhost',
-        port: 5000,
+        port: 4000,
         path: req.url,
         method: req.method,
         headers: req.headers
