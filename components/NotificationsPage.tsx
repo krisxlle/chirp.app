@@ -1,528 +1,412 @@
-import { LinearGradient } from 'expo-linear-gradient';
+// components/NotificationsPage.tsx
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// TEMPORARILY DISABLED: Database calls
-// import { getNotifications, markNotificationAsRead } from '../mobile-db';
+import { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { notificationService } from '../services/notificationService';
+import type { Notification } from '../types/notifications';
 import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
-import FollowIcon from './icons/FollowIcon';
-import HeartIcon from './icons/HeartIcon';
-import MentionIcon from './icons/MentionIcon';
-
-interface Notification {
-  id: string;
-  type: 'reaction' | 'mention' | 'follow' | 'reply' | 'mention_bio' | 'repost' | 'weekly_summary';
-  user: {
-    id: string;
-    name: string;
-    handle: string;
-    email: string;
-    profileImageUrl?: string;
-  };
-  content?: string;
-  timestamp: string;
-  isRead: boolean;
-  chirpId?: number;
-  fromUserId?: string;
-}
 
 export default function NotificationsPage() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [user]);
-
-  const fetchNotifications = async () => {
-    if (!user?.id) {
-      console.log('NotificationsPage: User not available, skipping notification fetch');
-      return;
-    }
-    
+  const loadNotifications = useCallback(async () => {
     try {
-      setLoading(true);
-      console.log('NotificationsPage: Using mock notifications (database calls disabled)');
+      if (!user?.id) return;
+
+      setIsLoading(true);
+      const fetchedNotifications = await notificationService.getNotifications(user.id);
+      setNotifications(fetchedNotifications);
       
-      // TEMPORARILY DISABLED: Database calls
-      // const dbNotifications = await getNotifications(user.id);
-      
-      // Mock notifications for testing
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          type: 'reaction',
-          user: {
-            id: 'user-1',
-            name: 'Alex Chen',
-            handle: 'alex_chen',
-            email: 'alex@example.com',
-          },
-          content: 'Welcome to Chirp! This is a test chirp to get you started. 🐦✨',
-          timestamp: '2m',
-          isRead: false,
-          chirpId: 1,
-          fromUserId: 'user-1',
-        },
-        {
-          id: '2',
-          type: 'follow',
-          user: {
-            id: 'user-2',
-            name: 'Maya Rodriguez',
-            handle: 'maya_rodriguez',
-            email: 'maya@example.com',
-          },
-          content: '',
-          timestamp: '5m',
-          isRead: false,
-          fromUserId: 'user-2',
-        },
-        {
-          id: '3',
-          type: 'mention',
-          user: {
-            id: 'user-3',
-            name: 'Jordan Kim',
-            handle: 'jordan_kim',
-            email: 'jordan@example.com',
-          },
-          content: 'Hey @kriselle, check out this new feature!',
-          timestamp: '10m',
-          isRead: true,
-          chirpId: 2,
-          fromUserId: 'user-3',
-        }
-      ];
-      
-      setNotifications(mockNotifications);
+      // Count unread notifications
+      const unread = fetchedNotifications.filter(n => !n.is_read).length;
+      setUnreadCount(unread);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('❌ Error loading notifications:', error);
       Alert.alert('Error', 'Failed to load notifications');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return 'now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const handleNotificationPress = async (notification: Notification) => {
+  const refreshNotifications = useCallback(async () => {
     try {
-      console.log('🔔 Notification pressed:', {
-        type: notification.type,
-        fromUserId: notification.fromUserId,
-        chirpId: notification.chirpId
-      });
+      setIsRefreshing(true);
+      await loadNotifications();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadNotifications]);
 
-      // Mark notification as read
-      if (!notification.isRead) {
-        // TEMPORARILY DISABLED: Database calls
-        // await markNotificationAsRead(Number(notification.id));
-        console.log('🔔 Marking notification as read (database call disabled)');
-        // Update local state
-        setNotifications(prev => 
-          prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
-        );
-      }
+  const markAsRead = useCallback(async (notification: Notification) => {
+    try {
+      if (notification.is_read) return;
+
+      await notificationService.markAsRead(notification.id);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === notification.id 
+            ? { ...n, is_read: true }
+            : n
+        )
+      );
+      
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('❌ Error marking notification as read:', error);
+    }
+  }, []);
+
+  const markAllAsRead = useCallback(async () => {
+    try {
+      if (!user?.id) return;
+
+      await notificationService.markAllAsRead(user.id);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, is_read: true }))
+      );
+      
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('❌ Error marking all notifications as read:', error);
+      Alert.alert('Error', 'Failed to mark all notifications as read');
+    }
+  }, [user?.id]);
+
+  const handleNotificationPress = useCallback(async (notification: Notification) => {
+    try {
+      // Mark as read
+      await markAsRead(notification);
 
       // Navigate based on notification type
       switch (notification.type) {
+        case 'like':
+        case 'comment':
+          if (notification.chirpId) {
+            router.push(`/chirp/${notification.chirpId}`);
+          }
+          break;
         case 'follow':
-          // Navigate to the follower's profile
-          if (notification.fromUserId) {
-            console.log('🔄 Trying to navigate to profile:', notification.fromUserId);
-            console.log('🔄 Router object:', router);
-            console.log('🔄 Router push function:', typeof router.push);
-            
-            // Test if basic navigation works first
-            console.log('🔄 Testing basic home navigation...');
-            router.push('/');
-            
-            // Then try profile navigation after a small delay
-            setTimeout(() => {
-              console.log('🔄 Now trying profile navigation...');
-              try {
-                router.push(`/profile/${notification.fromUserId}`);
-                console.log('✅ Profile navigation call completed');
-              } catch (navError) {
-                console.error('❌ Profile navigation error:', navError);
-              }
-            }, 100);
-          } else {
-            console.log('⚠️ No fromUserId, navigating to home');
-            router.push('/');
+          if (notification.actorId) {
+            router.push(`/profile/${notification.actorId}`);
           }
           break;
-          
-        case 'reaction':
-          // For mood reactions, navigate to the specific chirp page
-          console.log(`🔄 Processing ${notification.type} notification:`, {
-            chirpId: notification.chirpId,
-            fromUserId: notification.fromUserId,
-            content: notification.content
-          });
-          
-          if (notification.chirpId) {
-            console.log(`🔄 Navigating to individual chirp page: /chirp/${notification.chirpId}`);
-            router.push(`/chirp/${notification.chirpId}`);
-          } else {
-            console.log(`🔄 No chirp ID found, navigating to home`);
-            router.push('/');
-          }
-          break;
-          
-        case 'reply':
         case 'mention':
-          // For replies and mentions, also navigate to the specific chirp page
-          console.log(`🔄 Processing ${notification.type} notification:`, {
-            chirpId: notification.chirpId,
-            fromUserId: notification.fromUserId
-          });
-          
           if (notification.chirpId) {
-            console.log(`🔄 Navigating to chirp page for ${notification.type}: /chirp/${notification.chirpId}`);
             router.push(`/chirp/${notification.chirpId}`);
-          } else if (notification.fromUserId) {
-            console.log(`🔄 No chirp ID, navigating to user profile: ${notification.fromUserId}`);
-            router.push(`/profile/${notification.fromUserId}`);
-          } else {
-            console.log(`🔄 Fallback navigation to home for ${notification.type}`);
-            router.push('/');
           }
           break;
-          
-        case 'mention_bio':
-          // Navigate to the user's profile who mentioned them in their bio
-          if (notification.fromUserId) {
-            console.log('🔄 Navigating to profile that mentioned in bio:', notification.fromUserId);
-            try {
-              router.push(`/profile/${notification.fromUserId}`);
-              console.log('✅ Profile navigation attempted');
-            } catch (navError) {
-              console.error('❌ Profile navigation failed:', navError);
-              router.push('/');
-            }
-          } else {
-            console.log('⚠️ No fromUserId, navigating to home');
-            router.push('/');
-          }
-          break;
-          
-        case 'repost':
-          // Navigate to home feed to see the repost
-          console.log('Navigating to home for repost notification');
-          router.push('/');
-          break;
-          
-        case 'weekly_summary':
-          // Navigate to home feed to see weekly summary
-          console.log('Navigating to home for weekly summary');
-          router.push('/');
-          break;
-          
         default:
-          // Default to home feed
-          console.log('Default navigation to home feed');
-          router.push('/');
-          break;
+          console.log('Unknown notification type:', notification.type);
       }
     } catch (error) {
       console.error('❌ Error handling notification press:', error);
-      console.error('Navigation error details:', {
-        notificationType: notification.type,
-        fromUserId: notification.fromUserId,
-        chirpId: notification.chirpId,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      });
-      Alert.alert('Navigation Error', `Failed to navigate: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  };
+  }, [markAsRead]);
 
-  const getNotificationText = (notification: Notification) => {
+  const getNotificationText = useCallback((notification: Notification): string => {
+    const actorName = notification.actor?.customHandle || notification.actor?.handle || 'Someone';
+    
     switch (notification.type) {
-      case 'reaction':
-        return 'reacted to your chirp';
-      case 'mention':
-        return 'mentioned you in a chirp';
-      case 'mention_bio':
-        return 'mentioned you in their bio';
+      case 'like':
+        return `${actorName} liked your chirp`;
+      case 'comment':
+        return `${actorName} commented on your chirp`;
       case 'follow':
-        return 'started following you';
-      case 'reply':
-        return 'replied to your chirp';
-      case 'repost':
-        return 'reposted your chirp';
-      case 'weekly_summary':
-        return 'your weekly summary is ready';
+        return `${actorName} started following you`;
+      case 'mention':
+        return `${actorName} mentioned you`;
       default:
-        return 'sent you a notification';
+        return 'New notification';
     }
-  };
+  }, []);
 
-  const getNotificationIcon = (type: string, color: string) => {
+  const getNotificationIcon = useCallback((type: string): string => {
     switch (type) {
-      case 'reaction':
-        return <HeartIcon size={16} color={color} />;
-      case 'mention':
-        return <MentionIcon size={16} color={color} />;
+      case 'like':
+        return '❤️';
+      case 'comment':
+        return '💬';
       case 'follow':
-        return <FollowIcon size={16} color={color} />;
-      default:
-        return null;
-    }
-  };
-
-  const getNotificationIconColor = (type: string) => {
-    switch (type) {
-      case 'reaction':
-        return '#ef4444'; // red
+        return '👤';
       case 'mention':
-        return '#7c3aed'; // purple
-      case 'follow':
-        return '#3b82f6'; // blue
+        return '@';
       default:
-        return '#657786';
+        return '🔔';
     }
-  };
+  }, []);
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+  const formatTimeAgo = useCallback((dateString: string): string => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return 'now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}m`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}h`;
+    } else if (diffInSeconds < 2592000) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}d`;
+    } else {
+      const months = Math.floor(diffInSeconds / 2592000);
+      return `${months}mo`;
+    }
+  }, []);
+
+  const renderNotification = useCallback(({ item: notification }: { item: Notification }) => (
+    <TouchableOpacity
+      style={[
+        styles.notificationItem,
+        !notification.is_read && styles.unreadNotification,
+      ]}
+      onPress={() => handleNotificationPress(notification)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.notificationContent}>
+        <View style={styles.notificationHeader}>
+          <UserAvatar
+            user={notification.actor}
+            size={40}
+            style={styles.avatar}
+          />
+          <View style={styles.notificationText}>
+            <Text style={styles.notificationMessage}>
+              {getNotificationText(notification)}
+            </Text>
+            <Text style={styles.notificationTime}>
+              {formatTimeAgo(notification.createdAt)}
+            </Text>
+          </View>
+          <View style={styles.notificationIcon}>
+            <Text style={styles.iconText}>
+              {getNotificationIcon(notification.type)}
+            </Text>
+            {!notification.is_read && <View style={styles.unreadDot} />}
+          </View>
+        </View>
+        
+        {notification.chirp && (
+          <View style={styles.chirpPreview}>
+            <Text style={styles.chirpText} numberOfLines={2}>
+              {notification.chirp.content}
+            </Text>
+          </View>
+        )}
       </View>
+    </TouchableOpacity>
+  ), [handleNotificationPress, getNotificationText, getNotificationIcon, formatTimeAgo]);
 
+  const renderEmptyState = useCallback(() => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyIcon}>🔔</Text>
+      <Text style={styles.emptyTitle}>No notifications yet</Text>
+      <Text style={styles.emptySubtext}>
+        You'll see notifications when someone likes, comments, or follows you
+      </Text>
+    </View>
+  ), []);
 
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
-      {/* Notifications List */}
-      {loading ? (
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Subscribe to real-time notifications
+    notificationService.subscribeToNotifications(user.id, (newNotification) => {
+      setNotifications(prev => [newNotification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    });
+
+    return () => {
+      notificationService.unsubscribeFromNotifications();
+    };
+  }, [user?.id]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#7c3aed" />
           <Text style={styles.loadingText}>Loading notifications...</Text>
         </View>
-      ) : notifications.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No notifications yet</Text>
-          <Text style={styles.emptySubtext}>When someone interacts with your chirps, you'll see it here</Text>
-        </View>
-      ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notifications.map((notification, index) => (
-            <View key={notification.id} style={{ marginHorizontal: 12, marginVertical: 4 }}>
+      </SafeAreaView>
+    );
+  }
 
-              <TouchableOpacity 
-                style={styles.notificationItem}
-                onPress={() => handleNotificationPress(notification)}
-                activeOpacity={0.7}
-              >
-              <View style={styles.notificationContent}>
-                {/* User Avatar */}
-                <View style={styles.avatarContainer}>
-                  <UserAvatar user={notification.user} size="md" />
-                </View>
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Notifications</Text>
+        {unreadCount > 0 && (
+          <TouchableOpacity onPress={markAllAsRead} style={styles.markAllButton}>
+            <Text style={styles.markAllText}>Mark all read</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-                {/* Notification Text */}
-                <View style={styles.textContainer}>
-                  <View style={styles.notificationTextRow}>
-                    <Text style={styles.notificationText}>
-                      <Text style={styles.userName}>{notification.user.name}</Text>
-                      <Text style={styles.actionText}> {getNotificationText(notification)}</Text>
-                    </Text>
-                  </View>
-
-                  {/* Content preview for reactions */}
-                  {notification.content && (
-                    <Text style={styles.contentPreview}>{notification.content}</Text>
-                  )}
-
-                  {/* Timestamp */}
-                  <Text style={styles.timestamp}>{notification.timestamp}</Text>
-                </View>
-
-                {/* Action Icon */}
-                <View style={styles.actionIconContainer}>
-                  {getNotificationIcon(notification.type, getNotificationIconColor(notification.type))}
-                </View>
-              </View>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </ScrollView>
-      )}
-      
-      {/* Feedback Button */}
-      <TouchableOpacity 
-        style={styles.feedbackButtonContainer}
-        onPress={() => router.push('/feedback')}
-      >
-        <LinearGradient
-          colors={['#7c3aed', '#ec4899']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.feedbackButton}
-        >
-          <Text style={styles.feedbackButtonText}>Feedback</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
+      <FlatList
+        data={notifications}
+        renderItem={renderNotification}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshNotifications}
+            colors={['#7c3aed', '#ec4899']}
+            tintColor="#7c3aed"
+          />
+        }
+        ListEmptyComponent={renderEmptyState}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
-    paddingTop: 20, // Add top padding
-    paddingBottom: 40, // Increased bottom padding to avoid iPhone home indicator
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    paddingTop: 60, // Increased to avoid iPhone 16 dynamic island
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-    backgroundColor: '#ffffff',
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: '#14171a',
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#14171a',
-  },
-  content: {
-    flex: 1,
-  },
-  notificationItem: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  notificationContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  textContainer: {
-    flex: 1,
-    marginRight: 12,
-  },
-  notificationTextRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-  },
-  notificationText: {
-    fontSize: 15,
-    lineHeight: 20,
-    flex: 1,
-  },
-  userName: {
-    fontWeight: '600',
-    color: '#14171a',
-  },
-  actionText: {
-    fontWeight: '400',
-    color: '#14171a',
-  },
-  contentPreview: {
-    fontSize: 15,
-    color: '#657786',
-    marginBottom: 4,
-    fontStyle: 'italic',
-  },
-  timestamp: {
-    fontSize: 13,
-    color: '#657786',
-  },
-  actionIconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionIcon: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  feedbackButtonContainer: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  feedbackButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  feedbackButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 14,
+    backgroundColor: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
     color: '#657786',
   },
-  emptyContainer: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E1E8ED',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#14171A',
+  },
+  markAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#7c3aed',
+    borderRadius: 16,
+  },
+  markAllText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  listContainer: {
+    flexGrow: 1,
+  },
+  notificationItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F7F9FA',
+  },
+  unreadNotification: {
+    backgroundColor: '#F0F4FF',
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  avatar: {
+    marginRight: 12,
+  },
+  notificationText: {
+    flex: 1,
+    marginRight: 12,
+  },
+  notificationMessage: {
+    fontSize: 16,
+    color: '#14171A',
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  notificationTime: {
+    fontSize: 14,
+    color: '#657786',
+  },
+  notificationIcon: {
+    alignItems: 'center',
+    position: 'relative',
+  },
+  iconText: {
+    fontSize: 20,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#7c3aed',
+    marginTop: 4,
+  },
+  chirpPreview: {
+    marginTop: 12,
+    marginLeft: 52,
+    padding: 12,
+    backgroundColor: '#F7F9FA',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#7c3aed',
+  },
+  chirpText: {
+    fontSize: 14,
+    color: '#657786',
+    lineHeight: 20,
+  },
+  emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 100,
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
   },
-  emptyText: {
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#14171a',
+    fontWeight: 'bold',
+    color: '#14171A',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -530,6 +414,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#657786',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
   },
 });

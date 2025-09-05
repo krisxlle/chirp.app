@@ -11,6 +11,7 @@ import { useAuth } from './AuthContext';
 
 // Import real Supabase functions
 import { deleteChirp } from '../mobile-db-supabase';
+import { notificationService } from '../services/notificationService';
 
 // Temporary inline createReply function to bypass import issues
 const createReply = async (content: string, chirpId: string, userId: string): Promise<any> => {
@@ -37,6 +38,10 @@ const createReply = async (content: string, chirpId: string, userId: string): Pr
     }
 
     console.log('✅ Reply created successfully:', reply.id);
+    
+    // Create notification for the chirp author
+    await notificationService.createCommentNotification(userId, chirpId);
+    
     return reply;
   } catch (error) {
     console.error('❌ Error in createReply:', error);
@@ -235,58 +240,74 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         return;
       }
 
-      // TEMPORARILY DISABLED: Database calls
-      console.log('ChirpCard: Like functionality disabled (database calls disabled)');
-      Alert.alert('Feature Disabled', 'Like functionality is temporarily disabled while database calls are disabled.');
-      
-      /*
       console.log('🔴 Like button pressed!');
       console.log('Chirp ID:', chirp.id, 'Type:', typeof chirp.id);
       console.log('User ID:', user.id, 'Type:', typeof user.id);
       console.log('Current likes:', likes);
       console.log('User has liked:', userHasLiked);
 
-      const { addReaction, triggerReactionNotification } = await import('../mobile-db');
+      // Import supabase client directly
+      const { supabase } = await import('../mobile-db-supabase');
       
       // Ensure proper string conversion for database constraints
       const chirpIdStr = String(chirp.id);
       const userIdStr = String(user.id);
       
-      console.log('Toggling like for chirp:', chirpIdStr, 'by user:', userIdStr);
-      
-      const result = await addReaction(chirpIdStr, '❤️', userIdStr);
-      
-      console.log('AddReaction result:', result);
-      
-      if (result.added) {
-        // User liked the chirp
-        const newLikeCount = likes + 1;
-        setLikes(newLikeCount);
-        setUserHasLiked(true);
+      if (userHasLiked) {
+        // Unlike: Remove the reaction
+        console.log('🔴 Unliking chirp...');
         
-        // Notify parent component of like count update
-        if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, newLikeCount);
+        const { error } = await supabase
+          .from('reactions')
+          .delete()
+          .eq('chirp_id', chirpIdStr)
+          .eq('user_id', userIdStr)
+          .eq('type', 'like');
+
+        if (error) {
+          console.error('❌ Error removing like:', error);
+          Alert.alert('Error', 'Failed to remove like. Please try again.');
+          return;
         }
-        
-        // Trigger push notification for like
-        await triggerReactionNotification(String(chirp.author.id), userIdStr, parseInt(chirpIdStr));
-        
-        console.log('✅ Chirp liked successfully');
-      } else {
-        // User unliked the chirp
-        const newLikeCount = Math.max(0, likes - 1);
-        setLikes(newLikeCount);
+
+        // Update local state
+        setLikes(prev => Math.max(0, prev - 1));
         setUserHasLiked(false);
         
-        // Notify parent component of like count update
-        if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, newLikeCount);
-        }
+        console.log('✅ Like removed successfully');
+      } else {
+        // Like: Add the reaction
+        console.log('🔴 Liking chirp...');
         
-        console.log('✅ Chirp unliked successfully');
+        const { error } = await supabase
+          .from('reactions')
+          .insert({
+            chirp_id: chirpIdStr,
+            user_id: userIdStr,
+            type: 'like',
+            created_at: new Date().toISOString()
+          });
+
+        if (error) {
+          console.error('❌ Error adding like:', error);
+          Alert.alert('Error', 'Failed to like chirp. Please try again.');
+          return;
+        }
+
+        // Update local state
+        setLikes(prev => prev + 1);
+        setUserHasLiked(true);
+        
+        // Create notification for the chirp author
+        await notificationService.createLikeNotification(userIdStr, chirpIdStr);
+        
+        console.log('✅ Like added successfully');
       }
-      */
+
+      // Notify parent component of the change
+      if (onLikeUpdate) {
+        onLikeUpdate(chirp.id, userHasLiked ? likes - 1 : likes + 1);
+      }
     } catch (error) {
       console.error('❌ Error handling like:', error);
       Alert.alert('Error', 'Failed to like chirp. Please try again.');

@@ -3,6 +3,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import type { MobileChirp } from './mobile-types';
 
+// Utility function to truncate long error messages
+const truncateError = (error: any): string => {
+  if (!error) return 'Unknown error';
+  if (typeof error === 'string') {
+    return error.length > 100 ? `${error.substring(0, 100)}...` : error;
+  }
+  if (error.message) {
+    return error.message.length > 100 ? `${error.message.substring(0, 100)}...` : error.message;
+  }
+  return 'Unknown error';
+};
+
 // Supabase configuration
 const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
@@ -58,7 +70,7 @@ export const testNetworkConnectivity = async () => {
     clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
-    console.error('❌ Network connectivity test failed:', error);
+    console.error('❌ Network connectivity test failed:', truncateError(error));
     return false;
   }
 };
@@ -90,7 +102,7 @@ const testDatabaseConnection = async () => {
       clearTimeout(timeoutId);
     
     if (error) {
-      console.error('❌ Database connection failed:', error);
+      console.error('❌ Database connection failed:', error?.message || 'Unknown error');
       isDatabaseConnected = false;
         lastConnectionTest = now;
       return false;
@@ -101,7 +113,7 @@ const testDatabaseConnection = async () => {
       console.log(`✅ Database connection test successful in ${Date.now() - startTime}ms`);
     return true;
   } catch (error) {
-      console.error('❌ Database connection test failed:', error);
+      console.error('❌ Database connection test failed:', error?.message || 'Unknown error');
     isDatabaseConnected = false;
       lastConnectionTest = now;
     return false;
@@ -202,7 +214,7 @@ export async function getUserStats(userId: string) {
       moodReactions: 0 // Simplified for now
     };
   } catch (error) {
-    console.error('❌ Error fetching user stats:', error);
+    console.error('❌ Error fetching user stats:', truncateError(error));
     return { chirps: 0, followers: 0, following: 0, moodReactions: 0 };
   }
 }
@@ -613,7 +625,7 @@ export const signInWithSupabase = async (email: string, password: string) => {
       });
 
     if (error) {
-      console.error('❌ Supabase sign in error:', error);
+      console.error('❌ Supabase sign in error:', truncateError(error));
       throw error;
     }
     
@@ -642,7 +654,7 @@ export const signInWithSupabase = async (email: string, password: string) => {
 
     throw new Error('No user data returned from sign in');
   } catch (error) {
-    console.error('❌ Error in sign in:', error);
+    console.error('❌ Error in sign in:', truncateError(error));
     throw error;
   }
 };
@@ -1390,6 +1402,10 @@ export const followUser = async (followerId: string, followingId: string): Promi
     }
 
     console.log('✅ User followed successfully');
+    
+    // Create notification for the followed user
+    const { notificationService } = await import('./services/notificationService');
+    await notificationService.createFollowNotification(followerId, followingId);
   } catch (error) {
     console.error('❌ Error following user:', error);
     throw error;

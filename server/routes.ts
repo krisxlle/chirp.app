@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.addPushToken(validatedData.userId, validatedData.token, validatedData.platform);
       
-      console.log('Push token registered successfully:', validatedData.token);
+      console.log('Push token registered successfully:', validatedData.token ? `${validatedData.token.substring(0, 20)}...${validatedData.token.substring(validatedData.token.length - 10)}` : 'null');
       res.json({ success: true, message: 'Push token registered' });
     } catch (error) {
       console.error('Error registering push token:', error);

@@ -6,13 +6,28 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "entitlements": {
+          "com.apple.developer.in-app-payments": true
+        }
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "entitlements": {
+          "com.apple.developer.in-app-payments": true
+        }
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "ios": {
+        "entitlements": {
+          "com.apple.developer.in-app-payments": true
+        }
+      }
     }
   },
   "submit": {

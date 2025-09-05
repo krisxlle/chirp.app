@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from './AuthContext';
 
 import BottomNavigation from './BottomNavigation';
@@ -14,6 +15,7 @@ export default function ChirpApp() {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const profilePageRef = useRef<any>(null);
+  const { counts } = useNotifications(user?.id);
 
   // Check if user is authenticated
   const isAuthenticated = !!user;
@@ -96,7 +98,7 @@ export default function ChirpApp() {
       <BottomNavigation 
         activeTab={activeTab} 
         onTabChange={handleTabChange}
-        unreadCount={0}
+        unreadCount={counts.unread}
       />
     </View>
   );

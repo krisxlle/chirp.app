@@ -12,6 +12,7 @@ import {
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import FollowersFollowingModal from './FollowersFollowingModal';
+import BirdIcon from './icons/BirdIcon';
 import GearIcon from './icons/GearIcon';
 import SettingsPage from './SettingsPage';
 import UserAvatar from './UserAvatar';
@@ -341,7 +342,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
         {activeTab === 'collection' && (
           <View style={styles.collectionContainer}>
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🎮</Text>
+              <BirdIcon size={50} color="#7c3aed" />
               <Text style={styles.emptyTitle}>Collection Feed</Text>
               <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
             </View>

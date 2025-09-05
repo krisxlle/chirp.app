@@ -10,6 +10,7 @@ import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import ComposeChirp from './ComposeChirp';
 import ProfileModal from './ProfileModal';
+import BirdIcon from './icons/BirdIcon';
 import SearchIcon from './icons/SearchIcon';
 
 export default function HomePage() {
@@ -284,7 +285,7 @@ export default function HomePage() {
            // Collection Feed
            <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
              <View style={styles.emptyState}>
-               <Text style={styles.emptyIcon}>🎮</Text>
+               <BirdIcon size={50} color="#7c3aed" />
                <Text style={styles.emptyTitle}>Collection Feed</Text>
                <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
              </View>

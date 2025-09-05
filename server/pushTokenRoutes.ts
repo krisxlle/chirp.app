@@ -1,7 +1,6 @@
+import { insertPushTokenSchema } from '@shared/schema';
 import { Router } from 'express';
 import { storage } from './storage';
-import { insertPushTokenSchema } from '@shared/schema';
-import { z } from 'zod';
 
 const router = Router();
 
@@ -20,7 +19,7 @@ router.post('/push-tokens', async (req, res) => {
 
     await storage.addPushToken(validatedData.userId, validatedData.token, validatedData.platform);
     
-    console.log('Push token registered successfully:', validatedData.token);
+    console.log('Push token registered successfully:', validatedData.token ? `${validatedData.token.substring(0, 20)}...${validatedData.token.substring(validatedData.token.length - 10)}` : 'null');
     res.json({ success: true, message: 'Push token registered' });
   } catch (error) {
     console.error('Error registering push token:', error);
@@ -33,7 +32,7 @@ router.delete('/push-tokens/:token', async (req, res) => {
   try {
     await storage.removePushToken(req.params.token);
     
-    console.log('Push token removed successfully:', req.params.token);
+    console.log('Push token removed successfully:', req.params.token ? `${req.params.token.substring(0, 20)}...${req.params.token.substring(req.params.token.length - 10)}` : 'null');
     res.json({ success: true, message: 'Push token removed' });
   } catch (error) {
     console.error('Error removing push token:', error);
