@@ -1,0 +1,24 @@
+{
+  "name": "CodeQL Configuration",
+  "version": "2.1.0",
+  "paths-ignore": [
+    "ios/App/App/public/",
+    "ios/App/App/www/",
+    "android/app/src/main/assets/www/",
+    "node_modules/",
+    "dist/",
+    "web-build/",
+    ".expo/",
+    "*.tsbuildinfo"
+  ],
+  "queries": {
+    "exclude": [
+      "security-and-quality"
+    ]
+  },
+  "packs": {
+    "javascript": [
+      "codeql/javascript-queries:security-and-quality"
+    ]
+  }
+}

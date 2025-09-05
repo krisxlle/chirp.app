@@ -36,4 +36,11 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# iOS build files (generated)
+ios/App/App/public/
+ios/App/App/www/
+
+# Android build files (generated)
+android/app/src/main/assets/www/
+
 app-example

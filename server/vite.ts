@@ -6,6 +6,7 @@ import { nanoid } from "nanoid";
 import path from "path";
 import { createLogger, createServer as createViteServer } from "vite";
 import viteConfig from "../vite.config";
+import { generalApiLimiter } from "./rateLimiting";
 
 const viteLogger = createLogger();
 
@@ -75,6 +76,10 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+  
+  // Apply rate limiting to Vite middleware and catch-all routes
+  app.use(generalApiLimiter);
+  
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
@@ -109,6 +114,7 @@ export function serveStatic(app: Express) {
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
     );
   }
+  
   // Apply rate limiting to all static asset requests
   const staticLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -119,6 +125,9 @@ export function serveStatic(app: Express) {
   app.use(staticLimiter);
 
   app.use(express.static(distPath));
+
+  // Apply additional rate limiting to catch-all routes
+  app.use(generalApiLimiter);
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
