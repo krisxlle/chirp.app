@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import HeartIcon from './icons/HeartIcon';
 import ShareIcon from './icons/ShareIcon';
@@ -8,6 +8,41 @@ import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
 import UserAvatar from './UserAvatar';
 // Removed UserProfileModal import - using page navigation instead
 import { useAuth } from './AuthContext';
+
+// Import real Supabase functions
+import { deleteChirp } from '../mobile-db-supabase';
+
+// Temporary inline createReply function to bypass import issues
+const createReply = async (content: string, chirpId: string, userId: string): Promise<any> => {
+  try {
+    console.log('📝 Creating reply to chirp:', chirpId, 'by user:', userId);
+    
+    // Import supabase client directly
+    const { supabase } = await import('../mobile-db-supabase');
+    
+    const { data: reply, error } = await supabase
+      .from('chirps')
+      .insert({
+        content: content.trim(),
+        author_id: userId,
+        reply_to_id: chirpId,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error creating reply:', error);
+      throw error;
+    }
+
+    console.log('✅ Reply created successfully:', reply.id);
+    return reply;
+  } catch (error) {
+    console.error('❌ Error in createReply:', error);
+    throw error;
+  }
+};
 
 interface User {
   id: string;
@@ -32,21 +67,35 @@ interface Chirp {
   // Reply identification fields
   isDirectReply?: boolean;
   isNestedReply?: boolean;
+  // Thread identification field
+  isThreadedChirp?: boolean;
 }
 
 interface ChirpCardProps {
   chirp: Chirp;
-  onDeleteSuccess?: () => void;
+  onDeleteSuccess?: (deletedChirpId?: string) => void;
   onProfilePress?: (userId: string) => void;
   onLikeUpdate?: (chirpId: string, newLikeCount: number) => void;
+  onReplyPosted?: (chirpId: string) => void;
   isHighlighted?: boolean;
 }
 
-export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLikeUpdate, isHighlighted = false }: ChirpCardProps) {
+export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLikeUpdate, onReplyPosted, isHighlighted = false }: ChirpCardProps) {
   // Safety check for author data
   if (!chirp || !chirp.author) {
     return null;
   }
+
+  // Debug: Log ALL props being received - ENHANCED
+  console.log(`🔍 MOBILE ChirpCard render - ID: ${chirp.id}, author: ${chirp.author.customHandle || chirp.author.handle}`);
+  console.log(`🔍 Props received:`, { 
+    onProfilePress: typeof onProfilePress, 
+    onDeleteSuccess: typeof onDeleteSuccess, 
+    onLikeUpdate: typeof onLikeUpdate, 
+    onReplyPosted: typeof onReplyPosted 
+  });
+  console.log(`🔍 onProfilePress value:`, onProfilePress);
+  console.log(`🔍 All arguments:`, arguments);
 
   const { user } = useAuth();
   
@@ -70,17 +119,14 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   // Real-time timestamp updates
   const [currentTime, setCurrentTime] = useState(Date.now());
   
-  // TEMPORARILY DISABLED: Real-time timestamp updates to prevent looping
-  // Update timestamp every minute for real-time display
-  /*
+  // Update timestamp every 5 seconds for more responsive timestamps
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 60000); // Update every minute
+    }, 5000); // Update every 5 seconds
     
     return () => clearInterval(interval);
-  }, []);
-  */
+  }, []); // Remove currentTime dependency to prevent infinite loops
   
   // States for user interaction options
   const [isFollowing, setIsFollowing] = useState(false);
@@ -158,13 +204,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     }
 
     try {
-      // TEMPORARILY DISABLED: Database calls
-      console.log('ChirpCard: Reply functionality disabled (database calls disabled)');
-      Alert.alert('Feature Disabled', 'Reply functionality is temporarily disabled while database calls are disabled.');
-      
-      /*
-      const { createReply } = await import('../mobile-db');
-      
       const chirpIdStr = String(chirp.id);
       const userIdStr = String(user.id);
       
@@ -172,24 +211,17 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       
       const newReply = await createReply(replyText.trim(), chirpIdStr, userIdStr);
       
-      // Trigger push notification for reply
-      const { triggerReplyNotification } = await import('../mobile-db');
-      await triggerReplyNotification(String(chirp.author.id), userIdStr, parseInt(chirpIdStr));
-      
       // Update local state
       setReplies(prev => prev + 1);
       setReplyText('');
       setShowReplyInput(false);
       
-      // If thread is currently shown, refresh replies
-      if (showReplies) {
-        const { getChirpReplies } = await import('../mobile-db');
-        const updatedReplies = await getChirpReplies(chirpIdStr);
-        setThreadReplies(updatedReplies);
+      // Notify parent component to refresh replies
+      if (onReplyPosted) {
+        onReplyPosted(chirpIdStr);
       }
       
       console.log('Reply posted successfully');
-      */
     } catch (error) {
       console.error('Error posting reply:', error);
       Alert.alert('Error', 'Failed to post reply. Please try again.');
@@ -278,21 +310,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   };
 
   const handleDeleteChirp = async () => {
-    console.log('🗑️ Delete chirp button pressed - proceeding immediately...');
-    console.log('Chirp details:', { id: chirp.id, authorId: chirp.author.id });
-    console.log('User details:', { id: user?.id, type: typeof user?.id });
+    console.log('🗑️ Delete chirp button pressed');
+    console.log('Chirp ID:', chirp.id?.substring(0, 8) + '...', 'Author:', chirp.author.id?.substring(0, 8) + '...');
+    console.log('User ID:', user?.id?.substring(0, 8) + '...', 'Type:', typeof user?.id);
     
     try {
-      // TEMPORARILY DISABLED: Database calls
-      console.log('ChirpCard: Delete functionality disabled (database calls disabled)');
-      Alert.alert('Feature Disabled', 'Delete functionality is temporarily disabled while database calls are disabled.');
-      
-      /*
       console.log('🗑️ Proceeding with deletion...');
-      console.log('Deleting chirp:', chirp.id, 'by user:', user?.id);
-      
-      const { deleteChirp } = await import('../mobile-db');
-      console.log('DeleteChirp function imported successfully');
+      console.log('Deleting chirp:', chirp.id?.substring(0, 8) + '...', 'by user:', user?.id?.substring(0, 8) + '...');
       
       await deleteChirp(chirp.id, String(user?.id));
       console.log('✅ Delete operation completed successfully');
@@ -302,7 +326,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       // Force a refresh of the parent component's data
       if (onDeleteSuccess) {
         console.log('📱 Calling onDeleteSuccess callback to refresh feed');
-        onDeleteSuccess();
+        onDeleteSuccess(chirp.id);
       } else {
         console.log('📱 No refresh callback available - implementing page reload');
         // Force reload the current screen to show updated data
@@ -310,14 +334,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           window.location.reload();
         }
       }
-      */
     } catch (error) {
       console.error('❌ Delete error:', error);
       console.error('Error details:', {
         message: error.message,
         stack: error.stack
       });
-      alert(`Failed to delete chirp: ${error.message}`);
+      Alert.alert('Error', `Failed to delete chirp: ${error.message}`);
     }
   };
 
@@ -520,38 +543,57 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     }
     
     console.log('🔥 Avatar pressed - opening profile modal for:', chirp.author.id);
+    console.log('🔍 Debug - onProfilePress prop:', typeof onProfilePress, onProfilePress);
+    console.log('🔍 Debug - chirp ID:', chirp.id, 'author:', chirp.author.customHandle || chirp.author.handle);
     
     // Use the onProfilePress callback to open profile modal
     if (onProfilePress) {
       onProfilePress(chirp.author.id);
     } else {
-      console.warn('No profile press handler available');
+      console.warn('No profile press handler available for chirp:', chirp.id, 'author:', chirp.author.customHandle || chirp.author.handle);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const diffTime = Math.abs(currentTime - date.getTime());
-    
-    const diffMinutes = Math.floor(diffTime / (1000 * 60));
-    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffMinutes < 1) return 'now';
-    if (diffMinutes < 60) return `${diffMinutes}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays === 1) return '1d';
-    if (diffDays < 7) return `${diffDays}d`;
-    if (diffDays < 365) {
-      const month = date.toLocaleDateString('en-US', { month: 'short' });
-      const day = date.getDate();
-      return `${month} ${day}`;
+    const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString);
+        return 'now';
+      }
+      
+      // Server sends UTC timestamps, so we need to compare with UTC time
+      const now = new Date();
+      const nowUTC = now.getTime();
+      const dateUTC = date.getTime();
+      
+      const diffTime = Math.abs(nowUTC - dateUTC);
+      
+      const diffMinutes = Math.floor(diffTime / (1000 * 60));
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffMinutes < 1) return 'now';
+      if (diffMinutes < 60) return `${diffMinutes}m`;
+      if (diffHours < 24) return `${diffHours}h`;
+      if (diffDays === 1) return '1d';
+      if (diffDays < 7) return `${diffDays}d`;
+      if (diffDays < 365) {
+        const month = date.toLocaleDateString('en-US', { month: 'short' });
+        const day = date.getDate();
+        return `${month} ${day}`;
+      }
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, 'dateString:', dateString);
+      return 'now';
     }
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
   };
 
   const formatNumber = (num: number) => {
@@ -568,36 +610,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     return b % 1 === 0 ? `${b}B` : `${b.toFixed(1)}B`;
   };
 
-  const [showReplies, setShowReplies] = useState(false);
-  const [threadReplies, setThreadReplies] = useState<any[]>([]);
-  const [loadingReplies, setLoadingReplies] = useState(false);
-
   const handleChirpPress = async () => {
-    if (replies === 0) {
-      // No replies to show
-      return;
-    }
-    
-    if (showReplies) {
-      // Hide replies
-      setShowReplies(false);
-    } else {
-      // Show replies - fetch from database
-      setLoadingReplies(true);
-      try {
-        const { getChirpReplies } = await import('../mobile-db');
-        const repliesData = await getChirpReplies(chirp.id);
-        setThreadReplies(repliesData);
-        setShowReplies(true);
-        console.log(`Loaded ${repliesData.length} replies for chirp ${chirp.id}`);
-      } catch (error) {
-        console.error('Error loading replies:', error);
-        Alert.alert('Error', 'Failed to load replies. Please try again.');
-      } finally {
-        setLoadingReplies(false);
-      }
-    }
+    console.log('🔍 ChirpCard: Chirp tapped, navigating to ChirpScreen for ID:', chirp.id);
+    // Navigate to thread view
+    router.push(`/chirp/${chirp.id}`);
   };
+
+  // Debug logging for user data (removed to prevent infinite loops)
 
   return (
     <TouchableOpacity 
@@ -605,6 +624,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         styles.container, 
         chirp.isWeeklySummary && styles.weeklySummaryContainer,
         chirp.isDirectReply && styles.replyContainer,
+        chirp.isThreadedChirp && styles.threadedChirpContainer,
         isHighlighted && styles.highlightedContainer
       ]}
       onPress={handleChirpPress}
@@ -791,48 +811,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         </View>
       )}
 
-      {/* Thread Replies */}
-      {showReplies && (
-        <View style={styles.repliesContainer}>
-          {loadingReplies ? (
-            <Text style={styles.loadingText}>Loading replies...</Text>
-          ) : threadReplies.length === 0 ? (
-            <Text style={styles.noRepliesText}>No replies yet</Text>
-          ) : (
-            <View style={styles.threadContainer}>
-              {/* Continuous vertical line for all direct replies */}
-              {threadReplies.length > 0 && (
-                <View style={styles.continuousConnector} />
-              )}
-              
-              {threadReplies.map((reply, index) => (
-                <View key={reply.id}>
-                  {/* Direct reply to original chirp - same level */}
-                  <View style={styles.replyWrapper}>
-                    <ChirpCard chirp={reply} />
-                  </View>
-                  
-                  {/* Nested replies (replies to this reply) - deeper indent */}
-                  {reply.nestedReplies && reply.nestedReplies.length > 0 && (
-                    <View style={styles.nestedRepliesContainer}>
-                      {/* Continuous line for nested replies */}
-                      <View style={styles.nestedContinuousConnector} />
-                      {reply.nestedReplies.map((nestedReply, nestedIndex) => (
-                        <View key={nestedReply.id} style={styles.nestedReplyWrapper}>
-                          <ChirpCard chirp={nestedReply} />
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-      )}
-
-
-      
       {/* Custom Options Modal */}
       <Modal
         visible={showOptionsModal}
@@ -854,6 +832,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
               // Own chirp options - only Delete and Cancel
               <>
                 <TouchableOpacity style={styles.modalOption} onPress={() => {
+                  console.log('🗑️ Delete button pressed in modal');
                   setShowOptionsModal(false);
                   handleDeleteChirp();
                 }}>
@@ -939,7 +918,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
-    marginHorizontal: 16,
     marginVertical: 3,
     borderRadius: 16,
     paddingHorizontal: 16,
@@ -975,6 +953,13 @@ const styles = StyleSheet.create({
     borderLeftColor: '#7c3aed',
     paddingLeft: 20,
     backgroundColor: '#fafafa',
+  },
+  threadedChirpContainer: {
+    backgroundColor: '#f0f9ff',
+    borderLeftWidth: 3,
+    borderLeftColor: '#7c3aed',
+    marginLeft: 8,
+    borderRadius: 8,
   },
   header: {
     flexDirection: 'row',

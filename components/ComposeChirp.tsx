@@ -1,7 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useResponsive } from '../hooks/useResponsive';
+import { createThread } from '../mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
 
@@ -26,6 +28,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [threadChirps, setThreadChirps] = useState<string[]>([]);
   
   const { user: authUser, isLoading } = useAuth();
+  const { padding } = useResponsive();
   
   const maxLength = 280;
   const remainingChars = maxLength - content.length;
@@ -45,7 +48,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   }
 
   // Convert auth user to expected User format for UserAvatar component
-  const user = {
+  const user = React.useMemo(() => ({
     id: authUser.id,
     firstName: authUser.firstName || authUser.name || authUser.email?.split('@')[0] || 'User',
     lastName: authUser.lastName || '',
@@ -54,9 +57,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     customHandle: authUser.customHandle,
     handle: authUser.handle,
     bio: authUser.bio,
-  };
+  }), [authUser]);
 
   console.log('ComposeChirp: Final user object:', user.id);
+  console.log('ComposeChirp: User profile image:', user.profileImageUrl ? 'has image' : 'no image');
 
   const addToThread = () => {
     if (!content.trim()) {
@@ -74,6 +78,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   };
 
   const handleSubmit = async () => {
+    // Dismiss keyboard first
+    Keyboard.dismiss();
+    
     // Check if user is available
     if (!user?.id) {
       Alert.alert("Authentication Error", "Please sign in to post a chirp.");
@@ -116,8 +123,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       console.log('Creating chirp via API...');
       console.log('User ID for chirp creation:', user.id);
       
-      // Import the createChirp function from mobile-db
-      const { createChirp } = await import('../mobile-db');
+      // Import the createChirp function from mobile-api
+      const { createChirp } = await import('../mobile-api');
       
       console.log('🔍 Debug: User object for chirp creation:', {
         userId: user.id,
@@ -133,28 +140,24 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           allThreadContent.push(content.trim());
         }
         
-        // Post all chirps in the thread
-        let previousChirpId: string | null = null;
-        for (const chirpContent of allThreadContent) {
-          const newChirp = await createChirp(chirpContent, user.id, previousChirpId);
-          if (newChirp) {
-            previousChirpId = newChirp.id;
-          }
-        }
-        Alert.alert("Success!", "Your thread has been posted!");
+        console.log('🔄 Creating thread with', allThreadContent.length, 'parts');
+        
+        // Create the thread using the proper thread creation function
+        const createdThread = await createThread(allThreadContent, user.id);
+        console.log('✅ Thread created with', createdThread.length, 'chirps');
+        
         setThreadChirps([]);
         setIsThreadMode(false);
       } else {
         // Post single chirp
-        const newChirp = await createChirp(content.trim(), user.id);
-        if (newChirp) {
-          Alert.alert("Success!", "Your chirp has been posted!");
-        }
+                 const newChirp = await createChirp(content.trim(), user.id);
+         if (newChirp) {
+           // Call the onPost callback to update the UI (but don't create another chirp)
+           await onPost?.(content.trim());
+         }
       }
       
       setContent("");
-      // Call the onPost callback with the content
-      await onPost?.(content.trim());
     } catch (error) {
       console.error('Error posting chirp:', error);
       Alert.alert("Error", error instanceof Error ? error.message : "Failed to post. Please try again.");
@@ -175,46 +178,71 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   };
 
   if (isThreadMode) {
-    // Thread mode - use same formatting as normal compose field
+    // Thread mode - extend the compose field
     return (
-      <View style={styles.threadModeContainer}>
-        {/* Header with Cancel and Post All buttons */}
-        <View style={styles.threadHeader}>
-          <TouchableOpacity onPress={() => setIsThreadMode(false)} style={styles.cancelButton}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={handleSubmit}
-            disabled={(threadChirps.length === 0 && !content.trim()) || isPosting}
-          >
-            <LinearGradient
-              colors={['#7c3aed', '#ec4899']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[
-                styles.postButton,
-                ((threadChirps.length === 0 && !content.trim()) || isPosting) && styles.postButtonDisabled
-              ]}
-            >
-              <Text style={styles.postButtonText}>
-                {isPosting ? "Posting..." : "Post all"}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+      <View style={[styles.container, { marginHorizontal: padding.screen.horizontal }]}>
+        <View style={styles.composeArea}>
+          <UserAvatar user={user} size="md" />
+          
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Start a thread..."
+              placeholderTextColor="#9ca3af"
+              value={content}
+              onChangeText={setContent}
+              multiline
+              maxLength={maxLength}
+              textAlignVertical="top"
+            />
+            
+            <View style={styles.actionRow}>
+              <View style={styles.leftActions}>
+                <TouchableOpacity 
+                  style={styles.threadButton}
+                  onPress={addToThread}
+                  disabled={!content.trim() || content.length > maxLength}
+                >
+                  <ThreadIcon size={16} color="#7c3aed" />
+                  <Text style={styles.threadButtonText}>Add</Text>
+                </TouchableOpacity>
+                
+                <Text style={[styles.charCount, { color: getCharCountColor() }]}>
+                  {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
+                </Text>
+              </View>
+              
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={(threadChirps.length === 0 && !content.trim()) || isPosting}
+              >
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[
+                    styles.postButton,
+                    ((threadChirps.length === 0 && !content.trim()) || isPosting) && styles.postButtonDisabled
+                  ]}
+                >
+                  <Text style={styles.postButtonText}>
+                    {isPosting ? "Posting..." : "Post all"}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
-        {/* Thread List with same styling as normal compose */}
-        <View style={styles.threadList}>
-          {threadChirps.map((chirp, index) => (
-            <View key={index} style={styles.container}>
-              <View style={styles.composeArea}>
-                <UserAvatar user={user} size="md" />
-                <View style={styles.inputContainer}>
+        {/* Thread List */}
+        {threadChirps.length > 0 && (
+          <View style={styles.threadList}>
+            {threadChirps.map((chirp, index) => (
+              <View key={index} style={styles.threadItem}>
+                <View style={styles.threadContent}>
                   <Text style={styles.threadChirpText}>{chirp}</Text>
-                  <View style={styles.actionRow}>
-                    <View style={styles.leftActions}>
-                      <Text style={styles.threadIndexText}>Chirp {index + 1}</Text>
-                    </View>
+                  <View style={styles.threadItemActions}>
+                    <Text style={styles.threadIndexText}>Chirp {index + 1}</Text>
                     <TouchableOpacity 
                       onPress={() => removeFromThread(index)}
                       style={styles.removeThreadButton}
@@ -224,58 +252,16 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                   </View>
                 </View>
               </View>
-            </View>
-          ))}
-          
-          {/* Current compose area - exact same as normal compose */}
-          <View style={styles.container}>
-            <View style={styles.composeArea}>
-              <UserAvatar user={user} size="md" />
-              
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder={threadChirps.length === 0 ? "Start a thread..." : "Add another chirp..."}
-                  placeholderTextColor="#9ca3af"
-                  value={content}
-                  onChangeText={setContent}
-                  multiline
-                  maxLength={maxLength}
-                  textAlignVertical="top"
-                />
-                
-                <View style={styles.actionRow}>
-                  <View style={styles.leftActions}>
-                    <TouchableOpacity 
-                      style={styles.threadButton}
-                      onPress={addToThread}
-                      disabled={!content.trim() || content.length > maxLength}
-                    >
-                      <ThreadIcon size={16} color="#7c3aed" />
-                      <Text style={styles.threadButtonText}>Add</Text>
-                    </TouchableOpacity>
-                    
-                    <Text style={[styles.charCount, { color: getCharCountColor() }]}>
-                      {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
+            ))}
           </View>
-        </View>
-
-        {/* Bottom notice */}
-        <View style={styles.threadBottomNotice}>
-          <Text style={styles.threadBottomNoticeText}>Everyone can reply to threads</Text>
-        </View>
+        )}
       </View>
     );
   }
 
   // Normal compose mode
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { marginHorizontal: padding.screen.horizontal }]}>
       <View style={styles.composeArea}>
         <UserAvatar user={user} size="md" />
         
@@ -334,12 +320,11 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
-    marginHorizontal: 16,
     marginTop: 0,
     marginBottom: 3,
     borderRadius: 16,
     paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 16, // Use hardcoded value instead of padding.screen.horizontal
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -414,39 +399,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  // Thread mode styles - matching normal compose field
-  threadModeContainer: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    paddingTop: 50,
+  // Thread mode styles - simplified inline thread list
+  threadList: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
-  threadHeader: {
+  threadItem: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  threadContent: {
+    flex: 1,
+  },
+  threadChirpText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  threadItemActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  cancelButton: {
-    padding: 8,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '600',
-  },
-  threadList: {
-    flex: 1,
-    paddingTop: 12,
-  },
-  threadChirpText: {
-    fontSize: 18,
-    lineHeight: 24,
-    color: '#1a1a1a',
-    marginBottom: 12,
   },
   threadIndexText: {
     fontSize: 14,
@@ -454,29 +432,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   removeThreadButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#fee2e2',
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#fecaca',
   },
   removeButtonText: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  threadBottomNotice: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  threadBottomNoticeText: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
+    fontSize: 12,
+    color: '#dc2626',
     fontWeight: '500',
   },
   loadingContainer: {

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { getTrendingHashtags, searchChirps, searchUsers } from '../mobile-db';
 import ChirpCard from './ChirpCard';
 import UserAvatar from './UserAvatar';
@@ -145,7 +145,11 @@ export default function SearchPage() {
             )}
             {searchResults.length > 0 ? (
               searchResults.map((chirp) => (
-                <ChirpCard key={chirp.id} chirp={chirp} />
+                <ChirpCard 
+                  key={chirp.id} 
+                  chirp={chirp} 
+                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                />
               ))
             ) : query.trim() && !isLoading ? (
               <View style={styles.emptyState}>

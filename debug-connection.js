@@ -6,8 +6,8 @@ const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
 
 console.log('🔍 Supabase Connection Debugger');
-console.log('📍 URL:', SUPABASE_URL);
-console.log('🔑 Key (first 20 chars):', SUPABASE_ANON_KEY.substring(0, 20) + '...');
+console.log('📍 URL:', SUPABASE_URL ? 'configured' : 'not configured');
+console.log('🔑 Key format:', SUPABASE_ANON_KEY.startsWith('eyJ') ? 'valid JWT' : 'invalid format');
 console.log('🔑 Key length:', SUPABASE_ANON_KEY.length);
 
 // Validate key format

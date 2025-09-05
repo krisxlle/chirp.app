@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: 80, // Extra padding to clear navigation bar
   },
   trendingSection: {
     padding: 16,

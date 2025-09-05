@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -84,7 +85,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
         profile: !!profileData,
         chirps: chirpsData?.length || 0,
         replies: repliesData?.length || 0,
-        stats: statsData
+        stats: !!statsData
       });
 
       setUser(profileData);
@@ -458,7 +459,10 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
                   ) : (
                     chirps.map((chirp: any, index: number) => (
                       <View key={chirp.id} style={[styles.chirpContainer, index > 0 && styles.chirpBorder]}>
-                        <ChirpCard chirp={chirp} />
+                        <ChirpCard 
+                          chirp={chirp} 
+                          onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                        />
                       </View>
                     ))
                   )}
@@ -474,7 +478,10 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
                   ) : (
                     replies.map((reply: any, index: number) => (
                       <View key={reply.id} style={[styles.chirpContainer, index > 0 && styles.chirpBorder]}>
-                        <ChirpCard chirp={reply} />
+                        <ChirpCard 
+                          chirp={reply} 
+                          onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                        />
                       </View>
                     ))
                   )}

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { getChirpsByHashtag } from '../../mobile-db';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ChirpCard from '../../components/ChirpCard';
+import { getChirpsByHashtag } from '../../mobile-db';
 import type { MobileChirp } from '../../mobile-types';
 
 export default function HashtagPage() {
@@ -78,7 +78,10 @@ export default function HashtagPage() {
           <View style={styles.chirpsContainer}>
             {chirps.map((chirp, index) => (
               <View key={chirp.id} style={[styles.chirpWrapper, index > 0 && styles.chirpBorder]}>
-                <ChirpCard chirp={chirp} />
+                <ChirpCard 
+                  chirp={chirp} 
+                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                />
               </View>
             ))}
           </View>

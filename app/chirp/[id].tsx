@@ -1,8 +1,8 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ChirpCard } from '../../components/ChirpCard';
-import { getChirpById, getChirpReplies } from '../../mobile-db';
+import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ChirpCard from '../../components/ChirpCard';
+import { getChirpById, getChirpReplies, getThreadedChirps } from '../../mobile-db-supabase';
 import { MobileChirp } from '../../mobile-types';
 
 export default function ChirpScreen() {
@@ -10,6 +10,7 @@ export default function ChirpScreen() {
   const { id } = useLocalSearchParams();
   const [chirp, setChirp] = useState<MobileChirp | null>(null);
   const [replies, setReplies] = useState<MobileChirp[]>([]);
+  const [threadedChirps, setThreadedChirps] = useState<MobileChirp[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,16 +24,26 @@ export default function ChirpScreen() {
       setLoading(true);
       const chirpId = Array.isArray(id) ? id[0] : id;
       console.log('🔍 ChirpScreen: Loading chirp data for ID:', chirpId);
+      console.log('🔍 ChirpScreen: ID type:', typeof chirpId, 'Value:', chirpId);
       
       // Load the main chirp
       const chirpData = await getChirpById(chirpId);
-      console.log('📋 ChirpScreen: Retrieved chirp data:', chirpData);
+      console.log('📋 ChirpScreen: Retrieved chirp data:', chirpData ? 'success' : 'failed');
       setChirp(chirpData);
       
       // Load replies
       const repliesData = await getChirpReplies(chirpId);
       console.log('💬 ChirpScreen: Retrieved replies:', repliesData.length);
       setReplies(repliesData);
+      
+      // Check if this chirp is part of a thread or is a thread starter
+      if (chirpData?.threadId) {
+        // This chirp is part of a thread, load all threaded chirps
+        console.log('🧵 ChirpScreen: Chirp has threadId:', chirpData.threadId);
+        await loadThreadedChirps(chirpData.threadId);
+      } else {
+        console.log('🧵 ChirpScreen: Chirp has no threadId, not loading threaded chirps');
+      }
     } catch (error) {
       console.error('❌ ChirpScreen: Error loading chirp:', error);
     } finally {
@@ -40,9 +51,45 @@ export default function ChirpScreen() {
     }
   };
 
+  const refreshReplies = async () => {
+    try {
+      if (!id) return;
+      const chirpId = Array.isArray(id) ? id[0] : id;
+      console.log('🔄 ChirpScreen: Refreshing replies for chirp:', chirpId);
+      
+      const repliesData = await getChirpReplies(chirpId);
+      console.log('💬 ChirpScreen: Refreshed replies:', repliesData.length);
+      setReplies(repliesData);
+    } catch (error) {
+      console.error('❌ ChirpScreen: Error refreshing replies:', error);
+    }
+  };
+
+  const loadThreadedChirps = async (threadId: string) => {
+    try {
+      console.log('🧵 ChirpScreen: Loading threaded chirps for threadId:', threadId);
+      // Use the proper getThreadedChirps function that orders by thread_order
+      const threadData = await getThreadedChirps(threadId);
+      console.log('🧵 ChirpScreen: Raw thread data:', threadData.length, 'chirps');
+      
+      // Filter out the main chirp to avoid duplication
+      const mainChirpId = Array.isArray(id) ? id[0] : id;
+      const filteredThreadData = threadData.filter(chirp => chirp.id !== mainChirpId);
+      
+      const threadedData = filteredThreadData.map(chirp => ({
+        ...chirp,
+        isThreadedChirp: true
+      }));
+      setThreadedChirps(threadedData);
+      console.log('🧵 ChirpScreen: Loaded threaded chirps (excluding main):', threadedData.length);
+    } catch (error) {
+      console.error('❌ ChirpScreen: Error loading threaded chirps:', error);
+    }
+  };
+
   if (loading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backIcon}>←</Text>
@@ -53,13 +100,13 @@ export default function ChirpScreen() {
           <ActivityIndicator size="large" color="#7c3aed" />
           <Text style={styles.loadingText}>Loading chirp...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (!chirp) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backIcon}>←</Text>
@@ -70,12 +117,12 @@ export default function ChirpScreen() {
           <Text style={styles.errorText}>Chirp not found</Text>
           <Text style={styles.errorSubtext}>This chirp may have been deleted or doesn't exist</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -86,14 +133,36 @@ export default function ChirpScreen() {
 
       {/* Chirp Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Main Chirp */}
         <ChirpCard 
           chirp={chirp} 
           onReplyPress={() => {}} 
           onSharePress={() => {}} 
           onMorePress={() => {}} 
+          onReplyPosted={() => refreshReplies()}
+          onProfilePress={(userId) => router.push(`/profile/${userId}`)}
         />
         
-        {/* Replies Section */}
+        {/* Threaded Chirps - Directly below main chirp */}
+        {threadedChirps.length > 0 && (
+          <View style={styles.threadedSection}>
+            {threadedChirps
+              .filter(threadChirp => threadChirp.id !== chirp?.id) // Filter out the main chirp to avoid duplicates
+              .map((threadChirp) => (
+              <View key={threadChirp.id} style={styles.threadedChirpContainer}>
+                <ChirpCard 
+                  chirp={threadChirp} 
+                  onReplyPress={() => {}} 
+                  onSharePress={() => {}} 
+                  onMorePress={() => {}} 
+                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+        
+        {/* Replies Section - Separated from main chirp */}
         {replies.length > 0 && (
           <View style={styles.repliesSection}>
             <Text style={styles.repliesHeader}>Replies</Text>
@@ -104,12 +173,13 @@ export default function ChirpScreen() {
                 onReplyPress={() => {}} 
                 onSharePress={() => {}} 
                 onMorePress={() => {}} 
+                onProfilePress={(userId) => router.push(`/profile/${userId}`)}
               />
             ))}
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -122,8 +192,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    paddingTop: 20,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
     backgroundColor: '#ffffff',
@@ -147,6 +216,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: 80, // Extra padding to clear navigation bar
   },
   loadingContainer: {
     flex: 1,
@@ -188,5 +258,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e1e8ed',
+  },
+  threadedSection: {
+    marginTop: 0,
+  },
+  threadedChirpContainer: {
+    backgroundColor: '#f8fafc',
+    marginHorizontal: 16,
+    marginVertical: 2,
+    borderRadius: 8,
   },
 });

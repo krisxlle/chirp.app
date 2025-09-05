@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 interface UserAvatarProps {
   user?: {
@@ -88,7 +88,7 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
       const filename = imageUrl.split('/').pop();
       if (filename) {
         processedImageUrl = `/generated-images/${filename}`;
-        console.log('Loading image directly from static assets:', processedImageUrl);
+        console.log('Loading image directly from static assets');
       } else {
         processedImageUrl = undefined;
       }
@@ -110,7 +110,7 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
           source={{ uri: processedImageUrl }}
           style={[styles.avatar, sizeStyles[size]]}
           onError={(error) => {
-            console.log('Avatar image failed to load:', processedImageUrl, error);
+            console.log('Avatar image failed to load:', error.message || 'unknown error');
             setImageError(true);
           }}
         />

@@ -98,7 +98,7 @@ export default function UserProfileScreen() {
           getCurrentUserId,
           checkFollowStatus,
           checkBlockStatus
-        } = await import('../../mobile-db');
+        } = await import('../../mobile-db-supabase');
 
         // Get current user for checking relationships
         const currentUserId = await getCurrentUserId();
@@ -169,7 +169,7 @@ export default function UserProfileScreen() {
 
   const handleFollow = async () => {
     try {
-      const { followUser, unfollowUser, getCurrentUserId } = await import('../../mobile-db');
+      const { followUser, unfollowUser, getCurrentUserId } = await import('../../mobile-db-supabase');
       
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
@@ -189,7 +189,7 @@ export default function UserProfileScreen() {
 
   const handleBlock = async () => {
     try {
-      const { blockUser, unblockUser, getCurrentUserId } = await import('../../mobile-db');
+      const { blockUser, unblockUser, getCurrentUserId } = await import('../../mobile-db-supabase');
       
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
@@ -209,7 +209,7 @@ export default function UserProfileScreen() {
 
   const handleNotificationToggle = async () => {
     try {
-      const { toggleUserNotifications, getCurrentUserId } = await import('../../mobile-db');
+      const { toggleUserNotifications, getCurrentUserId } = await import('../../mobile-db-supabase');
       
       const currentUserId = await getCurrentUserId();
       if (!currentUserId) return;
@@ -396,7 +396,10 @@ export default function UserProfileScreen() {
               ) : (
                 chirps.map((chirp: any, index: number) => (
                   <View key={chirp.id} style={[styles.chirpContainer, index > 0 && styles.chirpBorder]}>
-                    <ChirpCard chirp={chirp} />
+                    <ChirpCard 
+                      chirp={chirp} 
+                      onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                    />
                   </View>
                 ))
               )}
@@ -412,7 +415,10 @@ export default function UserProfileScreen() {
               ) : (
                 replies.map((reply: any, index: number) => (
                   <View key={reply.id} style={[styles.chirpContainer, index > 0 && styles.chirpBorder]}>
-                    <ChirpCard chirp={reply} />
+                    <ChirpCard 
+                      chirp={reply} 
+                      onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                    />
                   </View>
                 ))
               )}

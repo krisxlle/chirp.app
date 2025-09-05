@@ -43,6 +43,19 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     },
   ];
 
+  const handleTabChange = (tab: string) => {
+    console.log(`🔄 Navigation: Switching from ${activeTab} to ${tab}`);
+    const startTime = Date.now();
+    
+    onTabChange(tab);
+    
+    // Log navigation completion after a short delay
+    setTimeout(() => {
+      const navTime = Date.now() - startTime;
+      console.log(`✅ Navigation: Completed switch to ${tab} in ${navTime}ms`);
+    }, 100);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.navContainer}>
@@ -50,7 +63,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
           <TouchableOpacity
             key={item.key}
             style={styles.navItem}
-            onPress={() => onTabChange(item.key)}
+            onPress={() => handleTabChange(item.key)}
             activeOpacity={0.7}
           >
             {item.isActive ? (

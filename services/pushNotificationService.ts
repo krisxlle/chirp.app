@@ -1,5 +1,5 @@
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 // Configure notification behavior
@@ -59,7 +59,7 @@ export class PushNotificationService {
       });
 
       this.expoPushToken = token.data;
-      console.log('Expo Push Token:', token.data);
+      console.log('Expo Push Token received');
 
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {

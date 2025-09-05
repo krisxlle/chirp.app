@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import {
     Alert,
     ImageBackground,
@@ -34,7 +35,11 @@ interface ProfileStats {
   profilePower: number;
 }
 
-export default function ProfilePage() {
+interface ProfilePageProps {
+  onNavigateToProfile?: (tab: string) => void;
+}
+
+export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNavigateToProfile }, ref) {
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
@@ -48,64 +53,52 @@ export default function ProfilePage() {
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
 
-  const fetchUserChirps = async () => {
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    closeSettings: () => {
+      setShowSettings(false);
+    }
+  }));
+
+  const fetchUserChirps = useCallback(async () => {
     try {
       if (!authUser?.id) return;
       
-      console.log('ProfilePage: Using mock data (database calls disabled)');
+      console.log('🔄 ProfilePage: Fetching data via API...');
+      const startTime = Date.now();
       
-      // TEMPORARILY DISABLED: Database calls
-      // const { getUserChirps, getUserReplies, getUserStats } = await import('../mobile-db');
+      // Use API instead of direct database connection
+      const { getUserChirps, getUserReplies, getUserStats } = await import('../mobile-api');
       
-      // Mock data for testing
-      const mockChirps = [
-        {
-          id: '1',
-          content: 'Welcome to Chirp! This is a test chirp to get you started. 🐦✨',
-          createdAt: new Date().toISOString(),
-          reactionCount: 5,
-          replyCount: 2,
-        },
-        {
-          id: '2',
-          content: 'Testing the app with authentication disabled. Everything should work smoothly now! 🚀',
-          createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          reactionCount: 12,
-          replyCount: 3,
-        }
-      ];
+      // Fetch data in parallel for better performance
+      const [chirpsData, repliesData, statsData] = await Promise.all([
+        getUserChirps(authUser.id),
+        getUserReplies(authUser.id),
+        getUserStats(authUser.id)
+      ]);
       
-      const mockReplies = [
-        {
-          id: '1',
-          content: 'Great post!',
-          createdAt: new Date().toISOString(),
-          reactionCount: 2,
-          replyCount: 1,
-        }
-      ];
+      const loadTime = Date.now() - startTime;
+      console.log(`✅ ProfilePage: Data loaded successfully in ${loadTime}ms`);
       
-      const mockStats = {
-        followers: 125,
-        following: 89,
-      };
+      setUserChirps(chirpsData || []);
+      setUserReplies(repliesData || []);
       
-      setUserChirps(mockChirps);
-      setUserReplies(mockReplies);
+      // Calculate profile power based on stats
+      const profilePower = calculateProfilePower(chirpsData || [], repliesData || [], statsData);
       
-      // Calculate profile power based on mock data
-      const profilePower = calculateProfilePower(mockChirps, mockReplies, mockStats);
-      
-      // Update stats with mock data
+      // Update stats with API data
       setStats({
-        followers: mockStats.followers,
-        following: mockStats.following,
+        followers: statsData.followers || 0,
+        following: statsData.following || 0,
         profilePower: profilePower
       });
+      
+      console.log('ProfilePage: Data loaded successfully');
     } catch (error) {
-      console.error('Error fetching user chirps:', error);
+      console.error('❌ ProfilePage: Error loading data:', error);
+      // Keep existing mock data if API fails
     }
-  };
+  }, [authUser?.id]);
 
   // Algorithm to calculate profile power based on engagement
   const calculateProfilePower = (chirps: any[], replies: any[], stats: any) => {
@@ -160,10 +153,22 @@ export default function ProfilePage() {
   useEffect(() => {
     // Use authenticated user data from AuthContext
     if (authUser) {
+      console.log('ProfilePage: authUser updated:', authUser.profileImageUrl ? 'has image' : 'no image');
       setUser(authUser);
       fetchUserChirps();
     }
-  }, [authUser]);
+  }, [authUser?.id]); // Only depend on authUser.id, not the entire authUser object or fetchUserChirps
+
+  // Function to update chirp reply count
+  const handleChirpReplyUpdate = useCallback((chirpId: string) => {
+    setUserChirps(prevChirps => 
+      prevChirps.map(chirp => 
+        chirp.id === chirpId 
+          ? { ...chirp, replyCount: (chirp.replyCount || 0) + 1 }
+          : chirp
+      )
+    );
+  }, []);
 
   const displayName = user?.firstName || user?.customHandle || user?.handle || 'User';
 
@@ -173,6 +178,10 @@ export default function ProfilePage() {
 
   const handleSettings = () => {
     setShowSettings(true);
+  };
+
+  const handleNavigateToProfile = () => {
+    setShowSettings(false);
   };
 
   if (showSettings) {
@@ -299,6 +308,8 @@ export default function ProfilePage() {
                   key={chirp.id} 
                   chirp={chirp} 
                   onDeleteSuccess={fetchUserChirps}
+                  onReplyPosted={handleChirpReplyUpdate}
+                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
                 />
               ))
             )}
@@ -319,6 +330,8 @@ export default function ProfilePage() {
                   key={reply.id} 
                   chirp={reply} 
                   onDeleteSuccess={fetchUserChirps}
+                  onReplyPosted={handleChirpReplyUpdate}
+                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
                 />
               ))
             )}
@@ -354,7 +367,7 @@ export default function ProfilePage() {
       />
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -758,12 +771,15 @@ const styles = StyleSheet.create({
   },
   chirpsContainer: {
     paddingHorizontal: 8,
+    paddingBottom: 80, // Extra padding to clear navigation bar
   },
   repliesContainer: {
     paddingHorizontal: 8,
+    paddingBottom: 80, // Extra padding to clear navigation bar
   },
   collectionContainer: {
     paddingHorizontal: 8,
+    paddingBottom: 80, // Extra padding to clear navigation bar
   },
   analyticsContainer: {
     marginTop: 16,

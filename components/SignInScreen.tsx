@@ -1,17 +1,19 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { signInWithSupabase, signUp } from '../mobile-db-supabase';
 import { useAuth } from './AuthContext';
 
 // Custom Icon Components
@@ -67,16 +69,17 @@ const BotIcon = ({ size = 24, color = "#7c3aed" }) => (
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [customHandle, setCustomHandle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { signIn, clearSession } = useAuth();
+  const { signIn } = useAuth();
 
   const handleSignIn = async () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter an email address');
+    if (!username.trim()) {
+      Alert.alert('Error', 'Please enter your username');
       return;
     }
 
@@ -87,14 +90,25 @@ export default function SignInScreen() {
 
     setIsLoading(true);
     try {
-      console.log('🔐 Attempting to sign in with email:', email);
-      const success = await signIn(email, password);
+      console.log('🔐 Attempting to sign in with username:', username);
+      const result = await signIn(username, password);
       
-      if (success) {
+      if (result.success) {
         console.log('✅ Sign in successful');
         // AuthContext will handle the state update
       } else {
-        Alert.alert('Sign In Failed', 'Invalid email or password.');
+        // Check if this is an email confirmation issue
+        if (result.error === 'EMAIL_NOT_CONFIRMED') {
+          Alert.alert(
+            'Email Confirmation Required', 
+            'Please check your email and click the confirmation link before signing in.',
+            [
+              { text: 'OK', style: 'default' }
+            ]
+          );
+        } else {
+          Alert.alert('Sign In Failed', 'Invalid username or password.');
+        }
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -154,41 +168,52 @@ export default function SignInScreen() {
     try {
       console.log('📝 Attempting to sign up with email:', email);
       
-      // Call the sign-up API
-      const apiUrl = __DEV__ ? '/api/auth/signup' : 'http://192.168.1.194:4000/api/auth/signup';
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          name,
-          customHandle
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        Alert.alert('Sign Up Failed', errorData.error || 'Failed to create account');
-        return;
-      }
-
-      const result = await response.json();
+      // Use Supabase sign up function
+      const result = await signUp(email, password, name, customHandle);
       
-      if (result.success) {
+      if (result.user) {
         console.log('✅ Sign up successful, now automatically signing in...');
         
-        // Automatically sign in the user after successful sign-up
-        const signInSuccess = await signIn(email, password);
-        
-        if (signInSuccess) {
-          console.log('✅ Auto sign-in successful after sign-up');
-          // No need to show alert - user is now signed in and will be redirected
-        } else {
-          console.log('⚠️ Auto sign-in failed after sign-up, showing manual sign-in prompt');
-          Alert.alert('Account Created', 'Account created successfully! Please sign in with your credentials.', [
+        try {
+          // Automatically sign in the user after successful sign-up using Supabase
+          const signInResult = await signInWithSupabase(email, password);
+          
+          if (signInResult.user && signInResult.profile) {
+            console.log('✅ Auto sign-in successful after sign-up');
+            
+            // Create user object in the same format as AuthContext expects
+            const user = {
+              id: signInResult.user.id,
+              email: signInResult.user.email || email,
+              name: signInResult.profile.first_name && signInResult.profile.last_name 
+                ? `${signInResult.profile.first_name} ${signInResult.profile.last_name}`.trim()
+                : signInResult.profile.custom_handle || signInResult.profile.handle || email.split('@')[0],
+              firstName: signInResult.profile.first_name,
+              lastName: signInResult.profile.last_name,
+              customHandle: signInResult.profile.custom_handle,
+              handle: signInResult.profile.handle,
+              profileImageUrl: signInResult.profile.profile_image_url,
+              avatarUrl: signInResult.profile.profile_image_url,
+              bannerImageUrl: signInResult.profile.banner_image_url,
+              bio: signInResult.profile.bio
+            };
+            
+            // Store user data in AsyncStorage (same as AuthContext does)
+            await AsyncStorage.setItem('user', JSON.stringify(user));
+            await AsyncStorage.removeItem('userSignedOut');
+            
+            // Use the AuthContext's updateUser method to set the user state
+            const { updateUser } = useAuth();
+            await updateUser(user);
+            
+            console.log('✅ User automatically signed in after sign-up:', user.customHandle || user.handle || user.id);
+            Alert.alert('Welcome!', 'Your account has been created and you are now signed in!');
+          } else {
+            throw new Error('Sign in result missing user or profile data');
+          }
+        } catch (signInError) {
+          console.error('⚠️ Auto sign-in failed after sign-up:', signInError);
+          Alert.alert('Account Created', 'Your account has been created successfully! Please sign in to continue.', [
             {
               text: 'OK',
               onPress: () => setIsSignUp(false)
@@ -206,15 +231,6 @@ export default function SignInScreen() {
     }
   };
 
-  const handleClearSession = async () => {
-    try {
-      await clearSession();
-      Alert.alert('Session Cleared', 'All stored session data has been cleared. Please sign in again.');
-    } catch (error) {
-      console.error('Error clearing session:', error);
-      Alert.alert('Error', 'Failed to clear session');
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -272,11 +288,11 @@ export default function SignInScreen() {
           
           <TextInput
             style={styles.emailInput}
-            placeholder="Enter your email"
+            placeholder={isSignUp ? "Enter your email" : "Enter your username"}
             placeholderTextColor="#9ca3af"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            value={isSignUp ? email : username}
+            onChangeText={isSignUp ? setEmail : setUsername}
+            keyboardType={isSignUp ? "email-address" : "default"}
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -340,16 +356,6 @@ export default function SignInScreen() {
             </Text>
           </TouchableOpacity>
           
-          {/* Debug: Clear Session Button */}
-          <TouchableOpacity
-            style={[styles.switchModeButton, { marginTop: 8 }]}
-            onPress={handleClearSession}
-            disabled={isLoading}
-          >
-            <Text style={[styles.switchModeText, { color: '#ef4444' }]}>
-              Clear Session (Debug)
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Footer */}

@@ -1,104 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// Use API instead of direct database connection
 import { useResponsive } from '../hooks/useResponsive';
-import { getForYouChirps } from '../mobile-db';
-import type { MobileChirp } from '../mobile-types';
+import { getForYouChirps } from '../mobile-api';
+import { clearChirpCache } from '../mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import ComposeChirp from './ComposeChirp';
 import ProfileModal from './ProfileModal';
-
-// Mock data for when API is not available
-const createMockChirps = () => [
-  {
-    id: '1',
-    content: 'Welcome to Chirp! This is a test chirp to get you started. 🐦✨',
-    createdAt: new Date().toISOString(),
-    author: {
-      id: 'test-user-123',
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'test@example.com',
-      customHandle: 'testuser',
-      handle: 'testuser',
-      profileImageUrl: undefined,
-    },
-    replyCount: 0,
-    reactionCount: 5,
-    reactions: [],
-    isWeeklySummary: false,
-  },
-  {
-    id: '2',
-    content: 'Testing the app with authentication disabled. Everything should work smoothly now! 🚀',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-    author: {
-      id: 'test-user-123',
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'test@example.com',
-      customHandle: 'testuser',
-      handle: 'testuser',
-      profileImageUrl: undefined,
-    },
-    replyCount: 2,
-    reactionCount: 12,
-    reactions: [],
-    isWeeklySummary: false,
-  },
-  {
-    id: '3',
-    content: 'The white screen issue should be resolved now. Let me know if you see this chirp! 👀',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
-    author: {
-      id: 'test-user-123',
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'test@example.com',
-      customHandle: 'testuser',
-      handle: 'testuser',
-      profileImageUrl: undefined,
-    },
-    replyCount: 1,
-    reactionCount: 8,
-    reactions: [],
-    isWeeklySummary: false,
-  }
-];
-
-// Convert mobile chirps to ChirpCard format
-const convertToChirpCard = (chirp: MobileChirp) => {
-  // Safety check for chirp and author
-  if (!chirp || !chirp.author) {
-    console.log('HomePage: Invalid chirp data, skipping conversion');
-    return null;
-  }
-
-  return {
-    id: chirp.id,
-    content: chirp.content,
-    createdAt: chirp.createdAt,
-    isWeeklySummary: chirp.isWeeklySummary || false,
-    author: {
-      id: chirp.author.id || 'anonymous',
-      firstName: chirp.author.firstName || chirp.author.first_name || '',
-      lastName: chirp.author.lastName || chirp.author.last_name || chirp.author.firstName || chirp.author.first_name || '',
-      email: chirp.author.email || 'anonymous@example.com',
-      handle: chirp.author.handle || 'anonymous',
-      customHandle: chirp.author.customHandle || chirp.author.custom_handle || 'anonymous',
-      profileImageUrl: chirp.author.profileImageUrl || chirp.author.profile_image_url || undefined,
-    },
-    replyCount: chirp.replyCount || 0,
-    reactionCount: chirp.reactionCount || 0,
-    reactionCounts: chirp.reactions?.reduce((acc: any, reaction: any) => {
-      acc[reaction.emoji] = reaction.count;
-      return acc;
-    }, {}) || {},
-    replies: [],
-  };
-};
+import SearchIcon from './icons/SearchIcon';
 
 export default function HomePage() {
   // Get user from AuthContext
@@ -108,79 +20,69 @@ export default function HomePage() {
   // State for feed type
   const [feedType, setFeedType] = useState<'forYou' | 'collection'>('forYou');
   
-  // State for chirps - start with mock data
-  const [forYouChirps, setForYouChirps] = useState(createMockChirps());
-  const [collectionChirps, setCollectionChirps] = useState([
-    {
-      id: '4',
-      content: 'Just pulled a rare character from the gacha! 🎉✨',
-      createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
-      author: {
-        id: 'gacha-user-1',
-        firstName: 'Gacha',
-        lastName: 'Player',
-        email: 'gacha@example.com',
-        customHandle: 'gachamaster',
-        handle: 'gachamaster',
-        profileImageUrl: undefined,
-      },
-      replyCount: 3,
-      reactionCount: 15,
-      reactions: [],
-      isWeeklySummary: false,
-    },
-    {
-      id: '5',
-      content: 'Finally completed my collection! This took forever but totally worth it 🏆',
-      createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 minutes ago
-      author: {
-        id: 'gacha-user-2',
-        firstName: 'Collection',
-        lastName: 'Hunter',
-        email: 'hunter@example.com',
-        customHandle: 'hunter',
-        handle: 'hunter',
-        profileImageUrl: undefined,
-      },
-      replyCount: 8,
-      reactionCount: 25,
-      reactions: [],
-      isWeeklySummary: false,
-    }
-  ]);
+  // State for chirps - start with empty array
+  const [forYouChirps, setForYouChirps] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(0);
   
-    // Fetch real chirps from database when component mounts
-  useEffect(() => {
-    const loadChirps = async () => {
-      try {
-        console.log('🔄 Loading chirps from database...');
-        const realChirps = await getForYouChirps();
-        console.log(`✅ Loaded ${realChirps.length} chirps from database`);
-        setForYouChirps(realChirps);
-      } catch (error) {
-        console.error('❌ Error loading chirps from database:', error);
-        console.log('🔄 Falling back to mock chirps');
-        // Keep the mock chirps if database fails
+  // Load chirps function
+  const loadChirps = useCallback(async (forceRefresh = false) => {
+    try {
+      // Don't reload if we have recent data and not forcing refresh
+      const now = Date.now();
+      if (!forceRefresh && forYouChirps.length > 0 && (now - lastRefresh) < 30000) {
+        console.log('🔄 HomePage: Using cached chirps (last refresh:', now - lastRefresh, 'ms ago)');
+        return;
       }
-    };
-    
+      
+      setIsLoading(true);
+      console.log('🔄 HomePage: Loading chirps from database...', forceRefresh ? '(force refresh)' : '');
+      const startTime = Date.now();
+      
+      const realChirps = await getForYouChirps();
+      const loadTime = Date.now() - startTime;
+      
+      console.log(`✅ HomePage: Loaded ${realChirps.length} chirps from database in ${loadTime}ms`);
+      
+      setForYouChirps(realChirps);
+      setLastRefresh(now);
+    } catch (error) {
+      console.error('❌ HomePage: Error loading chirps from database:', error);
+      console.log('🔄 HomePage: Keeping existing chirps array');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [lastRefresh]); // Remove forYouChirps.length from dependencies to prevent infinite loops
+  
+  // Load chirps on mount
+  useEffect(() => {
     loadChirps();
-  }, []);
+  }, []); // Empty dependency array to only run once on mount
   
   // Function to refresh chirps
-  const refreshChirps = async () => {
+  const refreshChirps = useCallback(async () => {
+    console.log('🔄 HomePage: Force refreshing chirps...');
     try {
-      console.log('🔄 Refreshing chirps...');
+      setIsLoading(true);
+      clearChirpCache(); // Clear cache before refreshing
+      
+      const startTime = Date.now();
       const realChirps = await getForYouChirps();
-      console.log(`✅ Refreshed ${realChirps.length} chirps from database`);
+      const loadTime = Date.now() - startTime;
+      
+      console.log(`✅ HomePage: Refreshed ${realChirps.length} chirps from database in ${loadTime}ms`);
+      
       setForYouChirps(realChirps);
+      setLastRefresh(Date.now());
     } catch (error) {
-      console.error('❌ Error refreshing chirps:', error);
+      console.error('❌ HomePage: Error refreshing chirps:', error);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []); // No dependencies to avoid timing issues
   
   // Function to update chirp like count
-  const handleChirpLikeUpdate = (chirpId: string, newLikeCount: number) => {
+  const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
     setForYouChirps(prevChirps => 
       prevChirps.map(chirp => 
         chirp.id === chirpId 
@@ -188,127 +90,210 @@ export default function HomePage() {
           : chirp
       )
     );
-    
-    setCollectionChirps(prevChirps => 
+  }, []);
+
+  const handleChirpReplyUpdate = useCallback((chirpId: string) => {
+    setForYouChirps(prevChirps => 
       prevChirps.map(chirp => 
         chirp.id === chirpId 
-          ? { ...chirp, reactionCount: newLikeCount }
+          ? { ...chirp, replyCount: (chirp.replyCount || 0) + 1 }
           : chirp
       )
     );
-  };
+  }, []);
+  
   // Function to add a new chirp to the For You feed
-  const handleNewChirp = async (content: string) => {
-    // Safety check - if user is not available, don't create chirp
-    if (!user) {
-      console.log('HomePage: Cannot create chirp - user not available');
-      return;
+  const handleNewChirp = useCallback(async (content: string) => {
+    try {
+      console.log('🔄 HomePage: Adding new chirp to feed...');
+      
+      // Create a temporary chirp object
+      const newChirp = {
+        id: `temp_${Date.now()}`,
+        content,
+        createdAt: new Date().toISOString(),
+        replyToId: null,
+        isWeeklySummary: false,
+        reactionCount: 0,
+        replyCount: 0,
+        reactions: [],
+        replies: [],
+        repostOfId: null,
+        originalChirp: undefined,
+        author: {
+          id: user?.id || 'unknown',
+          firstName: user?.firstName || 'User',
+          lastName: user?.lastName || '',
+          email: user?.email || 'user@example.com',
+          customHandle: user?.customHandle || user?.handle || 'user',
+          handle: user?.handle || 'user',
+          profileImageUrl: user?.profileImageUrl,
+          avatarUrl: user?.avatarUrl,
+          bannerImageUrl: user?.bannerImageUrl,
+          bio: user?.bio || ''
+        }
+      };
+      
+      // Add to the beginning of the feed
+      setForYouChirps(prevChirps => [newChirp, ...prevChirps]);
+      
+      // Clear cache to force fresh data on next load
+      clearChirpCache();
+      
+      console.log('✅ HomePage: New chirp added to feed');
+    } catch (error) {
+      console.error('❌ HomePage: Error adding new chirp:', error);
+    }
+  }, [user]);
+  
+  // Function to handle chirp deletion
+  const handleChirpDelete = useCallback((deletedChirpId?: string) => {
+    console.log('🗑️ HomePage: Chirp removed from feed');
+    
+    // Immediately remove the chirp from local state for instant UI update
+    if (deletedChirpId) {
+      setForYouChirps(prevChirps => 
+        prevChirps.filter(chirp => chirp.id !== deletedChirpId)
+      );
     }
     
-    const newChirp = {
-      id: `chirp-${Date.now()}`, // Generate unique ID
-      content: content,
-      createdAt: new Date().toISOString(),
-      author: {
-        id: user.id,
-        firstName: user.firstName || 'Current',
-        lastName: user.lastName || 'User',
-        email: user.email || 'current@example.com',
-        customHandle: user.customHandle || 'currentuser',
-        handle: user.handle || 'currentuser',
-        profileImageUrl: undefined, // Keep consistent with mock data type
-      },
-      replyCount: 0,
-      reactionCount: 0,
-      reactions: [],
-      isWeeklySummary: false,
-    };
-    
-    // Add the new chirp to the beginning of the For You feed immediately
-    setForYouChirps(prevChirps => [newChirp, ...prevChirps]);
-    console.log('New chirp added to For You feed:', newChirp);
-    
-    // Don't refresh immediately - let the user see their chirp
-    // The chirp will be persisted in the database and will appear on next app load
-    console.log('✅ Chirp added to local feed - will persist in database');
+    // Also refresh to ensure consistency with database
+    refreshChirps();
+  }, [refreshChirps]);
+
+  // Function to navigate to search page
+  const handleSearchPress = () => {
+    router.push('/(tabs)/explore');
   };
-  
-  // Get current chirps based on feed type
-  const currentChirps = feedType === 'forYou' ? forYouChirps : collectionChirps;
-  
-  // Safety check - if user is not available, show a loading state
-  if (!user) {
-    console.log('HomePage: User not available, showing loading state');
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
-  
-  console.log('HomePage: User available, rendering full component - user ID:', user.id);
-  
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={[styles.header, { paddingHorizontal: padding.header.horizontal, paddingVertical: padding.header.vertical }]}>
-          <View style={styles.headerContent}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>Chirp</Text>
-            </View>
-            
-            <View style={styles.feedControls}>
-              <TouchableOpacity 
-                style={[styles.feedButton, feedType === 'forYou' && styles.activeFeedButton]}
-                onPress={() => setFeedType('forYou')}
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingHorizontal: padding.screen.horizontal }]}>
+        <Text style={styles.headerTitle}>Home</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={styles.searchButton} 
+            onPress={handleSearchPress}
+          >
+            <SearchIcon size={20} color="#657786" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.refreshButton} 
+            onPress={refreshChirps}
+            disabled={isLoading}
+          >
+            <Text style={styles.refreshButtonText}>
+              {isLoading ? '🔄' : '↻'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Feed Type Toggle - Updated to match SettingsPage styling */}
+      <View style={[styles.tabsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
+        <View style={styles.tabsButtonContainer}>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setFeedType('forYou')}
+          >
+            {feedType === 'forYou' ? (
+              <LinearGradient
+                colors={['#7c3aed', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.activeTabButton}
               >
-                <Text style={feedType === 'forYou' ? styles.activeFeedButtonText : styles.feedButtonText}>
+                <Text style={[styles.tabButtonText, styles.activeTabButtonText]}>
                   For You
                 </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.feedButton, feedType === 'collection' && styles.activeFeedButton]}
-                onPress={() => setFeedType('collection')}
+              </LinearGradient>
+            ) : (
+              <Text style={styles.tabButtonText}>
+                For You
+              </Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setFeedType('collection')}
+          >
+            {feedType === 'collection' ? (
+              <LinearGradient
+                colors={['#7c3aed', '#ec4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.activeTabButton}
               >
-                <Text style={feedType === 'collection' ? styles.activeFeedButtonText : styles.feedButtonText}>
+                <Text style={[styles.tabButtonText, styles.activeTabButtonText]}>
                   Collection
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+              </LinearGradient>
+            ) : (
+              <Text style={styles.tabButtonText}>
+                Collection
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Chirps Feed */}
+      <ScrollView 
+        style={styles.feed} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={refreshChirps}
+            colors={['#7c3aed', '#ec4899']}
+            tintColor="#7c3aed"
+            title="Pull to refresh"
+            titleColor="#657786"
+          />
+        }
+      >
+        {/* Compose Chirp - Now part of the scrollable feed */}
+        <View style={styles.composeContainer}>
+          <ComposeChirp onPost={handleNewChirp} />
         </View>
 
-        {/* Content */}
-        <ScrollView style={[styles.content, { paddingHorizontal: padding.content.horizontal }]}>
-          <View style={[styles.composeContainer, { paddingTop: spacing.lg, paddingBottom: spacing.md }]}>
-            <ComposeChirp onPost={handleNewChirp} />
+        {feedType === 'forYou' ? (
+          // For You Feed
+          <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
+            {forYouChirps.length === 0 && !isLoading ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>💬</Text>
+                <Text style={styles.emptyTitle}>No chirps yet</Text>
+                <Text style={styles.emptySubtext}>Be the first to chirp!</Text>
+              </View>
+            ) : (
+              forYouChirps.map((chirp) => (
+                <ChirpCard 
+                  key={chirp.id} 
+                  chirp={chirp} 
+                  onLikeUpdate={handleChirpLikeUpdate}
+                  onDeleteSuccess={handleChirpDelete}
+                  onReplyPosted={handleChirpReplyUpdate}
+                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                />
+              ))
+            )}
           </View>
-          
-          {currentChirps.map((chirp) => {
-            const convertedChirp = convertToChirpCard(chirp);
-            if (!convertedChirp) {
-              return null; // Skip invalid chirps
-            }
-            return (
-              <ChirpCard 
-                key={chirp.id} 
-                chirp={convertedChirp} 
-                onDeleteSuccess={() => console.log('Chirp deleted')}
-                onProfilePress={(userId) => console.log('Profile pressed:', userId)}
-                onLikeUpdate={handleChirpLikeUpdate}
-              />
-            );
-          })}
-        </ScrollView>
+                 ) : (
+           // Collection Feed
+           <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
+             <View style={styles.emptyState}>
+               <Text style={styles.emptyIcon}>🎮</Text>
+               <Text style={styles.emptyTitle}>Collection Feed</Text>
+               <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
+             </View>
+           </View>
+         )}
+      </ScrollView>
 
-        <ProfileModal
-          visible={false}
-          userId={null}
-          onClose={() => console.log('Profile modal closed')}
-        />
-      </View>
+      {/* Profile Modal */}
+      <ProfileModal visible={false} userId="" onClose={() => {}} />
     </SafeAreaView>
   );
 }
@@ -326,56 +311,102 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-  },
-  headerContent: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  logoContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 12,
   },
-  logoText: {
+  headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#7c3aed',
+    color: '#333',
   },
-  content: {
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchButton: {
+    padding: 8,
+  },
+  refreshButton: {
+    padding: 8,
+  },
+  refreshButtonText: {
+    fontSize: 24,
+  },
+  // Updated tabs styling to match SettingsPage
+  tabsContainer: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
+    paddingVertical: 12,
+  },
+  tabsButtonContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f7f9fa',
+    borderRadius: 12,
+    padding: 3,
+  },
+  tabButton: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 2,
+    flex: 1,
+  },
+  activeTabButton: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  tabButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#657786',
+  },
+  activeTabButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  feed: {
     flex: 1,
   },
   composeContainer: {
-    // Padding will be applied dynamically
+    paddingTop: 8,
+    paddingBottom: 8,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  chirpsContainer: {
+    paddingBottom: 80, // Extra padding to clear navigation bar
+  },
+  emptyState: {
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    paddingVertical: 50,
   },
-  loadingText: {
-    fontSize: 16,
-    color: '#657786',
+  emptyIcon: {
+    fontSize: 50,
+    marginBottom: 10,
   },
-  feedControls: {
-    flexDirection: 'row',
-    backgroundColor: '#e0e0e0',
-    borderRadius: 20,
-    padding: 2,
-  },
-  feedButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 15,
-  },
-  activeFeedButton: {
-    backgroundColor: '#7c3aed',
-  },
-  activeFeedButtonText: {
+  emptyTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#333',
+    marginBottom: 5,
   },
-  feedButtonText: {
+  emptySubtext: {
+    fontSize: 16,
     color: '#657786',
   },
 });

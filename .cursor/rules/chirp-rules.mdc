@@ -7,3 +7,4 @@ alwaysApply: true
 - Previews for testing is done on a physical iPhone 16 using Expo Go. Rememer to consider this as a possible error source.
     - Use computer IP instead of localhost.
 - Use Supabase for all database related concepts.
+- If running a command takes more than 2 minutes to get the output, skip and try a different method.

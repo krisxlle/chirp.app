@@ -41,7 +41,7 @@ const PushNotificationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         console.log('Initializing push notifications...');
         console.log('Platform:', Platform.OS);
         console.log('Development mode:', __DEV__);
-        console.log('API Base URL:', API_BASE_URL);
+        console.log('API Base URL:', API_BASE_URL ? 'configured' : 'not configured');
         console.log('User ID:', user.id);
         
         // Skip push notifications on web platform
@@ -54,7 +54,7 @@ const PushNotificationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const token = await pushNotificationService.registerForPushNotifications();
         
         if (token) {
-          console.log('Push token obtained:', token);
+          console.log('Push token obtained:', token ? 'success' : 'failed');
           // Register token with backend
           await registerTokenWithBackend(user.id, token, Platform.OS);
           
@@ -82,33 +82,64 @@ const PushNotificationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 // Register push token with backend
 async function registerTokenWithBackend(userId: string, token: string, platform: string) {
-  try {
-    const apiUrl = `${API_BASE_URL}/api/push-tokens`;
-    console.log('Registering push token with:', apiUrl);
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        token,
-        platform,
-      }),
-    });
+  const maxRetries = 3;
+  let attempt = 0;
+  
+  while (attempt < maxRetries) {
+    try {
+      attempt++;
+      const apiUrl = `${API_BASE_URL}/api/push-tokens`;
+      console.log(`Attempt ${attempt}/${maxRetries}: Registering push token with API`);
+      
+      // Add timeout to the fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          platform,
+        }),
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Server responded with error:', response.status, errorText);
-      throw new Error(`Failed to register push token: ${response.status} ${errorText}`);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Attempt ${attempt}: Server responded with error:`, response.status, errorText);
+        if (attempt === maxRetries) {
+          throw new Error(`Failed to register push token: ${response.status} ${errorText}`);
+        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+
+      const result = await response.json();
+      console.log('Push token registered successfully');
+      return; // Success, exit the retry loop
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error(`Attempt ${attempt}: Request timeout - server may not be running`);
+      } else {
+        console.error(`Attempt ${attempt}: Error registering push token:`, error);
+      }
+      
+      if (attempt === maxRetries) {
+        console.error('All attempts failed to register push token');
+        // Don't throw the error - just log it so the app continues to work
+        // Push notifications are not critical for core app functionality
+        return;
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
-
-    const result = await response.json();
-    console.log('Push token registered successfully:', result);
-  } catch (error) {
-    console.error('Error registering push token:', error);
-    // Don't throw the error - just log it so the app continues to work
-    // Push notifications are not critical for core app functionality
   }
 }
 

@@ -1,25 +1,25 @@
-import { formatDistanceToNow } from "date-fns";
-import { MessageCircle, Repeat2, Share, Bot, Sparkles, Trash2, MoreHorizontal, UserPlus, UserMinus, UserX, Bell, BellOff, Download, Link, Image } from "lucide-react";
-import html2canvas from 'html2canvas';
 import BrandIcon from "@/components/BrandIcon";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import UserAvatar from "@/components/UserAvatar";
-import MoodReactions from "@/components/MoodReactions";
+import ChirpPlusBadge from "@/components/ChirpPlusBadge";
 import MentionText from "@/components/MentionText";
-import { useLocation } from "wouter";
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import MoodReactions from "@/components/MoodReactions";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import UserAvatar from "@/components/UserAvatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import ChirpPlusBadge from "@/components/ChirpPlusBadge";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatDistanceToNow } from "date-fns";
+import html2canvas from 'html2canvas';
+import { Bell, BellOff, Bot, Image, Link, MessageCircle, MoreHorizontal, Repeat2, Share, Sparkles, Trash2, UserMinus, UserPlus, UserX } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
 
 interface ChirpCardProps {
   chirp: {
@@ -85,6 +85,9 @@ interface ChirpCardProps {
 }
 
 export default function ChirpCard({ chirp }: ChirpCardProps) {
+  // Debug: Log if web client ChirpCard is being used in mobile app
+  console.log(`🔍 WEB ChirpCard render - ID: ${chirp.id}, author: ${chirp.author.customHandle || chirp.author.handle}`);
+  
   const [, setLocation] = useLocation();
   const [showReplies, setShowReplies] = useState(false);
   const [replyContent, setReplyContent] = useState("");

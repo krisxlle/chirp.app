@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from './AuthContext';
 
@@ -13,6 +13,7 @@ import SignInScreen from './SignInScreen';
 export default function ChirpApp() {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+  const profilePageRef = useRef<any>(null);
 
   // Check if user is authenticated
   const isAuthenticated = !!user;
@@ -42,6 +43,33 @@ export default function ChirpApp() {
 
   console.log('ChirpApp: User authenticated, rendering main app - user ID:', user?.id);
 
+  // Handle tab changes
+  const handleTabChange = (tab: string) => {
+    console.log(`🔄 ChirpApp: Tab change requested from ${activeTab} to ${tab}`);
+    const startTime = Date.now();
+    
+    // If we're already on profile and trying to go to profile, do nothing
+    if (activeTab === 'profile' && tab === 'profile') {
+      console.log('🔄 ChirpApp: Already on profile tab, ignoring request');
+      return;
+    }
+    
+    // If we're going to profile and the profile page has settings open, close settings
+    if (tab === 'profile' && activeTab === 'profile' && profilePageRef.current?.closeSettings) {
+      console.log('🔄 ChirpApp: Closing settings and staying on profile');
+      profilePageRef.current.closeSettings();
+      return;
+    }
+    
+    setActiveTab(tab);
+    
+    // Log tab change completion
+    setTimeout(() => {
+      const changeTime = Date.now() - startTime;
+      console.log(`✅ ChirpApp: Tab change to ${tab} completed in ${changeTime}ms`);
+    }, 50);
+  };
+
   // Render the appropriate page based on active tab
   const renderCurrentPage = () => {
     switch (activeTab) {
@@ -50,7 +78,7 @@ export default function ChirpApp() {
       case 'notifications':
         return <NotificationsPage />;
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage ref={profilePageRef} />;
       case 'collection':
         return <CollectionPage />;
       case 'gacha':
@@ -67,7 +95,7 @@ export default function ChirpApp() {
       </View>
       <BottomNavigation 
         activeTab={activeTab} 
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         unreadCount={0}
       />
     </View>

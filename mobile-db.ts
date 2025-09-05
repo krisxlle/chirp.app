@@ -91,7 +91,7 @@ export const checkDatabaseSchema = async () => {
     if (usersError) {
       console.error('Users table error:', usersError);
     } else {
-      console.log('Users table columns:', Object.keys(usersTest?.[0] || {}));
+      console.log('Users table columns:', Object.keys(usersTest?.[0] || {}).length, 'columns');
     }
     
     // Test 2: Check if chirps table exists
@@ -104,7 +104,7 @@ export const checkDatabaseSchema = async () => {
     if (chirpsError) {
       console.error('Chirps table error:', chirpsError);
     } else {
-      console.log('Chirps table columns:', Object.keys(chirpsTest?.[0] || {}));
+      console.log('Chirps table columns:', Object.keys(chirpsTest?.[0] || {}).length, 'columns');
     }
     
     // Test 3: Check if follows table exists
@@ -117,7 +117,7 @@ export const checkDatabaseSchema = async () => {
     if (followsError) {
       console.error('Follows table error:', followsError);
     } else {
-      console.log('Follows table columns:', Object.keys(followsTest?.[0] || {}));
+      console.log('Follows table columns:', Object.keys(followsTest?.[0] || {}).length, 'columns');
     }
     
     return {
@@ -138,7 +138,7 @@ export const validateSupabaseCredentials = () => {
   const urlValid = SUPABASE_URL && SUPABASE_URL.startsWith('https://') && SUPABASE_URL.includes('supabase.co');
   const keyValid = SUPABASE_ANON_KEY && (SUPABASE_ANON_KEY.startsWith('eyJ') || SUPABASE_ANON_KEY.startsWith('sb_'));
   
-  console.log('📍 URL valid:', urlValid, SUPABASE_URL);
+  console.log('📍 URL valid:', urlValid);
   console.log('🔑 Key valid:', keyValid, SUPABASE_ANON_KEY.substring(0, 10) + '...');
   
   if (!urlValid) {
@@ -162,7 +162,7 @@ export const testNetworkConnectivity = async () => {
     
     // Test 1: Basic fetch to Supabase URL (web-compatible)
     const testUrl = SUPABASE_URL + '/rest/v1/';
-    console.log('📡 Testing URL:', testUrl);
+    console.log('📡 Testing Supabase connection');
     
     const response = await fetch(testUrl, {
       method: 'GET',
@@ -1122,9 +1122,31 @@ export async function updateUserProfile(userId: string, updates: any): Promise<a
       return { id: userId, ...updates };
     }
     
+    // First, verify the user exists
+    const { data: existingUser, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (userError || !existingUser) {
+      console.error('User not found for profile update:', userId);
+      throw new Error('User not found');
+    }
+    
+    // Filter out undefined values
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    
+    if (Object.keys(cleanUpdates).length === 0) {
+      console.log('No valid updates to apply');
+      return existingUser;
+    }
+    
     const { data, error } = await supabase
       .from('users')
-      .update(updates)
+      .update(cleanUpdates)
       .eq('id', userId)
       .select()
       .single();
@@ -1138,6 +1160,122 @@ export async function updateUserProfile(userId: string, updates: any): Promise<a
   } catch (error) {
     console.error('Error updating user profile:', error);
     throw error;
+  }
+}
+
+// Upload profile image to Supabase storage
+export async function uploadProfileImage(userId: string, imageUri: string): Promise<string> {
+  try {
+    console.log('Uploading profile image for user:', userId);
+    
+    // Ensure database is initialized
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, mock image upload');
+      return imageUri; // Return the local URI as mock
+    }
+    
+    // First, verify the user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (userError || !user) {
+      console.error('User not found:', userId);
+      throw new Error('User not found');
+    }
+    
+    // For now, we'll use a simple approach: convert the image to base64
+    // and store it directly in the database as a data URL
+    try {
+      // Convert image URI to base64
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(blob);
+      
+      const base64Data = await base64Promise;
+      
+      console.log('✅ Image converted to base64 successfully');
+      return base64Data; // Return the base64 data URL
+      
+    } catch (conversionError) {
+      console.error('Error converting image to base64:', conversionError);
+      // Fallback: return the original URI
+      return imageUri;
+    }
+    
+  } catch (error) {
+    console.error('Error uploading profile image:', error);
+    // Always return the original image URI as fallback
+    return imageUri;
+  }
+}
+
+// Upload banner image to Supabase storage
+export async function uploadBannerImage(userId: string, imageUri: string): Promise<string> {
+  try {
+    console.log('Uploading banner image for user:', userId);
+    
+    // Ensure database is initialized
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, mock banner image upload');
+      return imageUri; // Return the local URI as mock
+    }
+    
+    // First, verify the user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (userError || !user) {
+      console.error('User not found:', userId);
+      throw new Error('User not found');
+    }
+    
+    // For now, we'll use a simple approach: convert the image to base64
+    // and store it directly in the database as a data URL
+    try {
+      // Convert image URI to base64
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(blob);
+      
+      const base64Data = await base64Promise;
+      
+      console.log('✅ Banner image converted to base64 successfully');
+      return base64Data; // Return the base64 data URL
+      
+    } catch (conversionError) {
+      console.error('Error converting banner image to base64:', conversionError);
+      // Fallback: return the original URI
+      return imageUri;
+    }
+    
+  } catch (error) {
+    console.error('Error uploading banner image:', error);
+    // Always return the original image URI as fallback
+    return imageUri;
   }
 }
 
@@ -1858,39 +1996,9 @@ export async function getUserByHandle(handle: string): Promise<any | null> {
 
 // Authenticate user (simplified for now)
 export async function authenticateUser(email: string, password: string): Promise<any | null> {
-  try {
-    console.log('Authenticating user:', email);
-    
-    // Use relative URL in development to leverage Metro proxy
-    const apiUrl = __DEV__ ? '/api/auth/login' : 'http://192.168.1.194:4000/api/auth/login';
-    
-    // Call the authentication API
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
-    
-    if (!response.ok) {
-      console.error('Authentication API error:', response.status);
-      return null;
-    }
-    
-    const result = await response.json();
-    
-    if (result.success && result.user) {
-      console.log('✅ User authenticated successfully:', result.user.email);
-      return result.user;
-    }
-    
-    console.log('❌ Authentication failed');
-    return null;
-  } catch (error) {
-    console.error('Error authenticating user:', error);
-    return null;
-  }
+  console.log('⚠️ DEPRECATED: Old authenticateUser function called - should use Supabase version');
+  console.log('⚠️ This function is deprecated and should not be used');
+  throw new Error('DEPRECATED: Use authenticateUserByUsername from mobile-db-supabase.ts instead');
 }
 
 // Get first user (for demo purposes)

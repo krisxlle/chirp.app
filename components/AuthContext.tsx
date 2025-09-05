@@ -20,7 +20,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password?: string) => Promise<boolean>;
+  signIn: (username: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
@@ -74,25 +74,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Removed auto-login functionality - users must explicitly sign in
 
-  const signIn = async (email: string, password?: string): Promise<boolean> => {
+  const signIn = async (username: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('🔐 Attempting sign in for:', email);
+      console.log('🔐 Attempting sign in for:', username);
       setIsLoading(true);
       
       // Require password for security
       if (!password) {
         console.log('❌ Password is required for authentication');
         setIsLoading(false);
-        return false;
+        return { success: false, error: 'Password is required' };
       }
       
       // Clear any old session data to ensure fresh authentication
       await AsyncStorage.removeItem('user');
       await AsyncStorage.removeItem('userSignedOut');
       
-      // Authenticate user with email and password
-      const { authenticateUser } = await import('../mobile-db');
-      const dbUser = await authenticateUser(email, password);
+      // Authenticate user with username and password using Supabase
+      console.log('🔐 Using Supabase authentication for username:', username);
+      const { authenticateUserByUsername } = await import('../mobile-db-supabase');
+      const dbUser = await authenticateUserByUsername(username, password);
       
       if (dbUser) {
         console.log('✅ User authenticated successfully:', dbUser.custom_handle || dbUser.handle || dbUser.id);
@@ -103,14 +104,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!uuidRegex.test(dbUser.id)) {
           console.error('❌ Server returned non-UUID user ID:', dbUser.id);
           setIsLoading(false);
-          return false;
+          return { success: false, error: 'Invalid user ID' };
         }
         
         // Use real user data from database
         const user = {
           id: dbUser.id,
-          email: dbUser.email || email,
-          name: dbUser.display_name || dbUser.custom_handle || dbUser.handle || email.split('@')[0],
+          email: dbUser.email || username,
+          name: dbUser.display_name || dbUser.custom_handle || dbUser.handle || username,
           firstName: dbUser.first_name,
           lastName: dbUser.last_name,
           customHandle: dbUser.custom_handle,
@@ -127,16 +128,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(user);
         setIsLoading(false);
         console.log('✅ Signed in as user:', user.customHandle || user.handle || user.id);
-        return true;
+        return { success: true };
       }
       
       console.log('❌ No users found in database');
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'User not found' };
     } catch (error) {
       console.error('Sign in error:', error);
+      
+      // Handle email confirmation error specifically
+      if (error.message === 'EMAIL_NOT_CONFIRMED') {
+        console.log('📧 Email confirmation required');
+        setIsLoading(false);
+        return { success: false, error: 'EMAIL_NOT_CONFIRMED' };
+      }
+      
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'Authentication failed' };
     }
   };
 
@@ -182,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     
     validateUser();
-  }, [user, isLoading]);
+  }, [user?.id]); // Only depend on user.id to prevent infinite loops
 
   const clearSession = async () => {
     try {

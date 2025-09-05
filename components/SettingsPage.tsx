@@ -1,9 +1,11 @@
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -11,10 +13,12 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { updateUserProfile } from '../mobile-db';
+import { updateUserProfile, uploadBannerImage, uploadProfileImage } from '../mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import GearIcon from './icons/GearIcon';
+import UserAvatar from './UserAvatar';
 
 interface SettingsPageProps {
   onClose: () => void;
@@ -162,6 +166,51 @@ const LegalIcon = ({ size = 20, color = "#7c3aed" }) => (
   </Svg>
 );
 
+const CameraIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const BannerIcon = ({ size = 20, color = "#7c3aed" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path 
+      d="M3 3h18v18H3z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M3 9h18" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <Path 
+      d="M9 21V9" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 export default function SettingsPage({ onClose }: SettingsPageProps) {
   const { user, signOut, updateUser } = useAuth();
   const router = useRouter();
@@ -173,6 +222,179 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
   const [linkInBio, setLinkInBio] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedBannerImage, setSelectedBannerImage] = useState<string | null>(null);
+  const [isUploadingBannerImage, setIsUploadingBannerImage] = useState(false);
+
+  const pickImage = async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant permission to access your photo library.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+        // Automatically trigger upload after image selection
+        await handleUploadProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const pickBannerImage = async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please grant permission to access your photo library.');
+        return;
+      }
+
+      // Launch image picker for banner (wider aspect ratio)
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [3, 1], // Banner aspect ratio - 3:1 for wide banner display
+        quality: 0.8,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
+        allowsMultipleSelection: false,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedBannerImage(result.assets[0].uri);
+        // Automatically trigger upload after banner image selection
+        await handleUploadBannerImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking banner image:', error);
+      Alert.alert('Error', 'Failed to pick banner image. Please try again.');
+    }
+  };
+
+  const handleUploadProfileImage = async (imageUri?: string) => {
+    const uriToUpload = imageUri || selectedImage;
+    if (!uriToUpload || !user) return;
+
+    setIsUploadingImage(true);
+    try {
+      console.log('Starting profile image upload for user:', user.id);
+      console.log('User object:', user);
+      
+      // Validate user ID
+      if (!user.id || typeof user.id !== 'string') {
+        throw new Error('Invalid user ID');
+      }
+      
+      // Upload image to Supabase storage
+      const imageUrl = await uploadProfileImage(user.id, uriToUpload);
+      
+      if (!imageUrl) {
+        throw new Error('Failed to get image URL from upload');
+      }
+      
+      console.log('Image uploaded successfully, updating profile with URL:', imageUrl ? 'success' : 'failed');
+      
+      // Update user profile with new image URL
+      await updateUserProfile(user.id, {
+        profile_image_url: imageUrl
+      });
+      
+      // Update the user data in AuthContext to reflect the new profile image
+      await updateUser({
+        profileImageUrl: imageUrl,
+        avatarUrl: imageUrl
+      });
+      
+      Alert.alert('Success', 'Profile picture updated successfully!');
+      setSelectedImage(null);
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      Alert.alert('Error', `Failed to upload profile image: ${error.message}`);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleUploadBannerImage = async (imageUri?: string) => {
+    const uriToUpload = imageUri || selectedBannerImage;
+    if (!uriToUpload || !user) return;
+
+    setIsUploadingBannerImage(true);
+    try {
+      console.log('Starting banner image upload for user:', user.id);
+      
+      // Validate user ID
+      if (!user.id || typeof user.id !== 'string') {
+        throw new Error('Invalid user ID');
+      }
+      
+      // Upload image to Supabase storage
+      const imageUrl = await uploadBannerImage(user.id, uriToUpload);
+      
+      if (!imageUrl) {
+        throw new Error('Failed to get banner image URL from upload');
+      }
+      
+      console.log('Banner image uploaded successfully, updating profile with URL:', imageUrl ? 'success' : 'failed');
+      
+      // Update user profile with new banner image URL
+      await updateUserProfile(user.id, {
+        banner_image_url: imageUrl
+      });
+      
+      // Update the user data in AuthContext to reflect the new banner image
+      await updateUser({
+        bannerImageUrl: imageUrl
+      });
+      
+      Alert.alert('Success', 'Profile banner updated successfully!');
+      setSelectedBannerImage(null);
+    } catch (error) {
+      console.error('Error uploading banner image:', error);
+      Alert.alert('Error', `Failed to upload banner image: ${error.message}`);
+    } finally {
+      setIsUploadingBannerImage(false);
+    }
+  };
+
+  const handleUpdateName = async () => {
+    if (!user) return;
+    
+    setIsUpdating(true);
+    try {
+      // Update name in database
+      await updateUserProfile(user.id, {
+        first_name: firstName,
+      });
+      
+      // Update the user data in AuthContext to reflect the name change
+      await updateUser({
+        firstName: firstName,
+      });
+      
+      Alert.alert('Success', 'Name updated successfully!');
+    } catch (error) {
+      console.error('Error updating name:', error);
+      Alert.alert('Error', 'Failed to update name. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -186,7 +408,13 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         link_in_bio: linkInBio
       });
       
-      // updateUser(updatedUser); // TODO: Add updateUser method to AuthContext
+      // Update the user data in AuthContext to reflect the changes
+      await updateUser({
+        firstName: firstName,
+        bio: bio,
+        linkInBio: linkInBio
+      });
+      
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -222,6 +450,95 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
 
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
+      {/* Profile Picture Section */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardTitleContainer}>
+            <CameraIcon size={20} color="#7c3aed" />
+            <Text style={styles.cardTitle}>Profile Picture</Text>
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.profilePictureContainer}>
+            <View style={styles.currentPictureContainer}>
+              <UserAvatar 
+                user={{ 
+                  ...user, 
+                  profileImageUrl: selectedImage || user?.profileImageUrl 
+                }} 
+                size="xl" 
+              />
+              <Text style={styles.currentInfo}>
+                Current profile picture
+              </Text>
+            </View>
+            
+            <View style={styles.uploadSection}>
+              <TouchableOpacity
+                style={styles.uploadButton}
+                onPress={pickImage}
+                disabled={isUploadingImage}
+              >
+                <CameraIcon size={16} color="#7c3aed" />
+                <Text style={styles.uploadButtonText}>Upload Photo</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Profile Banner Section */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardTitleContainer}>
+            <BannerIcon size={20} color="#7c3aed" />
+            <Text style={styles.cardTitle}>Profile Banner</Text>
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.bannerContainer}>
+            <View style={styles.currentBannerContainer}>
+              <View style={styles.bannerPreview}>
+                {selectedBannerImage ? (
+                  <Image 
+                    source={{ uri: selectedBannerImage }} 
+                    style={styles.bannerPreviewImage}
+                    resizeMode="cover"
+                  />
+                ) : user?.bannerImageUrl ? (
+                  <Image 
+                    source={{ uri: user.bannerImageUrl }} 
+                    style={styles.bannerPreviewImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.bannerPlaceholder}>
+                    <BannerIcon size={32} color="#9ca3af" />
+                    <Text style={styles.bannerPlaceholderText}>No banner set</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.currentInfo}>
+                Current profile banner
+              </Text>
+            </View>
+            
+                         <View style={styles.uploadSection}>
+               <TouchableOpacity
+                 style={styles.uploadButton}
+                 onPress={pickBannerImage}
+                 disabled={isUploadingBannerImage}
+               >
+                 <BannerIcon size={16} color="#7c3aed" />
+                 <Text style={styles.uploadButtonText}>Upload Banner</Text>
+               </TouchableOpacity>
+               
+               
+             </View>
+          </View>
+        </View>
+      </View>
+
       {/* Profile Name Section */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -248,10 +565,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           
           {/* Last Name input removed per user request */}
           
-          <TouchableOpacity
-            onPress={handleUpdateProfile}
-            disabled={isUpdating}
-          >
+                     <TouchableOpacity
+             onPress={handleUpdateName}
+             disabled={isUpdating}
+           >
             <LinearGradient
               colors={['#7c3aed', '#ec4899']}
               start={{ x: 0, y: 0 }}
@@ -281,18 +598,36 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
             Current bio: {user?.bio || 'No bio set'}
           </Text>
           
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Bio</Text>
-            <TextInput
-              style={[styles.textInput, styles.textArea]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell the world about yourself..."
-              placeholderTextColor="#9ca3af"
-              multiline
-              numberOfLines={4}
-            />
-          </View>
+                     <View style={styles.inputSection}>
+             <Text style={styles.inputLabel}>Bio</Text>
+             <TextInput
+               style={[styles.textInput, styles.textArea]}
+               value={bio}
+               onChangeText={setBio}
+               placeholder="Tell the world about yourself..."
+               placeholderTextColor="#9ca3af"
+               multiline
+               numberOfLines={4}
+             />
+           </View>
+           
+           <TouchableOpacity
+             onPress={handleUpdateProfile}
+             disabled={isUpdating}
+           >
+             <LinearGradient
+               colors={['#7c3aed', '#ec4899']}
+               start={{ x: 0, y: 0 }}
+               end={{ x: 1, y: 0 }}
+               style={[styles.updateButton, isUpdating && styles.disabledButton]}
+             >
+               {isUpdating ? (
+                 <ActivityIndicator color="#ffffff" size="small" />
+               ) : (
+                 <Text style={styles.updateButtonText}>Update Bio</Text>
+               )}
+             </LinearGradient>
+           </TouchableOpacity>
         </View>
       </View>
 
@@ -309,18 +644,36 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
             Current link: No link set
           </Text>
           
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Link URL</Text>
-            <TextInput
-              style={styles.textInput}
-              value={linkInBio}
-              onChangeText={setLinkInBio}
-              placeholder="https://your-website.com"
-              placeholderTextColor="#9ca3af"
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-          </View>
+                     <View style={styles.inputSection}>
+             <Text style={styles.inputLabel}>Link URL</Text>
+             <TextInput
+               style={styles.textInput}
+               value={linkInBio}
+               onChangeText={setLinkInBio}
+               placeholder="https://your-website.com"
+               placeholderTextColor="#9ca3af"
+               autoCapitalize="none"
+               keyboardType="url"
+             />
+           </View>
+           
+           <TouchableOpacity
+             onPress={handleUpdateProfile}
+             disabled={isUpdating}
+           >
+             <LinearGradient
+               colors={['#7c3aed', '#ec4899']}
+               start={{ x: 0, y: 0 }}
+               end={{ x: 1, y: 0 }}
+               style={[styles.updateButton, isUpdating && styles.disabledButton]}
+             >
+               {isUpdating ? (
+                 <ActivityIndicator color="#ffffff" size="small" />
+               ) : (
+                 <Text style={styles.updateButtonText}>Update Link</Text>
+               )}
+             </LinearGradient>
+           </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -427,14 +780,16 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafa' }}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onClose}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <GearIcon size={20} color="#7c3aed" />
+          <View style={{ marginRight: 8 }}>
+            <GearIcon size={20} color="#7c3aed" />
+          </View>
           <Text style={styles.headerTitle}>Settings</Text>
         </View>
         <View style={styles.headerSpacer} />
@@ -455,7 +810,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         {activeTab === 'profile' && renderProfileTab()}
         {activeTab === 'account' && renderAccountTab()}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -468,7 +823,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -476,8 +831,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
+    padding: 12,
     borderRadius: 8,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backButtonText: {
     fontSize: 24,
@@ -731,4 +1090,87 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     textAlign: 'center',
   },
-});
+  profilePictureContainer: {
+    alignItems: 'center',
+  },
+  currentPictureContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  uploadSection: {
+    width: '100%',
+    gap: 12,
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    gap: 8,
+  },
+  uploadButtonText: {
+    color: '#7c3aed',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  uploadConfirmButton: {
+    marginTop: 8,
+  },
+  uploadConfirmGradient: {
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  uploadConfirmButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  bannerContainer: {
+    alignItems: 'center',
+  },
+  currentBannerContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  bannerPreview: {
+    width: 300, // Increased width for better banner preview
+    height: 100, // 3:1 aspect ratio (300/100 = 3:1)
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  bannerPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bannerPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f8f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    borderStyle: 'dashed',
+  },
+     bannerPlaceholderText: {
+     color: '#9ca3af',
+     fontSize: 12,
+     marginTop: 4,
+   },
+ });

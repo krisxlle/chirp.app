@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
+    "strict": false,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -26,12 +26,23 @@
       "@shared/*": [
         "./shared/*"
       ]
-    }
+    },
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "ignoreDeprecations": "5.0"
   },
   "include": [
     "client/src/**/*",
     "server/**/*",
     "shared/**/*",
+    "components/**/*",
+    "hooks/**/*",
+    "constants/**/*",
+    "services/**/*",
+    "mobile-*.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],

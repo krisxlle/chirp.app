@@ -5,6 +5,9 @@ export interface MobileChirp {
   content: string;
   createdAt: string;
   replyToId?: string | null;
+  threadId?: string | null;
+  threadOrder?: number;
+  isThreadStarter?: boolean;
   author: {
     id: string;
     firstName: string;
@@ -22,6 +25,7 @@ export interface MobileChirp {
   nestedReplies?: MobileChirp[];
   isDirectReply?: boolean;
   isNestedReply?: boolean;
+  isThreadedChirp?: boolean;
   // Repost-related fields
   isRepost?: boolean;
   repostOfId?: string | null;
