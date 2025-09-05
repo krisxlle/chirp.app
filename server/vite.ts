@@ -1,10 +1,11 @@
 import express, { type Express } from "express";
+import rateLimit from "express-rate-limit";
 import fs from "fs";
-import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+import path from "path";
+import { createLogger, createServer as createViteServer } from "vite";
+import viteConfig from "../vite.config";
 
 const viteLogger = createLogger();
 
@@ -22,8 +23,41 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
+    hmr: { 
+      server,
+      port: 24678, // Use different port for HMR
+    },
+    allowedHosts: ['localhost', '127.0.0.1', process.env.COMPUTER_IP].filter(Boolean),
+    cors: {
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Define allowed origins for development
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'http://localhost:5000',
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:5000',
+          'http://localhost:8080',
+          'http://127.0.0.1:8080',
+          // Add your computer's IP for mobile testing
+          process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:5000` : null,
+          process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:3000` : null,
+        ].filter(Boolean);
+        
+        // Check if origin is allowed
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          console.warn(`🚨 Blocked CORS request from unauthorized origin: ${origin}`);
+          callback(new Error('Not allowed by CORS'), false);
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    },
   };
 
   const vite = await createViteServer({
@@ -75,6 +109,14 @@ export function serveStatic(app: Express) {
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
     );
   }
+  // Apply rate limiting to all static asset requests
+  const staticLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    standardHeaders: true, // Return rate limit info in the RateLimit-* headers
+    legacyHeaders: false, // Disable X-RateLimit-* headers
+  });
+  app.use(staticLimiter);
 
   app.use(express.static(distPath));
 

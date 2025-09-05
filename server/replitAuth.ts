@@ -6,6 +6,7 @@ import type { Express, RequestHandler } from "express";
 import session from "express-session";
 import memoize from "memoizee";
 import passport from "passport";
+import { authLimiter } from "./rateLimiting";
 import { storage } from "./storage";
 
 // Make REPLIT_DOMAINS optional for local development
@@ -116,7 +117,7 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  app.get("/api/login", (req, res, next) => {
+  app.get("/api/login", authLimiter, (req, res, next) => {
     // In development mode, just redirect to home
     if (!isReplitEnvironment) {
       console.log('🔧 Development mode: Skipping login, redirecting to home');
@@ -145,7 +146,7 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/callback", (req, res, next) => {
+  app.get("/api/callback", authLimiter, (req, res, next) => {
     // In development mode, just redirect to home
     if (!isReplitEnvironment) {
       console.log('🔧 Development mode: Skipping callback, redirecting to home');

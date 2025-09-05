@@ -1,10 +1,20 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { NextFunction, type Request, Response } from "express";
+import { generalApiLimiter } from "./rateLimiting";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { devServerProtection, securityLogging, securityMiddleware } from "./security";
+import { log, serveStatic, setupVite } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Apply security middleware
+app.use(securityLogging);
+app.use(securityMiddleware);
+app.use(devServerProtection);
+
+// Apply general rate limiting to all API routes
+app.use('/api', generalApiLimiter);
 
 // Serve static files from public directory (including generated images)
 app.use(express.static('public'));

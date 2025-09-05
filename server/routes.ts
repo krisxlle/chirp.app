@@ -4,6 +4,15 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { processMentions } from "./mentionUtils";
 import { generatePersonalizedProfile, generateUserAvatar, generateUserBanner, generateUserBio, generateUserInterests, generateWeeklySummary } from "./openai";
+import {
+    adminLimiter,
+    contentCreationLimiter,
+    notificationLimiter,
+    profileLimiter,
+    socialActionLimiter,
+    supportLimiter,
+    uploadLimiter
+} from "./rateLimiting";
 import { isAuthenticated, setupAuth } from "./replitAuth";
 import { storage } from "./storage";
 
@@ -15,7 +24,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Manual trigger for weekly analytics (for testing)
-  app.post('/api/admin/trigger-weekly-analytics', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/trigger-weekly-analytics', adminLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const { sendWeeklyAnalyticsToAllUsers } = await import('./analyticsService');
       await sendWeeklyAnalyticsToAllUsers();
@@ -27,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Push token management (for mobile push notifications)
-  app.post('/api/push-tokens', async (req, res) => {
+  app.post('/api/push-tokens', notificationLimiter, async (req, res) => {
     try {
       const userId = 'chirp-preview-001'; // Default to @chirp account for demo
       
@@ -48,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create notification and trigger push notification
-  app.post('/api/notifications', async (req, res) => {
+  app.post('/api/notifications', notificationLimiter, async (req, res) => {
     try {
       const validatedData = insertNotificationSchema.parse(req.body);
       
@@ -164,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chirp routes
-  app.post('/api/chirps', isAuthenticated, async (req: any, res) => {
+  app.post('/api/chirps', contentCreationLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -218,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create thread endpoint
-  app.post('/api/chirps/thread', isAuthenticated, async (req: any, res) => {
+  app.post('/api/chirps/thread', contentCreationLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { threadParts } = req.body;
@@ -396,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a repost
-  app.post('/api/chirps/:id/repost', isAuthenticated, async (req: any, res) => {
+  app.post('/api/chirps/:id/repost', socialActionLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const chirpId = parseInt(req.params.id);
@@ -414,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Undo repost
-  app.delete('/api/chirps/:id/repost', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/chirps/:id/repost', socialActionLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const chirpId = parseInt(req.params.id);
@@ -512,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Follow routes
-  app.post('/api/follows', isAuthenticated, async (req: any, res) => {
+  app.post('/api/follows', socialActionLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const followerId = req.user.claims.sub;
       const followData = insertFollowSchema.parse({
@@ -546,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/follows/:followingId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/follows/:followingId', socialActionLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const followerId = req.user.claims.sub;
       const { followingId } = req.params;
@@ -605,7 +614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reaction routes
-  app.post('/api/reactions', isAuthenticated, async (req: any, res) => {
+  app.post('/api/reactions', socialActionLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const reactionData = insertReactionSchema.parse({
@@ -624,7 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/reactions/:chirpId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/reactions/:chirpId', socialActionLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const chirpId = parseInt(req.params.chirpId);
@@ -890,7 +899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI routes
   // Combined image generation endpoint for mobile app
-  app.post('/api/ai/generate-images', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai/generate-images', uploadLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { prompt, type } = req.body;
@@ -986,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/ai/generate-avatar', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai/generate-avatar', uploadLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -1000,7 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/ai/generate-banner', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai/generate-banner', uploadLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const bannerUrl = await generateUserBanner(userId);
@@ -1212,7 +1221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update profile name route
-  app.patch('/api/users/name', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/users/name', profileLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { firstName, lastName } = req.body;
@@ -1234,7 +1243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/ai/generate-complete-profile', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai/generate-complete-profile', uploadLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -1269,7 +1278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Handle routes
-  app.post("/api/handles/claim", isAuthenticated, async (req: any, res) => {
+  app.post("/api/handles/claim", profileLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;
       const { customHandle } = req.body;
@@ -1889,7 +1898,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Handle changing for Chirp+ users
-  app.patch('/api/users/handle', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/users/handle', profileLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { newHandle } = req.body;
@@ -1924,7 +1933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Support request endpoint
-  app.post('/api/support', async (req, res) => {
+  app.post('/api/support', supportLimiter, async (req, res) => {
     try {
       const { subject, message, email, category } = req.body;
       
