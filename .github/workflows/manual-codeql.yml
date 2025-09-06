@@ -1,0 +1,53 @@
+name: "Manual CodeQL Security Scan"
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_scan:
+        description: 'Force a fresh CodeQL scan'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  manual-codeql-scan:
+    name: Manual CodeQL Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for better analysis
+
+    - name: Verify no build artifacts
+      run: |
+        echo "🔍 Checking for build artifacts..."
+        if [ -d "ios/App/App/public" ]; then
+          echo "❌ iOS build files found!"
+          exit 1
+        fi
+        if [ -d "android/app/src/main/assets/public" ]; then
+          echo "❌ Android build files found!"
+          exit 1
+        fi
+        echo "✅ No build artifacts found"
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript
+        queries: security-and-quality
+        config-file: ./.codeqlconfig
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:javascript-manual"

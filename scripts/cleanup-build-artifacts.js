@@ -58,6 +58,5 @@ function main() {
   console.log('3. CodeQL security issues should be resolved');
 }
 
-if (require.main === module) {
-  main();
-}
+// Run the script
+main();
