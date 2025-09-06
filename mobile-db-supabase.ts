@@ -1,6 +1,6 @@
 // Supabase database connection for React Native/Expo
-import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 import type { MobileChirp } from './mobile-types';
 
 // Platform-specific storage
@@ -470,7 +470,11 @@ export async function getForYouChirps(): Promise<any[]> {
       return [];
     }
     
-    // Single optimized query with joins and reply count
+    // Get current user ID for like status
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
+
+    // Single optimized query with joins, reply count, and reaction count
     const { data: chirps, error } = await supabase
       .from('chirps')
       .select(`
@@ -498,42 +502,86 @@ export async function getForYouChirps(): Promise<any[]> {
       return [];
     }
 
-    // Transform data to match MobileChirp format and fetch reply counts
-    const transformedChirps = await Promise.all((chirps || []).map(async (chirp: any) => {
-      // Get reply count for this chirp
-      const { count: replyCount } = await supabase
-        .from('chirps')
-        .select('*', { count: 'exact', head: true })
-        .eq('reply_to_id', chirp.id);
-      
-      return {
-        id: chirp.id.toString(),
-        content: chirp.content,
-        createdAt: chirp.created_at,
-        replyToId: chirp.reply_to_id,
-        isWeeklySummary: chirp.is_weekly_summary || false,
-        reactionCount: 0,
-        replyCount: replyCount || 0,
-        reactions: [],
-        replies: [],
-        repostOfId: null,
-        originalChirp: undefined,
-        author: {
-          id: chirp.users.id,
-          firstName: chirp.users.first_name || 'User',
-          lastName: chirp.users.last_name || '',
-          email: chirp.users.email || 'user@example.com',
-          customHandle: chirp.users.custom_handle || chirp.users.handle,
-          handle: chirp.users.handle,
-          profileImageUrl: chirp.users.profile_image_url,
-          avatarUrl: chirp.users.profile_image_url,
-          bannerImageUrl: null,
-          bio: '',
-          joinedAt: new Date().toISOString(),
-          isChirpPlus: false,
-          showChirpPlusBadge: false
-        }
-      };
+    if (!chirps || chirps.length === 0) {
+      return [];
+    }
+
+    const chirpIds = chirps.map(c => c.id);
+
+    // Batch load reply counts for all chirps
+    const { data: replyCounts } = await supabase
+      .from('chirps')
+      .select('reply_to_id')
+      .in('reply_to_id', chirpIds);
+
+    // Batch load reaction counts for all chirps
+    const { data: reactionCounts } = await supabase
+      .from('reactions')
+      .select('chirp_id')
+      .in('chirp_id', chirpIds);
+
+    // Batch load user like statuses (if user is logged in)
+    let userLikes: any[] = [];
+    if (currentUserId) {
+      const { data: userReactions } = await supabase
+        .from('reactions')
+        .select('chirp_id')
+        .eq('user_id', currentUserId)
+        .in('chirp_id', chirpIds);
+      userLikes = userReactions || [];
+    }
+
+    // Create lookup maps for efficient access
+    const replyCountMap = new Map<number, number>();
+    const reactionCountMap = new Map<number, number>();
+    const userLikesMap = new Map<number, boolean>();
+
+    // Count replies per chirp
+    replyCounts?.forEach(reply => {
+      const chirpId = reply.reply_to_id;
+      replyCountMap.set(chirpId, (replyCountMap.get(chirpId) || 0) + 1);
+    });
+
+    // Count reactions per chirp
+    reactionCounts?.forEach(reaction => {
+      const chirpId = reaction.chirp_id;
+      reactionCountMap.set(chirpId, (reactionCountMap.get(chirpId) || 0) + 1);
+    });
+
+    // Map user likes
+    userLikes.forEach(reaction => {
+      userLikesMap.set(reaction.chirp_id, true);
+    });
+
+    // Transform data to match MobileChirp format
+    const transformedChirps = chirps.map((chirp: any) => ({
+      id: chirp.id.toString(),
+      content: chirp.content,
+      createdAt: chirp.created_at,
+      replyToId: chirp.reply_to_id,
+      isWeeklySummary: chirp.is_weekly_summary || false,
+      reactionCount: reactionCountMap.get(chirp.id) || 0,
+      replyCount: replyCountMap.get(chirp.id) || 0,
+      reactions: [],
+      replies: [],
+      repostOfId: null,
+      originalChirp: undefined,
+      userHasLiked: userLikesMap.get(chirp.id) || false,
+      author: {
+        id: chirp.users.id,
+        firstName: chirp.users.first_name || 'User',
+        lastName: chirp.users.last_name || '',
+        email: chirp.users.email || 'user@example.com',
+        customHandle: chirp.users.custom_handle || chirp.users.handle,
+        handle: chirp.users.handle,
+        profileImageUrl: chirp.users.profile_image_url,
+        avatarUrl: chirp.users.profile_image_url,
+        bannerImageUrl: null,
+        bio: '',
+        joinedAt: new Date().toISOString(),
+        isChirpPlus: false,
+        showChirpPlusBadge: false
+      }
     }));
 
     console.log(`✅ Transformed ${transformedChirps.length} chirps`);

@@ -1693,7 +1693,7 @@ export async function checkUserReposted(userId: string, chirpId: string): Promis
 }
 
 // Get user reaction for chirp
-export async function getUserReactionForChirp(chirpId: string, userId: string): Promise<string | null> {
+export async function getUserReactionForChirp(chirpId: string, userId: string): Promise<boolean> {
   try {
     console.log('Getting user reaction for chirp:', chirpId, userId);
     
@@ -1702,25 +1702,25 @@ export async function getUserReactionForChirp(chirpId: string, userId: string): 
     
     if (!isDatabaseConnected) {
       console.log('🔄 Database not connected, mock reaction');
-      return null;
+      return false;
     }
     
     const { data, error } = await supabase
       .from('reactions')
-      .select('emoji')
+      .select('id')
       .eq('chirp_id', chirpId)
       .eq('user_id', userId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
       console.error('Error getting user reaction:', error);
-      return null;
+      return false;
     }
 
-    return data?.emoji || null;
+    return !!data;
   } catch (error) {
     console.error('Error getting user reaction:', error);
-    return null;
+    return false;
   }
 }
 
@@ -1811,10 +1811,10 @@ export async function createRepost(originalChirpId: string, userId: string): Pro
   }
 }
 
-// Add reaction
-export async function addReaction(chirpId: string, emoji: string, userId: string): Promise<{ added: boolean }> {
+// Add like reaction (simplified - no emoji)
+export async function addReaction(chirpId: string, userId: string): Promise<{ added: boolean }> {
   try {
-    console.log('Adding reaction:', { chirpId, emoji, userId });
+    console.log('Adding like reaction:', { chirpId, userId });
     
     // Ensure database is initialized
     await ensureDatabaseInitialized();
@@ -1842,13 +1842,13 @@ export async function addReaction(chirpId: string, emoji: string, userId: string
 
       return { added: false };
     } else {
-      // Create new reaction
+      // Create new reaction (like)
       const { error } = await supabase
         .from('reactions')
         .insert({
           chirp_id: chirpId,
           user_id: userId,
-          emoji,
+          type: 'like',
           created_at: new Date().toISOString()
         });
 

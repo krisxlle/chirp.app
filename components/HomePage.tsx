@@ -87,7 +87,11 @@ export default function HomePage() {
     setForYouChirps(prevChirps => 
       prevChirps.map(chirp => 
         chirp.id === chirpId 
-          ? { ...chirp, reactionCount: newLikeCount }
+          ? { 
+              ...chirp, 
+              reactionCount: newLikeCount,
+              userHasLiked: newLikeCount > (chirp.reactionCount || 0)
+            }
           : chirp
       )
     );

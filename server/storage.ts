@@ -1,39 +1,36 @@
 import {
-  users,
-  chirps,
-  follows,
-  reactions,
-  notifications,
-  pushTokens,
-  vipCodes,
-  linkShares,
-  type User,
-  type UpsertUser,
-  type Chirp,
-  type InsertChirp,
-  type Follow,
-  type InsertFollow,
-  type Reaction,
-  type InsertReaction,
-  type Notification,
-  type InsertNotification,
-  type VipCode,
-  type InsertVipCode,
-  type LinkShare,
-  type InsertLinkShare,
-  weeklySummaries,
-  type WeeklySummary,
-  type InsertWeeklySummary,
-  feedback,
-  type Feedback,
-  type InsertFeedback,
-  userBlocks,
-  type UserBlock,
-  userNotificationSettings,
-  type UserNotificationSetting,
+    type Chirp,
+    chirps,
+    feedback,
+    type Feedback,
+    type Follow,
+    follows,
+    type InsertChirp,
+    type InsertFeedback,
+    type InsertFollow,
+    type InsertNotification,
+    type InsertReaction,
+    type InsertWeeklySummary,
+    type LinkShare,
+    linkShares,
+    type Notification,
+    notifications,
+    pushTokens,
+    type Reaction,
+    reactions,
+    type UpsertUser,
+    type User,
+    type UserBlock,
+    userBlocks,
+    type UserNotificationSetting,
+    userNotificationSettings,
+    users,
+    vipCodes,
+    weeklySummaries,
+    type WeeklySummary
 } from "@shared/schema";
+import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, not, or, sql } from "drizzle-orm";
 import { db } from "./db";
-import { eq, desc, and, or, sql, count, isNotNull, isNull, gte, lte, inArray, not, exists, lt, gt, asc, ne } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -60,10 +57,10 @@ export interface IStorage {
   createChirp(chirp: InsertChirp): Promise<Chirp>;
   createThread(userId: string, threadParts: Array<{ content: string }>): Promise<Chirp[]>;
   createRepost(userId: string, chirpId: number): Promise<Chirp>;
-  getChirps(userId?: string, limit?: number): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string; repostOf?: Chirp & { author: User } }>>;
-  getChirpsByUser(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; repostOf?: Chirp & { author: User } }>>;
-  getChirpById(chirpId: number): Promise<(Chirp & { author: User; reactionCounts: Record<string, number> }) | undefined>;
-  getChirpReplies(chirpId: number): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; replies?: Array<Chirp & { author: User; reactionCounts: Record<string, number> }> }>>;
+  getChirps(userId?: string, limit?: number): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean; repostOf?: Chirp & { author: User } }>>;
+  getChirpsByUser(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number; repostOf?: Chirp & { author: User } }>>;
+  getChirpById(chirpId: number): Promise<(Chirp & { author: User; reactionCount: number }) | undefined>;
+  getChirpReplies(chirpId: number): Promise<Array<Chirp & { author: User; reactionCount: number; replies?: Array<Chirp & { author: User; reactionCount: number }> }>>;
   getTotalChirpCount(userId: string): Promise<number>;
   
   // Follow operations
@@ -94,9 +91,9 @@ export interface IStorage {
   
   // Search operations
   searchUsers(query: string): Promise<Array<User>>;
-  searchChirps(query: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string }>>;
-  getUserReplies(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; parentChirp?: Chirp & { author: User } }>>;
-  getUserReactedChirps(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string }>>;
+  searchChirps(query: string): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean }>>;
+  getUserReplies(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number; parentChirp?: Chirp & { author: User } }>>;
+  getUserReactedChirps(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean }>>;
   
   // Handle operations
   generateRandomHandle(): Promise<string>;
@@ -134,7 +131,7 @@ export interface IStorage {
   getWeeklyChirpStats(userId: string, weekStart: Date, weekEnd: Date): Promise<{
     chirpCount: number;
     topChirp: string | null;
-    topReactions: Array<{ emoji: string; count: number }>;
+    totalLikes: number;
     commonWords: string[];
   }>;
 
@@ -161,7 +158,7 @@ export interface IStorage {
 
   // Trending hashtags
   getTrendingHashtags(limit?: number): Promise<Array<{ hashtag: string; count: number }>>;
-  getHashtagChirps(hashtag: string, limit?: number): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number> }>>;
+  getHashtagChirps(hashtag: string, limit?: number): Promise<Array<Chirp & { author: User; reactionCount: number }>>;
 
   // User blocking
   blockUser(userId: string, targetUserId: string): Promise<UserBlock>;
@@ -375,7 +372,7 @@ export class DatabaseStorage implements IStorage {
     return createdChirps;
   }
 
-  async getTrendingChirps(userId?: string, limit = 50, blockedUserIds: string[] = []): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string; repostOf?: Chirp & { author: User }; parentChirp?: Chirp & { author: User } }>> {
+  async getTrendingChirps(userId?: string, limit = 50, blockedUserIds: string[] = []): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean; repostOf?: Chirp & { author: User }; parentChirp?: Chirp & { author: User } }>> {
     // Get chirps from the last 7 days sorted by reaction count (extended timeframe)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -461,12 +458,11 @@ export class DatabaseStorage implements IStorage {
       reactionCounts = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
           count: count(),
         })
         .from(reactions)
         .where(inArray(reactions.chirpId, chirpIds))
-        .groupBy(reactions.chirpId, reactions.emoji);
+        .groupBy(reactions.chirpId);
     }
 
     // Get user's reactions if userId provided
@@ -475,7 +471,6 @@ export class DatabaseStorage implements IStorage {
       userReactions = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
         })
         .from(reactions)
         .where(and(
@@ -508,12 +503,9 @@ export class DatabaseStorage implements IStorage {
 
     return sortedResults.map(({ chirp, author }) => {
       const chirpReactions = reactionCounts.filter(r => r.chirpId === chirp.id);
-      const reactionCountsMap: Record<string, number> = {};
-      chirpReactions.forEach(r => {
-        reactionCountsMap[r.emoji] = r.count;
-      });
+      const totalReactions = chirpReactions.reduce((sum, r) => sum + r.count, 0);
 
-      const userReaction = userReactions.find(r => r.chirpId === chirp.id)?.emoji;
+      const userHasLiked = userReactions.some(r => r.chirpId === chirp.id);
 
       // Find repost data if this is a repost
       let repostOf: any = undefined;
@@ -530,8 +522,8 @@ export class DatabaseStorage implements IStorage {
       return {
         ...chirp,
         author,
-        reactionCounts: reactionCountsMap,
-        userReaction,
+        reactionCount: totalReactions,
+        userHasLiked,
         repostOf,
       };
     });
@@ -642,7 +634,7 @@ export class DatabaseStorage implements IStorage {
     return result.count;
   }
 
-  async getUserReplies(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number> }>> {
+  async getUserReplies(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number }>> {
     const results = await db
       .select({
         chirp: chirps,
@@ -663,30 +655,26 @@ export class DatabaseStorage implements IStorage {
       reactionCounts = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
           count: count(),
         })
         .from(reactions)
         .where(inArray(reactions.chirpId, chirpIds))
-        .groupBy(reactions.chirpId, reactions.emoji);
+        .groupBy(reactions.chirpId);
     }
 
     return results.map(({ chirp, author }) => {
       const chirpReactions = reactionCounts.filter(r => r.chirpId === chirp.id);
-      const reactionCountsMap: Record<string, number> = {};
-      chirpReactions.forEach(r => {
-        reactionCountsMap[r.emoji] = r.count;
-      });
+      const totalReactions = chirpReactions.reduce((sum, r) => sum + r.count, 0);
 
       return {
         ...chirp,
         author,
-        reactionCounts: reactionCountsMap,
+        reactionCount: totalReactions,
       };
     });
   }
 
-  async getUserReactedChirps(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string }>> {
+  async getUserReactedChirps(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean }>> {
     // Get chirp IDs that the user has reacted to
     const reactedChirpIds = await db
       .select({ chirpId: reactions.chirpId })
@@ -715,19 +703,17 @@ export class DatabaseStorage implements IStorage {
       reactionCounts = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
           count: count(),
         })
         .from(reactions)
         .where(inArray(reactions.chirpId, chirpIds))
-        .groupBy(reactions.chirpId, reactions.emoji);
+        .groupBy(reactions.chirpId);
     }
 
     // Get user's specific reactions
     const userReactions = await db
       .select({
         chirpId: reactions.chirpId,
-        emoji: reactions.emoji,
       })
       .from(reactions)
       .where(and(
@@ -737,23 +723,20 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(({ chirp, author }) => {
       const chirpReactions = reactionCounts.filter(r => r.chirpId === chirp.id);
-      const reactionCountsMap: Record<string, number> = {};
-      chirpReactions.forEach(r => {
-        reactionCountsMap[r.emoji] = r.count;
-      });
+      const totalReactions = chirpReactions.reduce((sum, r) => sum + r.count, 0);
 
-      const userReaction = userReactions.find(r => r.chirpId === chirp.id)?.emoji;
+      const userHasLiked = userReactions.some(r => r.chirpId === chirp.id);
 
       return {
         ...chirp,
         author,
-        reactionCounts: reactionCountsMap,
-        userReaction,
+        reactionCount: totalReactions,
+        userHasLiked,
       };
     });
   }
 
-  async getChirps(userId?: string, limit = 50, blockedUserIds: string[] = []): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string; repostOf?: Chirp & { author: User }; parentChirp?: Chirp & { author: User } }>> {
+  async getChirps(userId?: string, limit = 50, blockedUserIds: string[] = []): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean; repostOf?: Chirp & { author: User }; parentChirp?: Chirp & { author: User } }>> {
     // For chronological feed, show ALL chirps including replies
     let whereConditions: any[] = [];
     
@@ -777,7 +760,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Helper method to add reaction data to chirps
-  async addReactionDataToChirps(results: any[], userId?: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string; repostOf?: Chirp & { author: User }; parentChirp?: Chirp & { author: User } }>> {
+  async addReactionDataToChirps(results: any[], userId?: string): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean; repostOf?: Chirp & { author: User }; parentChirp?: Chirp & { author: User } }>> {
     if (results.length === 0) {
       return [];
     }
@@ -790,12 +773,11 @@ export class DatabaseStorage implements IStorage {
       reactionCounts = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
           count: count(),
         })
         .from(reactions)
         .where(inArray(reactions.chirpId, chirpIds))
-        .groupBy(reactions.chirpId, reactions.emoji);
+        .groupBy(reactions.chirpId);
     }
 
     // Get user's reactions if userId provided
@@ -804,7 +786,6 @@ export class DatabaseStorage implements IStorage {
       userReactions = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
         })
         .from(reactions)
         .where(and(
@@ -845,12 +826,9 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(({ chirp, author }) => {
       const chirpReactions = reactionCounts.filter(r => r.chirpId === chirp.id);
-      const reactionCountsMap: Record<string, number> = {};
-      chirpReactions.forEach(r => {
-        reactionCountsMap[r.emoji] = r.count;
-      });
+      const totalReactions = chirpReactions.reduce((sum, r) => sum + r.count, 0);
 
-      const userReaction = userReactions.find(r => r.chirpId === chirp.id)?.emoji;
+      const userHasLiked = userReactions.some(r => r.chirpId === chirp.id);
 
       // Find repost data if this is a repost
       let repostOf = undefined;
@@ -873,15 +851,15 @@ export class DatabaseStorage implements IStorage {
       return {
         ...chirp,
         author,
-        reactionCounts: reactionCountsMap,
-        userReaction,
+        reactionCount: totalReactions,
+        userHasLiked,
         repostOf,
         parentChirp,
       };
     });
   }
 
-  async getChirpReplies(chirpId: number): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; replies?: Array<Chirp & { author: User; reactionCounts: Record<string, number> }> }>> {
+  async getChirpReplies(chirpId: number): Promise<Array<Chirp & { author: User; reactionCount: number; replies?: Array<Chirp & { author: User; reactionCount: number }> }>> {
     // Get direct replies to this chirp
     const directReplies = await db
       .select({
@@ -896,7 +874,7 @@ export class DatabaseStorage implements IStorage {
     return await this.addReactionDataToChirps(directReplies);
   }
 
-  async getChirpById(chirpId: number): Promise<(Chirp & { author: User; reactionCounts: Record<string, number> }) | undefined> {
+  async getChirpById(chirpId: number): Promise<(Chirp & { author: User; reactionCount: number }) | undefined> {
     const [result] = await db
       .select({
         chirp: chirps,
@@ -914,26 +892,22 @@ export class DatabaseStorage implements IStorage {
     // Get reaction counts for this chirp
     const reactionCounts = await db
       .select({
-        emoji: reactions.emoji,
         count: count(),
       })
       .from(reactions)
       .where(eq(reactions.chirpId, chirpId))
-      .groupBy(reactions.emoji);
+      .groupBy();
 
-    const reactionCountsMap: Record<string, number> = {};
-    reactionCounts.forEach(r => {
-      reactionCountsMap[r.emoji] = r.count;
-    });
+    const totalReactions = reactionCounts[0]?.count || 0;
 
     return {
       ...result.chirp,
       author: result.author,
-      reactionCounts: reactionCountsMap,
+      reactionCount: totalReactions,
     };
   }
 
-  async getChirpsByUser(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; repostOf?: Chirp & { author: User } }>> {
+  async getChirpsByUser(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number; repostOf?: Chirp & { author: User } }>> {
     const results = await db
       .select({
         chirp: chirps,
@@ -951,14 +925,13 @@ export class DatabaseStorage implements IStorage {
       reactionCounts = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
           count: count(),
         })
         .from(reactions)
         .where(
           or(...chirpIds.map(id => eq(reactions.chirpId, id)))
         )
-        .groupBy(reactions.chirpId, reactions.emoji);
+        .groupBy(reactions.chirpId);
     }
 
     // Get reposted chirps data
@@ -978,10 +951,7 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(({ chirp, author }) => {
       const chirpReactions = reactionCounts.filter(r => r.chirpId === chirp.id);
-      const reactionCountsMap: Record<string, number> = {};
-      chirpReactions.forEach(r => {
-        reactionCountsMap[r.emoji] = r.count;
-      });
+      const totalReactions = chirpReactions.reduce((sum, r) => sum + r.count, 0);
 
       // Find repost data if this is a repost
       let repostOf: any = undefined;
@@ -998,7 +968,7 @@ export class DatabaseStorage implements IStorage {
       return {
         ...chirp,
         author,
-        reactionCounts: reactionCountsMap,
+        reactionCount: totalReactions,
         repostOf,
       };
     });
@@ -1145,9 +1115,9 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
-  async getUserReactionForChirp(userId: string, chirpId: number): Promise<string | null> {
+  async getUserReactionForChirp(userId: string, chirpId: number): Promise<boolean> {
     const [result] = await db
-      .select({ emoji: reactions.emoji })
+      .select({ id: reactions.id })
       .from(reactions)
       .where(
         and(
@@ -1157,7 +1127,7 @@ export class DatabaseStorage implements IStorage {
       )
       .limit(1);
     
-    return result?.emoji || null;
+    return !!result;
   }
 
   // Notification operations
@@ -1314,7 +1284,7 @@ export class DatabaseStorage implements IStorage {
       .limit(20);
   }
 
-  async searchChirps(query: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string }>> {
+  async searchChirps(query: string): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean }>> {
     const results = await db
       .select({
         chirp: chirps,
@@ -1329,7 +1299,7 @@ export class DatabaseStorage implements IStorage {
     return await this.addReactionDataToChirps(results);
   }
 
-  async getUserReplies(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; parentChirp?: Chirp & { author: User } }>> {
+  async getUserReplies(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number; parentChirp?: Chirp & { author: User } }>> {
     const results = await db
       .select({
         chirp: chirps,
@@ -1348,24 +1318,20 @@ export class DatabaseStorage implements IStorage {
       reactionCounts = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
           count: count(),
         })
         .from(reactions)
         .where(
           or(...chirpIds.map(id => eq(reactions.chirpId, id)))
         )
-        .groupBy(reactions.chirpId, reactions.emoji);
+        .groupBy(reactions.chirpId);
     }
 
     // Get parent chirps for context
     const repliesWithParents = await Promise.all(
       results.map(async ({ chirp, author }) => {
         const chirpReactions = reactionCounts.filter(r => r.chirpId === chirp.id);
-        const reactionCountsMap: Record<string, number> = {};
-        chirpReactions.forEach(r => {
-          reactionCountsMap[r.emoji] = r.count;
-        });
+        const totalReactions = chirpReactions.reduce((sum, r) => sum + r.count, 0);
 
         let parentChirp = undefined;
         if (chirp.replyToId) {
@@ -1390,7 +1356,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...chirp,
           author,
-          reactionCounts: reactionCountsMap,
+          reactionCount: totalReactions,
           parentChirp,
         };
       })
@@ -1399,7 +1365,7 @@ export class DatabaseStorage implements IStorage {
     return repliesWithParents;
   }
 
-  async getUserReactedChirps(userId: string): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number>; userReaction?: string }>> {
+  async getUserReactedChirps(userId: string): Promise<Array<Chirp & { author: User; reactionCount: number; userHasLiked?: boolean }>> {
     const results = await db
       .select({
         chirp: chirps,
@@ -1414,12 +1380,12 @@ export class DatabaseStorage implements IStorage {
 
     const chirpsWithReactions = await Promise.all(
       results.map(async ({ chirp, author, reaction }) => {
-        const reactionCounts = await this.getReactionCounts(chirp.id);
+        const reactionCount = await this.getReactionCounts(chirp.id);
         return {
           ...chirp,
           author,
-          reactionCounts,
-          userReaction: reaction.emoji,
+          reactionCount,
+          userHasLiked: true,
         };
       })
     );
@@ -1670,22 +1636,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Helper method for getting reaction counts for a single chirp
-  private async getReactionCounts(chirpId: number): Promise<Record<string, number>> {
-    const reactionCounts = await db
+  private async getReactionCounts(chirpId: number): Promise<number> {
+    const [result] = await db
       .select({
-        emoji: reactions.emoji,
         count: count(),
       })
       .from(reactions)
-      .where(eq(reactions.chirpId, chirpId))
-      .groupBy(reactions.emoji);
+      .where(eq(reactions.chirpId, chirpId));
 
-    const reactionCountsMap: Record<string, number> = {};
-    reactionCounts.forEach(r => {
-      reactionCountsMap[r.emoji] = r.count;
-    });
-
-    return reactionCountsMap;
+    return result?.count || 0;
   }
 
   // AI generation rate limiting
@@ -1814,7 +1773,7 @@ export class DatabaseStorage implements IStorage {
   async getWeeklyChirpStats(userId: string, weekStart: Date, weekEnd: Date): Promise<{
     chirpCount: number;
     topChirp: string | null;
-    topReactions: Array<{ emoji: string; count: number }>;
+    totalLikes: number;
     commonWords: string[];
   }> {
     // Get chirps from the week
@@ -1838,23 +1797,21 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
-    // Get reactions for these chirps
+    // Get total likes for these chirps
     const chirpIds = weekChirps.map(c => c.id);
     const weekReactions = await db
       .select({
         chirpId: reactions.chirpId,
-        emoji: reactions.emoji,
         count: count()
       })
       .from(reactions)
       .where(or(...chirpIds.map(id => eq(reactions.chirpId, id))))
-      .groupBy(reactions.chirpId, reactions.emoji);
+      .groupBy(reactions.chirpId);
 
-    // Find top chirp by reaction count
+    // Find top chirp by like count
     const chirpReactionCounts = new Map<number, number>();
     weekReactions.forEach(r => {
-      const current = chirpReactionCounts.get(r.chirpId) || 0;
-      chirpReactionCounts.set(r.chirpId, current + r.count);
+      chirpReactionCounts.set(r.chirpId, r.count);
     });
 
     const topChirpId = Array.from(chirpReactionCounts.entries())
@@ -1864,17 +1821,8 @@ export class DatabaseStorage implements IStorage {
       ? weekChirps.find(c => c.id === topChirpId)?.content || null
       : weekChirps[0]?.content || null;
 
-    // Get top reactions across all chirps
-    const reactionCounts = new Map<string, number>();
-    weekReactions.forEach(r => {
-      const current = reactionCounts.get(r.emoji) || 0;
-      reactionCounts.set(r.emoji, current + r.count);
-    });
-
-    const topReactions = Array.from(reactionCounts.entries())
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
-      .map(([emoji, count]) => ({ emoji, count }));
+    // Get total likes across all chirps
+    const totalLikes = weekReactions.reduce((sum, r) => sum + r.count, 0);
 
     // Extract common words
     const allText = weekChirps.map(c => c.content).join(' ');
@@ -1896,7 +1844,7 @@ export class DatabaseStorage implements IStorage {
     return {
       chirpCount: weekChirps.length,
       topChirp,
-      topReactions,
+      totalLikes,
       commonWords
     };
   }
@@ -2088,7 +2036,7 @@ export class DatabaseStorage implements IStorage {
     return trendingHashtags;
   }
 
-  async getHashtagChirps(hashtag: string, limit = 50): Promise<Array<Chirp & { author: User; reactionCounts: Record<string, number> }>> {
+  async getHashtagChirps(hashtag: string, limit = 50): Promise<Array<Chirp & { author: User; reactionCount: number }>> {
     // Normalize the hashtag (add # if not present and make lowercase for search)
     const normalizedHashtag = hashtag.startsWith('#') ? hashtag.toLowerCase() : `#${hashtag.toLowerCase()}`;
     
@@ -2111,25 +2059,21 @@ export class DatabaseStorage implements IStorage {
       reactionCounts = await db
         .select({
           chirpId: reactions.chirpId,
-          emoji: reactions.emoji,
           count: count(),
         })
         .from(reactions)
         .where(inArray(reactions.chirpId, chirpIds))
-        .groupBy(reactions.chirpId, reactions.emoji);
+        .groupBy(reactions.chirpId);
     }
 
     return results.map(({ chirp, author }) => {
       const chirpReactions = reactionCounts.filter(r => r.chirpId === chirp.id);
-      const reactionCountsMap: Record<string, number> = {};
-      chirpReactions.forEach(r => {
-        reactionCountsMap[r.emoji] = r.count;
-      });
+      const totalReactions = chirpReactions.reduce((sum, r) => sum + r.count, 0);
 
       return {
         ...chirp,
         author,
-        reactionCounts: reactionCountsMap,
+        reactionCount: totalReactions,
       };
     });
   }

@@ -69,6 +69,7 @@ interface Chirp {
   replyCount: number;
   reactionCount: number;
   isWeeklySummary?: boolean;
+  userHasLiked?: boolean;
   // Reply identification fields
   isDirectReply?: boolean;
   isNestedReply?: boolean;
@@ -119,7 +120,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   console.log('ChirpCard: User available, rendering chirp:', user.id);
   const [likes, setLikes] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
-  const [userHasLiked, setUserHasLiked] = useState(false);
+  const [userHasLiked, setUserHasLiked] = useState(chirp.userHasLiked || false);
   
   // Real-time timestamp updates
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -140,20 +141,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   const [loadingUserActions, setLoadingUserActions] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   
-  // Update counts when chirp data changes
+  // Update local state when chirp data changes
   useEffect(() => {
     setLikes(chirp.reactionCount || 0);
     setReplies(chirp.replyCount || 0);
-  }, [chirp.reactionCount, chirp.replyCount]);
-
-  // Check if user has already liked this chirp
-  useEffect(() => {
-    if (user?.id) {
-      loadUserLikeStatus();
-    } else {
-      console.log('ChirpCard: User not available for like status check');
-    }
-  }, [user?.id, chirp.id]);
+    setUserHasLiked(chirp.userHasLiked || false);
+  }, [chirp.reactionCount, chirp.replyCount, chirp.userHasLiked]);
   
   // Calculate display name for the chirp author (remove lastName functionality)
   const displayName = chirp.author.firstName 
@@ -162,36 +155,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
-  
-  // Load user's current like status on component mount
-  useEffect(() => {
-    if (user?.id) {
-      loadUserLikeStatus();
-    } else {
-      console.log('ChirpCard: User not available for status loading');
-    }
-  }, [chirp.id, user?.id]);
-  
-  const loadUserLikeStatus = async () => {
-    if (!user?.id) {
-      console.log('ChirpCard: User not available for like status loading');
-      return;
-    }
-    
-    try {
-      console.log('ChirpCard: Loading user like status from database');
-      const { getUserReactionForChirp } = await import('../mobile-db');
-      const chirpIdStr = String(chirp.id);
-      const userIdStr = String(user.id);
-      
-      const reaction = await getUserReactionForChirp(chirpIdStr, userIdStr);
-      setUserHasLiked(!!reaction);
-      console.log('ChirpCard: User like status loaded:', !!reaction);
-    } catch (error) {
-      console.error('Error loading user like status:', error);
-      setUserHasLiked(false); // Default to not liked on error
-    }
-  };
 
   const handleReply = () => {
     setShowReplyInput(true);
@@ -270,37 +233,17 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         setLikes(prev => Math.max(0, prev - 1));
         setUserHasLiked(false);
         
+        // Notify parent component of the change
+        if (onLikeUpdate) {
+          onLikeUpdate(chirp.id, likes - 1);
+        }
+        
         console.log('✅ Like removed successfully');
       } else {
         // Like: Add the reaction
         console.log('🔴 Liking chirp...');
         
-        // Double-check if user has already liked this chirp
-        const { getUserReactionForChirp } = await import('../mobile-db');
-        const existingReaction = await getUserReactionForChirp(chirpIdStr, userIdStr);
-        
-        if (existingReaction) {
-          console.log('⚠️ User has already liked this chirp, switching to unlike');
-          // User has already liked, so unlike instead
-          const { error } = await supabase
-            .from('reactions')
-            .delete()
-            .eq('chirp_id', chirpIdStr)
-            .eq('user_id', userIdStr);
-
-          if (error) {
-            console.error('❌ Error removing like:', error);
-            Alert.alert('Error', 'Failed to remove like. Please try again.');
-            return;
-          }
-
-          // Update local state
-          setLikes(prev => Math.max(0, prev - 1));
-          setUserHasLiked(false);
-          
-          console.log('✅ Like removed successfully');
-          return;
-        }
+        // User hasn't liked yet, so add the like
         
         const { error } = await supabase
           .from('reactions')
@@ -320,15 +263,15 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         setLikes(prev => prev + 1);
         setUserHasLiked(true);
         
+        // Notify parent component of the change
+        if (onLikeUpdate) {
+          onLikeUpdate(chirp.id, likes + 1);
+        }
+        
         // Create notification for the chirp author
         await notificationService.createLikeNotification(userIdStr, chirpIdStr);
         
         console.log('✅ Like added successfully');
-      }
-
-      // Notify parent component of the change
-      if (onLikeUpdate) {
-        onLikeUpdate(chirp.id, userHasLiked ? likes - 1 : likes + 1);
       }
     } catch (error) {
       console.error('❌ Error handling like:', error);
@@ -1119,9 +1062,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   likedButton: {
-    backgroundColor: '#f3f0ff',
-    borderWidth: 1,
-    borderColor: '#e9d5ff',
+    // Removed purple background - just keep the heart icon color change
   },
   addReactionButton: {
     alignItems: 'center',
@@ -1143,85 +1084,6 @@ const styles = StyleSheet.create({
     lineHeight: 14, // Match fontSize for perfect centering
     includeFontPadding: false, // Remove extra padding on Android
     textAlignVertical: 'center', // Ensure vertical centering on Android
-  },
-  reactionPickerContainer: {
-    position: 'absolute',
-    bottom: 45,
-    left: -16,
-    right: -16,
-    zIndex: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reactionPickerWrapper: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    width: '90%',
-    maxHeight: 200, // Increased height for grid
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e1e8ed',
-  },
-  reactionPicker: {
-    flex: 1,
-  },
-  reactionPickerContent: {
-    padding: 16,
-    paddingTop: 40, // Extra top padding to avoid close button overlap
-  },
-  reactionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reactionGridOption: {
-    width: '18%', // 5 columns with spacing
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    borderRadius: 12,
-    backgroundColor: '#f8f9fa',
-  },
-  reactionPickerClose: {
-    position: 'absolute',
-    top: 8,
-    right: 12,
-    zIndex: 20,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#f3f4f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reactionPickerCloseText: {
-    fontSize: 18,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  reactionOption: {
-    marginHorizontal: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  selectedReactionOption: {
-    backgroundColor: '#f3e8ff',
-  },
-  selectedReactionButton: {
-    backgroundColor: '#f3e8ff',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  reactionEmoji: {
-    fontSize: 20,
   },
 
   replyInput: {

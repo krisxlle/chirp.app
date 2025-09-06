@@ -26,6 +26,7 @@ export interface MobileChirp {
   isDirectReply?: boolean;
   isNestedReply?: boolean;
   isThreadedChirp?: boolean;
+  userHasLiked?: boolean;
   // Repost-related fields
   isRepost?: boolean;
   repostOfId?: string | null;
@@ -46,7 +47,6 @@ export interface MobileChirp {
 }
 
 export interface MobileReaction {
-  emoji: string;
   count: number;
 }
 

@@ -10,3 +10,4 @@ alwaysApply: true
 - If running a command takes more than 2 minutes to get the output, skip and try a different method.
 - Keep git commit -m titles under 8 words and descriptions under 300 characters.
 - When adding visuals to the front end, use custom icons instead of emojis. Do not use emojis.
+- If any relevant changes are made, update README.md and SECURITY.md.
