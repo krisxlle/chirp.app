@@ -1,6 +1,39 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { ProfileProvider } from './ProfileContext';
+
+// Platform-specific storage
+let storage: any;
+if (Platform.OS === 'web') {
+  storage = {
+    getItem: (key: string) => {
+      try {
+        return Promise.resolve(localStorage.getItem(key));
+      } catch {
+        return Promise.resolve(null);
+      }
+    },
+    setItem: (key: string, value: string) => {
+      try {
+        localStorage.setItem(key, value);
+        return Promise.resolve();
+      } catch {
+        return Promise.resolve();
+      }
+    },
+    removeItem: (key: string) => {
+      try {
+        localStorage.removeItem(key);
+        return Promise.resolve();
+      } catch {
+        return Promise.resolve();
+      }
+    }
+  };
+} else {
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  storage = AsyncStorage;
+}
 
 interface User {
   id: string;
@@ -37,8 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔍 Checking authentication state...');
       
-      const storedUser = await AsyncStorage.getItem('user');
-      const userSignedOut = await AsyncStorage.getItem('userSignedOut');
+      const storedUser = await storage.getItem('user');
+      const userSignedOut = await storage.getItem('userSignedOut');
       
       // If user explicitly signed out, don't restore session
       if (userSignedOut === 'true') {
@@ -87,8 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Clear any old session data to ensure fresh authentication
-      await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('userSignedOut');
+      await storage.removeItem('user');
+      await storage.removeItem('userSignedOut');
       
       // Authenticate user with username and password using Supabase
       console.log('🔐 Using Supabase authentication for username:', username);
@@ -122,9 +155,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           bio: dbUser.bio
         };
         
-        await AsyncStorage.setItem('user', JSON.stringify(user));
+        await storage.setItem('user', JSON.stringify(user));
         // Clear sign out flag when user successfully signs in
-        await AsyncStorage.removeItem('userSignedOut');
+        await storage.removeItem('userSignedOut');
         setUser(user);
         setIsLoading(false);
         console.log('✅ Signed in as user:', user.customHandle || user.handle || user.id);
@@ -153,9 +186,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🚪 Signing out user...');
       console.log('🔍 Current user before signOut:', user?.customHandle || user?.handle || user?.id);
-      await AsyncStorage.removeItem('user');
+      await storage.removeItem('user');
       // Set flag to indicate user explicitly signed out
-      await AsyncStorage.setItem('userSignedOut', 'true');
+      await storage.setItem('userSignedOut', 'true');
       console.log('🔒 Set userSignedOut flag');
       setUser(null);
       setIsLoading(false);
@@ -171,7 +204,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       const updatedUser = { ...user, ...updates };
-      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      await storage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
       console.log('✅ User updated successfully:', updates);
     } catch (error) {
@@ -196,8 +229,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearSession = async () => {
     try {
       console.log('🧹 Clearing all stored session data...');
-      await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('userSignedOut');
+      await storage.removeItem('user');
+      await storage.removeItem('userSignedOut');
       setUser(null);
       setIsLoading(false);
       console.log('✅ Session data cleared successfully');

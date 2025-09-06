@@ -83,9 +83,11 @@ export const reactions = pgTable("reactions", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   chirpId: integer("chirp_id").notNull().references(() => chirps.id, { onDelete: "cascade" }),
-  emoji: varchar("emoji", { length: 10 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  // Ensure one like per user per chirp
+  uniqueUserChirp: unique("unique_user_chirp").on(table.userId, table.chirpId),
+}));
 
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),

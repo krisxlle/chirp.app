@@ -261,8 +261,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           .from('reactions')
           .delete()
           .eq('chirp_id', chirpIdStr)
-          .eq('user_id', userIdStr)
-          .eq('type', 'like');
+          .eq('user_id', userIdStr);
 
         if (error) {
           console.error('❌ Error removing like:', error);
@@ -284,7 +283,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           .insert({
             chirp_id: chirpIdStr,
             user_id: userIdStr,
-            type: 'like',
             created_at: new Date().toISOString()
           });
 
