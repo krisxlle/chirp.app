@@ -9,7 +9,7 @@ DROP POLICY IF EXISTS "Users can view all reactions" ON public.reactions;
 DROP POLICY IF EXISTS "Users can insert own reactions" ON public.reactions;
 DROP POLICY IF EXISTS "Users can delete own reactions" ON public.reactions;
 
--- Create new policies
+-- Create new policies with proper type casting
 CREATE POLICY "Users can view all reactions" ON public.reactions
     FOR SELECT USING (true);
 
