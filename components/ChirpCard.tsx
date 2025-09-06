@@ -179,20 +179,17 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     }
     
     try {
-      // TEMPORARILY DISABLED: Database calls
-      console.log('ChirpCard: Using mock like status (database calls disabled)');
-      setUserHasLiked(false); // Default to not liked
-      
-      /*
+      console.log('ChirpCard: Loading user like status from database');
       const { getUserReactionForChirp } = await import('../mobile-db');
       const chirpIdStr = String(chirp.id);
       const userIdStr = String(user.id);
       
       const reaction = await getUserReactionForChirp(chirpIdStr, userIdStr);
       setUserHasLiked(!!reaction);
-      */
+      console.log('ChirpCard: User like status loaded:', !!reaction);
     } catch (error) {
       console.error('Error loading user like status:', error);
+      setUserHasLiked(false); // Default to not liked on error
     }
   };
 
@@ -277,6 +274,33 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       } else {
         // Like: Add the reaction
         console.log('🔴 Liking chirp...');
+        
+        // Double-check if user has already liked this chirp
+        const { getUserReactionForChirp } = await import('../mobile-db');
+        const existingReaction = await getUserReactionForChirp(chirpIdStr, userIdStr);
+        
+        if (existingReaction) {
+          console.log('⚠️ User has already liked this chirp, switching to unlike');
+          // User has already liked, so unlike instead
+          const { error } = await supabase
+            .from('reactions')
+            .delete()
+            .eq('chirp_id', chirpIdStr)
+            .eq('user_id', userIdStr);
+
+          if (error) {
+            console.error('❌ Error removing like:', error);
+            Alert.alert('Error', 'Failed to remove like. Please try again.');
+            return;
+          }
+
+          // Update local state
+          setLikes(prev => Math.max(0, prev - 1));
+          setUserHasLiked(false);
+          
+          console.log('✅ Like removed successfully');
+          return;
+        }
         
         const { error } = await supabase
           .from('reactions')
