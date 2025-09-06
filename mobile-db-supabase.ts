@@ -1,7 +1,40 @@
 // Supabase database connection for React Native/Expo
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import type { MobileChirp } from './mobile-types';
+
+// Platform-specific storage
+let storage: any;
+if (Platform.OS === 'web') {
+  storage = {
+    getItem: (key: string) => {
+      try {
+        return Promise.resolve(localStorage.getItem(key));
+      } catch {
+        return Promise.resolve(null);
+      }
+    },
+    setItem: (key: string, value: string) => {
+      try {
+        localStorage.setItem(key, value);
+        return Promise.resolve();
+      } catch {
+        return Promise.resolve();
+      }
+    },
+    removeItem: (key: string) => {
+      try {
+        localStorage.removeItem(key);
+        return Promise.resolve();
+      } catch {
+        return Promise.resolve();
+      }
+    }
+  };
+} else {
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  storage = AsyncStorage;
+}
 
 // Utility function to truncate long error messages
 const truncateError = (error: any): string => {
@@ -19,10 +52,10 @@ const truncateError = (error: any): string => {
 const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
 
-// Create Supabase client with React Native storage
+// Create Supabase client with platform-specific storage
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: AsyncStorage,
+    storage: storage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
