@@ -11,7 +11,7 @@ import { writeFileSync } from 'fs';
 import { networkInterfaces } from 'os';
 import { join } from 'path';
 
-function getLocalIPAddress(): string | null {
+function getLocalIPAddress() {
   const interfaces = networkInterfaces();
   
   for (const name of Object.keys(interfaces)) {
@@ -96,6 +96,4 @@ function main() {
   console.log('4. Monitor console for any security alerts');
 }
 
-if (require.main === module) {
-  main();
-}
+main();
