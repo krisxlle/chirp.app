@@ -38,14 +38,13 @@ class NotificationService {
       // Create new notification with fallback for missing columns
       const notificationData: any = {
         user_id: action.targetUserId,
-        is_read: false,
+        read: false,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
 
       // Add optional columns if they exist
       if (action.actorId) {
-        notificationData.actor_id = action.actorId;
+        notificationData.from_user_id = action.actorId;
       }
       if (action.type) {
         notificationData.type = action.type;
@@ -85,7 +84,7 @@ class NotificationService {
         .from('notifications')
         .select(`
           *,
-          actor:actor_id (
+          actor:from_user_id (
             id,
             first_name,
             custom_handle,
