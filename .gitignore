@@ -39,8 +39,30 @@ yarn-error.*
 # iOS build files (generated)
 ios/App/App/public/
 ios/App/App/www/
+ios/App/App/public/**
+ios/App/App/www/**
 
 # Android build files (generated)
 android/app/src/main/assets/www/
+android/app/src/main/assets/www/**
+
+# Build artifacts
+build/
+build/**
+coverage/
+coverage/**
+.nyc_output/
+.nyc_output/**
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 app-example

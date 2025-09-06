@@ -4,12 +4,25 @@
   "paths-ignore": [
     "ios/App/App/public/",
     "ios/App/App/www/",
+    "ios/App/App/public/**",
+    "ios/App/App/www/**",
     "android/app/src/main/assets/www/",
+    "android/app/src/main/assets/www/**",
     "node_modules/",
+    "node_modules/**",
     "dist/",
+    "dist/**",
     "web-build/",
+    "web-build/**",
     ".expo/",
-    "*.tsbuildinfo"
+    ".expo/**",
+    "*.tsbuildinfo",
+    "build/",
+    "build/**",
+    "coverage/",
+    "coverage/**",
+    ".nyc_output/",
+    ".nyc_output/**"
   ],
   "queries": {
     "exclude": [
@@ -20,5 +33,7 @@
     "javascript": [
       "codeql/javascript-queries:security-and-quality"
     ]
-  }
+  },
+  "disable-default-rules": false,
+  "disable-default-queries": false
 }
