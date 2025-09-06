@@ -1,5 +1,17 @@
 import nodemailer from 'nodemailer';
 
+// HTML escape function to prevent XSS
+function escapeHtml(text: string): string {
+  const map: { [key: string]: string } = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 async function sendFeedbackEmailViaGmail(feedback: any, userClaims?: any): Promise<boolean> {
   try {
     const transporter = nodemailer.createTransporter({
@@ -132,15 +144,15 @@ export async function sendSupportNotificationEmail(supportRequest: any): Promise
       
       <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <h2 style="color: #333; margin-top: 0;">📋 Support Details</h2>
-        <p><strong>Category:</strong> ${supportRequest.category}</p>
-        <p><strong>Subject:</strong> ${supportRequest.subject}</p>
-        <p><strong>Contact Email:</strong> ${supportRequest.email || 'Not provided'}</p>
+        <p><strong>Category:</strong> ${escapeHtml(supportRequest.category)}</p>
+        <p><strong>Subject:</strong> ${escapeHtml(supportRequest.subject)}</p>
+        <p><strong>Contact Email:</strong> ${escapeHtml(supportRequest.email || 'Not provided')}</p>
         <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
       </div>
       
       <div style="background: white; padding: 20px; border: 2px solid #e5e7eb; border-radius: 8px;">
         <h3 style="color: #333; margin-top: 0;">💬 Message</h3>
-        <p style="white-space: pre-wrap; line-height: 1.6;">${supportRequest.message}</p>
+        <p style="white-space: pre-wrap; line-height: 1.6;">${escapeHtml(supportRequest.message)}</p>
       </div>
       
       <div style="margin-top: 20px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
@@ -154,7 +166,7 @@ export async function sendSupportNotificationEmail(supportRequest: any): Promise
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: 'joinchirp@gmail.com',
-      subject: `🐤 New Support Request: ${supportRequest.subject}`,
+      subject: `🐤 New Support Request: ${escapeHtml(supportRequest.subject)}`,
       html: emailHtml
     });
 

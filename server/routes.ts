@@ -908,7 +908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Prompt is required" });
       }
 
-      console.log(`Generating ${type} images for user ${userId} with prompt:`, prompt);
+      console.log(`Generating ${type || 'unknown'} images for user ${userId} with prompt:`, JSON.stringify(prompt));
 
       // Get user details for personalized generation
       const user = await storage.getUser(userId);

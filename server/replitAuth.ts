@@ -8,6 +8,7 @@ import memoize from "memoizee";
 import passport from "passport";
 import { authLimiter } from "./rateLimiting";
 import { storage } from "./storage";
+import { csrfMiddleware, initCsrfSecret } from "./csrf";
 
 // Make REPLIT_DOMAINS optional for local development
 const isReplitEnvironment = process.env.REPLIT_DOMAINS && process.env.NODE_ENV === 'production';
@@ -118,6 +119,9 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", authLimiter, (req, res, next) => {
+    // Initialize CSRF secret in session
+    initCsrfSecret(req);
+    
     // In development mode, just redirect to home
     if (!isReplitEnvironment) {
       console.log('🔧 Development mode: Skipping login, redirecting to home');
@@ -146,7 +150,7 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/callback", authLimiter, (req, res, next) => {
+  app.get("/api/callback", authLimiter, csrfMiddleware, (req, res, next) => {
     // In development mode, just redirect to home
     if (!isReplitEnvironment) {
       console.log('🔧 Development mode: Skipping callback, redirecting to home');
