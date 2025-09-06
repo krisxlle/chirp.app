@@ -14,10 +14,10 @@ CREATE POLICY "Users can view all reactions" ON public.reactions
     FOR SELECT USING (true);
 
 CREATE POLICY "Users can insert own reactions" ON public.reactions
-    FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+    FOR INSERT WITH CHECK (auth.uid() = user_id::uuid);
 
 CREATE POLICY "Users can delete own reactions" ON public.reactions
-    FOR DELETE USING (auth.uid()::text = user_id);
+    FOR DELETE USING (auth.uid() = user_id::uuid);
 
 -- Success!
 SELECT 'Reactions RLS policies configured successfully!' as result;
