@@ -3,6 +3,7 @@ import { generalApiLimiter } from "./rateLimiting";
 import { registerRoutes } from "./routes";
 import { devServerProtection, securityLogging, securityMiddleware } from "./security";
 import { log, serveStatic, setupVite } from "./vite";
+import { truncateSensitiveData } from "./loggingUtils";
 
 const app = express();
 app.use(express.json());
@@ -35,11 +36,15 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        // Truncate long responses and sensitive data
+        const responseStr = JSON.stringify(capturedJsonResponse);
+        const truncatedResponse = truncateSensitiveData(responseStr);
+        logLine += ` :: ${truncatedResponse}`;
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      // Ensure log line doesn't exceed reasonable length
+      if (logLine.length > 200) {
+        logLine = logLine.slice(0, 199) + "…";
       }
 
       log(logLine);

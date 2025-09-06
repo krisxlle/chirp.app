@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { truncateSensitiveData } from "./loggingUtils";
 
 // Security middleware to protect against unauthorized access
 export function securityMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -107,9 +108,9 @@ export function securityLogging(req: Request, res: Response, next: NextFunction)
       console.warn(`🚨 SUSPICIOUS REQUEST`, {
         method: req.method,
         path: req.path,
-        origin,
+        origin: truncateSensitiveData(origin),
         ip: req.ip,
-        userAgent: req.get('User-Agent'),
+        userAgent: truncateSensitiveData(req.get('User-Agent') || ''),
         statusCode: res.statusCode,
         duration: `${duration}ms`,
         timestamp: new Date().toISOString()
@@ -121,7 +122,7 @@ export function securityLogging(req: Request, res: Response, next: NextFunction)
       console.log(`🔍 DEV SERVER ACCESS`, {
         method: req.method,
         path: req.path,
-        origin: origin || 'no-origin',
+        origin: truncateSensitiveData(origin || 'no-origin'),
         ip: req.ip,
         statusCode: res.statusCode,
         duration: `${duration}ms`
