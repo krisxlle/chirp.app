@@ -759,7 +759,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={styles.likeButton} 
+          style={[styles.likeButton, userHasLiked && styles.likedButton]} 
           onPress={(e) => {
             e.stopPropagation();
             handleLike();
@@ -767,10 +767,10 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         >
           <HeartIcon 
             size={18} 
-            color={userHasLiked ? "#e31b23" : "#657786"} 
+            color={userHasLiked ? "#7c3aed" : "#657786"} 
             filled={userHasLiked}
           />
-          <Text style={[styles.actionText, userHasLiked && { color: "#e31b23" }]}>
+          <Text style={[styles.actionText, userHasLiked && { color: "#7c3aed" }]}>
             {likes}
           </Text>
         </TouchableOpacity>
@@ -1093,6 +1093,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  likedButton: {
+    backgroundColor: '#f3f0ff',
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
   },
   addReactionButton: {
     alignItems: 'center',
