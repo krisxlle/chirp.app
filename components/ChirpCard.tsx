@@ -92,16 +92,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     return null;
   }
 
-  // Debug: Log ALL props being received - ENHANCED
-  console.log(`🔍 MOBILE ChirpCard render - ID: ${chirp.id}, author: ${chirp.author.customHandle || chirp.author.handle}`);
-  console.log(`🔍 Props received:`, { 
-    onProfilePress: typeof onProfilePress, 
-    onDeleteSuccess: typeof onDeleteSuccess, 
-    onLikeUpdate: typeof onLikeUpdate, 
-    onReplyPosted: typeof onReplyPosted 
-  });
-  console.log(`🔍 onProfilePress value:`, onProfilePress);
-  console.log(`🔍 All arguments:`, arguments);
+  // Debug logging removed to reduce log spam
 
   const { user } = useAuth();
   
@@ -117,10 +108,38 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     );
   }
   
-  console.log('ChirpCard: User available, rendering chirp:', user.id);
+  // User available, rendering chirp
   const [likes, setLikes] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [userHasLiked, setUserHasLiked] = useState(chirp.userHasLiked || false);
+  
+  // Verify like status on component mount to ensure accuracy
+  useEffect(() => {
+    const verifyLikeStatus = async () => {
+      if (!user?.id || !chirp.id) return;
+      
+      try {
+        const { supabase } = await import('../mobile-db-supabase');
+        const { data: existingLike } = await supabase
+          .from('reactions')
+          .select('id')
+          .eq('chirp_id', String(chirp.id))
+          .eq('user_id', String(user.id))
+          .single();
+        
+        // Update state if it doesn't match database
+        if (existingLike && !userHasLiked) {
+          setUserHasLiked(true);
+        } else if (!existingLike && userHasLiked) {
+          setUserHasLiked(false);
+        }
+      } catch (error) {
+        console.log('🔍 Error verifying like status:', error);
+      }
+    };
+    
+    verifyLikeStatus();
+  }, [user?.id, chirp.id]); // Only run when user or chirp changes
   
   // Real-time timestamp updates
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -243,8 +262,29 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         // Like: Add the reaction
         console.log('🔴 Liking chirp...');
         
-        // User hasn't liked yet, so add the like
+        // First check if user has already liked this chirp to prevent duplicate constraint error
+        const { data: existingLike, error: checkError } = await supabase
+          .from('reactions')
+          .select('id')
+          .eq('chirp_id', chirpIdStr)
+          .eq('user_id', userIdStr)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+          console.error('❌ Error checking existing like:', checkError);
+          Alert.alert('Error', 'Failed to check like status. Please try again.');
+          return;
+        }
+
+        // If user has already liked, don't try to insert again
+        if (existingLike) {
+          console.log('⚠️ User has already liked this chirp, skipping insert');
+          // Update local state to reflect the actual state
+          setUserHasLiked(true);
+          return;
+        }
         
+        // User hasn't liked yet, so add the like
         const { error } = await supabase
           .from('reactions')
           .insert({
@@ -255,6 +295,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 
         if (error) {
           console.error('❌ Error adding like:', error);
+          // If it's a duplicate key error, just update the UI state
+          if (error.code === '23505') {
+            console.log('⚠️ Duplicate like detected, updating UI state');
+            setUserHasLiked(true);
+            setLikes(prev => prev + 1);
+            return;
+          }
           Alert.alert('Error', 'Failed to like chirp. Please try again.');
           return;
         }

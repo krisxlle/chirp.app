@@ -293,7 +293,13 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     setIsUploadingImage(true);
     try {
       console.log('Starting profile image upload for user:', user.id);
-      console.log('User object:', user);
+      console.log('User object:', {
+        id: user.id,
+        handle: user.handle,
+        customHandle: user.customHandle,
+        email: user.email,
+        profileImageUrl: user.profileImageUrl ? 'has image' : 'no image'
+      });
       
       // Validate user ID
       if (!user.id || typeof user.id !== 'string') {

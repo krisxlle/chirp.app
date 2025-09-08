@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -8,10 +9,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { getFollowers, getFollowing } from '../mobile-db-supabase';
 import UserAvatar from './UserAvatar';
-// TEMPORARILY DISABLED: Database calls
-// import { getFollowers, getFollowing } from '../mobile-db';
-import { router } from 'expo-router';
 
 interface User {
   id: string;
@@ -53,37 +52,8 @@ export default function FollowersFollowingModal({
     try {
       setLoading(true);
       
-      // TEMPORARILY DISABLED: Database calls
-      console.log('FollowersFollowingModal: Using mock data (database calls disabled)');
+      console.log(`🔄 Fetching ${type} for user:`, userId);
       
-      // Mock data for testing
-      const mockUsers: User[] = [
-        {
-          id: 'user-1',
-          firstName: 'Alex',
-          customHandle: 'alex_chen',
-          profileImageUrl: 'https://via.placeholder.com/150',
-          bio: 'Software developer and coffee enthusiast ☕',
-        },
-        {
-          id: 'user-2',
-          firstName: 'Maya',
-          customHandle: 'maya_rodriguez',
-          profileImageUrl: 'https://via.placeholder.com/150',
-          bio: 'Designer and art lover 🎨',
-        },
-        {
-          id: 'user-3',
-          firstName: 'Jordan',
-          customHandle: 'jordan_kim',
-          profileImageUrl: 'https://via.placeholder.com/150',
-          bio: 'Music producer and vinyl collector 🎵',
-        }
-      ];
-      
-      setUsers(mockUsers);
-      
-      /*
       let userData: User[] = [];
       
       if (type === 'followers') {
@@ -92,10 +62,10 @@ export default function FollowersFollowingModal({
         userData = await getFollowing(userId);
       }
       
+      console.log(`✅ Fetched ${userData.length} ${type}`);
       setUsers(userData);
-      */
     } catch (error) {
-      console.error(`Error fetching ${type}:`, error);
+      console.error(`❌ Error fetching ${type}:`, error);
       setUsers([]);
     } finally {
       setLoading(false);

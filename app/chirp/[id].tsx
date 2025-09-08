@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ChirpCard from '../../components/ChirpCard';
 import { getChirpById, getChirpReplies, getThreadedChirps } from '../../mobile-db-supabase';
@@ -64,6 +64,46 @@ export default function ChirpScreen() {
       console.error('❌ ChirpScreen: Error refreshing replies:', error);
     }
   };
+
+  // Function to handle like count updates
+  const handleLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
+    console.log('❤️ ChirpScreen: Like count updated for chirp:', chirpId, 'New count:', newLikeCount);
+    
+    // Update main chirp
+    if (chirp && chirp.id === chirpId) {
+      setChirp(prevChirp => ({
+        ...prevChirp,
+        reactionCount: newLikeCount,
+        userHasLiked: newLikeCount > (prevChirp?.reactionCount || 0)
+      }));
+    }
+    
+    // Update threaded chirps
+    setThreadedChirps(prevThreaded => 
+      prevThreaded.map(threadChirp => 
+        threadChirp.id === chirpId 
+          ? { 
+              ...threadChirp, 
+              reactionCount: newLikeCount,
+              userHasLiked: newLikeCount > (threadChirp.reactionCount || 0)
+            }
+          : threadChirp
+      )
+    );
+    
+    // Update replies
+    setReplies(prevReplies => 
+      prevReplies.map(reply => 
+        reply.id === chirpId 
+          ? { 
+              ...reply, 
+              reactionCount: newLikeCount,
+              userHasLiked: newLikeCount > (reply.reactionCount || 0)
+            }
+          : reply
+      )
+    );
+  }, [chirp]);
 
   const loadThreadedChirps = async (threadId: string) => {
     try {
@@ -141,6 +181,7 @@ export default function ChirpScreen() {
           onMorePress={() => {}} 
           onReplyPosted={() => refreshReplies()}
           onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+          onLikeUpdate={handleLikeUpdate}
         />
         
         {/* Threaded Chirps - Directly below main chirp */}
@@ -156,6 +197,7 @@ export default function ChirpScreen() {
                   onSharePress={() => {}} 
                   onMorePress={() => {}} 
                   onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                  onLikeUpdate={handleLikeUpdate}
                 />
               </View>
             ))}
@@ -174,6 +216,7 @@ export default function ChirpScreen() {
                 onSharePress={() => {}} 
                 onMorePress={() => {}} 
                 onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                onLikeUpdate={handleLikeUpdate}
               />
             ))}
           </View>

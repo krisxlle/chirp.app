@@ -57,8 +57,14 @@ export default function HomePage() {
   
   // Load chirps on mount
   useEffect(() => {
-    loadChirps();
-  }, []); // Empty dependency array to only run once on mount
+    // Only load chirps if user is available
+    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id);
+    if (user) {
+      loadChirps();
+    } else {
+      console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
+    }
+  }, [user, loadChirps]); // Include user and loadChirps in dependencies
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {

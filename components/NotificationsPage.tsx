@@ -12,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../mobile-db-supabase';
 import { notificationService } from '../services/notificationService';
 import type { Notification } from '../types/notifications';
 import { useAuth } from './AuthContext';
@@ -26,17 +27,76 @@ export default function NotificationsPage() {
 
   const loadNotifications = useCallback(async () => {
     try {
-      if (!user?.id) return;
+      console.log('=== NOTIFICATION DEBUG START ===');
+      console.log('User exists:', !!user);
+      console.log('User ID:', user?.id);
+      
+      if (!user?.id) {
+        console.log('No user ID, returning early');
+        return;
+      }
 
+      console.log('Starting notification load...');
       setIsLoading(true);
+      
+      // Test direct query first
+      console.log('Testing direct Supabase query...');
+      const { data: directNotifications, error: directError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      console.log('Direct query completed');
+      console.log('Direct notifications count:', directNotifications?.length || 0);
+      console.log('Direct query error:', directError);
+      
+      if (directNotifications && directNotifications.length > 0) {
+        const sample = directNotifications[0];
+        console.log('Sample notification:', {
+          id: sample.id,
+          type: sample.type,
+          chirp_id: sample.chirp_id,
+          from_user_id: sample.from_user_id,
+          read: sample.read
+        });
+      }
+      
+      // Test notification service
+      console.log('Testing notification service...');
       const fetchedNotifications = await notificationService.getNotifications(user.id);
+      console.log('Service completed');
+      console.log('Service notifications count:', fetchedNotifications?.length || 0);
+      
+      if (fetchedNotifications && fetchedNotifications.length > 0) {
+        const sample = fetchedNotifications[0];
+        console.log('Sample service notification:', {
+          id: sample.id,
+          type: sample.type,
+          chirp_id: sample.chirp_id,
+          from_user_id: sample.from_user_id,
+          read: sample.read,
+          actor: sample.actor ? {
+            id: sample.actor.id,
+            customHandle: sample.actor.customHandle,
+            handle: sample.actor.handle
+          } : null
+        });
+      }
+      
       setNotifications(fetchedNotifications);
       
       // Count unread notifications
-      const unread = fetchedNotifications.filter(n => !n.is_read).length;
+      const unread = fetchedNotifications.filter(n => !n.read).length;
       setUnreadCount(unread);
+      
+      console.log('Final state:');
+      console.log('- Notifications set:', fetchedNotifications?.length || 0);
+      console.log('- Unread count:', unread);
+      console.log('=== NOTIFICATION DEBUG END ===');
+      
     } catch (error) {
-      console.error('❌ Error loading notifications:', error);
+      console.error('Error in loadNotifications:', error);
       Alert.alert('Error', 'Failed to load notifications');
     } finally {
       setIsLoading(false);
@@ -54,20 +114,30 @@ export default function NotificationsPage() {
 
   const markAsRead = useCallback(async (notification: Notification) => {
     try {
-      if (notification.is_read) return;
+      if (notification.read) {
+        console.log('📖 Notification already read, skipping');
+        return;
+      }
 
+      console.log('📖 Marking notification as read:', notification.id);
       await notificationService.markAsRead(notification.id);
       
       // Update local state
       setNotifications(prev => 
         prev.map(n => 
           n.id === notification.id 
-            ? { ...n, is_read: true }
+            ? { ...n, read: true }
             : n
         )
       );
       
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      // Update unread count
+      setUnreadCount(prev => {
+        const newCount = Math.max(0, prev - 1);
+        console.log('📊 Updated unread count:', prev, '->', newCount);
+        return newCount;
+      });
+      
     } catch (error) {
       console.error('❌ Error marking notification as read:', error);
     }
@@ -81,7 +151,7 @@ export default function NotificationsPage() {
       
       // Update local state
       setNotifications(prev => 
-        prev.map(n => ({ ...n, is_read: true }))
+        prev.map(n => ({ ...n, read: true }))
       );
       
       setUnreadCount(0);
@@ -93,6 +163,20 @@ export default function NotificationsPage() {
 
   const handleNotificationPress = useCallback(async (notification: Notification) => {
     try {
+      console.log('🔔 Notification pressed:', notification.type);
+      console.log('🔔 Notification data (truncated):', {
+        id: notification.id,
+        type: notification.type,
+        chirp_id: notification.chirp_id,
+        from_user_id: notification.from_user_id,
+        read: notification.read,
+        actor: notification.actor ? {
+          id: notification.actor.id,
+          customHandle: notification.actor.customHandle,
+          handle: notification.actor.handle
+        } : null
+      });
+      
       // Mark as read
       await markAsRead(notification);
 
@@ -100,22 +184,39 @@ export default function NotificationsPage() {
       switch (notification.type) {
         case 'like':
         case 'comment':
-          if (notification.chirpId) {
-            router.push(`/chirp/${notification.chirpId}`);
+          if (notification.chirp_id) {
+            console.log('📍 Navigating to chirp:', notification.chirp_id, 'Type:', typeof notification.chirp_id);
+            router.push(`/chirp/${notification.chirp_id}`);
+          } else {
+            console.log('⚠️ No chirp_id for like/comment notification');
+            console.log('⚠️ Available fields:', Object.keys(notification));
+            // Fallback: navigate to actor's profile if no chirp_id
+            if (notification.from_user_id) {
+              console.log('📍 Fallback: Navigating to actor profile:', notification.from_user_id);
+              router.push(`/profile/${notification.from_user_id}`);
+            } else {
+              console.log('❌ No fallback navigation available');
+            }
           }
           break;
         case 'follow':
-          if (notification.actorId) {
-            router.push(`/profile/${notification.actorId}`);
+          if (notification.from_user_id) {
+            console.log('📍 Navigating to profile:', notification.from_user_id);
+            router.push(`/profile/${notification.from_user_id}`);
+          } else {
+            console.log('⚠️ No from_user_id for follow notification');
           }
           break;
         case 'mention':
-          if (notification.chirpId) {
-            router.push(`/chirp/${notification.chirpId}`);
+          if (notification.chirp_id) {
+            console.log('📍 Navigating to mentioned chirp:', notification.chirp_id);
+            router.push(`/chirp/${notification.chirp_id}`);
+          } else {
+            console.log('⚠️ No chirp_id for mention notification');
           }
           break;
         default:
-          console.log('Unknown notification type:', notification.type);
+          console.log('❓ Unknown notification type:', notification.type);
       }
     } catch (error) {
       console.error('❌ Error handling notification press:', error);
@@ -155,8 +256,18 @@ export default function NotificationsPage() {
   }, []);
 
   const formatTimeAgo = useCallback((dateString: string): string => {
+    if (!dateString) {
+      return 'now';
+    }
+    
     const now = new Date();
     const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'now';
+    }
+    
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
@@ -180,7 +291,7 @@ export default function NotificationsPage() {
     <TouchableOpacity
       style={[
         styles.notificationItem,
-        !notification.is_read && styles.unreadNotification,
+        !notification.read && styles.unreadNotification,
       ]}
       onPress={() => handleNotificationPress(notification)}
       activeOpacity={0.7}
@@ -204,7 +315,7 @@ export default function NotificationsPage() {
             <Text style={styles.iconText}>
               {getNotificationIcon(notification.type)}
             </Text>
-            {!notification.is_read && <View style={styles.unreadDot} />}
+            {!notification.read && <View style={styles.unreadDot} />}
           </View>
         </View>
         
@@ -234,7 +345,25 @@ export default function NotificationsPage() {
   }, [loadNotifications]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      // Clear notifications when no user
+      setNotifications([]);
+      setUnreadCount(0);
+      notificationService.clearUserData();
+      return;
+    }
+
+    console.log('🔄 User changed, reloading notifications for:', user.id);
+    
+    // Clear previous notifications immediately when user changes
+    setNotifications([]);
+    setUnreadCount(0);
+    
+    // Clear notification service data for previous user
+    notificationService.clearUserData();
+    
+    // Load notifications for new user
+    loadNotifications();
 
     // Subscribe to real-time notifications
     notificationService.subscribeToNotifications(user.id, (newNotification) => {
@@ -245,7 +374,7 @@ export default function NotificationsPage() {
     return () => {
       notificationService.unsubscribeFromNotifications();
     };
-  }, [user?.id]);
+  }, [user?.id, loadNotifications]);
 
   if (isLoading) {
     return (

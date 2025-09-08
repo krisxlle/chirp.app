@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { pushNotificationService } from '../services/pushNotificationService';
 import { useAuth } from './AuthContext';
 
 // Determine the correct API URL based on platform and environment
@@ -37,41 +36,9 @@ const PushNotificationProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     const initializePushNotifications = async () => {
-      try {
-        console.log('Initializing push notifications...');
-        console.log('Platform:', Platform.OS);
-        console.log('Development mode:', __DEV__);
-        console.log('API Base URL:', API_BASE_URL ? 'configured' : 'not configured');
-        console.log('User ID:', user.id);
-        
-        // Skip push notifications on web platform
-        if (Platform.OS === 'web') {
-          console.log('Push notifications are not supported on web - skipping');
-          return;
-        }
-        
-        // Register for push notifications
-        const token = await pushNotificationService.registerForPushNotifications();
-        
-        if (token) {
-          console.log('Push token obtained:', token ? 'success' : 'failed');
-          // Register token with backend
-          await registerTokenWithBackend(user.id, token, Platform.OS);
-          
-          // Set up notification listeners
-          const subscriptions = pushNotificationService.setupNotificationListeners();
-          
-          // Return cleanup function
-          return () => {
-            subscriptions.foreground.remove();
-            subscriptions.response.remove();
-          };
-        } else {
-          console.log('No push token obtained - notifications may not work');
-        }
-      } catch (error) {
-        console.error('Error initializing push notifications:', error);
-      }
+      // Push notifications disabled to prevent ECONNREFUSED errors
+      console.log('Push notifications disabled - skipping initialization');
+      return;
     };
 
     initializePushNotifications();

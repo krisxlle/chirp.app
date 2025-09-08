@@ -291,7 +291,8 @@ export async function getUserChirps(userId: string) {
           custom_handle,
           handle,
           profile_image_url,
-          avatar_url
+          avatar_url,
+          banner_image_url
         )
       `)
       .eq('author_id', userId)
@@ -305,42 +306,34 @@ export async function getUserChirps(userId: string) {
       return [];
     }
 
-    // Transform data efficiently and fetch reply counts
-    const transformedChirps = await Promise.all((chirps || []).map(async (chirp: any) => {
-      // Get reply count for this chirp
-      const { count: replyCount } = await supabase
-        .from('chirps')
-        .select('*', { count: 'exact', head: true })
-        .eq('reply_to_id', chirp.id);
-      
-      return {
-        id: chirp.id.toString(),
-        content: chirp.content,
-        createdAt: chirp.created_at,
-        replyToId: chirp.reply_to_id,
-        isWeeklySummary: chirp.is_weekly_summary || false,
-        reactionCount: 0,
-        replyCount: replyCount || 0,
-        reactions: [],
-        replies: [],
-        repostOfId: null,
-        originalChirp: undefined,
-        author: {
-          id: chirp.users.id,
-          firstName: chirp.users.first_name || 'User',
-          lastName: chirp.users.last_name || '',
-          email: chirp.users.email,
-          customHandle: chirp.users.custom_handle || chirp.users.handle,
-          handle: chirp.users.handle,
-          profileImageUrl: chirp.users.profile_image_url,
-          avatarUrl: chirp.users.avatar_url,
-          bannerImageUrl: null,
-          bio: '',
-          joinedAt: new Date().toISOString(),
-          isChirpPlus: false,
-          showChirpPlusBadge: false
-        }
-      };
+    // Transform data efficiently without individual reply count queries (prevents timeouts)
+    const transformedChirps = (chirps || []).map((chirp: any) => ({
+      id: chirp.id.toString(),
+      content: chirp.content,
+      createdAt: chirp.created_at,
+      replyToId: chirp.reply_to_id,
+      isWeeklySummary: chirp.is_weekly_summary || false,
+      reactionCount: 0,
+      replyCount: 0, // Simplified - remove individual count queries to prevent timeouts
+      reactions: [],
+      replies: [],
+      repostOfId: null,
+      originalChirp: undefined,
+      author: {
+        id: chirp.users.id,
+        firstName: chirp.users.first_name || 'User',
+        lastName: chirp.users.last_name || '',
+        email: chirp.users.email,
+        customHandle: chirp.users.custom_handle || chirp.users.handle,
+        handle: chirp.users.handle,
+        profileImageUrl: chirp.users.profile_image_url,
+        avatarUrl: chirp.users.avatar_url,
+        bannerImageUrl: chirp.users.banner_image_url,
+        bio: '',
+        joinedAt: new Date().toISOString(),
+        isChirpPlus: false,
+        showChirpPlusBadge: false
+      }
     }));
     
     // Cache the result
@@ -393,7 +386,8 @@ export async function getUserReplies(userId: string) {
           custom_handle,
           handle,
           profile_image_url,
-          avatar_url
+          avatar_url,
+          banner_image_url
         )
       `)
       .eq('author_id', userId)
@@ -429,7 +423,7 @@ export async function getUserReplies(userId: string) {
         handle: reply.users.handle,
         profileImageUrl: reply.users.profile_image_url,
         avatarUrl: reply.users.avatar_url,
-        bannerImageUrl: null,
+        bannerImageUrl: reply.users.banner_image_url,
         bio: '',
         joinedAt: new Date().toISOString(),
         isChirpPlus: false,
@@ -449,9 +443,103 @@ export async function getUserReplies(userId: string) {
 }
 
 // Optimized for you chirps with caching
+// Helper function to add like status to chirps
+async function addLikeStatusToChirps(chirps: any[], currentUserId: string): Promise<any[]> {
+  if (!currentUserId || chirps.length === 0) {
+    return chirps.map(chirp => ({ ...chirp, userHasLiked: false }));
+  }
+
+  const chirpIds = chirps.map(c => c.id);
+  const { data: userLikes } = await supabase
+    .from('reactions')
+    .select('chirp_id')
+    .eq('user_id', currentUserId)
+    .in('chirp_id', chirpIds);
+
+  const userLikesMap = new Map();
+  userLikes?.forEach(like => {
+    userLikesMap.set(like.chirp_id, true);
+  });
+
+  return chirps.map(chirp => ({
+    ...chirp,
+    userHasLiked: userLikesMap.get(chirp.id) || false
+  }));
+}
+
+// Fallback function for basic feed without personalization
+async function getBasicForYouFeed(): Promise<any[]> {
+  const { data: chirps, error } = await supabase
+    .from('chirps')
+    .select(`
+      id,
+      content,
+      created_at,
+      reply_to_id,
+      is_weekly_summary,
+      users!inner(
+        id,
+        first_name,
+        last_name,
+        email,
+        custom_handle,
+        handle,
+        profile_image_url,
+        avatar_url,
+        banner_image_url
+      )
+    `)
+    .is('reply_to_id', null)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error || !chirps) return [];
+
+  // Transform chirps and add actual counts
+  const transformedChirps = await Promise.all((chirps || []).map(async (chirp: any) => {
+    // Get actual reaction and reply counts
+    const [reactionCount, replyCount] = await Promise.all([
+      supabase.from('reactions').select('id', { count: 'exact' }).eq('chirp_id', chirp.id).then(({ count }) => count || 0),
+      supabase.from('chirps').select('id', { count: 'exact' }).eq('reply_to_id', chirp.id).then(({ count }) => count || 0)
+    ]);
+
+    return {
+      id: chirp.id.toString(),
+      content: chirp.content,
+      createdAt: chirp.created_at,
+      replyToId: chirp.reply_to_id,
+      isWeeklySummary: chirp.is_weekly_summary || false,
+      reactionCount,
+      replyCount,
+      reactions: [],
+      replies: [],
+      repostOfId: null,
+      originalChirp: undefined,
+      userHasLiked: false,
+      author: {
+        id: chirp.users.id,
+        firstName: chirp.users.first_name || 'User',
+        lastName: chirp.users.last_name || '',
+        email: chirp.users.email || 'user@example.com',
+        customHandle: chirp.users.custom_handle || chirp.users.handle,
+        handle: chirp.users.handle,
+        profileImageUrl: chirp.users.profile_image_url,
+        avatarUrl: chirp.users.avatar_url,
+        bannerImageUrl: chirp.users.banner_image_url,
+        bio: '',
+        joinedAt: new Date().toISOString(),
+        isChirpPlus: false,
+        showChirpPlusBadge: false
+      }
+    };
+  }));
+
+  return transformedChirps;
+}
+
 export async function getForYouChirps(): Promise<any[]> {
   try {
-    console.log('🔄 Fetching for you chirps');
+    console.log('🔄 Fetching for you chirps with personalized algorithm');
     const startTime = Date.now();
     
     // Check cache first
@@ -470,129 +558,40 @@ export async function getForYouChirps(): Promise<any[]> {
       return [];
     }
     
-    // Get current user ID for like status
+    // Get current user ID for personalized feed
     const { data: { user } } = await supabase.auth.getUser();
     const currentUserId = user?.id;
 
-    // Single optimized query with joins, reply count, and reaction count
-    const { data: chirps, error } = await supabase
-      .from('chirps')
-      .select(`
-        id,
-        content,
-        created_at,
-        reply_to_id,
-        is_weekly_summary,
-        users(
-          id,
-          first_name,
-          last_name,
-          custom_handle,
-          handle,
-          profile_image_url
-        )
-      `)
-      .is('reply_to_id', null)
-      .or('is_thread_starter.is.true,thread_id.is.null')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    if (!currentUserId) {
+      console.log('🔄 No authenticated user, returning basic feed');
+      // Fallback to basic feed without personalization
+      return await getBasicForYouFeed();
+    }
+
+    // Use the new For You algorithm
+    const { default: ForYouAlgorithm } = await import('./services/forYouAlgorithm');
+    const personalizedChirps = await ForYouAlgorithm.getForYouFeed({
+      userId: currentUserId,
+      limit: 20,
+      includeReplies: false,
+      prioritizeFollowed: true
+    });
+
+    // Add like status for current user
+    const chirpsWithLikeStatus = await addLikeStatusToChirps(personalizedChirps, currentUserId);
     
-    if (error) {
-      console.error('❌ Error fetching for you chirps:', error);
-      return [];
-    }
-
-    if (!chirps || chirps.length === 0) {
-      return [];
-    }
-
-    const chirpIds = chirps.map(c => c.id);
-
-    // Batch load reply counts for all chirps
-    const { data: replyCounts } = await supabase
-      .from('chirps')
-      .select('reply_to_id')
-      .in('reply_to_id', chirpIds);
-
-    // Batch load reaction counts for all chirps
-    const { data: reactionCounts } = await supabase
-      .from('reactions')
-      .select('chirp_id')
-      .in('chirp_id', chirpIds);
-
-    // Batch load user like statuses (if user is logged in)
-    let userLikes: any[] = [];
-    if (currentUserId) {
-      const { data: userReactions } = await supabase
-        .from('reactions')
-        .select('chirp_id')
-        .eq('user_id', currentUserId)
-        .in('chirp_id', chirpIds);
-      userLikes = userReactions || [];
-    }
-
-    // Create lookup maps for efficient access
-    const replyCountMap = new Map<number, number>();
-    const reactionCountMap = new Map<number, number>();
-    const userLikesMap = new Map<number, boolean>();
-
-    // Count replies per chirp
-    replyCounts?.forEach(reply => {
-      const chirpId = reply.reply_to_id;
-      replyCountMap.set(chirpId, (replyCountMap.get(chirpId) || 0) + 1);
-    });
-
-    // Count reactions per chirp
-    reactionCounts?.forEach(reaction => {
-      const chirpId = reaction.chirp_id;
-      reactionCountMap.set(chirpId, (reactionCountMap.get(chirpId) || 0) + 1);
-    });
-
-    // Map user likes
-    userLikes.forEach(reaction => {
-      userLikesMap.set(reaction.chirp_id, true);
-    });
-
-    // Transform data to match MobileChirp format
-    const transformedChirps = chirps.map((chirp: any) => ({
-      id: chirp.id.toString(),
-      content: chirp.content,
-      createdAt: chirp.created_at,
-      replyToId: chirp.reply_to_id,
-      isWeeklySummary: chirp.is_weekly_summary || false,
-      reactionCount: reactionCountMap.get(chirp.id) || 0,
-      replyCount: replyCountMap.get(chirp.id) || 0,
-      reactions: [],
-      replies: [],
-      repostOfId: null,
-      originalChirp: undefined,
-      userHasLiked: userLikesMap.get(chirp.id) || false,
-      author: {
-        id: chirp.users.id,
-        firstName: chirp.users.first_name || 'User',
-        lastName: chirp.users.last_name || '',
-        email: chirp.users.email || 'user@example.com',
-        customHandle: chirp.users.custom_handle || chirp.users.handle,
-        handle: chirp.users.handle,
-        profileImageUrl: chirp.users.profile_image_url,
-        avatarUrl: chirp.users.profile_image_url,
-        bannerImageUrl: null,
-        bio: '',
-        joinedAt: new Date().toISOString(),
-        isChirpPlus: false,
-        showChirpPlusBadge: false
-      }
-    }));
-
-    console.log(`✅ Transformed ${transformedChirps.length} chirps`);
-    console.log('📊 Sample chirp ID:', truncateId(transformedChirps[0]?.id));
-
     // Cache the result
-    chirpCache.set(cacheKey, { data: transformedChirps, timestamp: Date.now(), ttl: CACHE_TTL });
+    chirpCache.set(cacheKey, { data: chirpsWithLikeStatus, timestamp: Date.now(), ttl: CACHE_TTL });
     
-    console.log(`✅ For you chirps fetched in ${Date.now() - startTime}ms`);
-    console.log('📊 Chirps data:', transformedChirps);
-    return transformedChirps;
+    console.log(`✅ For you chirps fetched with algorithm in ${Date.now() - startTime}ms`);
+    console.log('📊 Chirps data summary:', {
+      count: chirpsWithLikeStatus.length,
+      firstChirpId: chirpsWithLikeStatus[0]?.id,
+      hasAuthorData: !!chirpsWithLikeStatus[0]?.author,
+      hasImageData: !!chirpsWithLikeStatus[0]?.author?.profileImageUrl
+    });
+    
+    return chirpsWithLikeStatus;
   } catch (error) {
     console.error('❌ Error fetching for you chirps:', error);
     return [];
@@ -656,11 +655,25 @@ export const authenticateUserByUsername = async (username: string, password: str
       } else if (handleError?.code !== 'PGRST116') {
         console.log('❌ Error searching by handle:', handleError);
         return null;
+      } else {
+        // Try email if handle didn't work (for users logging in with email)
+        const { data: emailUser, error: emailError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', username)
+          .single();
+
+        if (emailUser) {
+          userProfile = emailUser;
+        } else if (emailError?.code !== 'PGRST116') {
+          console.log('❌ Error searching by email:', emailError);
+          return null;
+        }
       }
     }
 
     if (!userProfile) {
-      console.log('❌ No user found with username:', username);
+      console.log('❌ No user found with username/email:', username);
       return null;
     }
 
@@ -830,7 +843,8 @@ export const createChirp = async (content: string, authorId?: string, replyToId?
           last_name,
           custom_handle,
           handle,
-          profile_image_url
+          profile_image_url,
+          banner_image_url
         )
       `)
       .single();
@@ -889,7 +903,8 @@ export const createThread = async (threadParts: string[], authorId: string): Pro
           last_name,
           custom_handle,
           handle,
-          profile_image_url
+          profile_image_url,
+          banner_image_url
         )
       `)
       .single();
@@ -932,7 +947,8 @@ export const createThread = async (threadParts: string[], authorId: string): Pro
           last_name,
           custom_handle,
           handle,
-          profile_image_url
+          profile_image_url,
+          banner_image_url
         )
       `)
         .single();
@@ -1148,7 +1164,8 @@ export const getChirpReplies = async (chirpId: string): Promise<any[]> => {
           last_name,
           custom_handle,
           handle,
-          profile_image_url
+          profile_image_url,
+          banner_image_url
         )
       `)
       .eq('reply_to_id', chirpId)
@@ -1180,7 +1197,7 @@ export const getChirpReplies = async (chirpId: string): Promise<any[]> => {
         handle: reply.users.handle,
         profileImageUrl: reply.users.profile_image_url,
         avatarUrl: reply.users.profile_image_url,
-        bannerImageUrl: null,
+        bannerImageUrl: reply.users.banner_image_url,
         bio: '',
         joinedAt: new Date().toISOString(),
         isChirpPlus: false,
@@ -1223,6 +1240,17 @@ export const createReply = async (content: string, chirpId: string, userId: stri
     }
 
     console.log('✅ Reply created successfully:', reply.id);
+    
+    // Create notification for the chirp author
+    try {
+      const { notificationService } = await import('./services/notificationService');
+      await notificationService.createCommentNotification(userId, chirpId);
+      console.log('✅ Comment notification created');
+    } catch (notificationError) {
+      console.error('❌ Error creating comment notification:', notificationError);
+      // Don't throw here - reply was created successfully
+    }
+    
     return reply;
   } catch (error) {
     console.error('❌ Error in createReply:', error);
@@ -1257,7 +1285,8 @@ export const getChirpById = async (chirpId: string): Promise<any> => {
           last_name,
           custom_handle,
           handle,
-          profile_image_url
+          profile_image_url,
+          banner_image_url
         )
       `)
       .eq('id', chirpId)
@@ -1292,7 +1321,7 @@ export const getChirpById = async (chirpId: string): Promise<any> => {
         handle: (chirp.users as any).handle,
         profileImageUrl: (chirp.users as any).profile_image_url,
         avatarUrl: (chirp.users as any).profile_image_url,
-        bannerImageUrl: null,
+        bannerImageUrl: (chirp.users as any).banner_image_url,
         bio: '',
         joinedAt: new Date().toISOString(),
         isChirpPlus: false,
@@ -1320,7 +1349,7 @@ export const getThreadedChirps = async (threadId: string): Promise<any[]> => {
       .from('chirps')
       .select(`
         id, content, created_at, reply_to_id, is_weekly_summary, thread_id, thread_order, is_thread_starter,
-        users(id, first_name, last_name, custom_handle, handle, profile_image_url)
+        users(id, first_name, last_name, custom_handle, handle, profile_image_url, banner_image_url)
       `)
       .eq('thread_id', threadId)
       .order('thread_order', { ascending: true });
@@ -1334,7 +1363,7 @@ export const getThreadedChirps = async (threadId: string): Promise<any[]> => {
         id: chirp.users.id, firstName: chirp.users.first_name || 'User', lastName: chirp.users.last_name || '',
         email: chirp.users.email, customHandle: chirp.users.custom_handle || chirp.users.handle,
         handle: chirp.users.handle, profileImageUrl: chirp.users.profile_image_url,
-        avatarUrl: chirp.users.profile_image_url, bannerImageUrl: null, bio: '',
+        avatarUrl: chirp.users.profile_image_url, bannerImageUrl: chirp.users.banner_image_url, bio: '',
         joinedAt: new Date().toISOString(), isChirpPlus: false, showChirpPlusBadge: false
       }
     }));
@@ -1402,7 +1431,12 @@ export const getUserById = async (userId: string): Promise<any> => {
       return null;
     }
 
-    console.log('✅ User fetched successfully:', user.id);
+    console.log('✅ User fetched successfully:', {
+      id: user.id,
+      handle: user.handle,
+      customHandle: user.custom_handle,
+      profileImageUrl: user.profile_image_url ? 'has image' : 'no image'
+    });
     return user;
   } catch (error) {
     console.error('❌ Error fetching user:', error);
@@ -1421,20 +1455,138 @@ export const getCurrentUserId = async (): Promise<string | null> => {
   }
 };
 
-// Check follow status between users
-export const checkFollowStatus = async (userId: string): Promise<any> => {
+// Get followers for a user
+export const getFollowers = async (userId: string): Promise<any[]> => {
   try {
-    const currentUserId = await getCurrentUserId();
-    if (!currentUserId) {
+    console.log('🔄 Fetching followers for user:', userId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, cannot fetch followers');
+      return [];
+    }
+
+    const { data: followers, error } = await supabase
+      .from('follows')
+      .select(`
+        follower_id,
+        users!follows_follower_id_fkey (
+          id,
+          handle,
+          custom_handle,
+          profile_image_url,
+          bio,
+          first_name,
+          last_name
+        )
+      `)
+      .eq('following_id', userId);
+
+    if (error) {
+      console.error('❌ Error fetching followers:', error);
+      return [];
+    }
+
+    const transformedFollowers = (followers || []).map((follow: any) => ({
+      id: follow.users.id,
+      handle: follow.users.handle,
+      customHandle: follow.users.custom_handle,
+      profileImageUrl: follow.users.profile_image_url,
+      bio: follow.users.bio,
+      firstName: follow.users.first_name,
+      lastName: follow.users.last_name
+    }));
+
+    console.log(`✅ Fetched ${transformedFollowers.length} followers`);
+    return transformedFollowers;
+  } catch (error) {
+    console.error('❌ Error fetching followers:', error);
+    return [];
+  }
+};
+
+// Get following for a user
+export const getFollowing = async (userId: string): Promise<any[]> => {
+  try {
+    console.log('🔄 Fetching following for user:', userId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, cannot fetch following');
+      return [];
+    }
+
+    const { data: following, error } = await supabase
+      .from('follows')
+      .select(`
+        following_id,
+        users!follows_following_id_fkey (
+          id,
+          handle,
+          custom_handle,
+          profile_image_url,
+          bio,
+          first_name,
+          last_name
+        )
+      `)
+      .eq('follower_id', userId);
+
+    if (error) {
+      console.error('❌ Error fetching following:', error);
+      return [];
+    }
+
+    const transformedFollowing = (following || []).map((follow: any) => ({
+      id: follow.users.id,
+      handle: follow.users.handle,
+      customHandle: follow.users.custom_handle,
+      profileImageUrl: follow.users.profile_image_url,
+      bio: follow.users.bio,
+      firstName: follow.users.first_name,
+      lastName: follow.users.last_name
+    }));
+
+    console.log(`✅ Fetched ${transformedFollowing.length} following`);
+    return transformedFollowing;
+  } catch (error) {
+    console.error('❌ Error fetching following:', error);
+    return [];
+  }
+};
+
+// Check follow status between users
+export const checkFollowStatus = async (userId: string, currentUserId?: string): Promise<any> => {
+  try {
+    // Use provided currentUserId or try to get it from auth
+    let followerId = currentUserId;
+    if (!followerId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      followerId = user?.id;
+    }
+    
+    if (!followerId) {
       return { isFollowing: false, isBlocked: false, notificationsEnabled: false };
     }
+
+    console.log('🔍 Checking follow status:', {
+      followerId,
+      followingId: userId,
+      hasFollowerId: !!followerId
+    });
 
     const { data: follow, error } = await supabase
       .from('follows')
       .select('*')
-      .eq('follower_id', currentUserId)
+      .eq('follower_id', followerId)
       .eq('following_id', userId)
-      .single();
+      .maybeSingle();
+
+    console.log('🔍 Follow query result:', {
+      follow,
+      error,
+      isFollowing: !error && !!follow
+    });
 
     return {
       isFollowing: !error && !!follow,
@@ -1466,6 +1618,19 @@ export const followUser = async (followerId: string, followingId: string): Promi
     
     if (!isDatabaseConnected) {
       console.log('🔄 Database not connected, cannot follow user');
+      return;
+    }
+    
+    // Check if relationship already exists
+    const { data: existingFollow } = await supabase
+      .from('follows')
+      .select('*')
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId)
+      .maybeSingle();
+
+    if (existingFollow) {
+      console.log('✅ Already following this user');
       return;
     }
     

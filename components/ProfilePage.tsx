@@ -3,6 +3,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import {
     Alert,
     ImageBackground,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -46,6 +47,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
   const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
   const [userReplies, setUserReplies] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<ProfileStats>({
     following: 0,
     followers: 0,
@@ -185,6 +187,18 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
     setShowSettings(false);
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Refresh user chirps and replies (fetchUserChirps handles both)
+      await fetchUserChirps();
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   if (showSettings) {
     return <SettingsPage onClose={() => setShowSettings(false)} />;
   }
@@ -198,7 +212,19 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#7c3aed', '#ec4899']}
+          tintColor="#7c3aed"
+          title="Pull to refresh"
+          titleColor="#657786"
+        />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => Alert.alert('Navigate', 'Go back to previous screen')}>

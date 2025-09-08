@@ -79,7 +79,7 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     if (!username.trim()) {
-      Alert.alert('Error', 'Please enter your username');
+      Alert.alert('Error', 'Please enter your username or email');
       return;
     }
 
@@ -90,7 +90,7 @@ export default function SignInScreen() {
 
     setIsLoading(true);
     try {
-      console.log('🔐 Attempting to sign in with username:', username);
+      console.log('🔐 Attempting to sign in with username/email:', username);
       const result = await signIn(username, password);
       
       if (result.success) {
@@ -236,7 +236,7 @@ export default function SignInScreen() {
     <View style={styles.container}>
       {/* Background Gradient */}
       <LinearGradient
-        colors={['#7c3aed', '#ec4899', '#f59e0b']}
+        colors={['#7c3aed', '#ec4899']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.backgroundGradient}
@@ -288,7 +288,7 @@ export default function SignInScreen() {
           
           <TextInput
             style={styles.emailInput}
-            placeholder={isSignUp ? "Enter your email" : "Enter your username"}
+            placeholder={isSignUp ? "Enter your email" : "Enter your username or email"}
             placeholderTextColor="#9ca3af"
             value={isSignUp ? email : username}
             onChangeText={isSignUp ? setEmail : setUsername}

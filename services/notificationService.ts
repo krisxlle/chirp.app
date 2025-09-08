@@ -9,6 +9,23 @@ import type {
 
 class NotificationService {
   private realtimeSubscription: any = null;
+  private currentUserId: string | null = null;
+
+  // Clear all cached data when user changes
+  clearUserData(): void {
+    console.log('🧹 Clearing notification service user data');
+    this.currentUserId = null;
+    this.unsubscribeFromNotifications();
+  }
+
+  // Set current user and clear previous data if different
+  setCurrentUser(userId: string): void {
+    if (this.currentUserId !== userId) {
+      console.log('🔄 User changed in notification service:', this.currentUserId, '->', userId);
+      this.clearUserData();
+      this.currentUserId = userId;
+    }
+  }
 
   async createNotification(action: NotificationAction): Promise<boolean> {
     try {
@@ -78,53 +95,68 @@ class NotificationService {
   async getNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
     try {
       console.log('🔔 Fetching notifications for user:', userId);
+      
+      // Set current user and clear previous data if different
+      this.setCurrentUser(userId);
 
-      // First try the full query with relationships
-      const { data, error } = await supabase
+      // Use simple query first (more reliable)
+      console.log('🔄 Using simple query without relationships...');
+      const { data: simpleData, error: simpleError } = await supabase
         .from('notifications')
-        .select(`
-          *,
-          actor:from_user_id (
-            id,
-            first_name,
-            custom_handle,
-            handle,
-            profile_image_url,
-            avatar_url
-          ),
-          chirp:chirp_id (
-            id,
-            content,
-            author_id
-          )
-        `)
+        .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) {
-        console.error('❌ Error fetching notifications with relationships:', error);
-        
-        // If the relationship query fails, try a simple query without relationships
-        console.log('🔄 Trying simple query without relationships...');
-        const { data: simpleData, error: simpleError } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(limit);
-
-        if (simpleError) {
-          console.error('❌ Error fetching notifications:', simpleError);
-          return [];
-        }
-
-        console.log('✅ Fetched notifications (simple query):', simpleData?.length || 0);
-        return simpleData || [];
+      if (simpleError) {
+        console.error('❌ Error fetching notifications:', simpleError);
+        return [];
       }
 
-      console.log('✅ Fetched notifications:', data?.length || 0);
-      return data || [];
+      console.log('✅ Fetched notifications (simple query):', simpleData?.length || 0);
+      
+      // Transform the data to match the expected format
+      const transformedNotifications = await Promise.all((simpleData || []).map(async (notification) => {
+        // Fetch actor user data if from_user_id exists
+        let actor = null;
+        if (notification.from_user_id) {
+          try {
+            const { data: actorData, error: actorError } = await supabase
+              .from('users')
+              .select('id, first_name, last_name, custom_handle, handle, profile_image_url')
+              .eq('id', notification.from_user_id)
+              .single();
+            
+            if (!actorError && actorData) {
+              actor = {
+                id: actorData.id,
+                firstName: actorData.first_name || 'User',
+                lastName: actorData.last_name || '',
+                customHandle: actorData.custom_handle || actorData.handle,
+                handle: actorData.handle,
+                profileImageUrl: actorData.profile_image_url,
+                avatarUrl: actorData.profile_image_url
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching actor data:', error);
+          }
+        }
+
+        return {
+          id: notification.id.toString(),
+          user_id: notification.user_id,
+          from_user_id: notification.from_user_id,
+          type: notification.type,
+          chirp_id: notification.chirp_id?.toString(),
+          read: notification.read,
+          createdAt: notification.created_at,
+          actor: actor,
+          chirp: null
+        };
+      }));
+
+      return transformedNotifications;
     } catch (error) {
       console.error('❌ Error fetching notifications:', error);
       return [];
@@ -136,8 +168,7 @@ class NotificationService {
       const { error } = await supabase
         .from('notifications')
         .update({ 
-          is_read: true,
-          updated_at: new Date().toISOString()
+          read: true
         })
         .eq('id', notificationId);
 
@@ -159,11 +190,11 @@ class NotificationService {
       const { error } = await supabase
         .from('notifications')
         .update({ 
-          is_read: true,
+          read: true,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId)
-        .eq('is_read', false);
+        .eq('read', false);
 
       if (error) {
         console.error('❌ Error marking all notifications as read:', error);
@@ -182,7 +213,7 @@ class NotificationService {
     try {
       const { data, error } = await supabase
         .from('notifications')
-        .select('type, is_read')
+        .select('type, read')
         .eq('user_id', userId);
 
       if (error) {
@@ -199,7 +230,7 @@ class NotificationService {
 
       const counts: NotificationCounts = {
         total: data.length,
-        unread: data.filter(n => !n.is_read).length,
+        unread: data.filter(n => !n.read).length,
         likes: data.filter(n => n.type === 'like').length,
         comments: data.filter(n => n.type === 'comment').length,
         follows: data.filter(n => n.type === 'follow').length,
@@ -276,10 +307,10 @@ class NotificationService {
         .from('notifications')
         .select('*')
         .eq('user_id', action.targetUserId)
-        .eq('actor_id', action.actorId)
+        .eq('from_user_id', action.actorId)
         .eq('type', action.type)
         .eq('chirp_id', action.chirpId || null)
-        .eq('is_read', false)
+        .eq('read', false)
         .single();
 
       if (error) {
@@ -308,13 +339,13 @@ class NotificationService {
 
     switch (type) {
       case 'like':
-        return settings.likesEnabled;
+        return settings.likes_enabled;
       case 'comment':
-        return settings.commentsEnabled;
+        return settings.comments_enabled;
       case 'follow':
-        return settings.followsEnabled;
+        return settings.follows_enabled;
       case 'mention':
-        return settings.mentionsEnabled;
+        return settings.mentions_enabled;
       default:
         return true;
     }

@@ -1,13 +1,12 @@
 // types/notifications.ts
 export interface Notification {
   id: string;
-  userId: string; // User who receives the notification
-  actorId: string; // User who performed the action
+  user_id: string; // User who receives the notification
+  from_user_id?: string; // User who performed the action
   type: 'like' | 'comment' | 'follow' | 'mention';
-  chirpId?: string; // For likes and comments
-  isRead: boolean;
-  createdAt: string;
-  updatedAt: string;
+  chirp_id?: string; // For likes and comments
+  read: boolean;
+  created_at: string;
   
   // Populated data
   actor?: {
@@ -34,13 +33,13 @@ export interface NotificationAction {
 }
 
 export interface NotificationSettings {
-  userId: string;
-  likesEnabled: boolean;
-  commentsEnabled: boolean;
-  followsEnabled: boolean;
-  mentionsEnabled: boolean;
-  pushEnabled: boolean;
-  emailEnabled: boolean;
+  user_id: string;
+  likes_enabled: boolean;
+  comments_enabled: boolean;
+  follows_enabled: boolean;
+  mentions_enabled: boolean;
+  push_enabled: boolean;
+  email_enabled: boolean;
 }
 
 export interface NotificationCounts {
