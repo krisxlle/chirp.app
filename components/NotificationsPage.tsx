@@ -1,165 +1,61 @@
 // components/NotificationsPage.tsx
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     RefreshControl,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../mobile-db-supabase';
-import { notificationService } from '../services/notificationService';
+import { useNotifications } from '../hooks/useNotifications';
 import type { Notification } from '../types/notifications';
 import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
+import FollowIcon from './icons/FollowIcon';
+import HeartIcon from './icons/HeartIcon';
+import MentionIcon from './icons/MentionIcon';
+import NotificationIcon from './icons/NotificationIcon';
+import ReplyIcon from './icons/ReplyIcon';
 
 export default function NotificationsPage() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    notifications,
+    counts,
+    isLoading,
+    isLoadingMore,
+    hasMoreNotifications,
+    error,
+    loadInitialNotifications,
+    loadMoreNotifications,
+    markAsRead,
+    markAllAsRead,
+    refreshNotifications,
+  } = useNotifications(user?.id);
+  
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
 
-  const loadNotifications = useCallback(async () => {
-    try {
-      console.log('=== NOTIFICATION DEBUG START ===');
-      console.log('User exists:', !!user);
-      console.log('User ID:', user?.id);
-      
-      if (!user?.id) {
-        console.log('No user ID, returning early');
-        return;
-      }
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
 
-      console.log('Starting notification load...');
-      setIsLoading(true);
-      
-      // Test direct query first
-      console.log('Testing direct Supabase query...');
-      const { data: directNotifications, error: directError } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
-      console.log('Direct query completed');
-      console.log('Direct notifications count:', directNotifications?.length || 0);
-      console.log('Direct query error:', directError);
-      
-      if (directNotifications && directNotifications.length > 0) {
-        const sample = directNotifications[0];
-        console.log('Sample notification:', {
-          id: sample.id,
-          type: sample.type,
-          chirp_id: sample.chirp_id,
-          from_user_id: sample.from_user_id,
-          read: sample.read
-        });
-      }
-      
-      // Test notification service
-      console.log('Testing notification service...');
-      const fetchedNotifications = await notificationService.getNotifications(user.id);
-      console.log('Service completed');
-      console.log('Service notifications count:', fetchedNotifications?.length || 0);
-      
-      if (fetchedNotifications && fetchedNotifications.length > 0) {
-        const sample = fetchedNotifications[0];
-        console.log('Sample service notification:', {
-          id: sample.id,
-          type: sample.type,
-          chirp_id: sample.chirp_id,
-          from_user_id: sample.from_user_id,
-          read: sample.read,
-          actor: sample.actor ? {
-            id: sample.actor.id,
-            customHandle: sample.actor.customHandle,
-            handle: sample.actor.handle
-          } : null
-        });
-      }
-      
-      setNotifications(fetchedNotifications);
-      
-      // Count unread notifications
-      const unread = fetchedNotifications.filter(n => !n.read).length;
-      setUnreadCount(unread);
-      
-      console.log('Final state:');
-      console.log('- Notifications set:', fetchedNotifications?.length || 0);
-      console.log('- Unread count:', unread);
-      console.log('=== NOTIFICATION DEBUG END ===');
-      
-    } catch (error) {
-      console.error('Error in loadNotifications:', error);
-      Alert.alert('Error', 'Failed to load notifications');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
-
-  const refreshNotifications = useCallback(async () => {
     try {
       setIsRefreshing(true);
-      await loadNotifications();
+      await refreshNotifications();
+    } catch (error) {
+      console.error('❌ Error refreshing notifications:', error);
     } finally {
       setIsRefreshing(false);
     }
-  }, [loadNotifications]);
+  }, [isRefreshing, refreshNotifications]);
 
-  const markAsRead = useCallback(async (notification: Notification) => {
-    try {
-      if (notification.read) {
-        console.log('📖 Notification already read, skipping');
-        return;
-      }
+  
 
-      console.log('📖 Marking notification as read:', notification.id);
-      await notificationService.markAsRead(notification.id);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notification.id 
-            ? { ...n, read: true }
-            : n
-        )
-      );
-      
-      // Update unread count
-      setUnreadCount(prev => {
-        const newCount = Math.max(0, prev - 1);
-        console.log('📊 Updated unread count:', prev, '->', newCount);
-        return newCount;
-      });
-      
-    } catch (error) {
-      console.error('❌ Error marking notification as read:', error);
-    }
-  }, []);
 
-  const markAllAsRead = useCallback(async () => {
-    try {
-      if (!user?.id) return;
 
-      await notificationService.markAllAsRead(user.id);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-      
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('❌ Error marking all notifications as read:', error);
-      Alert.alert('Error', 'Failed to mark all notifications as read');
-    }
-  }, [user?.id]);
 
   const handleNotificationPress = useCallback(async (notification: Notification) => {
     try {
@@ -177,8 +73,10 @@ export default function NotificationsPage() {
         } : null
       });
       
-      // Mark as read
-      await markAsRead(notification);
+      // Mark as read (only if not already read)
+      if (!notification.read) {
+        await markAsRead(notification.id);
+      }
 
       // Navigate based on notification type
       switch (notification.type) {
@@ -240,18 +138,20 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  const getNotificationIcon = useCallback((type: string): string => {
+  const getNotificationIcon = useCallback((type: string) => {
+    const iconProps = { size: 20, color: '#657786' };
+    
     switch (type) {
       case 'like':
-        return '❤️';
+        return <HeartIcon {...iconProps} filled={true} color="#e91e63" />;
       case 'comment':
-        return '💬';
+        return <ReplyIcon {...iconProps} />;
       case 'follow':
-        return '👤';
+        return <FollowIcon {...iconProps} />;
       case 'mention':
-        return '@';
+        return <MentionIcon {...iconProps} />;
       default:
-        return '🔔';
+        return <NotificationIcon {...iconProps} />;
     }
   }, []);
 
@@ -287,52 +187,52 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  const renderNotification = useCallback(({ item: notification }: { item: Notification }) => (
-    <TouchableOpacity
-      style={[
-        styles.notificationItem,
-        !notification.read && styles.unreadNotification,
-      ]}
-      onPress={() => handleNotificationPress(notification)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.notificationContent}>
-        <View style={styles.notificationHeader}>
-          <UserAvatar
-            user={notification.actor}
-            size={40}
-            style={styles.avatar}
-          />
-          <View style={styles.notificationText}>
-            <Text style={styles.notificationMessage}>
-              {getNotificationText(notification)}
-            </Text>
-            <Text style={styles.notificationTime}>
-              {formatTimeAgo(notification.createdAt)}
-            </Text>
-          </View>
-          <View style={styles.notificationIcon}>
-            <Text style={styles.iconText}>
+  const renderNotification = useCallback(({ item: notification }: { item: Notification }) => {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.notificationItem,
+          !notification.read && styles.unreadNotification,
+        ]}
+        onPress={() => handleNotificationPress(notification)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.notificationContent}>
+          <View style={styles.notificationHeader}>
+            <UserAvatar
+              user={notification.actor}
+              size="md"
+              style={styles.avatar}
+            />
+            <View style={styles.notificationText}>
+              <Text style={styles.notificationMessage}>
+                {getNotificationText(notification)}
+              </Text>
+              <Text style={styles.notificationTime}>
+                {formatTimeAgo(notification.created_at)}
+              </Text>
+            </View>
+            <View style={styles.notificationIcon}>
               {getNotificationIcon(notification.type)}
-            </Text>
-            {!notification.read && <View style={styles.unreadDot} />}
+              {!notification.read && <View style={styles.unreadDot} />}
+            </View>
           </View>
+          
+          {notification.chirp && (
+            <View style={styles.chirpPreview}>
+              <Text style={styles.chirpText} numberOfLines={2}>
+                {notification.chirp.content}
+              </Text>
+            </View>
+          )}
         </View>
-        
-        {notification.chirp && (
-          <View style={styles.chirpPreview}>
-            <Text style={styles.chirpText} numberOfLines={2}>
-              {notification.chirp.content}
-            </Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  ), [handleNotificationPress, getNotificationText, getNotificationIcon, formatTimeAgo]);
+      </TouchableOpacity>
+    );
+  }, [handleNotificationPress, getNotificationText, getNotificationIcon, formatTimeAgo]);
 
   const renderEmptyState = useCallback(() => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyIcon}>🔔</Text>
+      <NotificationIcon size={64} color="#657786" />
       <Text style={styles.emptyTitle}>No notifications yet</Text>
       <Text style={styles.emptySubtext}>
         You'll see notifications when someone likes, comments, or follows you
@@ -340,41 +240,7 @@ export default function NotificationsPage() {
     </View>
   ), []);
 
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
 
-  useEffect(() => {
-    if (!user?.id) {
-      // Clear notifications when no user
-      setNotifications([]);
-      setUnreadCount(0);
-      notificationService.clearUserData();
-      return;
-    }
-
-    console.log('🔄 User changed, reloading notifications for:', user.id);
-    
-    // Clear previous notifications immediately when user changes
-    setNotifications([]);
-    setUnreadCount(0);
-    
-    // Clear notification service data for previous user
-    notificationService.clearUserData();
-    
-    // Load notifications for new user
-    loadNotifications();
-
-    // Subscribe to real-time notifications
-    notificationService.subscribeToNotifications(user.id, (newNotification) => {
-      setNotifications(prev => [newNotification, ...prev]);
-      setUnreadCount(prev => prev + 1);
-    });
-
-    return () => {
-      notificationService.unsubscribeFromNotifications();
-    };
-  }, [user?.id, loadNotifications]);
 
   if (isLoading) {
     return (
@@ -391,7 +257,7 @@ export default function NotificationsPage() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Notifications</Text>
-        {unreadCount > 0 && (
+        {counts.unread > 0 && (
           <TouchableOpacity onPress={markAllAsRead} style={styles.markAllButton}>
             <Text style={styles.markAllText}>Mark all read</Text>
           </TouchableOpacity>
@@ -405,7 +271,7 @@ export default function NotificationsPage() {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={refreshNotifications}
+            onRefresh={handleRefresh}
             colors={['#7c3aed', '#ec4899']}
             tintColor="#7c3aed"
           />
@@ -413,6 +279,19 @@ export default function NotificationsPage() {
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
+        onEndReached={loadMoreNotifications}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={() => {
+          if (isLoadingMore) {
+            return (
+              <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator size="small" color="#7c3aed" />
+                <Text style={styles.loadingMoreText}>Loading more notifications...</Text>
+              </View>
+            );
+          }
+          return null;
+        }}
       />
     </SafeAreaView>
   );
@@ -498,9 +377,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  iconText: {
-    fontSize: 20,
-  },
   unreadDot: {
     width: 8,
     height: 8,
@@ -528,10 +404,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -544,5 +416,18 @@ const styles = StyleSheet.create({
     color: '#657786',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  // New styles for infinite scroll
+  loadingMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 8,
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: '#657786',
+    fontStyle: 'italic',
   },
 });

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { DEFAULT_BANNER_URL } from '../constants/DefaultBanner';
+import { getFollowers, getFollowing, getUserById, getUserChirps } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
-import { getUserById, getFollowers, getFollowing, getUserChirps } from '../mobile-db';
 import UserAvatar from './UserAvatar';
 
 interface UserProfileViewProps {
@@ -135,9 +136,10 @@ export default function UserProfileView({ userId, onClose }: UserProfileViewProp
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Banner */}
-        {userData.banner_image_url && (
-          <Image source={{ uri: userData.banner_image_url }} style={styles.bannerImage} />
-        )}
+        <Image 
+          source={{ uri: userData.banner_image_url || DEFAULT_BANNER_URL }} 
+          style={styles.bannerImage} 
+        />
 
         {/* Profile Info */}
         <View style={styles.profileSection}>
@@ -281,6 +283,9 @@ export default function UserProfileView({ userId, onClose }: UserProfileViewProp
   );
 }
 
+const { width: screenWidth } = Dimensions.get('window');
+const bannerHeight = Math.round(screenWidth / 3); // 3:1 aspect ratio
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -328,7 +333,7 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     width: '100%',
-    height: 120,
+    height: bannerHeight, // Dynamic 3:1 aspect ratio
     resizeMode: 'cover',
   },
   profileSection: {

@@ -1973,6 +1973,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register bot routes
+  const { registerBotRoutes } = await import('./botRoutes');
+  registerBotRoutes(app);
+
   const httpServer = createServer(app);
   return httpServer;
 }

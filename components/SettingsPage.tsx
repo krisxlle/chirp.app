@@ -6,6 +6,8 @@ import {
     ActivityIndicator,
     Alert,
     Image,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -15,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { updateUserProfile, uploadBannerImage, uploadProfileImage } from '../mobile-db-supabase';
+import { updateUserProfile, uploadBannerImage, uploadProfileImage } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import GearIcon from './icons/GearIcon';
 import UserAvatar from './UserAvatar';
@@ -219,7 +221,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
   const [firstName, setFirstName] = useState(user?.firstName || '');
   // lastName functionality removed per user request
   const [bio, setBio] = useState(user?.bio || '');
-  const [linkInBio, setLinkInBio] = useState('');
+  const [linkInBio, setLinkInBio] = useState(user?.linkInBio || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -647,7 +649,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         </View>
         <View style={styles.cardContent}>
           <Text style={styles.currentInfo}>
-            Current link: No link set
+            Current link: {user?.linkInBio || 'No link set'}
           </Text>
           
                      <View style={styles.inputSection}>
@@ -811,11 +813,22 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         </ScrollView>
       </View>
 
-      {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === 'profile' && renderProfileTab()}
-        {activeTab === 'account' && renderAccountTab()}
-      </ScrollView>
+      {/* Content with Keyboard Avoidance */}
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContentContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          {activeTab === 'profile' && renderProfileTab()}
+          {activeTab === 'account' && renderAccountTab()}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -915,6 +928,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContentContainer: {
+    paddingBottom: 100, // Extra padding at bottom for keyboard clearance
   },
   tabContent: {
     padding: 16,

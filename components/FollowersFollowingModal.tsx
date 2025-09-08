@@ -9,7 +9,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { getFollowers, getFollowing } from '../mobile-db-supabase';
+import { getFollowers, getFollowing } from '../lib/database/mobile-db-supabase';
 import UserAvatar from './UserAvatar';
 
 interface User {

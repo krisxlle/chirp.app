@@ -14,9 +14,15 @@ export const useNotifications = (userId?: string) => {
     mentions: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreNotifications, setHasMoreNotifications] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination constants
+  const INITIAL_LIMIT = 15;
+  const LOAD_MORE_LIMIT = 15;
 
-  const loadNotifications = useCallback(async () => {
+  const loadInitialNotifications = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -24,19 +30,45 @@ export const useNotifications = (userId?: string) => {
       setError(null);
 
       const [fetchedNotifications, fetchedCounts] = await Promise.all([
-        notificationService.getNotifications(userId),
+        notificationService.getNotifications(userId, INITIAL_LIMIT, 0),
         notificationService.getNotificationCounts(userId),
       ]);
 
       setNotifications(fetchedNotifications);
       setCounts(fetchedCounts);
+      setHasMoreNotifications(fetchedNotifications.length === INITIAL_LIMIT);
     } catch (err) {
-      console.error('❌ Error loading notifications:', err);
+      console.error('❌ Error loading initial notifications:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }
   }, [userId]);
+
+  const loadMoreNotifications = useCallback(async () => {
+    if (!userId || isLoadingMore || !hasMoreNotifications) return;
+
+    try {
+      setIsLoadingMore(true);
+      
+      const moreNotifications = await notificationService.getNotifications(
+        userId, 
+        LOAD_MORE_LIMIT, 
+        notifications.length
+      );
+
+      if (moreNotifications.length > 0) {
+        setNotifications(prev => [...prev, ...moreNotifications]);
+        setHasMoreNotifications(moreNotifications.length === LOAD_MORE_LIMIT);
+      } else {
+        setHasMoreNotifications(false);
+      }
+    } catch (err) {
+      console.error('❌ Error loading more notifications:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [userId, notifications.length, isLoadingMore, hasMoreNotifications]);
 
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
@@ -89,12 +121,15 @@ export const useNotifications = (userId?: string) => {
   }, []);
 
   const refreshNotifications = useCallback(async () => {
-    await loadNotifications();
-  }, [loadNotifications]);
+    if (userId) {
+      notificationService.clearUserCaches(userId);
+      await loadInitialNotifications();
+    }
+  }, [userId, loadInitialNotifications]);
 
   useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    loadInitialNotifications();
+  }, [loadInitialNotifications]);
 
   useEffect(() => {
     if (!userId) return;
@@ -111,8 +146,11 @@ export const useNotifications = (userId?: string) => {
     notifications,
     counts,
     isLoading,
+    isLoadingMore,
+    hasMoreNotifications,
     error,
-    loadNotifications,
+    loadInitialNotifications,
+    loadMoreNotifications,
     markAsRead,
     markAllAsRead,
     refreshNotifications,

@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { getTrendingHashtags, searchChirps, searchUsers } from '../mobile-db';
+import { getTrendingHashtags, searchChirps, searchUsers } from '../lib/database/mobile-db-supabase';
 import ChirpCard from './ChirpCard';
 import UserAvatar from './UserAvatar';
 

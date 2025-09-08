@@ -10,7 +10,7 @@ import {
     View
 } from 'react-native';
 import UserAvatar from '../components/UserAvatar';
-import { getUserById } from '../mobile-db';
+import { getUserById } from '../lib/database/mobile-db-supabase';
 
 export default function ViewProfile() {
   console.log('🎯🎯🎯 VIEW PROFILE COMPONENT SUCCESSFULLY LOADED! 🎯🎯🎯');
@@ -130,7 +130,7 @@ export default function ViewProfile() {
                       key={index} 
                       onPress={async () => {
                         try {
-                          const { getUserByHandle } = await import('../mobile-db');
+                          const { getUserByHandle } = await import('../lib/database/mobile-db-supabase');
                           const mentionedUser = await getUserByHandle(part);
                           if (mentionedUser) {
                             const { router } = await import('expo-router');

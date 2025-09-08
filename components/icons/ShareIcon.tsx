@@ -11,16 +11,18 @@ export default function ShareIcon({ size = 20, color = '#657786' }: ShareIconPro
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-        {/* Square background */}
+        {/* Square outline with half-height left and right edges */}
         <Path
-          d="M3 3h18v18H3z"
+          d="M4 12v8 M20 12v8 M4 20h16"
           stroke={color}
           strokeWidth={2}
           fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
-        {/* Upwards arrow */}
+        {/* Upwards arrow extending much further up */}
         <Path
-          d="M12 7v10M7 12l5-5 5 5"
+          d="M12 0v14M7 5l5-5 5 5"
           stroke={color}
           strokeWidth={2}
           strokeLinecap="round"

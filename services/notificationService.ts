@@ -1,5 +1,5 @@
 // services/notificationService.ts
-import { supabase } from '../mobile-db-supabase';
+import { supabase } from '../lib/database/mobile-db-supabase';
 import type {
     Notification,
     NotificationAction,
@@ -10,11 +10,37 @@ import type {
 class NotificationService {
   private realtimeSubscription: any = null;
   private currentUserId: string | null = null;
+  
+  // Performance optimization: Cache for notifications
+  private notificationsCache = new Map<string, { data: Notification[], timestamp: number, ttl: number }>();
+  private countsCache = new Map<string, { data: NotificationCounts, timestamp: number, ttl: number }>();
+  private readonly NOTIFICATIONS_CACHE_TTL = 30000; // 30 seconds
+  private readonly COUNTS_CACHE_TTL = 60000; // 60 seconds
+
+  // Cache invalidation methods
+  clearNotificationsCache(userId: string): void {
+    const keysToDelete = Array.from(this.notificationsCache.keys()).filter(key => key.startsWith(`notifications_${userId}_`));
+    keysToDelete.forEach(key => this.notificationsCache.delete(key));
+    console.log('🗑️ Cleared notifications cache for user:', userId);
+  }
+
+  clearCountsCache(userId: string): void {
+    this.countsCache.delete(`counts_${userId}`);
+    console.log('🗑️ Cleared counts cache for user:', userId);
+  }
+
+  // Clear all caches for a user
+  clearUserCaches(userId: string): void {
+    this.clearNotificationsCache(userId);
+    this.clearCountsCache(userId);
+  }
 
   // Clear all cached data when user changes
   clearUserData(): void {
     console.log('🧹 Clearing notification service user data');
     this.currentUserId = null;
+    this.notificationsCache.clear();
+    this.countsCache.clear();
     this.unsubscribeFromNotifications();
   }
 
@@ -92,69 +118,35 @@ class NotificationService {
     }
   }
 
-  async getNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
+  async getNotifications(userId: string, limit: number = 20, offset: number = 0): Promise<Notification[]> {
     try {
-      console.log('🔔 Fetching notifications for user:', userId);
+      console.log('🔔 Fetching notifications for user:', userId, 'limit:', limit, 'offset:', offset);
       
       // Set current user and clear previous data if different
       this.setCurrentUser(userId);
 
-      // Use simple query first (more reliable)
-      console.log('🔄 Using simple query without relationships...');
-      const { data: simpleData, error: simpleError } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (simpleError) {
-        console.error('❌ Error fetching notifications:', simpleError);
-        return [];
+      // Check cache first
+      const cacheKey = `notifications_${userId}_${limit}_${offset}`;
+      const cached = this.notificationsCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
+        console.log('✅ Returning cached notifications');
+        return cached.data;
       }
 
-      console.log('✅ Fetched notifications (simple query):', simpleData?.length || 0);
-      
-      // Transform the data to match the expected format
-      const transformedNotifications = await Promise.all((simpleData || []).map(async (notification) => {
-        // Fetch actor user data if from_user_id exists
-        let actor = null;
-        if (notification.from_user_id) {
-          try {
-            const { data: actorData, error: actorError } = await supabase
-              .from('users')
-              .select('id, first_name, last_name, custom_handle, handle, profile_image_url')
-              .eq('id', notification.from_user_id)
-              .single();
-            
-            if (!actorError && actorData) {
-              actor = {
-                id: actorData.id,
-                firstName: actorData.first_name || 'User',
-                lastName: actorData.last_name || '',
-                customHandle: actorData.custom_handle || actorData.handle,
-                handle: actorData.handle,
-                profileImageUrl: actorData.profile_image_url,
-                avatarUrl: actorData.profile_image_url
-              };
-            }
-          } catch (error) {
-            console.error('Error fetching actor data:', error);
-          }
-        }
+      // Add timeout wrapper to prevent hanging queries
+      const queryPromise = this.fetchNotificationsWithTimeout(userId, limit, offset);
+      const timeoutPromise = new Promise<Notification[]>((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 10000) // 10 second timeout
+      );
 
-        return {
-          id: notification.id.toString(),
-          user_id: notification.user_id,
-          from_user_id: notification.from_user_id,
-          type: notification.type,
-          chirp_id: notification.chirp_id?.toString(),
-          read: notification.read,
-          createdAt: notification.created_at,
-          actor: actor,
-          chirp: null
-        };
-      }));
+      const transformedNotifications = await Promise.race([queryPromise, timeoutPromise]);
+
+      // Cache the result
+      this.notificationsCache.set(cacheKey, { 
+        data: transformedNotifications, 
+        timestamp: Date.now(), 
+        ttl: this.NOTIFICATIONS_CACHE_TTL 
+      });
 
       return transformedNotifications;
     } catch (error) {
@@ -163,8 +155,95 @@ class NotificationService {
     }
   }
 
+  private async fetchNotificationsWithTimeout(userId: string, limit: number, offset: number): Promise<Notification[]> {
+    // Use simplified query without complex joins to avoid timeout
+    console.log('🔄 Using simplified query to avoid timeout...');
+    const { data: notificationsData, error } = await supabase
+      .from('notifications')
+      .select(`
+        id,
+        user_id,
+        from_user_id,
+        type,
+        chirp_id,
+        read,
+        created_at
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+      .limit(limit); // Add explicit limit as backup
+
+    if (error) {
+      console.error('❌ Error fetching notifications:', error);
+      return [];
+    }
+
+    console.log('✅ Fetched notifications (simplified query):', notificationsData?.length || 0);
+    
+    // Get user IDs for batch fetching
+    const fromUserIds = [...new Set((notificationsData || [])
+      .map(n => n.from_user_id)
+      .filter(id => id))];
+    
+    // Batch fetch user data separately to avoid complex joins
+    let usersMap = new Map();
+    if (fromUserIds.length > 0) {
+      console.log('🔄 Batch fetching user data for:', fromUserIds.length, 'users');
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          custom_handle,
+          handle,
+          profile_image_url
+        `)
+        .in('id', fromUserIds);
+        
+      if (!usersError && usersData) {
+        usersMap = new Map(usersData.map(user => [user.id, user]));
+      }
+    }
+    
+    // Transform the data efficiently
+    const transformedNotifications: Notification[] = (notificationsData || []).map((notification: any) => {
+      const userData = usersMap.get(notification.from_user_id);
+      const actor = userData ? {
+        id: userData.id,
+        firstName: userData.first_name || 'User',
+        lastName: userData.last_name || '',
+        customHandle: userData.custom_handle || userData.handle,
+        handle: userData.handle,
+        profileImageUrl: userData.profile_image_url,
+        avatarUrl: userData.profile_image_url
+      } : null;
+
+      return {
+        id: notification.id.toString(),
+        user_id: notification.user_id,
+        from_user_id: notification.from_user_id,
+        type: notification.type,
+        chirp_id: notification.chirp_id?.toString(),
+        read: notification.read,
+        created_at: notification.created_at,
+        actor: actor,
+        chirp: null
+      };
+    });
+
+    return transformedNotifications;
+  }
+
   async markAsRead(notificationId: string): Promise<boolean> {
     try {
+      // Validate notificationId is a string
+      if (typeof notificationId !== 'string') {
+        console.error('❌ Invalid notificationId type:', typeof notificationId, notificationId);
+        return false;
+      }
+
       const { error } = await supabase
         .from('notifications')
         .update({ 
@@ -174,10 +253,23 @@ class NotificationService {
 
       if (error) {
         console.error('❌ Error marking notification as read:', error);
+        
+        // Handle specific error cases
+        if (error.code === '22P02') {
+          console.log('🔄 Invalid notification ID format, skipping');
+          return false;
+        }
+        
         return false;
       }
 
       console.log('✅ Notification marked as read:', notificationId);
+      
+      // Invalidate cache for current user
+      if (this.currentUserId) {
+        this.clearUserCaches(this.currentUserId);
+      }
+      
       return true;
     } catch (error) {
       console.error('❌ Error marking notification as read:', error);
@@ -190,8 +282,7 @@ class NotificationService {
       const { error } = await supabase
         .from('notifications')
         .update({ 
-          read: true,
-          updated_at: new Date().toISOString()
+          read: true
         })
         .eq('user_id', userId)
         .eq('read', false);
@@ -202,6 +293,10 @@ class NotificationService {
       }
 
       console.log('✅ All notifications marked as read for user:', userId);
+      
+      // Invalidate cache for user
+      this.clearUserCaches(userId);
+      
       return true;
     } catch (error) {
       console.error('❌ Error marking all notifications as read:', error);
@@ -211,6 +306,14 @@ class NotificationService {
 
   async getNotificationCounts(userId: string): Promise<NotificationCounts> {
     try {
+      // Check cache first
+      const cacheKey = `counts_${userId}`;
+      const cached = this.countsCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
+        console.log('✅ Returning cached notification counts');
+        return cached.data;
+      }
+
       const { data, error } = await supabase
         .from('notifications')
         .select('type, read')
@@ -237,6 +340,13 @@ class NotificationService {
         mentions: data.filter(n => n.type === 'mention').length,
       };
 
+      // Cache the result
+      this.countsCache.set(cacheKey, { 
+        data: counts, 
+        timestamp: Date.now(), 
+        ttl: this.COUNTS_CACHE_TTL 
+      });
+
       return counts;
     } catch (error) {
       console.error('❌ Error fetching notification counts:', error);
@@ -262,13 +372,13 @@ class NotificationService {
       if (error) {
         console.log('⚠️ No notification settings found, using defaults');
         return {
-          userId,
-          likesEnabled: true,
-          commentsEnabled: true,
-          followsEnabled: true,
-          mentionsEnabled: true,
-          pushEnabled: true,
-          emailEnabled: false,
+          user_id: userId,
+          likes_enabled: true,
+          comments_enabled: true,
+          follows_enabled: true,
+          mentions_enabled: true,
+          push_enabled: true,
+          email_enabled: false,
         };
       }
 
@@ -284,8 +394,7 @@ class NotificationService {
       const { error } = await supabase
         .from('notification_settings')
         .upsert({
-          ...settings,
-          updated_at: new Date().toISOString(),
+          ...settings
         });
 
       if (error) {
@@ -325,9 +434,11 @@ class NotificationService {
 
   private async updateNotificationTimestamp(notificationId: string): Promise<void> {
     try {
+      // Note: updated_at column doesn't exist in notifications table
+      // Just update the created_at timestamp instead
       await supabase
         .from('notifications')
-        .update({ updated_at: new Date().toISOString() })
+        .update({ created_at: new Date().toISOString() })
         .eq('id', notificationId);
     } catch (error) {
       console.error('❌ Error updating notification timestamp:', error);

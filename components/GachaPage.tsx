@@ -151,7 +151,7 @@ export default function GachaPage() {
         // This will be re-enabled once the crystal_balance column is added to Supabase
         console.log('💎 Using default crystal balance until column is added to Supabase');
         /*
-        const { getUserCrystalBalance } = await import('../mobile-db');
+        const { getUserCrystalBalance } = await import('../lib/database/mobile-db-supabase');
         const crystalBalance = await getUserCrystalBalance(user.id);
         // Update the user object in AuthContext
         if (user.crystalBalance !== crystalBalance) {
@@ -238,7 +238,7 @@ export default function GachaPage() {
              console.log('💎 Crystal balance updated in AuthContext');
              
              /*
-             const { deductCrystalBalance } = await import('../mobile-db');
+             const { deductCrystalBalance } = await import('../lib/database/mobile-db-supabase');
              const success = await deductCrystalBalance(user.id, cost);
              
              if (success) {

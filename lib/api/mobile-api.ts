@@ -1,5 +1,5 @@
 // Mobile API client using Supabase directly
-import { createChirp as createChirpSupabase, getForYouChirps as getForYouChirpsSupabase, getUserChirps as getUserChirpsSupabase, getUserReplies as getUserRepliesSupabase, getUserStats as getUserStatsSupabase } from './mobile-db-supabase';
+import { createChirp as createChirpSupabase, getForYouChirps as getForYouChirpsSupabase, getUserChirps as getUserChirpsSupabase, getUserReplies as getUserRepliesSupabase, getUserStats as getUserStatsSupabase } from '../database/mobile-db-supabase';
 
 // API base URL - using Supabase directly
 const API_BASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
@@ -36,9 +36,9 @@ export const createChirp = async (content: string, authorId: string, replyToId?:
   return await createChirpSupabase(content, authorId, replyToId);
 };
 
-export const getForYouChirps = async () => {
-  console.log('Fetching for you chirps via Supabase');
-  return await getForYouChirpsSupabase();
+export const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
+  console.log('Fetching for you chirps via Supabase with pagination');
+  return await getForYouChirpsSupabase(limit, offset);
 };
 
 export const getUserChirps = async (userId: string) => {

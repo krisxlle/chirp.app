@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../mobile-db-supabase';
+import { supabase } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 
 export default function ChirpInteractionsDebug() {

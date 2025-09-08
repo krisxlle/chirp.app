@@ -1,7 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Clipboard, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ChirpLikesModal from './ChirpLikesModal';
 import HeartIcon from './icons/HeartIcon';
 import ShareIcon from './icons/ShareIcon';
 import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
@@ -10,7 +11,7 @@ import UserAvatar from './UserAvatar';
 import { useAuth } from './AuthContext';
 
 // Import real Supabase functions
-import { deleteChirp } from '../mobile-db-supabase';
+import { deleteChirp } from '../lib/database/mobile-db-supabase';
 import { notificationService } from '../services/notificationService';
 
 // Temporary inline createReply function to bypass import issues
@@ -19,7 +20,7 @@ const createReply = async (content: string, chirpId: string, userId: string): Pr
     console.log('📝 Creating reply to chirp:', chirpId, 'by user:', userId);
     
     // Import supabase client directly
-    const { supabase } = await import('../mobile-db-supabase');
+    const { supabase } = await import('../lib/database/mobile-db-supabase');
     
     const { data: reply, error } = await supabase
       .from('chirps')
@@ -112,6 +113,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   const [likes, setLikes] = useState(chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [userHasLiked, setUserHasLiked] = useState(chirp.userHasLiked || false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
   
   // Verify like status on component mount to ensure accuracy
   useEffect(() => {
@@ -119,7 +121,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       if (!user?.id || !chirp.id) return;
       
       try {
-        const { supabase } = await import('../mobile-db-supabase');
+        const { supabase } = await import('../lib/database/mobile-db-supabase');
         const { data: existingLike } = await supabase
           .from('reactions')
           .select('id')
@@ -166,6 +168,28 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     setReplies(chirp.replyCount || 0);
     setUserHasLiked(chirp.userHasLiked || false);
   }, [chirp.reactionCount, chirp.replyCount, chirp.userHasLiked]);
+
+  // Check follow status when component mounts or user changes
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!user?.id || !chirp.author.id || user.id === chirp.author.id) {
+        return; // Don't check for own chirps
+      }
+
+      try {
+        const { checkFollowStatus: checkFollow } = await import('../lib/database/mobile-db-supabase');
+        const followData = await checkFollow(chirp.author.id, user.id);
+        setIsFollowing(followData.isFollowing || false);
+        setIsBlocked(followData.isBlocked || false);
+        setNotificationsEnabled(followData.notificationsEnabled || false);
+      } catch (error) {
+        console.error('Error checking follow status:', error);
+        // Keep default values on error
+      }
+    };
+
+    checkFollowStatus();
+  }, [user?.id, chirp.author.id]);
   
   // Calculate display name for the chirp author (remove lastName functionality)
   const displayName = chirp.author.firstName 
@@ -226,7 +250,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       console.log('User has liked:', userHasLiked);
 
       // Import supabase client directly
-      const { supabase } = await import('../mobile-db-supabase');
+      const { supabase } = await import('../lib/database/mobile-db-supabase');
       
       // Ensure proper string conversion for database constraints
       const chirpIdStr = String(chirp.id);
@@ -326,6 +350,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     }
   };
 
+  const handleLikesPress = () => {
+    if (likes > 0) {
+      setShowLikesModal(true);
+    }
+  };
+
   const handleMoreOptions = async () => {
     console.log('🔥 Triple dot menu pressed!');
     console.log('User ID:', user?.id, 'Type:', typeof user?.id);
@@ -385,12 +415,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     
     setLoadingUserActions(true);
     try {
-      // TEMPORARILY DISABLED: Database calls
-      console.log('ChirpCard: Follow functionality disabled (database calls disabled)');
-      Alert.alert('Feature Disabled', 'Follow functionality is temporarily disabled while database calls are disabled.');
-      
-      /*
-      const { followUser, unfollowUser } = await import('../mobile-db');
+      const { followUser, unfollowUser } = await import('../lib/database/mobile-db-supabase');
       
       if (isFollowing) {
         await unfollowUser(user.id, chirp.author.id);
@@ -401,7 +426,6 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         setIsFollowing(true);
         Alert.alert('Followed', `You are now following ${displayName}`);
       }
-      */
     } catch (error) {
       console.error('Error toggling follow:', error);
       Alert.alert('Error', 'Failed to update follow status. Please try again.');
@@ -413,19 +437,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   const handleCopyUserProfile = async () => {
     const profileUrl = `https://chirp.app/profile/${chirp.author.id}`;
     try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(profileUrl);
-      } else {
-        // Fallback for environments without clipboard API
-        const textArea = document.createElement('textarea');
-        textArea.value = profileUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
+      await Clipboard.setString(profileUrl);
+      Alert.alert('Link Copied!', 'The profile link has been copied to your clipboard.');
     } catch (error) {
       console.error('Error copying profile link:', error);
+      Alert.alert('Error', 'Failed to copy profile link. Please try again.');
     }
   };
 
@@ -447,7 +463,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             onPress: async () => {
               setLoadingUserActions(true);
               try {
-                const { unblockUser } = await import('../mobile-db');
+                const { unblockUser } = await import('../lib/database/mobile-db-supabase');
                 await unblockUser(user.id, chirp.author.id);
                 setIsBlocked(false);
                 Alert.alert('Unblocked', `You have unblocked ${displayName}`);
@@ -474,7 +490,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             onPress: async () => {
               setLoadingUserActions(true);
               try {
-                const { blockUser } = await import('../mobile-db');
+                const { blockUser } = await import('../lib/database/mobile-db-supabase');
                 await blockUser(user.id, chirp.author.id);
                 setIsBlocked(true);
                 setIsFollowing(false); // Remove follow relationship when blocking
@@ -500,7 +516,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     
     setLoadingUserActions(true);
     try {
-      const { toggleUserNotifications } = await import('../mobile-db');
+      const { toggleUserNotifications } = await import('../lib/database/mobile-db-supabase');
       const newState = await toggleUserNotifications(user.id, chirp.author.id);
       setNotificationsEnabled(newState);
       
@@ -784,9 +800,17 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             color={userHasLiked ? "#7c3aed" : "#657786"} 
             filled={userHasLiked}
           />
-          <Text style={[styles.actionText, userHasLiked && { color: "#7c3aed" }]}>
-            {likes}
-          </Text>
+          <TouchableOpacity 
+            onPress={(e) => {
+              e.stopPropagation();
+              handleLikesPress();
+            }}
+            style={styles.likeCountButton}
+          >
+            <Text style={[styles.actionText, userHasLiked && { color: "#7c3aed" }]}>
+              {likes}
+            </Text>
+          </TouchableOpacity>
         </TouchableOpacity>
 
         <View style={styles.shareButtonContainer}>
@@ -944,6 +968,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <ChirpLikesModal
+        visible={showLikesModal}
+        chirpId={chirp.id}
+        onClose={() => setShowLikesModal(false)}
+      />
     </TouchableOpacity>
   );
 }
@@ -1095,10 +1125,10 @@ const styles = StyleSheet.create({
     marginRight: 3,
   },
   actionText: {
-    fontSize: 12, // Smaller text
+    fontSize: 14, // Increased from 12
     color: '#657786',
     fontWeight: '500',
-    marginLeft: 4,
+    marginLeft: 8, // Increased from 4
   },
   likeButton: {
     flexDirection: 'row',
@@ -1110,6 +1140,12 @@ const styles = StyleSheet.create({
   },
   likedButton: {
     // Removed purple background - just keep the heart icon color change
+  },
+  likeCountButton: {
+    marginLeft: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    minWidth: 24,
   },
   addReactionButton: {
     alignItems: 'center',

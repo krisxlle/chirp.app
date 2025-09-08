@@ -1,27 +1,24 @@
-import { useEffect, useState } from "react";
-import { useParams } from "wouter";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/useAuth";
 import MentionText from "@/components/MentionText";
-import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useParams } from "wouter";
 
 import ChirpCard from "@/components/ChirpCard";
-import WeeklySummary from "@/components/WeeklySummary";
-import UserAvatar from "@/components/UserAvatar";
 import ChirpPlusBadge from "@/components/ChirpPlusBadge";
-import { ArrowLeft, Settings, MapPin, Calendar, Link as LinkIcon, Wand2, MoreHorizontal, Bell, BellOff, UserX } from "lucide-react";
-import NotificationToggle from "@/components/NotificationToggle";
-import BlockUser from "@/components/BlockUser";
-import { useLocation } from "wouter";
+import UserAvatar from "@/components/UserAvatar";
+import WeeklySummary from "@/components/WeeklySummary";
+import { DEFAULT_BANNER_URL } from "@/constants/DefaultBanner";
 import { formatDistanceToNow } from "date-fns";
+import { ArrowLeft, Bell, BellOff, Calendar, Link as LinkIcon, MoreHorizontal, Settings, UserX, Wand2 } from "lucide-react";
 
 // Tab Components
 function RepliesTab({ userId }: { userId: string }) {
@@ -507,20 +504,16 @@ export default function Profile() {
             {/* Profile Header */}
             <div className="bg-white">
               {/* Banner */}
-              <div className="h-32 gradient-bg relative overflow-hidden">
-                {(user as any)?.bannerImageUrl && (
-                  <img
-                    src={(user as any).bannerImageUrl.includes('oaidalleapiprodscus') 
-                      ? `${(user as any).bannerImageUrl}&cache_bust=${Date.now()}` 
-                      : (user as any).bannerImageUrl}
-                    alt="Profile banner"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log('Banner image failed to load:', (user as any).bannerImageUrl);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                )}
+              <div className="h-40 gradient-bg relative overflow-hidden"> {/* 160px height for better 3:1 ratio on desktop */}
+                <img
+                  src={(user as any)?.bannerImageUrl || DEFAULT_BANNER_URL}
+                  alt="Profile banner"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => {
+                    console.log('Banner image failed to load, using default');
+                    e.currentTarget.src = DEFAULT_BANNER_URL;
+                  }}
+                />
 
               </div>
 

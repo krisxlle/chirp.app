@@ -10,36 +10,56 @@ interface UserAvatarProps {
     profileImageUrl?: string;
     avatarUrl?: string;
   } | null;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | number;
   style?: any;
 }
 
 export default function UserAvatar({ user, size = "md", style }: UserAvatarProps) {
   const [imageError, setImageError] = useState(false);
   
-  const sizeStyles = {
-    sm: { width: 32, height: 32 },
-    md: { width: 40, height: 40 }, 
-    lg: { width: 64, height: 64 }, // Increased size for better profile visibility
-    xl: { width: 96, height: 96 }, // Increased size for profile headers
+  // Handle numeric size values
+  const getSizeStyles = () => {
+    if (typeof size === 'number') {
+      return { width: size, height: size };
+    }
+    
+    const sizeStyles = {
+      sm: { width: 32, height: 32 },
+      md: { width: 40, height: 40 }, 
+      lg: { width: 64, height: 64 }, // Increased size for better profile visibility
+      xl: { width: 96, height: 96 }, // Increased size for profile headers
+    };
+    
+    return sizeStyles[size];
   };
-
-  const textSizeStyles = {
-    sm: { fontSize: 12 },
-    md: { fontSize: 14 },
-    lg: { fontSize: 16 }, 
-    xl: { fontSize: 20 },
+  
+  const getTextSizeStyles = () => {
+    if (typeof size === 'number') {
+      return { fontSize: Math.max(12, size * 0.35) };
+    }
+    
+    const textSizeStyles = {
+      sm: { fontSize: 12 },
+      md: { fontSize: 14 },
+      lg: { fontSize: 16 }, 
+      xl: { fontSize: 20 },
+    };
+    
+    return textSizeStyles[size];
   };
+  
+  const sizeStyles = getSizeStyles();
+  const textSizeStyles = getTextSizeStyles();
 
   if (!user) {
     return (
       <View style={[
         styles.avatar,
-        sizeStyles[size],
+        sizeStyles,
         { backgroundColor: '#e5e7eb' },
         style
       ]}>
-        <Text style={[styles.fallbackText, textSizeStyles[size], { color: '#6b7280' }]}>
+        <Text style={[styles.fallbackText, textSizeStyles, { color: '#6b7280' }]}>
           ?
         </Text>
       </View>
@@ -105,10 +125,10 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
 
   if (processedImageUrl && !imageError) {
     return (
-      <View style={[sizeStyles[size], style]}>
+      <View style={[sizeStyles, style]}>
         <Image
           source={{ uri: processedImageUrl }}
-          style={[styles.avatar, sizeStyles[size]]}
+          style={[styles.avatar, sizeStyles]}
           onError={(error) => {
             console.log('Avatar image failed to load:', error.message || 'unknown error');
             setImageError(true);
@@ -121,11 +141,11 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
   return (
     <View style={[
       styles.avatar,
-      sizeStyles[size],
+      sizeStyles,
       { backgroundColor: startColor }, // Using start color as fallback
       style
     ]}>
-      <Text style={[styles.fallbackText, textSizeStyles[size]]}>
+      <Text style={[styles.fallbackText, textSizeStyles]}>
         {initials}
       </Text>
     </View>

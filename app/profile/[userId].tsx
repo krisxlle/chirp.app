@@ -1,9 +1,12 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Image,
+    Dimensions,
+    ImageBackground,
+    Linking,
     Modal,
     RefreshControl,
     ScrollView,
@@ -15,19 +18,22 @@ import {
 import { useAuth } from '../../components/AuthContext';
 import ChirpCard from '../../components/ChirpCard';
 import FollowersFollowingModal from '../../components/FollowersFollowingModal';
+import LinkIcon from '../../components/icons/LinkIcon';
+import NotificationIcon from '../../components/icons/NotificationIcon';
 import UserAvatar from '../../components/UserAvatar';
+import { DEFAULT_BANNER_URL } from '../../constants/DefaultBanner';
 
 interface User {
   id: string;
   email?: string;
-  first_name?: string;
-  last_name?: string;
-  custom_handle?: string;
+  firstName?: string;
+  lastName?: string;
+  customHandle?: string;
   handle?: string;
-  profile_image_url?: string;
-  banner_image_url?: string;
+  profileImageUrl?: string;
+  bannerImageUrl?: string;
   bio?: string;
-  created_at?: string;
+  joinedAt?: string;
 }
 
 export default function UserProfileScreen() {
@@ -56,6 +62,7 @@ export default function UserProfileScreen() {
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingChirps, setLoadingChirps] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [chirps, setChirps] = useState<any[]>([]);
   const [replies, setReplies] = useState<any[]>([]);
@@ -91,70 +98,46 @@ export default function UserProfileScreen() {
       try {
         setLoading(true);
 
-        // Import all database functions
+        // Import database functions
         const { 
           getUserById, 
-          getUserChirps, 
-          getUserReplies, 
           getUserStats, 
           checkFollowStatus,
           checkBlockStatus
-        } = await import('../../mobile-db-supabase');
+        } = await import('../../lib/database/mobile-db-supabase');
 
-
-        // Fetch all data in parallel for optimal performance
+        // Fetch essential profile data first (fast)
         const [
           userData, 
-          userChirps, 
-          userReplies, 
           userStats,
           followStatusData,
           isBlocked
         ] = await Promise.all([
           getUserById(userId),
-          getUserChirps(userId),
-          getUserReplies(userId), 
           getUserStats(userId),
           // Only check follow status if viewing someone else's profile
           currentUserId && currentUserId !== userId ? checkFollowStatus(userId, currentUserId) : Promise.resolve({ isFollowing: false, isBlocked: false, notificationsEnabled: false }),
           currentUserId && currentUserId !== userId ? checkBlockStatus(currentUserId, userId) : false
         ]);
         
-        // Update all state at once to minimize re-renders
-        console.log('🔍 Profile fetch debug:', {
-          currentUserId,
-          targetUserId: userId,
-          isOwnProfile: currentUserId === userId,
-          willCheckFollowStatus: currentUserId && currentUserId !== userId
-        });
-        console.log('🔍 Follow status check:', {
-          currentUserId,
-          targetUserId: userId,
-          followStatusData,
-          isFollowing: followStatusData.isFollowing
-        });
+        // Update profile state immediately
         setUser(userData);
-        setChirps(userChirps);
-        setReplies(userReplies);
         setStats({
-          profilePower: Math.floor((userStats.chirps * 10) + (userStats.moodReactions * 5) + (userStats.followers * 2) + (userStats.following * 1)),
+          profilePower: Math.floor((userStats.chirps * 10) + (userStats.likes * 5) + (userStats.followers * 2) + (userStats.following * 1)),
           following: userStats.following,
           followers: userStats.followers
-        });
-        console.log('🔍 User stats data:', userStats);
-        console.log('🎯 Profile Power calculation V2.0:', {
-          chirps: userStats.chirps,
-          moodReactions: userStats.moodReactions,
-          followers: userStats.followers,
-          following: userStats.following,
-          profilePower: Math.floor((userStats.chirps * 10) + (userStats.moodReactions * 5) + (userStats.followers * 2) + (userStats.following * 1))
         });
         setFollowStatus({
           isFollowing: followStatusData.isFollowing || false,
           isBlocked: isBlocked || false,
           notificationsEnabled: followStatusData.notificationsEnabled || false
         });
-        console.log('🎯 Profile state updated');
+        
+        setLoading(false);
+        console.log('✅ Profile data loaded, now loading chirps...');
+        
+        // Load chirps separately (slower)
+        await loadUserChirps(userId);
       } catch (error) {
         console.error('❌ Error fetching user profile:', error);
       } finally {
@@ -165,6 +148,28 @@ export default function UserProfileScreen() {
 
     fetchUserProfile();
   }, [userId, currentUserId]);
+
+  const loadUserChirps = async (targetUserId: string) => {
+    try {
+      setLoadingChirps(true);
+      console.log('📥 Loading chirps for user:', targetUserId);
+      
+      const { getUserChirps, getUserReplies } = await import('../../lib/database/mobile-db-supabase');
+      
+      const [userChirps, userReplies] = await Promise.all([
+        getUserChirps(targetUserId),
+        getUserReplies(targetUserId)
+      ]);
+      
+      setChirps(userChirps);
+      setReplies(userReplies);
+      setLoadingChirps(false);
+      console.log('✅ Chirps loaded successfully');
+    } catch (error) {
+      console.error('❌ Error loading chirps:', error);
+      setLoadingChirps(false);
+    }
+  };
 
   const handleBack = () => {
     try {
@@ -182,7 +187,7 @@ export default function UserProfileScreen() {
   const handleFollow = async () => {
     try {
       console.log('🔔 Follow button pressed for user:', userId);
-      const { followUser, unfollowUser } = await import('../../mobile-db-supabase');
+      const { followUser, unfollowUser } = await import('../../lib/database/mobile-db-supabase');
       
       console.log('🔔 Current user ID:', currentUserId);
       if (!currentUserId) {
@@ -209,7 +214,7 @@ export default function UserProfileScreen() {
 
   const handleBlock = async () => {
     try {
-      const { blockUser, unblockUser } = await import('../../mobile-db-supabase');
+      const { blockUser, unblockUser } = await import('../../lib/database/mobile-db-supabase');
       
       if (!currentUserId) return;
       
@@ -228,7 +233,7 @@ export default function UserProfileScreen() {
 
   const handleNotificationToggle = async () => {
     try {
-      const { toggleUserNotifications } = await import('../../mobile-db-supabase');
+      const { toggleUserNotifications } = await import('../../lib/database/mobile-db-supabase');
       
       if (!currentUserId) return;
       
@@ -248,36 +253,34 @@ export default function UserProfileScreen() {
         const fetchUserProfile = async () => {
           console.log('📥 Refreshing profile data for user:', userId);
           try {
-            const { getUserById, getUserChirps, getUserReplies, getUserStats, checkFollowStatus } = await import('../../mobile-db-supabase');
+            const { getUserById, getUserStats, checkFollowStatus, checkBlockStatus } = await import('../../lib/database/mobile-db-supabase');
             
-            // Fetch user data
-            const userData = await getUserById(userId);
+            // Fetch essential data first
+            const [userData, statsData, followData, isBlocked] = await Promise.all([
+              getUserById(userId),
+              getUserStats(userId),
+              currentUserId && currentUserId !== userId ? checkFollowStatus(userId, currentUserId) : Promise.resolve({ isFollowing: false, isBlocked: false, notificationsEnabled: false }),
+              currentUserId && currentUserId !== userId ? checkBlockStatus(currentUserId, userId) : false
+            ]);
+            
             if (userData) {
               setUser(userData);
             }
             
-            // Fetch chirps and replies
-            const [chirpsData, repliesData, statsData] = await Promise.all([
-              getUserChirps(userId),
-              getUserReplies(userId),
-              getUserStats(userId)
-            ]);
-            
-            setChirps(chirpsData || []);
-            setReplies(repliesData || []);
-            console.log('🔄 Refresh - User stats data:', statsData);
             setStats({
-              profilePower: statsData ? Math.floor((statsData.chirps * 10) + (statsData.moodReactions * 5) + (statsData.followers * 2) + (statsData.following * 1)) : 0,
+              profilePower: statsData ? Math.floor((statsData.chirps * 10) + (statsData.likes * 5) + (statsData.followers * 2) + (statsData.following * 1)) : 0,
               following: statsData?.following || 0,
               followers: statsData?.followers || 0
             });
-            console.log('🔄 Refresh - Calculated Profile Power:', statsData ? Math.floor((statsData.chirps * 10) + (statsData.moodReactions * 5) + (statsData.followers * 2) + (statsData.following * 1)) : 0);
             
-            // Fetch follow status if not own profile
-            if (currentUserId && currentUserId !== userId) {
-              const followData = await checkFollowStatus(userId, currentUserId);
-              setFollowStatus(followData);
-            }
+            setFollowStatus({
+              isFollowing: followData.isFollowing || false,
+              isBlocked: isBlocked || false,
+              notificationsEnabled: followData.notificationsEnabled || false
+            });
+            
+            // Load chirps separately
+            await loadUserChirps(userId);
             
           } catch (error) {
             console.error('Error refreshing profile data:', error);
@@ -341,9 +344,9 @@ export default function UserProfileScreen() {
     );
   }
 
-  const displayName = user.first_name && user.last_name 
-    ? `${user.first_name} ${user.last_name}`.trim()
-    : (user.custom_handle || user.handle || user.email?.split('@')[0] || 'User');
+  const displayName = user.firstName && user.lastName 
+    ? `${user.firstName} ${user.lastName}`.trim()
+    : (user.customHandle || user.handle || user.email?.split('@')[0] || 'User');
 
   return (
     <View style={styles.container}>
@@ -376,78 +379,151 @@ export default function UserProfileScreen() {
       >
         {/* Banner Section - exactly like original */}
         <View style={styles.bannerContainer}>
-          {user.banner_image_url ? (
-            <Image source={{ uri: user.banner_image_url }} style={styles.bannerImage} />
-          ) : (
-            <View style={styles.bannerPlaceholder} />
-          )}
+          <View style={styles.bannerImageWrapper}>
+            <ImageBackground 
+              source={{ uri: user.bannerImageUrl || DEFAULT_BANNER_URL }} 
+              style={styles.bannerImage}
+              resizeMode="cover"
+              defaultSource={{ uri: DEFAULT_BANNER_URL }}
+              onError={(error) => {
+                console.log('Banner image failed to load:', error.nativeEvent.error);
+                console.log('Banner URL:', user.bannerImageUrl || DEFAULT_BANNER_URL);
+              }}
+              onLoad={() => {
+                console.log('Banner image loaded successfully');
+              }}
+            />
+          </View>
         </View>
 
-        {/* Profile Info Section - exactly like original layout */}
+        {/* Profile Info Section - Traditional Social Media Layout */}
         <View style={styles.profileSection}>
-          <View style={styles.profileHeader}>
-            {/* Avatar and basic info */}
-            <View style={styles.profileInfo}>
-              <UserAvatar 
-                user={{
-                  id: user.id,
-                  firstName: user.first_name || '',
-                  lastName: user.last_name || '',
-                  email: user.email || '',
-                  profileImageUrl: user.profile_image_url || undefined
-                }} 
-                size="xl"
-              />
-              
-              <View style={styles.profileDetails}>
-                <View style={styles.nameContainer}>
-                  <Text style={styles.displayName}>{displayName}</Text>
-                </View>
-                <Text style={styles.handle}>@{user.custom_handle || user.handle}</Text>
-              </View>
-            </View>
+          {/* Avatar positioned to overlap banner */}
+          <View style={styles.avatarContainer}>
+            <UserAvatar 
+              user={{
+                id: user.id,
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                email: user.email || '',
+                profileImageUrl: user.profileImageUrl || undefined
+              }} 
+              size="xl"
+            />
+          </View>
 
-            {/* Action buttons - exactly like original */}
-            <View style={styles.actionButtons}>
-              <TouchableOpacity 
-                style={[styles.followButton, followStatus.isFollowing && styles.followingButton]} 
-                onPress={handleFollow}
-              >
+          {/* Action buttons positioned to the right */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => setShowMoreOptions(true)}>
+              <Text style={styles.iconButtonText}>⋯</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={handleNotificationToggle}
+            >
+              <NotificationIcon 
+                size={16} 
+                color={followStatus.notificationsEnabled ? "#7c3aed" : "#9ca3af"} 
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.followButton, followStatus.isFollowing && styles.followingButton]} 
+              onPress={handleFollow}
+            >
+              {followStatus.isFollowing ? (
                 <Text style={[styles.followButtonText, followStatus.isFollowing && styles.followingButtonText]}>
                   {followStatus.isFollowing ? 'Following' : 'Follow'}
                 </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.moreButton} onPress={() => setShowMoreOptions(true)}>
-                <Text style={styles.moreButtonText}>⋯</Text>
-              </TouchableOpacity>
-            </View>
+              ) : (
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.followButtonGradient}
+                >
+                  <Text style={styles.followButtonText}>
+                    Follow
+                  </Text>
+                </LinearGradient>
+              )}
+            </TouchableOpacity>
           </View>
 
-          {/* Bio - exactly like original */}
-          {user.bio && (
-            <View style={styles.bioContainer}>
-              <Text style={styles.bioText}>{user.bio}</Text>
+          {/* User info section */}
+          <View style={styles.userInfo}>
+            <View style={styles.nameRow}>
+              <Text style={styles.displayName}>{displayName}</Text>
             </View>
-          )}
+            
+            <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
 
-          {/* Profile Power - prominent display like own profile */}
-          <View style={styles.profilePowerContainer}>
-            <Text style={styles.profilePowerLabel}>Profile Power</Text>
-            <Text style={styles.profilePowerNumber}>{stats.profilePower}</Text>
-          </View>
+            {/* Bio */}
+            {user.bio && (
+              <Text style={styles.bio}>
+                {user.bio.split(/(@\w+)/).map((part, index) => {
+                  if (part.startsWith('@')) {
+                    return (
+                      <TouchableOpacity 
+                        key={index} 
+                        style={styles.mentionButton}
+                        onPress={async () => {
+                          try {
+                            const { getUserByHandle } = await import('../../lib/database/mobile-db-supabase');
+                            const mentionedUser = await getUserByHandle(part);
+                            if (mentionedUser) {
+                              const { router } = await import('expo-router');
+                              router.push(`/profile/${mentionedUser.id}`);
+                            } else {
+                              Alert.alert('User Not Found', `User ${part} could not be found.`);
+                            }
+                          } catch (error) {
+                            console.error('Error navigating to mentioned user:', error);
+                            Alert.alert('Error', 'Failed to navigate to user profile.');
+                          }
+                        }}
+                      >
+                        <Text style={styles.mentionText}>{part}</Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                  return <Text key={index}>{part}</Text>;
+                })}
+              </Text>
+            )}
 
-          {/* Stats - exactly like original with dividers */}
-          <View style={styles.statsContainer}>
-            <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
-              <Text style={styles.statNumber}>{stats.following}</Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </TouchableOpacity>
-            <View style={styles.statDivider} />
-            <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
-              <Text style={styles.statNumber}>{stats.followers}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </TouchableOpacity>
+            {/* Additional info row - only show if user has a link */}
+            {user.linkInBio && (
+              <View style={styles.infoRow}>
+                <LinkIcon size={14} color="#657786" />
+                <TouchableOpacity onPress={() => {
+                  // Open the link
+                  const url = user.linkInBio.startsWith('http') ? user.linkInBio : `https://${user.linkInBio}`;
+                  Linking.openURL(url).catch(err => console.error('Failed to open URL:', err));
+                }}>
+                  <Text style={styles.linkText}>{user.linkInBio}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Profile Power */}
+            <View style={styles.profilePowerContainer}>
+              <Text style={styles.profilePowerLabel}>Profile Power</Text>
+              <Text style={styles.profilePowerNumber}>{stats.profilePower}</Text>
+            </View>
+
+            {/* Stats row */}
+            <View style={styles.statsRow}>
+              <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowingModal(true)}>
+                <Text style={styles.statNumber}>{stats.following}</Text>
+                <Text style={styles.statLabel}>Following</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.statItem} onPress={() => setShowFollowersModal(true)}>
+                <Text style={styles.statNumber}>{stats.followers}</Text>
+                <Text style={styles.statLabel}>Followers</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -475,7 +551,12 @@ export default function UserProfileScreen() {
         <View style={styles.tabContent}>
           {activeTab === 'chirps' && (
             <View style={styles.chirpsContainer}>
-              {chirps.length === 0 ? (
+              {loadingChirps ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#7c3aed" />
+                  <Text style={styles.loadingText}>Loading chirps...</Text>
+                </View>
+              ) : chirps.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyStateText}>No chirps yet</Text>
                 </View>
@@ -525,15 +606,6 @@ export default function UserProfileScreen() {
           <View style={styles.moreOptionsMenu}>
             <TouchableOpacity style={styles.menuItem} onPress={() => {
               setShowMoreOptions(false);
-              handleNotificationToggle();
-            }}>
-              <Text style={styles.menuItemText}>
-                {followStatus.notificationsEnabled ? '🔕 Turn off notifications' : '🔔 Turn on notifications'}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.menuItem} onPress={() => {
-              setShowMoreOptions(false);
               handleBlock();
             }}>
               <Text style={[styles.menuItemText, styles.destructiveText]}>
@@ -567,6 +639,9 @@ export default function UserProfileScreen() {
     </View>
   );
 }
+
+const { width: screenWidth } = Dimensions.get('window');
+const bannerHeight = Math.round(screenWidth / 3); // Proper 3:1 aspect ratio
 
 const styles = StyleSheet.create({
   container: {
@@ -650,22 +725,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bannerContainer: {
-    height: 128,
+    position: 'relative',
+    height: bannerHeight, // Dynamic 3:1 aspect ratio
     backgroundColor: '#7c3aed',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerImageWrapper: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bannerImage: {
     width: '100%',
-    height: 128,
+    height: '100%',
   },
   bannerPlaceholder: {
     width: '100%',
-    height: 100, // Match ProfilePage banner height
+    height: bannerHeight, // Dynamic 3:1 aspect ratio
     backgroundColor: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #d946ef 100%)',
   },
   profileSection: {
-    padding: 16,
     backgroundColor: '#ffffff',
-    marginTop: -50, // Adjusted for 100px banner to maintain half-overlap
+    marginTop: -(bannerHeight * 0.25), // 25% overlap for proper 3:1 aspect ratio
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -675,69 +759,129 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  profileHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  profileInfo: {
-    flex: 1,
-    marginTop: -30, // Adjusted for 100px banner to maintain half-overlap
-  },
-  profileDetails: {
-    marginTop: 30, // Increased to account for higher avatar overlap
-    marginLeft: 12, // Added left margin to separate from avatar
-  },
-  nameContainer: {
-    flexDirection: 'row',
+  avatarContainer: {
+    position: 'absolute',
+    top: -(bannerHeight * 0.25) - 22, // Position so only top half overlaps banner (half of avatar height)
+    left: 16,
+    borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
+    borderWidth: 4,
+    borderColor: '#ffffff',
+    width: 88, // 80px avatar + 8px border (4px each side)
+    height: 88, // 80px avatar + 8px border (4px each side) 
     alignItems: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 4,
-  },
-  displayName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginRight: 8,
-  },
-  handle: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginBottom: 12,
+    justifyContent: 'center',
+    zIndex: 10, // Ensure avatar is above other elements
   },
   actionButtons: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12, // Add spacing between buttons
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8, // Reduced top padding
+    paddingBottom: 8,
+    marginTop: 10,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconButtonText: {
+    fontSize: 16,
+    color: '#7c3aed',
   },
   followButton: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginLeft: 8,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  followButtonGradient: {
+    paddingHorizontal: 24,
     paddingVertical: 8,
     borderRadius: 20,
-    marginLeft: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   followingButton: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f8f9fa',
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#e1e8ed',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   followButtonText: {
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   followingButtonText: {
-    color: '#374151',
+    color: '#6b7280',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
-  bioContainer: {
-    marginBottom: 16,
+  userInfo: {
+    paddingHorizontal: 16,
+    paddingTop: 8, // Further reduced padding for tighter layout
+    paddingBottom: 16,
   },
-  bioText: {
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  displayName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#14171a',
+  },
+  handle: {
+    fontSize: 15,
+    color: '#657786',
+    marginBottom: 12,
+  },
+  bio: {
+    fontSize: 15,
+    color: '#14171a',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  mentionText: {
+    fontSize: 15,
+    color: '#7c3aed',
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#7c3aed',
+  },
+  mentionButton: {
+    alignSelf: 'baseline',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  infoItem: {
+    fontSize: 14,
+    color: '#657786',
   },
   profilePowerContainer: {
     alignItems: 'center',
@@ -761,30 +905,26 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
-  statsContainer: {
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e8ed',
+    justifyContent: 'center',
+    gap: 48, // Increased gap for better centering
   },
   statItem: {
-    flex: 1,
     alignItems: 'center',
   },
-  statDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: '#e5e7eb',
-  },
   statNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#14171a',
   },
   statLabel: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 13,
+    color: '#657786',
     marginTop: 2,
   },
   tabsContainer: {
@@ -876,6 +1016,18 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 16,
     color: '#6b7280',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginLeft: 8,
   },
   modalOverlay: {
     flex: 1,

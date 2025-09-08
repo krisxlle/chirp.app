@@ -1023,7 +1023,7 @@ export async function getUserStats(userId: string) {
         chirps: Math.floor(Math.random() * 20) + 5, // 5-25 chirps
         followers: Math.floor(Math.random() * 100) + 10, // 10-110 followers
         following: Math.floor(Math.random() * 50) + 5, // 5-55 following
-        moodReactions: Math.floor(Math.random() * 50) + 10 // 10-60 reactions
+        likes: Math.floor(Math.random() * 50) + 10 // 10-60 likes
       };
     }
     
@@ -1034,21 +1034,21 @@ export async function getUserStats(userId: string) {
         (SELECT COUNT(*) FROM follows WHERE follower_id = ${userId}) as following,
         (SELECT COALESCE(SUM(count), 0) FROM reactions r 
          JOIN chirps c ON r.chirp_id = c.id 
-         WHERE c.author_id = ${userId}) as mood_reactions
+         WHERE c.author_id = ${userId}) as likes
     `;
     
     const userStats = {
       chirps: Number(stats[0]?.chirps || 0),
       followers: Number(stats[0]?.followers || 0), 
       following: Number(stats[0]?.following || 0),
-      moodReactions: Number(stats[0]?.mood_reactions || 0)
+      likes: Number(stats[0]?.likes || 0)
     };
     
     console.log('User stats:', userStats);
     return userStats;
   } catch (error) {
     console.error('Error fetching user stats:', error);
-    return { chirps: 0, followers: 0, following: 0, moodReactions: 0 };
+    return { chirps: 0, followers: 0, following: 0, likes: 0 };
   }
 }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Dimensions,
     ImageBackground,
     Modal,
     ScrollView,
@@ -13,7 +14,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { blockUser, checkFollowStatus, followUser, getUserChirps, getUserProfile, getUserReplies, getUserStats, unblockUser, unfollowUser, updateUserProfile } from '../mobile-db';
+import { DEFAULT_BANNER_URL } from '../constants/DefaultBanner';
+import { blockUser, checkFollowStatus, followUser, getUserChirps, getUserProfile, getUserReplies, getUserStats, unblockUser, unfollowUser, updateUserProfile } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import GearIcon from './icons/GearIcon';
@@ -35,7 +37,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
     chirps: 0,
     following: 0,
     followers: 0,
-    moodReactions: 0
+    likes: 0
   });
   const [followStatus, setFollowStatus] = useState({
     isFollowing: false,
@@ -197,7 +199,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
       console.log('Generating AI profile with prompt:', aiPrompt);
       
       // Import the AI generation function
-      const { generateAIProfile } = await import('../mobile-ai');
+      const { generateAIProfile } = await import('../lib/database/mobile-db-supabase');
       
       // Generate AI profile using direct OpenAI integration
       const result = await generateAIProfile(aiPrompt);
@@ -288,13 +290,16 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
           <ScrollView style={styles.scrollView}>
             {/* Banner */}
             <View style={styles.bannerContainer}>
-              <ImageBackground
-                source={{ uri: user.banner_image_url || 'https://via.placeholder.com/400x200/7c3aed/ffffff' }}
-                style={styles.banner}
-                defaultSource={{ uri: 'https://via.placeholder.com/400x200/7c3aed/ffffff' }}
-              >
-                <View style={styles.bannerOverlay} />
-              </ImageBackground>
+              <View style={styles.bannerImageWrapper}>
+                <ImageBackground
+                  source={{ uri: user.banner_image_url || DEFAULT_BANNER_URL }}
+                  style={styles.banner}
+                  defaultSource={{ uri: DEFAULT_BANNER_URL }}
+                  resizeMode="cover"
+                >
+                  <View style={styles.bannerOverlay} />
+                </ImageBackground>
+              </View>
               
               {/* Profile Avatar */}
               <View style={styles.avatarContainer}>
@@ -376,7 +381,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
                           key={index} 
                           onPress={async () => {
                             try {
-                              const { getUserByHandle } = await import('../mobile-db');
+                              const { getUserByHandle } = await import('../lib/database/mobile-db-supabase');
                               const mentionedUser = await getUserByHandle(part);
                               if (mentionedUser) {
                                 const { router } = await import('expo-router');
@@ -423,8 +428,8 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.statItem}>
-                <Text style={styles.statNumber}>{stats.moodReactions}</Text>
-                <Text style={styles.statLabel}>Reactions</Text>
+                <Text style={styles.statNumber}>{stats.likes}</Text>
+                <Text style={styles.statLabel}>Likes</Text>
               </TouchableOpacity>
             </View>
 
@@ -553,6 +558,9 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
   );
 }
 
+const { width: screenWidth } = Dimensions.get('window');
+const bannerHeight = Math.round(screenWidth / 3); // 3:1 aspect ratio
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -625,11 +633,20 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     position: 'relative',
-    height: 100, // Reduced by 50% from 200px
+    height: bannerHeight, // Dynamic 3:1 aspect ratio
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  bannerImageWrapper: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   banner: {
     width: '100%',
-    height: 100, // Reduced by 50% from 200px
+    height: '100%',
   },
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,

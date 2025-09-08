@@ -2,7 +2,9 @@ import { router } from 'expo-router';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import {
     Alert,
+    Dimensions,
     ImageBackground,
+    Linking,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -10,11 +12,13 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { DEFAULT_BANNER_URL } from '../constants/DefaultBanner';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import FollowersFollowingModal from './FollowersFollowingModal';
 import BirdIcon from './icons/BirdIcon';
 import GearIcon from './icons/GearIcon';
+import LinkIcon from './icons/LinkIcon';
 import SettingsPage from './SettingsPage';
 import UserAvatar from './UserAvatar';
 
@@ -28,6 +32,7 @@ interface User {
   avatarUrl?: string;
   bannerImageUrl?: string;
   bio?: string;
+  linkInBio?: string;
   joinedAt?: string;
 }
 
@@ -71,7 +76,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
       const startTime = Date.now();
       
       // Use API instead of direct database connection
-      const { getUserChirps, getUserReplies, getUserStats } = await import('../mobile-api');
+      const { getUserChirps, getUserReplies, getUserStats } = await import('../lib/api/mobile-api');
       
       // Fetch data in parallel for better performance
       const [chirpsData, repliesData, statsData] = await Promise.all([
@@ -238,57 +243,89 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
 
       {/* Banner */}
       <View style={styles.bannerContainer}>
-        <ImageBackground
-          source={{ uri: user.bannerImageUrl || 'https://via.placeholder.com/400x200/7c3aed/ffffff' }}
-          style={styles.banner}
-          defaultSource={{ uri: 'https://via.placeholder.com/400x200/7c3aed/ffffff' }}
-        >
-          <View style={styles.bannerOverlay} />
-        </ImageBackground>
-        
+        <View style={styles.bannerImageWrapper}>
+          <ImageBackground
+            source={{ uri: user.bannerImageUrl || DEFAULT_BANNER_URL }}
+            style={styles.banner}
+            defaultSource={{ uri: DEFAULT_BANNER_URL }}
+            resizeMode="cover"
+          >
+            <View style={styles.bannerOverlay} />
+          </ImageBackground>
+        </View>
+      </View>
+
+      {/* Profile Section */}
+      <View style={styles.profileSection}>
         {/* Profile Avatar */}
         <View style={styles.avatarContainer}>
           <UserAvatar user={user} size="xl" />
         </View>
-      </View>
 
-            {/* User Info */}
-      <View style={styles.userInfo}>
-        <View style={styles.nameRow}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.displayName}>{displayName}</Text>
-            <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
-          </View>
-          <TouchableOpacity style={styles.settingsButtonRounded} onPress={handleSettings}>
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleSettings}>
             <GearIcon size={16} color="#7c3aed" />
-            <Text style={styles.settingsText}>Settings</Text>
           </TouchableOpacity>
         </View>
+
+        {/* User Info */}
+        <View style={styles.userInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.displayName}>{displayName}</Text>
+          </View>
+          <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
                  <Text style={styles.bio}>
            {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
              if (part.startsWith('@')) {
                return (
-                 <TouchableOpacity 
+                 <Text 
                    key={index} 
-                   onPress={() => {
-                     // TEMPORARILY DISABLED: Database calls
-                     console.log('🔗 Mention clicked (database call disabled):', part);
-                     Alert.alert('Feature Disabled', 'User profile navigation is temporarily disabled while database calls are disabled.');
+                   style={styles.mentionText}
+                   onPress={async () => {
+                     try {
+                       const { getUserByHandle } = await import('../lib/database/mobile-db-supabase');
+                       const mentionedUser = await getUserByHandle(part);
+                       if (mentionedUser) {
+                         const { router } = await import('expo-router');
+                         router.push(`/profile/${mentionedUser.id}`);
+                       } else {
+                         Alert.alert('User Not Found', `User ${part} could not be found.`);
+                       }
+                     } catch (error) {
+                       console.error('Error navigating to mentioned user:', error);
+                       Alert.alert('Error', 'Failed to navigate to user profile.');
+                     }
                    }}
                  >
-                   <Text style={styles.mentionText}>{part}</Text>
-                 </TouchableOpacity>
+                   {part}
+                 </Text>
                );
              }
              return <Text key={index}>{part}</Text>;
            })}
          </Text>
-      </View>
 
-      {/* Profile Power */}
-      <View style={styles.profilePowerContainer}>
-        <Text style={styles.profilePowerLabel}>Profile Power</Text>
-        <Text style={styles.profilePowerNumber}>{stats.profilePower}</Text>
+        {/* Link in Bio */}
+        {user.linkInBio && (
+          <View style={styles.infoRow}>
+            <LinkIcon size={14} color="#657786" />
+            <TouchableOpacity onPress={() => {
+              // Open the link
+              const url = user.linkInBio.startsWith('http') ? user.linkInBio : `https://${user.linkInBio}`;
+              Linking.openURL(url).catch(err => console.error('Failed to open URL:', err));
+            }}>
+              <Text style={styles.linkText}>{user.linkInBio}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Profile Power */}
+        <View style={styles.profilePowerContainer}>
+          <Text style={styles.profilePowerLabel}>Profile Power</Text>
+          <Text style={styles.profilePowerNumber}>{stats.profilePower}</Text>
+        </View>
+        </View>
       </View>
 
       {/* Stats Row */}
@@ -396,6 +433,9 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
   );
 });
 
+const { width: screenWidth } = Dimensions.get('window');
+const bannerHeight = Math.round(screenWidth / 3); // 3:1 aspect ratio
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -445,11 +485,21 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     position: 'relative',
-    height: 100, // Reduced by 50% from 200px
+    height: bannerHeight, // Dynamic 3:1 aspect ratio
+    backgroundColor: '#7c3aed',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerImageWrapper: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   banner: {
     width: '100%',
-    height: 100, // Reduced by 50% from 200px
+    height: '100%',
   },
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -457,7 +507,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'absolute',
-    bottom: -44, // Centers avatar vertically on bottom edge of banner (half avatar height)
+    top: -44, // Position so only top half overlaps banner (half of avatar height)
     left: 16,
     borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
     borderWidth: 4,
@@ -466,13 +516,39 @@ const styles = StyleSheet.create({
     height: 88, // 80px avatar + 8px border (4px each side) 
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10, // Ensure avatar is above other elements
+  },
+  profileSection: {
+    backgroundColor: '#ffffff',
+    marginTop: -(bannerHeight * 0.25), // 25% overlap for proper 3:1 aspect ratio
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 12,
-    marginBottom: 16,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8, // Reduced top padding
+    paddingBottom: 8,
+    marginTop: 10,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   aiProfileButtonContainer: {
     shadowColor: '#000000',
@@ -526,37 +602,44 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     paddingHorizontal: 16,
-    paddingTop: 20, // Reduced from 40 to 20 (moved buttons up by 20px)
+    paddingTop: 8, // Further reduced padding for tighter layout
     paddingBottom: 16,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  nameContainer: {
-    flex: 1,
-    marginLeft: 100, // Add left margin to account for the avatar
+    marginBottom: 4,
   },
   displayName: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#14171a',
   },
-
   handle: {
     fontSize: 15,
     color: '#657786',
-    marginTop: 2,
+    marginBottom: 12,
   },
   bio: {
     fontSize: 15,
     color: '#14171a',
-    marginTop: 12,
-    lineHeight: 24,
+    marginBottom: 12,
+    lineHeight: 20,
   },
   mentionText: {
     color: '#7c3aed',
     fontSize: 15,
+    lineHeight: 20,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#7c3aed',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
   },
   joinedRow: {
     flexDirection: 'row',

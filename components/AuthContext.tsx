@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Authenticate user with username and password using Supabase
       console.log('🔐 Using Supabase authentication for username:', username);
-      const { authenticateUserByUsername } = await import('../mobile-db-supabase');
+      const { authenticateUserByUsername } = await import('../lib/database/mobile-db-supabase');
       const dbUser = await authenticateUserByUsername(username, password);
       
       if (dbUser) {

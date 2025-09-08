@@ -2,8 +2,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ChirpCard from '../../components/ChirpCard';
-import { getChirpById, getChirpReplies, getThreadedChirps } from '../../mobile-db-supabase';
-import { MobileChirp } from '../../mobile-types';
+import { getChirpById, getChirpReplies, getThreadedChirps } from '../../lib/database/mobile-db-supabase';
+import { MobileChirp } from '../../lib/types/mobile-types';
 
 export default function ChirpScreen() {
   const router = useRouter();

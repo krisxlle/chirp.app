@@ -13,7 +13,7 @@ import {
     View
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { signInWithSupabase, signUp } from '../mobile-db-supabase';
+import { signInWithSupabase, signUp } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 
 // Custom Icon Components

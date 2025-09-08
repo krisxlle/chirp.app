@@ -1,4 +1,4 @@
-import { supabase } from '../mobile-db-supabase';
+import { supabase } from '../lib/database/mobile-db-supabase';
 
 export interface Chirp {
   id: string;
@@ -32,8 +32,10 @@ export interface Chirp {
 export interface ForYouAlgorithmOptions {
   userId: string;
   limit?: number;
+  offset?: number;
   includeReplies?: boolean;
   prioritizeFollowed?: boolean;
+  useCache?: boolean;
 }
 
 /**
@@ -45,36 +47,42 @@ export class ForYouAlgorithm {
   private static readonly FOLLOWED_WEIGHT = 3.0; // Chirps from followed users get 3x boost
   private static readonly RECENCY_WEIGHT = 1.5; // Recent chirps get 1.5x boost
   private static readonly ENGAGEMENT_WEIGHT = 1.2; // High engagement chirps get 1.2x boost
+  
+  // Performance optimization: Cache for following lists
+  private static followingCache = new Map<string, { data: string[], timestamp: number }>();
+  private static readonly FOLLOWING_CACHE_TTL = 300000; // 5 minutes
 
   /**
-   * Get personalized "For You" feed for a user
+   * Get personalized "For You" feed for a user - OPTIMIZED VERSION
    */
   static async getForYouFeed(options: ForYouAlgorithmOptions): Promise<Chirp[]> {
     const {
       userId,
       limit = this.DEFAULT_LIMIT,
+      offset = 0,
       includeReplies = false,
-      prioritizeFollowed = true
+      prioritizeFollowed = true,
+      useCache = true
     } = options;
 
     try {
-      console.log('🎯 For You Algorithm: Starting personalized feed generation');
-      console.log('🎯 User ID:', userId, 'Limit:', limit, 'Prioritize Followed:', prioritizeFollowed);
+      console.log('🎯 For You Algorithm: Starting optimized feed generation');
+      console.log('🎯 User ID:', userId, 'Limit:', limit, 'Offset:', offset, 'Prioritize Followed:', prioritizeFollowed);
 
-      // Step 1: Get user's following list
+      // Step 1: Get user's following list (with caching)
       const followingIds = prioritizeFollowed ? await this.getFollowingIds(userId) : [];
       console.log('🎯 Following count:', followingIds.length);
 
-      // Step 2: Fetch chirps with engagement data
-      const chirps = await this.fetchChirpsWithEngagement(includeReplies, limit * 2); // Fetch more for better ranking
+      // Step 2: Fetch chirps with engagement data (optimized single query)
+      const chirps = await this.fetchChirpsWithEngagement(includeReplies, limit + offset);
       console.log('🎯 Raw chirps fetched:', chirps.length);
 
-      // Step 3: Apply personalized ranking algorithm
+      // Step 3: Apply personalized ranking algorithm (optimized)
       const rankedChirps = await this.rankChirps(chirps, userId, followingIds);
       console.log('🎯 Chirps after ranking:', rankedChirps.length);
 
-      // Step 4: Return top results
-      const finalResults = rankedChirps.slice(0, limit);
+      // Step 4: Apply pagination and return results
+      const finalResults = rankedChirps.slice(offset, offset + limit);
       console.log('🎯 Final For You feed:', finalResults.length, 'chirps');
 
       return finalResults;
@@ -85,10 +93,17 @@ export class ForYouAlgorithm {
   }
 
   /**
-   * Get list of user IDs that the current user follows
+   * Get list of user IDs that the current user follows - OPTIMIZED WITH CACHING
    */
   private static async getFollowingIds(userId: string): Promise<string[]> {
     try {
+      // Check cache first
+      const cached = this.followingCache.get(userId);
+      if (cached && (Date.now() - cached.timestamp) < this.FOLLOWING_CACHE_TTL) {
+        console.log('✅ Returning cached following list');
+        return cached.data;
+      }
+
       const { data: follows, error } = await supabase
         .from('follows')
         .select('following_id')
@@ -99,7 +114,12 @@ export class ForYouAlgorithm {
         return [];
       }
 
-      return follows?.map(f => f.following_id) || [];
+      const followingIds = follows?.map(f => f.following_id) || [];
+      
+      // Cache the result
+      this.followingCache.set(userId, { data: followingIds, timestamp: Date.now() });
+      
+      return followingIds;
     } catch (error) {
       console.error('❌ Error in getFollowingIds:', error);
       return [];
@@ -107,10 +127,12 @@ export class ForYouAlgorithm {
   }
 
   /**
-   * Fetch chirps with engagement metrics
+   * Fetch chirps with engagement metrics - OPTIMIZED VERSION
+   * Uses single query with joins to avoid N+1 problem
    */
   private static async fetchChirpsWithEngagement(includeReplies: boolean, limit: number): Promise<Chirp[]> {
     try {
+      // Single optimized query with engagement counts
       const query = supabase
         .from('chirps')
         .select(`
@@ -129,7 +151,9 @@ export class ForYouAlgorithm {
             profile_image_url,
             avatar_url,
             banner_image_url
-          )
+          ),
+          reactions(count),
+          replies:chirps!reply_to_id(count)
         `)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -146,42 +170,34 @@ export class ForYouAlgorithm {
         return [];
       }
 
-      // Transform and add engagement data
-      const transformedChirps = await Promise.all((chirps || []).map(async (chirp: any) => {
-        // Get engagement metrics
-        const [reactionCount, replyCount] = await Promise.all([
-          this.getReactionCount(chirp.id),
-          this.getReplyCount(chirp.id)
-        ]);
-
-        return {
-          id: chirp.id.toString(),
-          content: chirp.content,
-          createdAt: chirp.created_at,
-          replyToId: chirp.reply_to_id,
-          isWeeklySummary: chirp.is_weekly_summary || false,
-          reactionCount,
-          replyCount,
-          reactions: [],
-          replies: [],
-          repostOfId: null,
-          originalChirp: undefined,
-          author: {
-            id: chirp.users.id,
-            firstName: chirp.users.first_name || 'User',
-            lastName: chirp.users.last_name || '',
-            email: chirp.users.email,
-            customHandle: chirp.users.custom_handle || chirp.users.handle,
-            handle: chirp.users.handle,
-            profileImageUrl: chirp.users.profile_image_url,
-            avatarUrl: chirp.users.avatar_url,
-            bannerImageUrl: chirp.users.banner_image_url,
-            bio: '',
-            joinedAt: new Date().toISOString(),
-            isChirpPlus: false,
-            showChirpPlusBadge: false
-          }
-        };
+      // Transform data efficiently
+      const transformedChirps = (chirps || []).map((chirp: any) => ({
+        id: chirp.id.toString(),
+        content: chirp.content,
+        createdAt: chirp.created_at,
+        replyToId: chirp.reply_to_id,
+        isWeeklySummary: chirp.is_weekly_summary || false,
+        reactionCount: chirp.reactions?.[0]?.count || 0,
+        replyCount: chirp.replies?.[0]?.count || 0,
+        reactions: [],
+        replies: [],
+        repostOfId: undefined,
+        originalChirp: undefined,
+        author: {
+          id: chirp.users.id,
+          firstName: chirp.users.first_name || 'User',
+          lastName: chirp.users.last_name || '',
+          email: chirp.users.email,
+          customHandle: chirp.users.custom_handle || chirp.users.handle,
+          handle: chirp.users.handle,
+          profileImageUrl: chirp.users.profile_image_url,
+          avatarUrl: chirp.users.avatar_url,
+          bannerImageUrl: chirp.users.banner_image_url,
+          bio: '',
+          joinedAt: new Date().toISOString(),
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        }
       }));
 
       return transformedChirps;
@@ -192,35 +208,11 @@ export class ForYouAlgorithm {
   }
 
   /**
-   * Get reaction count for a chirp
+   * Clear following cache for a user (call when user follows/unfollows someone)
    */
-  private static async getReactionCount(chirpId: string): Promise<number> {
-    try {
-      const { count, error } = await supabase
-        .from('reactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('chirp_id', chirpId);
-
-      return error ? 0 : (count || 0);
-    } catch (error) {
-      return 0;
-    }
-  }
-
-  /**
-   * Get reply count for a chirp
-   */
-  private static async getReplyCount(chirpId: string): Promise<number> {
-    try {
-      const { count, error } = await supabase
-        .from('chirps')
-        .select('*', { count: 'exact', head: true })
-        .eq('reply_to_id', chirpId);
-
-      return error ? 0 : (count || 0);
-    } catch (error) {
-      return 0;
-    }
+  static clearFollowingCache(userId: string): void {
+    this.followingCache.delete(userId);
+    console.log('🗑️ Cleared following cache for user:', userId);
   }
 
   /**
@@ -350,7 +342,7 @@ export class ForYouAlgorithm {
         replyCount: 0,
         reactions: [],
         replies: [],
-        repostOfId: null,
+        repostOfId: undefined,
         originalChirp: undefined,
         author: {
           id: chirp.users.id,

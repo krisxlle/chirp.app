@@ -333,7 +333,7 @@ export async function getUserStats(userId: string) {
         chirps: Math.floor(Math.random() * 20) + 5, // 5-25 chirps
         followers: Math.floor(Math.random() * 100) + 10, // 10-110 followers
         following: Math.floor(Math.random() * 50) + 5, // 5-55 following
-        moodReactions: Math.floor(Math.random() * 50) + 10 // 10-60 reactions
+        likes: Math.floor(Math.random() * 50) + 10 // 10-60 likes
       };
     }
     
@@ -365,14 +365,14 @@ export async function getUserStats(userId: string) {
       chirps: chirpCount || 0,
       followers: followerCount || 0,
       following: followingCount || 0,
-      moodReactions: reactionCount || 0
+      likes: reactionCount || 0
     };
     
     console.log('User stats:', userStats);
     return userStats;
   } catch (error) {
     console.error('Error fetching user stats:', error);
-    return { chirps: 0, followers: 0, following: 0, moodReactions: 0 };
+    return { chirps: 0, followers: 0, following: 0, likes: 0 };
   }
 }
 

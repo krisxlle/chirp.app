@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useResponsive } from '../hooks/useResponsive';
-import { createThread } from '../mobile-db-supabase';
+import { createThread } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
 
@@ -124,7 +124,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       console.log('User ID for chirp creation:', user.id);
       
       // Import the createChirp function from mobile-api
-      const { createChirp } = await import('../mobile-api');
+      const { createChirp } = await import('../lib/api/mobile-api');
       
       console.log('🔍 Debug: User object for chirp creation:', {
         userId: user.id,

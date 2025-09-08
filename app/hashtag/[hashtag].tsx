@@ -3,8 +3,8 @@ import { ArrowLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ChirpCard from '../../components/ChirpCard';
-import { getChirpsByHashtag } from '../../mobile-db';
-import type { MobileChirp } from '../../mobile-types';
+import { getChirpsByHashtag } from '../../lib/database/mobile-db-supabase';
+import type { MobileChirp } from '../../lib/types/mobile-types';
 
 export default function HashtagPage() {
   const params = useLocalSearchParams();

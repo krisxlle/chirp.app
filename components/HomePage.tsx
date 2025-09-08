@@ -1,11 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive } from '../hooks/useResponsive';
-import { getForYouChirps } from '../mobile-api';
-import { clearChirpCache } from '../mobile-db-supabase';
+import { getForYouChirps } from '../lib/api/mobile-api';
+import { clearChirpCache } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import ComposeChirp from './ComposeChirp';
@@ -21,50 +21,90 @@ export default function HomePage() {
   // State for feed type
   const [feedType, setFeedType] = useState<'forYou' | 'collection'>('forYou');
   
-  // State for chirps - start with empty array
+  // State for chirps with pagination support
   const [forYouChirps, setForYouChirps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreChirps, setHasMoreChirps] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(0);
   
-  // Load chirps function
-  const loadChirps = useCallback(async (forceRefresh = false) => {
+  // Pagination constants
+  const INITIAL_LIMIT = 10; // Load fewer chirps initially for faster startup
+  const LOAD_MORE_LIMIT = 10;
+  
+  // Load initial chirps function - OPTIMIZED FOR STARTUP
+  const loadInitialChirps = useCallback(async (forceRefresh = false) => {
     try {
       // Don't reload if we have recent data and not forcing refresh
       const now = Date.now();
-      if (!forceRefresh && forYouChirps.length > 0 && (now - lastRefresh) < 30000) {
+      if (!forceRefresh && forYouChirps.length > 0 && (now - lastRefresh) < 60000) { // Increased cache time
         console.log('🔄 HomePage: Using cached chirps (last refresh:', now - lastRefresh, 'ms ago)');
         return;
       }
       
       setIsLoading(true);
-      console.log('🔄 HomePage: Loading chirps from database...', forceRefresh ? '(force refresh)' : '');
+      console.log('🔄 HomePage: Loading initial chirps from database...', forceRefresh ? '(force refresh)' : '');
       const startTime = Date.now();
       
-      const realChirps = await getForYouChirps();
+      const realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
       const loadTime = Date.now() - startTime;
       
-      console.log(`✅ HomePage: Loaded ${realChirps.length} chirps from database in ${loadTime}ms`);
+      console.log(`✅ HomePage: Loaded ${realChirps.length} initial chirps from database in ${loadTime}ms`);
       
       setForYouChirps(realChirps);
       setLastRefresh(now);
+      setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
     } catch (error) {
-      console.error('❌ HomePage: Error loading chirps from database:', error);
+      console.error('❌ HomePage: Error loading initial chirps from database:', error);
       console.log('🔄 HomePage: Keeping existing chirps array');
     } finally {
       setIsLoading(false);
     }
-  }, [lastRefresh]); // Remove forYouChirps.length from dependencies to prevent infinite loops
+  }, []);
   
-  // Load chirps on mount
+  // Load more chirps function for pagination
+  const loadMoreChirps = useCallback(async () => {
+    if (isLoadingMore || !hasMoreChirps) return;
+    
+    try {
+      setIsLoadingMore(true);
+      console.log('🔄 HomePage: Loading more chirps...');
+      const startTime = Date.now();
+      
+      const moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, forYouChirps.length);
+      const loadTime = Date.now() - startTime;
+      
+      console.log(`✅ HomePage: Loaded ${moreChirps.length} more chirps in ${loadTime}ms`);
+      
+      if (moreChirps.length > 0) {
+        setForYouChirps(prevChirps => {
+          // Create a map to track existing chirp IDs
+          const existingIds = new Set(prevChirps.map(chirp => chirp.id));
+          // Filter out any duplicate chirps
+          const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
+          return [...prevChirps, ...uniqueNewChirps];
+        });
+        setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
+      } else {
+        setHasMoreChirps(false);
+      }
+    } catch (error) {
+      console.error('❌ HomePage: Error loading more chirps:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMoreChirps]);
+  
+  // Load initial chirps on mount
   useEffect(() => {
     // Only load chirps if user is available
     console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id);
     if (user) {
-      loadChirps();
+      loadInitialChirps();
     } else {
       console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
     }
-  }, [user, loadChirps]); // Include user and loadChirps in dependencies
+  }, [user, loadInitialChirps]);
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {
@@ -74,19 +114,20 @@ export default function HomePage() {
       clearChirpCache(); // Clear cache before refreshing
       
       const startTime = Date.now();
-      const realChirps = await getForYouChirps();
+      const realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Refreshed ${realChirps.length} chirps from database in ${loadTime}ms`);
       
       setForYouChirps(realChirps);
       setLastRefresh(Date.now());
+      setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
     } catch (error) {
       console.error('❌ HomePage: Error refreshing chirps:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []); // No dependencies to avoid timing issues
+  }, []);
   
   // Function to update chirp like count
   const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
@@ -189,15 +230,6 @@ export default function HomePage() {
           >
             <SearchIcon size={20} color="#657786" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.refreshButton} 
-            onPress={refreshChirps}
-            disabled={isLoading}
-          >
-            <Text style={styles.refreshButtonText}>
-              {isLoading ? '🔄' : '↻'}
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -249,7 +281,7 @@ export default function HomePage() {
         </View>
       </View>
 
-      {/* Chirps Feed */}
+      {/* Chirps Feed with Infinite Scroll */}
       <ScrollView 
         style={styles.feed} 
         showsVerticalScrollIndicator={false}
@@ -263,6 +295,16 @@ export default function HomePage() {
             titleColor="#657786"
           />
         }
+        onScroll={({ nativeEvent }) => {
+          // Infinite scroll: load more when near bottom
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const isNearBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
+          
+          if (isNearBottom && hasMoreChirps && !isLoadingMore) {
+            loadMoreChirps();
+          }
+        }}
+        scrollEventThrottle={400}
       >
         {/* Compose Chirp - Now part of the scrollable feed */}
         <View style={styles.composeContainer}>
@@ -279,16 +321,33 @@ export default function HomePage() {
                 <Text style={styles.emptySubtext}>Be the first to chirp!</Text>
               </View>
             ) : (
-              forYouChirps.map((chirp) => (
-                <ChirpCard 
-                  key={chirp.id} 
-                  chirp={chirp} 
-                  onLikeUpdate={handleChirpLikeUpdate}
-                  onDeleteSuccess={handleChirpDelete}
-                  onReplyPosted={handleChirpReplyUpdate}
-                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
-                />
-              ))
+              <>
+                {forYouChirps.map((chirp, index) => (
+                  <ChirpCard 
+                    key={`${chirp.id}-${index}`} 
+                    chirp={chirp} 
+                    onLikeUpdate={handleChirpLikeUpdate}
+                    onDeleteSuccess={handleChirpDelete}
+                    onReplyPosted={handleChirpReplyUpdate}
+                    onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                  />
+                ))}
+                
+                {/* Loading more indicator */}
+                {isLoadingMore && (
+                  <View style={styles.loadingMoreContainer}>
+                    <ActivityIndicator size="small" color="#7c3aed" />
+                    <Text style={styles.loadingMoreText}>Loading more chirps...</Text>
+                  </View>
+                )}
+                
+                {/* End of feed indicator */}
+                {!hasMoreChirps && forYouChirps.length > 0 && (
+                  <View style={styles.endOfFeedContainer}>
+                    <Text style={styles.endOfFeedText}>You've reached the end! 🎉</Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
                  ) : (
@@ -339,12 +398,6 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     padding: 8,
-  },
-  refreshButton: {
-    padding: 8,
-  },
-  refreshButtonText: {
-    fontSize: 24,
   },
   // Updated tabs styling to match SettingsPage
   tabsContainer: {
@@ -419,5 +472,30 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 16,
     color: '#657786',
+  },
+  // New styles for infinite scroll
+  loadingMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 8,
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: '#657786',
+    fontStyle: 'italic',
+  },
+  endOfFeedContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  endOfFeedText: {
+    fontSize: 14,
+    color: '#657786',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });

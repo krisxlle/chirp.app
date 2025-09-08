@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { supabase, testNetworkConnectivity, validateSupabaseCredentials, checkDatabaseSchema } from '../mobile-db';
+import { checkDatabaseSchema, supabase, testNetworkConnectivity, validateSupabaseCredentials } from '../lib/database/mobile-db-supabase';
 
 export default function SupabaseDebugger() {
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
