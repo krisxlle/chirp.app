@@ -27,6 +27,11 @@ export interface MobileChirp {
   isNestedReply?: boolean;
   isThreadedChirp?: boolean;
   userHasLiked?: boolean;
+  // Image-related fields
+  imageUrl?: string | null;
+  imageAltText?: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   // Repost-related fields
   isRepost?: boolean;
   repostOfId?: string | null;
@@ -43,6 +48,10 @@ export interface MobileChirp {
       profileImageUrl?: string | null;
     };
     isWeeklySummary?: boolean;
+    imageUrl?: string | null;
+    imageAltText?: string | null;
+    imageWidth?: number | null;
+    imageHeight?: number | null;
   };
 }
 

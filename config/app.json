@@ -12,7 +12,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.kriselle.chirp",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app needs access to camera to take photos for your chirps.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select images for your chirps."
       }
     },
     "notification": {
@@ -27,7 +29,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",

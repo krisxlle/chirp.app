@@ -327,6 +327,10 @@ export async function getUserChirps(userId: string) {
         created_at,
         reply_to_id,
         is_weekly_summary,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
         users!inner(
           id,
           first_name,
@@ -363,6 +367,11 @@ export async function getUserChirps(userId: string) {
       replies: [],
       repostOfId: null,
       originalChirp: undefined,
+      // Image-related fields - ADDED THESE!
+      imageUrl: chirp.image_url,
+      imageAltText: chirp.image_alt_text,
+      imageWidth: chirp.image_width,
+      imageHeight: chirp.image_height,
       author: {
         id: chirp.users.id,
         firstName: chirp.users.first_name || 'User',
@@ -514,6 +523,7 @@ async function addLikeStatusToChirps(chirps: any[], currentUserId: string): Prom
 // Fallback function for basic feed without personalization
 async function getBasicForYouFeed(): Promise<any[]> {
   console.log('🔍 Testing database connection and checking for chirps...');
+  console.log('🔍 Database connection status:', isDatabaseConnected);
   
   // Check cache first
   const cacheKey = 'basic_feed';
@@ -536,7 +546,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
       .from('chirps')
       .select('id, content, created_at, author_id')
       .limit(5),
-    2000, // 2 second timeout for quick check
+    5000, // 5 second timeout for quick check
     'checking for chirps'
   ).catch(() => ({ data: null, error: new Error('Connection timeout') }));
 
@@ -548,9 +558,16 @@ async function getBasicForYouFeed(): Promise<any[]> {
   console.log(`📊 Total chirps in database: ${allChirps?.length || 0}`);
   if (allChirps && allChirps.length > 0) {
     console.log('📊 Sample chirp:', allChirps[0]);
+    console.log('📊 Sample chirp image data:', {
+      hasImageUrl: !!allChirps[0].image_url,
+      imageUrl: allChirps[0].image_url?.substring(0, 50) + '...',
+      imageWidth: allChirps[0].image_width,
+      imageHeight: allChirps[0].image_height
+    });
   }
 
-  // Ultra-simplified query for maximum speed (with timeout protection)
+  // Ultra-simplified query for maximum speed (without image fields to avoid timeout)
+  console.log('🔍 Starting main chirp query without image fields for speed...');
   const { data: chirps, error } = await withTimeout(
     supabase
       .from('chirps')
@@ -563,7 +580,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
       .is('reply_to_id', null)
       .order('created_at', { ascending: false })
       .limit(10), // Further reduced limit
-    3000, // Aggressive 3 second timeout
+    5000, // Reduced timeout since no image fields
     'fetching basic chirps'
   );
 
@@ -587,6 +604,63 @@ async function getBasicForYouFeed(): Promise<any[]> {
 
   console.log(`📊 Found ${chirps.length} chirps in database`);
 
+  // Fetch image data separately for chirps that have images (to avoid timeout)
+  console.log('🔍 Fetching image data separately...');
+  const chirpIds = chirps.map((chirp: any) => chirp.id);
+  console.log('🔍 Chirp IDs to fetch image data for:', chirpIds);
+  
+  const { data: imageData, error: imageError } = await withTimeout(
+    supabase
+      .from('chirps')
+      .select('id, image_url, image_alt_text, image_width, image_height')
+      .in('id', chirpIds)
+      .not('image_url', 'is', null),
+    3000, // 3 second timeout for image data
+    'fetching image data'
+  ).catch((error) => {
+    console.error('❌ Image data query failed:', error);
+    return { data: [], error: error };
+  });
+
+  // Create a map of chirp ID to image data
+  const imageMap = new Map();
+  if (imageData && !imageError) {
+    console.log('✅ Image data query successful, processing', imageData.length, 'images');
+    imageData.forEach((img: any) => {
+      console.log('🖼️ Processing image for chirp', img.id, ':', {
+        hasImageUrl: !!img.image_url,
+        imageUrl: img.image_url?.substring(0, 50) + '...',
+        imageWidth: img.image_width,
+        imageHeight: img.image_height
+      });
+      imageMap.set(img.id, {
+        imageUrl: img.image_url,
+        imageAltText: img.image_alt_text,
+        imageWidth: img.image_width,
+        imageHeight: img.image_height
+      });
+    });
+    console.log(`🖼️ Found image data for ${imageData.length} chirps`);
+  } else {
+    console.log('⚠️ Could not fetch image data, continuing without images');
+    if (imageError) {
+      console.error('❌ Image data error:', imageError);
+    }
+  }
+  
+  // Debug: Check if any chirps have image data
+  console.log(`🖼️ Chirps with images: ${imageMap.size}/${chirps.length}`);
+  if (imageMap.size > 0) {
+    const firstImageChirp = Array.from(imageMap.entries())[0];
+    console.log('🖼️ Sample chirp with image:', {
+      id: firstImageChirp[0],
+      hasImageUrl: !!firstImageChirp[1].imageUrl,
+      imageUrl: firstImageChirp[1].imageUrl?.substring(0, 50) + '...',
+      imageWidth: firstImageChirp[1].imageWidth,
+      imageHeight: firstImageChirp[1].imageHeight
+    });
+  }
+
   // Get user data for the chirps (separate query for better performance)
   const authorIds = [...new Set((chirps || []).map((chirp: any) => chirp.author_id))];
   const userData = authorIds.length > 0 ? await withTimeout(
@@ -594,7 +668,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
       .from('users')
       .select('id, first_name, custom_handle, handle, profile_image_url')
       .in('id', authorIds),
-    2000, // 2 second timeout for user data
+    5000, // 5 second timeout for user data
     'fetching user data'
   ).catch(() => ({ data: [] })) : { data: [] };
 
@@ -604,7 +678,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
   });
 
   // Transform chirps efficiently without individual count queries (prevents timeouts)
-  const chirpIds = (chirps || []).map((chirp: any) => chirp.id);
+  // chirpIds already declared above for image query
   
   // Get reaction counts efficiently (simplified for speed)
   const reactionCounts = chirpIds.length > 0 ? await withTimeout(
@@ -619,7 +693,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
         });
         return counts;
       }),
-    2000, // 2 second timeout
+    5000, // 5 second timeout
     'fetching reaction counts'
   ).catch((error) => {
     console.warn('⚠️ Reaction count query timed out, using mock counts');
@@ -639,7 +713,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
         });
         return counts;
       }),
-    2000, // 2 second timeout
+    5000, // 5 second timeout
     'fetching reply counts'
   ).catch((error) => {
     console.warn('⚠️ Reply count query timed out, using mock counts');
@@ -648,6 +722,20 @@ async function getBasicForYouFeed(): Promise<any[]> {
 
   const transformedChirps = (chirps || []).map((chirp: any) => {
     const user = userMap.get(chirp.author_id);
+    const imageData = imageMap.get(chirp.id);
+    
+    // Debug logging for image data assignment
+    if (imageData) {
+      console.log('🖼️ Assigning image data to chirp', chirp.id, ':', {
+        hasImageUrl: !!imageData.imageUrl,
+        imageUrl: imageData.imageUrl?.substring(0, 50) + '...',
+        imageWidth: imageData.imageWidth,
+        imageHeight: imageData.imageHeight
+      });
+    } else {
+      console.log('🖼️ No image data found for chirp', chirp.id);
+    }
+    
     return {
       id: chirp.id.toString(),
       content: chirp.content,
@@ -661,6 +749,11 @@ async function getBasicForYouFeed(): Promise<any[]> {
       repostOfId: null,
       originalChirp: undefined,
       userHasLiked: false,
+      // Image-related fields - from separate query
+      imageUrl: imageData?.imageUrl || null,
+      imageAltText: imageData?.imageAltText || null,
+      imageWidth: imageData?.imageWidth || null,
+      imageHeight: imageData?.imageHeight || null,
       author: {
         id: user?.id || chirp.author_id || 'unknown',
         firstName: user?.first_name || 'User',
@@ -789,11 +882,11 @@ export const authenticateUserByUsername = async (username: string, password: str
     let userProfile = null;
     let profileError = null;
 
-    // Try custom_handle first
+    // Try custom_handle first (case-insensitive)
     const { data: customHandleUser, error: customHandleError } = await supabase
       .from('users')
       .select('*')
-      .eq('custom_handle', username)
+      .ilike('custom_handle', username)
       .single();
 
     if (customHandleUser) {
@@ -802,11 +895,11 @@ export const authenticateUserByUsername = async (username: string, password: str
       console.log('❌ Error searching by custom_handle:', customHandleError);
       return null;
     } else {
-      // Try handle if custom_handle didn't work
+      // Try handle if custom_handle didn't work (case-insensitive)
       const { data: handleUser, error: handleError } = await supabase
         .from('users')
         .select('*')
-        .eq('handle', username)
+        .ilike('handle', username)
         .single();
 
       if (handleUser) {
@@ -912,6 +1005,92 @@ export const signInWithSupabase = async (email: string, password: string) => {
   }
 };
 
+// Check if a handle is available (case-insensitive) - for real-time validation
+export const checkHandleAvailability = async (handle: string): Promise<{
+  available: boolean;
+  message: string;
+}> => {
+  try {
+    console.log('🔍 Checking handle availability for real-time validation:', handle);
+    
+    // Basic validation
+    if (!handle || handle.trim().length === 0) {
+      return {
+        available: false,
+        message: 'Handle cannot be empty'
+      };
+    }
+    
+    if (handle.length < 3) {
+      return {
+        available: false,
+        message: 'Handle must be at least 3 characters'
+      };
+    }
+    
+    if (handle.length > 20) {
+      return {
+        available: false,
+        message: 'Handle must be 20 characters or less'
+      };
+    }
+    
+    // Check for invalid characters (alphanumeric and underscores only)
+    if (!/^[a-zA-Z0-9_]+$/.test(handle)) {
+      return {
+        available: false,
+        message: 'Handle can only contain letters, numbers, and underscores'
+      };
+    }
+    
+    // Check availability
+    const isAvailable = await isHandleAvailable(handle);
+    
+    return {
+      available: isAvailable,
+      message: isAvailable ? 'Handle is available!' : 'Handle is already taken'
+    };
+  } catch (error) {
+    console.error('❌ Error in checkHandleAvailability:', error);
+    return {
+      available: false,
+      message: 'Error checking handle availability'
+    };
+  }
+};
+
+// Check if a handle is available (case-insensitive)
+export const isHandleAvailable = async (handle: string): Promise<boolean> => {
+  try {
+    console.log('🔍 Checking handle availability:', handle);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, assuming handle is available');
+      return true;
+    }
+
+    // Check both handle and custom_handle fields case-insensitively
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .or(`handle.ilike.${handle},custom_handle.ilike.${handle}`)
+      .limit(1);
+
+    if (error) {
+      console.error('❌ Error checking handle availability:', error);
+      return false;
+    }
+
+    const isAvailable = !data || data.length === 0;
+    console.log(`✅ Handle "${handle}" is ${isAvailable ? 'available' : 'taken'}`);
+    return isAvailable;
+  } catch (error) {
+    console.error('❌ Error in isHandleAvailable:', error);
+    return false;
+  }
+};
+
 // Sign up function using Supabase auth
 export const signUp = async (email: string, password: string, name: string, customHandle?: string) => {
   try {
@@ -921,6 +1100,14 @@ export const signUp = async (email: string, password: string, name: string, cust
     if (!isDatabaseConnected) {
       console.log('🔄 Database not connected, cannot create account');
       throw new Error('Database not connected');
+    }
+
+    // Validate handle availability if custom handle is provided
+    if (customHandle) {
+      const handleAvailable = await isHandleAvailable(customHandle);
+      if (!handleAvailable) {
+        throw new Error(`Handle "${customHandle}" is already taken. Please choose a different handle.`);
+      }
     }
 
     // Generate a UUID for the user (bypass Supabase auth to avoid email confirmation)
@@ -949,6 +1136,16 @@ export const signUp = async (email: string, password: string, name: string, cust
     
     if (profileError) {
       console.error('❌ Error creating user profile:', profileError);
+      
+      // Check if it's a unique constraint violation
+      if (profileError.code === '23505') {
+        if (profileError.message.includes('handle')) {
+          throw new Error(`Handle "${customHandle}" is already taken. Please choose a different handle.`);
+        } else if (profileError.message.includes('email')) {
+          throw new Error('An account with this email already exists.');
+        }
+      }
+      
       throw new Error('Failed to create user profile');
     }
 
@@ -970,10 +1167,152 @@ export const signUp = async (email: string, password: string, name: string, cust
   }
 };
 
-// Export other functions as needed
-export const createChirp = async (content: string, authorId?: string, replyToId?: string | null): Promise<any> => {
+// Image upload function
+export const uploadChirpImage = async (imageUri: string, userId: string): Promise<{
+  imageUrl: string;
+  imageWidth: number;
+  imageHeight: number;
+}> => {
   try {
-    console.log('🔄 Creating chirp:', { content, authorId, replyToId });
+    console.log('🔄 Uploading chirp image for user:', userId);
+    
+    // Read the image file
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+    
+    // Check blob size - if too large, skip storage and go straight to base64
+    const blobSizeMB = blob.size / (1024 * 1024);
+    console.log(`📏 Image size: ${blobSizeMB.toFixed(2)}MB`);
+    
+    if (blobSizeMB > 1) { // If larger than 1MB, skip storage
+      console.log('⚠️ Image too large for storage, using base64 directly');
+      const base64 = await blobToBase64(blob);
+      const dataUrl = `data:image/jpeg;base64,${base64}`;
+      
+      return {
+        imageUrl: dataUrl,
+        imageWidth: 400,
+        imageHeight: 300
+      };
+    }
+    
+    // Try storage upload first
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileName = `${timestamp}-${randomId}.jpg`;
+    
+    console.log('📤 Attempting storage upload with filename:', fileName);
+    
+    try {
+      // Try storage upload
+      const { data, error } = await supabase.storage
+        .from('chirp-images')
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('chirp-images')
+        .getPublicUrl(fileName);
+      
+      console.log('✅ Storage upload successful:', publicUrl);
+      
+      return {
+        imageUrl: publicUrl,
+        imageWidth: 400,
+        imageHeight: 300
+      };
+      
+    } catch (storageError) {
+      console.log('⚠️ Storage upload failed:', storageError);
+      console.log('🔄 Falling back to base64 storage method...');
+      
+      // Fallback to base64
+      try {
+        const base64 = await blobToBase64(blob);
+        const dataUrl = `data:image/jpeg;base64,${base64}`;
+        
+        console.log('✅ Base64 fallback successful - using data URL');
+        
+        return {
+          imageUrl: dataUrl,
+          imageWidth: 400,
+          imageHeight: 300
+        };
+      } catch (base64Error) {
+        console.error('❌ Base64 fallback also failed:', base64Error);
+        throw storageError; // Throw the original storage error
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error uploading chirp image:', error);
+    throw error;
+  }
+};
+
+// Helper function to convert blob to base64
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove the data URL prefix to get just the base64 string
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+// Delete chirp image
+export const deleteChirpImage = async (imageUrl: string): Promise<boolean> => {
+  try {
+    console.log('🔄 Deleting chirp image:', imageUrl);
+    
+    // Extract filename from URL
+    const urlParts = imageUrl.split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    const fullPath = `chirp-images/${urlParts[urlParts.length - 2]}/${fileName}`;
+    
+    const { error } = await supabase.storage
+      .from('chirp-images')
+      .remove([fullPath]);
+    
+    if (error) {
+      console.error('❌ Error deleting image:', error);
+      return false;
+    }
+    
+    console.log('✅ Image deleted successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Error deleting chirp image:', error);
+    return false;
+  }
+};
+
+// Export other functions as needed
+export const createChirp = async (
+  content: string, 
+  authorId?: string, 
+  replyToId?: string | null,
+  imageData?: {
+    imageUrl?: string;
+    imageAltText?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+  }
+): Promise<any> => {
+  try {
+    console.log('🔄 Creating chirp:', { content, authorId, replyToId, hasImage: !!imageData?.imageUrl });
     await ensureDatabaseInitialized();
     
     if (!isDatabaseConnected) {
@@ -984,16 +1323,34 @@ export const createChirp = async (content: string, authorId?: string, replyToId?
     if (!authorId) {
       console.error('❌ Author ID is required to create chirp');
       throw new Error('Author ID is required');
-      }
+    }
+
+    const chirpData: any = {
+      content: content,
+      author_id: authorId,
+      reply_to_id: replyToId || null,
+      is_weekly_summary: false
+    };
+
+    // Add image data if provided
+    if (imageData?.imageUrl) {
+      console.log('🖼️ Adding image data to chirp:', {
+        imageUrl: imageData.imageUrl.substring(0, 50) + '...',
+        imageAltText: imageData.imageAltText,
+        imageWidth: imageData.imageWidth,
+        imageHeight: imageData.imageHeight
+      });
+      chirpData.image_url = imageData.imageUrl;
+      chirpData.image_alt_text = imageData.imageAltText || '';
+      chirpData.image_width = imageData.imageWidth || null;
+      chirpData.image_height = imageData.imageHeight || null;
+    } else {
+      console.log('🖼️ No image data provided to createChirp');
+    }
 
     const { data, error } = await supabase
       .from('chirps')
-      .insert({
-        content: content,
-        author_id: authorId,
-        reply_to_id: replyToId || null,
-        is_weekly_summary: false
-      })
+      .insert(chirpData)
       .select(`
         *,
         users(
@@ -1015,6 +1372,19 @@ export const createChirp = async (content: string, authorId?: string, replyToId?
 
     console.log('✅ Chirp created successfully:', data.id);
     console.log('📊 Created chirp ID:', truncateId(data?.id)); // Added debugging
+    console.log('🖼️ Chirp image data:', {
+      hasImage: !!data.image_url,
+      imageUrl: data.image_url?.substring(0, 50) + '...',
+      imageWidth: data.image_width,
+      imageHeight: data.image_height,
+      fullImageUrl: data.image_url ? 'Present' : 'Missing'
+    });
+    
+    // Additional debug: check if image columns exist
+    if (imageData?.imageUrl && !data.image_url) {
+      console.error('❌ Image data was provided but not saved to database!');
+      console.error('❌ This suggests the image columns do not exist in the chirps table');
+    }
     clearChirpCache();
     return data;
   } catch (error) {
@@ -1621,6 +1991,10 @@ export const getChirpsByHashtag = async (hashtag: string): Promise<any[]> => {
         thread_id,
         thread_order,
         is_thread_starter,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
         users!inner(
           id,
           first_name,
@@ -1678,6 +2052,11 @@ export const getChirpsByHashtag = async (hashtag: string): Promise<any[]> => {
       replyCount: 0, // We'll skip individual reply counts for performance
       reactions: [],
       userHasLiked: userLikes.has(chirp.id),
+      // Image-related fields - ADDED THESE!
+      imageUrl: chirp.image_url,
+      imageAltText: chirp.image_alt_text,
+      imageWidth: chirp.image_width,
+      imageHeight: chirp.image_height,
       author: {
         id: chirp.users.id,
         firstName: chirp.users.first_name || 'User',
@@ -1742,6 +2121,10 @@ export const searchChirps = async (query: string): Promise<any[]> => {
         created_at,
         reply_to_id,
         is_weekly_summary,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
         users!inner(
           id,
           first_name,
@@ -1796,6 +2179,11 @@ export const searchChirps = async (query: string): Promise<any[]> => {
       replyCount: 0, // We'll skip individual reply counts for performance
       reactions: [],
       userHasLiked: userLikes.has(chirp.id),
+      // Image-related fields - ADDED THESE!
+      imageUrl: chirp.image_url,
+      imageAltText: chirp.image_alt_text,
+      imageWidth: chirp.image_width,
+      imageHeight: chirp.image_height,
       author: {
         id: chirp.users.id,
         firstName: chirp.users.first_name || 'User',

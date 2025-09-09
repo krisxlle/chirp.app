@@ -13,7 +13,7 @@ import {
     View
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { signInWithSupabase, signUp } from '../lib/database/mobile-db-supabase';
+import { checkHandleAvailability, signInWithSupabase, signUp } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 
 // Custom Icon Components
@@ -75,7 +75,34 @@ export default function SignInScreen() {
   const [customHandle, setCustomHandle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [handleValidation, setHandleValidation] = useState<{
+    available: boolean;
+    message: string;
+  } | null>(null);
+  const [isValidatingHandle, setIsValidatingHandle] = useState(false);
   const { signIn } = useAuth();
+
+  // Validate handle availability in real-time
+  const validateHandle = async (handle: string) => {
+    if (!handle.trim()) {
+      setHandleValidation(null);
+      return;
+    }
+
+    setIsValidatingHandle(true);
+    try {
+      const validation = await checkHandleAvailability(handle);
+      setHandleValidation(validation);
+    } catch (error) {
+      console.error('Error validating handle:', error);
+      setHandleValidation({
+        available: false,
+        message: 'Error checking handle availability'
+      });
+    } finally {
+      setIsValidatingHandle(false);
+    }
+  };
 
   const handleSignIn = async () => {
     if (!username.trim()) {
@@ -146,21 +173,9 @@ export default function SignInScreen() {
       return;
     }
 
-    // Custom handle validation
-    if (customHandle.length < 3) {
-      Alert.alert('Error', 'Custom handle must be at least 3 characters long');
-      return;
-    }
-
-    if (customHandle.length > 20) {
-      Alert.alert('Error', 'Custom handle must be less than 20 characters');
-      return;
-    }
-
-    // Check for valid characters in handle (alphanumeric, hyphen, period)
-    const handleRegex = /^[a-zA-Z0-9.-]+$/;
-    if (!handleRegex.test(customHandle.replace('@', ''))) {
-      Alert.alert('Error', 'Custom handle can only contain letters, numbers, hyphens, and periods');
+    // Custom handle validation - use the new validation function
+    if (!handleValidation || !handleValidation.available) {
+      Alert.alert('Error', handleValidation?.message || 'Please enter a valid handle');
       return;
     }
 
@@ -325,10 +340,33 @@ export default function SignInScreen() {
                 placeholder="Custom handle (e.g., @username)"
                 placeholderTextColor="#9ca3af"
                 value={customHandle}
-                onChangeText={setCustomHandle}
+                onChangeText={(text) => {
+                  setCustomHandle(text);
+                  // Debounce validation to avoid too many API calls
+                  const timeoutId = setTimeout(() => {
+                    validateHandle(text);
+                  }, 500);
+                  return () => clearTimeout(timeoutId);
+                }}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              
+              {/* Handle validation message */}
+              {handleValidation && (
+                <View style={styles.validationContainer}>
+                  {isValidatingHandle ? (
+                    <ActivityIndicator size="small" color="#7c3aed" />
+                  ) : (
+                    <Text style={[
+                      styles.validationText,
+                      { color: handleValidation.available ? '#10b981' : '#ef4444' }
+                    ]}>
+                      {handleValidation.message}
+                    </Text>
+                  )}
+                </View>
+              )}
             </>
           )}
           
@@ -459,6 +497,17 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     backgroundColor: '#ffffff',
     marginBottom: 16,
+  },
+  validationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  validationText: {
+    fontSize: 14,
+    marginLeft: 8,
+    fontWeight: '500',
   },
   signInButton: {
     backgroundColor: '#7c3aed',

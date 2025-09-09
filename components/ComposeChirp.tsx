@@ -3,12 +3,19 @@ import React, { useState } from 'react';
 import { Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useResponsive } from '../hooks/useResponsive';
-import { createThread } from '../lib/database/mobile-db-supabase';
+import { createThread, uploadChirpImage } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
+import ChirpImage from './ChirpImage';
+import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
 
 interface ComposeChirpProps {
-  onPost?: (content: string) => Promise<void> | void;
+  onPost?: (content: string, imageData?: {
+    imageUrl?: string;
+    imageAltText?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+  }) => Promise<void> | void;
 }
 
 // Thread Icon Component
@@ -26,6 +33,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [isThreadMode, setIsThreadMode] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [threadChirps, setThreadChirps] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const { user: authUser, isLoading } = useAuth();
   const { padding } = useResponsive();
@@ -62,6 +71,14 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   console.log('ComposeChirp: Final user object:', user.id);
   console.log('ComposeChirp: User profile image:', user.profileImageUrl ? 'has image' : 'no image');
 
+  const handleImageSelected = (imageUri: string) => {
+    setSelectedImage(imageUri);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+  };
+
   const addToThread = () => {
     if (!content.trim()) {
       Alert.alert("Empty chirp", "Please write something before adding to thread.");
@@ -75,6 +92,11 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 
     setThreadChirps([...threadChirps, content.trim()]);
     setContent("");
+    // Note: Images are not supported in threads for now
+    if (selectedImage) {
+      Alert.alert("Thread Mode", "Images are not supported in threads. The image will be removed.");
+      setSelectedImage(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -105,8 +127,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       }
     } else {
       // Normal mode - just check for content
-      if (!content.trim()) {
-        Alert.alert("Empty chirp", "Please write something before posting.");
+      if (!content.trim() && !selectedImage) {
+        Alert.alert("Empty chirp", "Please write something or add an image before posting.");
         return;
       }
 
@@ -119,6 +141,28 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     setIsPosting(true);
     
     try {
+      let imageData = null;
+      
+      // Upload image if one is selected
+      if (selectedImage && !isThreadMode) {
+        setIsUploadingImage(true);
+        try {
+          const uploadResult = await uploadChirpImage(selectedImage, user.id);
+          imageData = {
+            imageUrl: uploadResult.imageUrl,
+            imageAltText: content.trim() || 'Chirp image',
+            imageWidth: uploadResult.imageWidth,
+            imageHeight: uploadResult.imageHeight
+          };
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          Alert.alert("Upload Error", "Failed to upload image. Please try again.");
+          return;
+        } finally {
+          setIsUploadingImage(false);
+        }
+      }
+      
       // Use API instead of direct database connection
       console.log('Creating chirp via API...');
       console.log('User ID for chirp creation:', user.id);
@@ -149,15 +193,16 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         setThreadChirps([]);
         setIsThreadMode(false);
       } else {
-        // Post single chirp
-                 const newChirp = await createChirp(content.trim(), user.id);
-         if (newChirp) {
-           // Call the onPost callback to update the UI (but don't create another chirp)
-           await onPost?.(content.trim());
-         }
+        // Post single chirp with image data
+        const newChirp = await createChirp(content.trim(), user.id, null, imageData);
+        if (newChirp) {
+          // Call the onPost callback to update the UI (but don't create another chirp)
+          await onPost?.(content.trim(), imageData);
+        }
       }
       
       setContent("");
+      setSelectedImage(null);
     } catch (error) {
       console.error('Error posting chirp:', error);
       Alert.alert("Error", error instanceof Error ? error.message : "Failed to post. Please try again.");
@@ -277,6 +322,21 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             textAlignVertical="top"
           />
           
+          {/* Image Preview */}
+          {selectedImage && (
+            <View style={styles.imagePreviewContainer}>
+              <ChirpImage
+                imageUrl={selectedImage}
+                imageAltText={content.trim() || 'Chirp image'}
+                onRemoveImage={handleRemoveImage}
+                showRemoveButton={true}
+                isUploading={isUploadingImage}
+                maxWidth={300} // Constrain width for compose context
+                maxHeight={200} // Constrain height for compose context
+              />
+            </View>
+          )}
+          
           <View style={styles.actionRow}>
             <View style={styles.leftActions}>
               <TouchableOpacity 
@@ -287,6 +347,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 <Text style={styles.threadButtonText}>Thread</Text>
               </TouchableOpacity>
               
+              <ImagePickerButton
+                onImageSelected={handleImageSelected}
+                disabled={isThreadMode || isPosting}
+                size={20}
+                color="#7c3aed"
+              />
+              
               <Text style={[styles.charCount, { color: getCharCountColor() }]}>
                 {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
               </Text>
@@ -294,7 +361,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             
             <TouchableOpacity
               onPress={handleSubmit}
-              disabled={!content.trim() || content.length > maxLength || isPosting}
+              disabled={(!content.trim() && !selectedImage) || content.length > maxLength || isPosting}
             >
               <LinearGradient
                 colors={['#7c3aed', '#ec4899']}
@@ -302,7 +369,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 end={{ x: 1, y: 0 }}
                 style={[
                   styles.postButton,
-                  (!content.trim() || content.length > maxLength || isPosting) && styles.postButtonDisabled
+                  ((!content.trim() && !selectedImage) || content.length > maxLength || isPosting) && styles.postButtonDisabled
                 ]}
               >
                 <Text style={styles.postButtonText}>
@@ -338,6 +405,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flex: 1,
     marginLeft: 12,
+    overflow: 'hidden', // Prevent content from overflowing
   },
   textInput: {
     fontSize: 18,
@@ -346,6 +414,12 @@ const styles = StyleSheet.create({
     padding: 0,
     color: '#1a1a1a',
     textAlignVertical: 'top',
+  },
+  imagePreviewContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+    overflow: 'hidden',
+    borderRadius: 12,
   },
   actionRow: {
     flexDirection: 'row',

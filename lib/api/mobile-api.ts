@@ -31,9 +31,22 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
 };
 
 // Chirp functions using Supabase
-export const createChirp = async (content: string, authorId: string, replyToId?: string | null) => {
-  console.log('Creating chirp via Supabase:', { content, authorId, replyToId });
-  return await createChirpSupabase(content, authorId, replyToId);
+export const createChirp = async (content: string, authorId: string, replyToId?: string | null, imageData?: {
+  imageUrl?: string;
+  imageAltText?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+}) => {
+  console.log('🔍 API createChirp called with:', { 
+    content: content.substring(0, 50) + '...', 
+    authorId, 
+    replyToId, 
+    hasImageData: !!imageData,
+    imageUrl: imageData?.imageUrl?.substring(0, 50) + '...',
+    imageWidth: imageData?.imageWidth,
+    imageHeight: imageData?.imageHeight
+  });
+  return await createChirpSupabase(content, authorId, replyToId, imageData);
 };
 
 export const getForYouChirps = async (limit: number = 20, offset: number = 0) => {

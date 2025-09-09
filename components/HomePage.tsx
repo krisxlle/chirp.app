@@ -155,9 +155,20 @@ export default function HomePage() {
   }, []);
   
   // Function to add a new chirp to the For You feed
-  const handleNewChirp = useCallback(async (content: string) => {
+  const handleNewChirp = useCallback(async (content: string, imageData?: {
+    imageUrl?: string;
+    imageAltText?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+  }) => {
     try {
       console.log('🔄 HomePage: Adding new chirp to feed...');
+      console.log('🖼️ HomePage: Image data received:', {
+        hasImageData: !!imageData,
+        imageUrl: imageData?.imageUrl?.substring(0, 50) + '...',
+        imageWidth: imageData?.imageWidth,
+        imageHeight: imageData?.imageHeight
+      });
       
       // Create a temporary chirp object
       const newChirp = {
@@ -172,6 +183,11 @@ export default function HomePage() {
         replies: [],
         repostOfId: null,
         originalChirp: undefined,
+        // Image-related fields - ADDED THESE!
+        imageUrl: imageData?.imageUrl || null,
+        imageAltText: imageData?.imageAltText || null,
+        imageWidth: imageData?.imageWidth || null,
+        imageHeight: imageData?.imageHeight || null,
         author: {
           id: user?.id || 'unknown',
           firstName: user?.firstName || 'User',

@@ -2,10 +2,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Clipboard, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
 import HeartIcon from './icons/HeartIcon';
 import ShareIcon from './icons/ShareIcon';
 import SpeechBubbleIcon from './icons/SpeechBubbleIcon';
+import ImageViewerModal from './ImageViewerModal';
 import UserAvatar from './UserAvatar';
 // Removed UserProfileModal import - using page navigation instead
 import { useAuth } from './AuthContext';
@@ -71,6 +73,11 @@ interface Chirp {
   reactionCount: number;
   isWeeklySummary?: boolean;
   userHasLiked?: boolean;
+  // Image-related fields
+  imageUrl?: string | null;
+  imageAltText?: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   // Reply identification fields
   isDirectReply?: boolean;
   isNestedReply?: boolean;
@@ -114,6 +121,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   const [replies, setReplies] = useState(chirp.replyCount || 0);
   const [userHasLiked, setUserHasLiked] = useState(chirp.userHasLiked || false);
   const [showLikesModal, setShowLikesModal] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   
   // Verify like status on component mount to ensure accuracy
   useEffect(() => {
@@ -168,6 +176,18 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     setReplies(chirp.replyCount || 0);
     setUserHasLiked(chirp.userHasLiked || false);
   }, [chirp.reactionCount, chirp.replyCount, chirp.userHasLiked]);
+
+  // Debug logging for image data
+  useEffect(() => {
+    console.log('🔍 ChirpCard image data:', {
+      chirpId: chirp.id,
+      hasImageUrl: !!chirp.imageUrl,
+      imageUrl: chirp.imageUrl?.substring(0, 50) + '...',
+      imageWidth: chirp.imageWidth,
+      imageHeight: chirp.imageHeight,
+      imageAltText: chirp.imageAltText
+    });
+  }, [chirp.id, chirp.imageUrl, chirp.imageWidth, chirp.imageHeight, chirp.imageAltText]);
 
   // Check follow status when component mounts or user changes
   useEffect(() => {
@@ -776,6 +796,26 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         })}
       </Text>
 
+      {/* Display chirp image if available */}
+      {chirp.imageUrl && (
+        <View style={styles.imageContainer}>
+          <ChirpImage
+            imageUrl={chirp.imageUrl}
+            imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
+            imageWidth={chirp.imageWidth}
+            imageHeight={chirp.imageHeight}
+            maxWidth={300} // Custom max width for ChirpCard
+            maxHeight={180} // Custom max height for ChirpCard (smaller than default)
+            onImagePress={() => {
+              console.log('Image pressed:', chirp.imageUrl?.substring(0, 50) + '...');
+              setShowImageViewer(true);
+            }}
+          />
+        </View>
+      )}
+      
+      {/* Debug logging for image data - moved to useEffect to avoid JSX issues */}
+
       <View style={styles.actions} pointerEvents="box-none">
         <TouchableOpacity 
           style={styles.actionButton} 
@@ -974,6 +1014,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         chirpId={chirp.id}
         onClose={() => setShowLikesModal(false)}
       />
+
+      <ImageViewerModal
+        visible={showImageViewer}
+        imageUrl={chirp.imageUrl || ''}
+        imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
+        onClose={() => setShowImageViewer(false)}
+      />
     </TouchableOpacity>
   );
 }
@@ -984,12 +1031,21 @@ const styles = StyleSheet.create({
     marginVertical: 3,
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 10,
     shadowColor: '#7c3aed',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+  },
+  imageContainer: {
+    marginTop: 0,           // Removed top margin
+    marginBottom: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff', // Match ChirpCard background
+    alignItems: 'center',      // Center the image horizontally
+    justifyContent: 'center',   // Center the image vertically
   },
   weeklySummaryContainer: {
     backgroundColor: '#f8f4ff',
@@ -1027,11 +1083,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 2,
   },
   headerContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
   },
   nameRow: {
     flexDirection: 'row',
@@ -1096,10 +1152,10 @@ const styles = StyleSheet.create({
   },
   content: {
     fontSize: 15,
-    lineHeight: 24,
+    lineHeight: 22,
     color: '#14171a',
     marginLeft: 52, // Align with avatar
-    marginBottom: 12,
+    marginBottom: 0, // Removed margin to reduce spacing
   },
   actions: {
     flexDirection: 'row',
@@ -1107,7 +1163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginLeft: 52, // Align with avatar
     marginRight: 8, // Reduced right margin
-    paddingTop: 4,
+    paddingTop: 0, // Reduced from 4 to 0
     overflow: 'visible', // Allow buttons to be visible
   },
   actionButton: {
