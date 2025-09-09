@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -25,8 +25,8 @@ interface ChirpImageProps {
 }
 
 const { width: screenWidth } = Dimensions.get('window');
-const maxImageWidth = screenWidth - 40; // Account for padding
-const maxImageHeight = 200; // Reduced from 300 to 200 for better fit
+const maxImageWidth = screenWidth - 20; // Reduced padding to allow wider images
+const maxImageHeight = 300; // Increased to allow wider images
 
 export default function ChirpImage({
   imageUrl,
@@ -43,25 +43,21 @@ export default function ChirpImage({
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  // Debug logging
-  console.log('🖼️ ChirpImage component loaded:', {
-    imageUrl: imageUrl?.substring(0, 50) + '...',
-    imageWidth,
-    imageHeight,
-    imageAltText,
-    isUploading
-  });
-
   // Use custom max dimensions or fallback to defaults
   const effectiveMaxWidth = maxWidth || maxImageWidth;
   const effectiveMaxHeight = maxHeight || maxImageHeight;
+
 
   // Calculate display dimensions while maintaining aspect ratio
   const aspectRatio = imageWidth / imageHeight;
   let displayWidth = imageWidth;
   let displayHeight = imageHeight;
 
-  if (displayWidth > effectiveMaxWidth) {
+  // Scale up if image is smaller than max width, or scale down if larger
+  if (displayWidth < effectiveMaxWidth) {
+    displayWidth = effectiveMaxWidth;
+    displayHeight = displayWidth / aspectRatio;
+  } else if (displayWidth > effectiveMaxWidth) {
     displayWidth = effectiveMaxWidth;
     displayHeight = displayWidth / aspectRatio;
   }

@@ -8,6 +8,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import ProfileFrame from './ProfileFrame';
 
 interface ProfileCard {
   id: string;
@@ -17,8 +18,8 @@ interface ProfileCard {
   imageUrl?: any;
   bio: string;
   followers: number;
-  chirps: number;
   profilePower: number;
+  quantity: number; // Number of copies owned
   obtainedAt?: string;
 }
 
@@ -73,13 +74,15 @@ export default function PhotocardProfileModal({ visible, photocard, onClose }: P
               <Text style={styles.rarityText}>{rarityNames[photocard.rarity]}</Text>
             </View>
             
-            {photocard.imageUrl ? (
-              <Image source={photocard.imageUrl} style={styles.profileImage} />
-            ) : (
-              <View style={[styles.profileImagePlaceholder, { backgroundColor: rarityColors[photocard.rarity] }]}>
-                <Text style={styles.profileImageText}>{photocard.name.charAt(0)}</Text>
-              </View>
-            )}
+            <ProfileFrame rarity={photocard.rarity} size={120}>
+              {photocard.imageUrl ? (
+                <Image source={photocard.imageUrl} style={styles.profileImage} />
+              ) : (
+                <View style={[styles.profileImagePlaceholder, { backgroundColor: rarityColors[photocard.rarity] }]}>
+                  <Text style={styles.profileImageText}>{photocard.name.charAt(0)}</Text>
+                </View>
+              )}
+            </ProfileFrame>
             
             <Text style={styles.profileName}>{photocard.name}</Text>
             <Text style={styles.profileHandle}>{photocard.handle}</Text>
@@ -95,12 +98,14 @@ export default function PhotocardProfileModal({ visible, photocard, onClose }: P
                 <Text style={styles.statLabel}>Followers</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{(photocard.chirps || 0).toLocaleString()}</Text>
-                <Text style={styles.statLabel}>Chirps</Text>
-              </View>
-              <View style={styles.statItem}>
                 <Text style={styles.statValue}>{photocard.profilePower || 0}</Text>
                 <Text style={styles.statLabel}>Power</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: rarityColors[photocard.rarity] }]}>
+                  {photocard.quantity || 1}x
+                </Text>
+                <Text style={styles.statLabel}>Owned</Text>
               </View>
             </View>
           </View>

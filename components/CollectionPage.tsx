@@ -1,146 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getUserCollection } from '../lib/database/mobile-db-supabase';
 import AnalyticsPage from './AnalyticsPage';
 import { useAuth } from './AuthContext';
+import AnalyticsIcon from './icons/AnalyticsIcon';
+import ProfileFrame from './ProfileFrame';
 
 interface ProfileCard {
   id: string;
   name: string;
   handle: string;
   rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
-  imageUrl?: string;
+  imageUrl?: string | any; // Support both string URLs and require() objects
   bio: string;
   followers: number;
-  chirps: number;
   profilePower: number;
+  quantity: number; // Number of copies owned
   obtainedAt?: string;
 }
 
-const mockProfileCards: ProfileCard[] = [
-  {
-    id: '1',
-    name: 'Alex Chen',
-    handle: '@alex_chen',
-    rarity: 'mythic',
-    imageUrl: require('../attached_assets/IMG_0653_1753250221773.png'),
-    bio: 'Building the future, one algorithm at a time. AI enthusiast, coffee addict, and occasional philosopher.',
-    followers: 125000,
-    chirps: 2847,
-    profilePower: 892,
-  },
-  {
-    id: '2',
-    name: 'Maya Rodriguez',
-    handle: '@maya_rodriguez',
-    rarity: 'legendary',
-    imageUrl: require('../attached_assets/IMG_0654_1753256178546.png'),
-    bio: 'Protecting our oceans, one coral reef at a time. Diver, scientist, and advocate for marine conservation.',
-    followers: 89000,
-    chirps: 1563,
-    profilePower: 634,
-  },
-  {
-    id: '3',
-    name: 'Jordan Kim',
-    handle: '@jordan_kim',
-    rarity: 'epic',
-    imageUrl: require('../attached_assets/IMG_0655_1753256178546.png'),
-    bio: 'Gaming is life, life is gaming. Pro player turned commentator. Always chasing that perfect play.',
-    followers: 67000,
-    chirps: 2341,
-    profilePower: 521,
-  },
-  {
-    id: '4',
-    name: 'Sarah Williams',
-    handle: '@sarah_williams',
-    rarity: 'rare',
-    bio: 'Creating magic in the kitchen and sharing it with the world. Food is love, cooking is therapy.',
-    followers: 45000,
-    chirps: 892,
-    profilePower: 234,
-  },
-  {
-    id: '5',
-    name: 'Marcus Johnson',
-    handle: '@marcus_johnson',
-    rarity: 'legendary',
-    bio: 'From the field to the stage. Using sports to inspire and motivate others to reach their potential.',
-    followers: 156000,
-    chirps: 3421,
-    profilePower: 987,
-  },
-  {
-    id: '6',
-    name: 'Luna Patel',
-    handle: '@luna_patel',
-    rarity: 'epic',
-    bio: 'Exploring the cosmos from my backyard telescope. The universe is vast, and so are the possibilities.',
-    followers: 78000,
-    chirps: 1234,
-    profilePower: 456,
-  },
-  {
-    id: '7',
-    name: 'David Thompson',
-    handle: '@david_thompson',
-    rarity: 'uncommon',
-    bio: 'Strumming strings and teaching others to find their rhythm. Music connects us all.',
-    followers: 23000,
-    chirps: 567,
-    profilePower: 123,
-  },
-  {
-    id: '8',
-    name: 'Emma Davis',
-    handle: '@emma_davis',
-    rarity: 'common',
-    bio: 'Lost in stories, creating my own. Books are my escape and my inspiration.',
-    followers: 12000,
-    chirps: 234,
-    profilePower: 67,
-  },
-  {
-    id: '9',
-    name: 'Zara Ahmed',
-    handle: '@zara_ahmed',
-    rarity: 'mythic',
-    bio: 'Documenting human stories from around the world. Every photo tells a story of resilience and hope.',
-    followers: 189000,
-    chirps: 4123,
-    profilePower: 1245,
-  },
-  {
-    id: '10',
-    name: 'Ryan O\'Connor',
-    handle: '@ryan_oconnor',
-    rarity: 'legendary',
-    bio: 'Crafting visual stories that move hearts and change minds. Every frame is intentional.',
-    followers: 134000,
-    chirps: 2987,
-    profilePower: 756,
-  },
-  {
-    id: '11',
-    name: 'Isabella Santos',
-    handle: '@isabella_santos',
-    rarity: 'epic',
-    bio: 'Creating beautiful fashion that doesn\'t cost the earth. Style with substance.',
-    followers: 92000,
-    chirps: 1876,
-    profilePower: 543,
-  },
-  {
-    id: '12',
-    name: 'Kevin Park',
-    handle: '@kevin_park',
-    rarity: 'rare',
-    bio: 'Building tools that make the world better. Code is poetry, bugs are features.',
-    followers: 38000,
-    chirps: 654,
-    profilePower: 198,
-  },
-];
 
 const rarityColors = {
   mythic: '#ff6b6b',
@@ -164,13 +42,47 @@ export default function CollectionPage() {
   const { user } = useAuth();
   const [collection, setCollection] = useState<ProfileCard[]>([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Simulate loading user's collection
+  // Load user's collection from database
   useEffect(() => {
-    // In a real app, this would load from the database
-    const userCollection = mockProfileCards.slice(0, 6); // User has first 6 profile cards
-    setCollection(userCollection);
+    loadUserCollection();
   }, []);
+
+  const loadUserCollection = async () => {
+    try {
+      setIsLoading(true);
+      if (user?.id) {
+        const userCollection = await getUserCollection(user.id);
+        setCollection(userCollection);
+        console.log('🎮 CollectionPage loaded user collection:', userCollection.length, 'items');
+      } else {
+        setCollection([]);
+        console.log('🎮 CollectionPage no user ID, starting with empty collection');
+      }
+    } catch (error) {
+      console.error('❌ Error loading user collection:', error);
+      setCollection([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (user?.id) {
+        const userCollection = await getUserCollection(user.id);
+        setCollection(userCollection);
+        console.log('🔄 CollectionPage refreshed user collection:', userCollection.length, 'items');
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing user collection:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (showAnalytics) {
     return <AnalyticsPage onClose={() => setShowAnalytics(false)} />;
@@ -180,25 +92,39 @@ export default function CollectionPage() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Collection</Text>
-        <Text style={styles.headerSubtitle}>Your collected profile cards</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>My Collection</Text>
+          <Text style={styles.headerSubtitle}>Your collected profile cards</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.analyticsIconButton}
+          onPress={() => setShowAnalytics(true)}
+        >
+          <AnalyticsIcon size={20} color="#ffffff" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Analytics Button */}
-        <View style={styles.analyticsSection}>
-          <TouchableOpacity 
-            style={styles.analyticsButton}
-            onPress={() => setShowAnalytics(true)}
-          >
-            <Text style={styles.analyticsButtonText}>📊 View Analytics</Text>
-          </TouchableOpacity>
-        </View>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#C671FF"
+            colors={["#C671FF", "#FF61A6"]}
+          />
+        }
+      >
 
         {/* Collection Display */}
         <View style={styles.collectionSection}>
           <Text style={styles.sectionTitle}>Your Collection ({collection.length})</Text>
-          {collection.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.emptyCollection}>
+              <Text style={styles.emptyText}>Loading your collection...</Text>
+            </View>
+          ) : collection.length === 0 ? (
             <View style={styles.emptyCollection}>
               <Text style={styles.emptyText}>No profile cards collected yet</Text>
               <Text style={styles.emptySubtext}>Open some capsules to get started!</Text>
@@ -211,32 +137,39 @@ export default function CollectionPage() {
                     <Text style={styles.rarityText}>{rarityNames[profile.rarity]}</Text>
                   </View>
                   
-                  {profile.imageUrl ? (
-                    <Image source={profile.imageUrl} style={styles.profileImage} />
-                  ) : (
-                    <View style={[styles.profileImagePlaceholder, { backgroundColor: rarityColors[profile.rarity] }]}>
-                      <Text style={styles.profileImageText}>{profile.name.charAt(0)}</Text>
-                    </View>
-                  )}
+                  <ProfileFrame rarity={profile.rarity} size={60}>
+                    {profile.imageUrl ? (
+                      <Image 
+                        source={typeof profile.imageUrl === 'string' ? { uri: profile.imageUrl } : profile.imageUrl} 
+                        style={styles.profileImage} 
+                      />
+                    ) : (
+                      <View style={[styles.profileImagePlaceholder, { backgroundColor: rarityColors[profile.rarity] }]}>
+                        <Text style={styles.profileImageText}>{profile.name.charAt(0)}</Text>
+                      </View>
+                    )}
+                  </ProfileFrame>
                   
                   <Text style={styles.profileName}>{profile.name}</Text>
                   <Text style={styles.profileHandle}>{profile.handle}</Text>
                   <Text style={styles.profileBio}>{profile.bio}</Text>
                   
-                                     <View style={styles.profileStats}>
-                     <View style={styles.statItem}>
-                       <Text style={styles.statValue}>{(profile.followers || 0).toLocaleString()}</Text>
-                       <Text style={styles.statLabel}>Followers</Text>
-                     </View>
-                     <View style={styles.statItem}>
-                       <Text style={styles.statValue}>{(profile.chirps || 0).toLocaleString()}</Text>
-                       <Text style={styles.statLabel}>Chirps</Text>
-                     </View>
-                     <View style={styles.statItem}>
-                       <Text style={styles.statValue}>{profile.profilePower || 0}</Text>
-                       <Text style={styles.statLabel}>Power</Text>
-                     </View>
-                   </View>
+                  <View style={styles.profileStats}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>{(profile.followers || 0).toLocaleString()}</Text>
+                      <Text style={styles.statLabel}>Followers</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>{profile.profilePower || 0}</Text>
+                      <Text style={styles.statLabel}>Power</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={[styles.statValue, { color: rarityColors[profile.rarity] }]}>
+                        {profile.quantity || 1}x
+                      </Text>
+                      <Text style={styles.statLabel}>Owned</Text>
+                    </View>
+                  </View>
                   
                   {profile.obtainedAt && (
                     <Text style={styles.obtainedDate}>
@@ -261,10 +194,16 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 28,
@@ -276,27 +215,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6b7280',
   },
+  analyticsIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#7c3aed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
   content: {
     flex: 1,
-  },
-  analyticsSection: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  analyticsButton: {
-    backgroundColor: '#7c3aed',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  analyticsButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 20,

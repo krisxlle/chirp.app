@@ -279,9 +279,8 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
            {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
              if (part.startsWith('@')) {
                return (
-                 <Text 
-                   key={index} 
-                   style={styles.mentionText}
+                 <TouchableOpacity 
+                   key={index}
                    onPress={async () => {
                      try {
                        const { getUserByHandle } = await import('../lib/database/mobile-db-supabase');
@@ -298,8 +297,8 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
                      }
                    }}
                  >
-                   {part}
-                 </Text>
+                   <Text style={styles.mentionText}>{part}</Text>
+                 </TouchableOpacity>
                );
              }
              return <Text key={index}>{part}</Text>;

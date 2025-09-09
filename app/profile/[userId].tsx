@@ -465,9 +465,9 @@ export default function UserProfileScreen() {
                 {user.bio.split(/(@\w+)/).map((part, index) => {
                   if (part.startsWith('@')) {
                     return (
-                      <TouchableOpacity 
+                      <Text 
                         key={index} 
-                        style={styles.mentionButton}
+                        style={styles.mentionText}
                         onPress={async () => {
                           try {
                             const { getUserByHandle } = await import('../../lib/database/mobile-db-supabase');
@@ -484,8 +484,8 @@ export default function UserProfileScreen() {
                           }
                         }}
                       >
-                        <Text style={styles.mentionText}>{part}</Text>
-                      </TouchableOpacity>
+                        {part}
+                      </Text>
                     );
                   }
                   return <Text key={index}>{part}</Text>;
@@ -861,17 +861,11 @@ const styles = StyleSheet.create({
   mentionText: {
     fontSize: 15,
     color: '#7c3aed',
-    fontWeight: '600',
     lineHeight: 20,
   },
   linkText: {
     fontSize: 14,
     color: '#7c3aed',
-  },
-  mentionButton: {
-    alignSelf: 'baseline',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
   },
   infoRow: {
     flexDirection: 'row',

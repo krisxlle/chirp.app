@@ -99,7 +99,7 @@ const truncateId = (id: string | undefined, length: number = 8): string => {
 // Helper function to wrap database operations with timeout
 const withTimeout = async <T>(
   operation: Promise<T>, 
-  timeoutMs: number = 10000, 
+  timeoutMs: number = 15000, 
   operationName: string = 'database operation'
 ): Promise<T> => {
   const controller = new AbortController();
@@ -168,7 +168,7 @@ const testDatabaseConnection = async () => {
     
       // Quick connection test with shorter timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
       const { data, error } = await supabase
         .from('users')
@@ -546,7 +546,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
       .from('chirps')
       .select('id, content, created_at, author_id')
       .limit(5),
-    5000, // 5 second timeout for quick check
+    8000, // 8 second timeout for quick check
     'checking for chirps'
   ).catch(() => ({ data: null, error: new Error('Connection timeout') }));
 
@@ -580,7 +580,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
       .is('reply_to_id', null)
       .order('created_at', { ascending: false })
       .limit(10), // Further reduced limit
-    5000, // Reduced timeout since no image fields
+    8000, // Increased timeout for better reliability
     'fetching basic chirps'
   );
 
@@ -615,7 +615,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
       .select('id, image_url, image_alt_text, image_width, image_height')
       .in('id', chirpIds)
       .not('image_url', 'is', null),
-    3000, // 3 second timeout for image data
+    5000, // 5 second timeout for image data
     'fetching image data'
   ).catch((error) => {
     console.error('❌ Image data query failed:', error);
@@ -1184,9 +1184,40 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
     const blobSizeMB = blob.size / (1024 * 1024);
     console.log(`📏 Image size: ${blobSizeMB.toFixed(2)}MB`);
     
-    if (blobSizeMB > 1) { // If larger than 1MB, skip storage
-      console.log('⚠️ Image too large for storage, using base64 directly');
-      const base64 = await blobToBase64(blob);
+    if (blobSizeMB > 2) { // Reduced limit to 2MB for storage
+      console.log('⚠️ Image too large for storage, compressing and using base64');
+      
+      // Compress the image using React Native Image Resizer
+      const compressedUri = await compressImage(imageUri);
+      
+      // Read the compressed image to check its size
+      const compressedResponse = await fetch(compressedUri);
+      const compressedBlob = await compressedResponse.blob();
+      const compressedSizeMB = compressedBlob.size / (1024 * 1024);
+      console.log(`📏 Compressed image size: ${compressedSizeMB.toFixed(2)}MB`);
+      
+      // If still too large after compression, compress more aggressively
+      if (compressedSizeMB > 1) {
+        console.log('⚠️ Still too large, applying aggressive compression');
+        const aggressiveUri = await compressImageAggressively(imageUri);
+        
+        // Read the aggressively compressed image
+        const aggressiveResponse = await fetch(aggressiveUri);
+        const aggressiveBlob = await aggressiveResponse.blob();
+        const aggressiveSizeMB = aggressiveBlob.size / (1024 * 1024);
+        console.log(`📏 Aggressively compressed size: ${aggressiveSizeMB.toFixed(2)}MB`);
+        
+        const base64 = await blobToBase64(aggressiveBlob);
+        const dataUrl = `data:image/jpeg;base64,${base64}`;
+        
+        return {
+          imageUrl: dataUrl,
+          imageWidth: 400,
+          imageHeight: 300
+        };
+      }
+      
+      const base64 = await blobToBase64(compressedBlob);
       const dataUrl = `data:image/jpeg;base64,${base64}`;
       
       return {
@@ -1272,6 +1303,66 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
   });
 };
 
+// Helper function to compress images using Expo ImageManipulator
+const compressImage = async (imageUri: string): Promise<string> => {
+  try {
+    console.log('📦 Compressing image with Expo ImageManipulator');
+    const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator');
+    
+    const manipulatedImage = await manipulateAsync(
+      imageUri,
+      [
+        {
+          resize: {
+            width: 1200,
+            height: 1200,
+          },
+        },
+      ],
+      {
+        compress: 0.7, // 70% quality
+        format: SaveFormat.JPEG,
+      }
+    );
+    
+    console.log('✅ Image compressed successfully');
+    return manipulatedImage.uri;
+  } catch (error) {
+    console.error('❌ Image compression failed:', error);
+    return imageUri; // Return original if compression fails
+  }
+};
+
+// Helper function for aggressive compression
+const compressImageAggressively = async (imageUri: string): Promise<string> => {
+  try {
+    console.log('📦 Applying aggressive image compression');
+    const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator');
+    
+    const manipulatedImage = await manipulateAsync(
+      imageUri,
+      [
+        {
+          resize: {
+            width: 800,
+            height: 800,
+          },
+        },
+      ],
+      {
+        compress: 0.5, // 50% quality
+        format: SaveFormat.JPEG,
+      }
+    );
+    
+    console.log('✅ Aggressive compression successful');
+    return manipulatedImage.uri;
+  } catch (error) {
+    console.error('❌ Aggressive compression failed:', error);
+    return imageUri; // Return original if compression fails
+  }
+};
+
 // Delete chirp image
 export const deleteChirpImage = async (imageUrl: string): Promise<boolean> => {
   try {
@@ -1348,22 +1439,90 @@ export const createChirp = async (
       console.log('🖼️ No image data provided to createChirp');
     }
 
-    const { data, error } = await supabase
-      .from('chirps')
-      .insert(chirpData)
-      .select(`
-        *,
-        users(
-          id,
-          first_name,
-          last_name,
-          custom_handle,
-          handle,
-          profile_image_url,
-          banner_image_url
-        )
-      `)
-      .single();
+    // For images, create chirp first without image data, then update with image
+    let data, error;
+    
+    if (imageData?.imageUrl) {
+      console.log('🖼️ Creating chirp without image first, then updating with image data');
+      
+      // Step 1: Create chirp without image data
+      const chirpWithoutImage = { ...chirpData };
+      delete chirpWithoutImage.image_url;
+      delete chirpWithoutImage.image_alt_text;
+      delete chirpWithoutImage.image_width;
+      delete chirpWithoutImage.image_height;
+      
+      const { data: chirpData_result, error: chirpError } = await withTimeout(
+        supabase
+          .from('chirps')
+          .insert(chirpWithoutImage)
+          .select('id')
+          .single(),
+        10000, // 10 second timeout for basic chirp creation
+        'creating chirp without image'
+      );
+      
+      if (chirpError) {
+        throw chirpError;
+      }
+      
+      // Step 2: Update chirp with image data
+      console.log('🖼️ Updating chirp with image data:', chirpData_result.id);
+      const { data: updateResult, error: updateError } = await withTimeout(
+        supabase
+          .from('chirps')
+          .update({
+            image_url: imageData.imageUrl,
+            image_alt_text: imageData.imageAltText || '',
+            image_width: imageData.imageWidth || null,
+            image_height: imageData.imageHeight || null
+          })
+          .eq('id', chirpData_result.id)
+          .select(`
+            *,
+            users(
+              id,
+              first_name,
+              last_name,
+              custom_handle,
+              handle,
+              profile_image_url,
+              banner_image_url
+            )
+          `)
+          .single(),
+        20000, // 20 second timeout for image update
+        'updating chirp with image data'
+      );
+      
+      data = updateResult;
+      error = updateError;
+    } else {
+      // No image data, create chirp normally
+      const result = await withTimeout(
+        supabase
+          .from('chirps')
+          .insert(chirpData)
+          .select(`
+            *,
+            users(
+              id,
+              first_name,
+              last_name,
+              custom_handle,
+              handle,
+              profile_image_url,
+              banner_image_url
+            )
+          `)
+          .single(),
+        15000, // 15 second timeout for chirps without images
+        'creating chirp without image data'
+      );
+      
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error('❌ Error creating chirp:', error);
@@ -2575,6 +2734,323 @@ export const getUserProfile = async (userId: string): Promise<any> => {
 // Get user by ID (alias for getUserProfile)
 export const getUserById = getUserProfile;
 
+// Get user's gacha collection
+export const getUserCollection = async (userId: string): Promise<any[]> => {
+  try {
+    console.log('🎮 Fetching user collection:', userId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, returning empty collection');
+      return [];
+    }
+    
+    // Check if user_collections table exists by trying to query it
+    const { data: collection, error } = await supabase
+      .from('user_collections')
+      .select(`
+        id,
+        user_id,
+        collected_user_id,
+        rarity,
+        quantity,
+        obtained_at,
+        collected_user:users!collected_user_id (
+          id,
+          first_name,
+          last_name,
+          custom_handle,
+          handle,
+          profile_image_url,
+          avatar_url,
+          banner_image_url,
+          bio,
+          created_at
+        )
+      `)
+      .eq('user_id', userId)
+      .order('obtained_at', { ascending: false });
+
+    if (error) {
+      // If table doesn't exist, return empty collection
+      if (error.code === 'PGRST116' || error.message.includes('relation "user_collections" does not exist')) {
+        console.log('📋 user_collections table does not exist yet, returning empty collection');
+        return [];
+      }
+      console.error('❌ Error fetching user collection:', error);
+      return [];
+    }
+
+    const transformedCollection = (collection || []).map((item: any) => {
+      const user = item.collected_user;
+      return {
+        id: item.id,
+        name: user.first_name || user.custom_handle || user.handle,
+        handle: `@${user.handle}`,
+        rarity: item.rarity,
+        imageUrl: user.profile_image_url || user.avatar_url,
+        bio: user.bio || 'A mysterious bird in the Chirp flock!',
+        followers: 0, // Will be updated below
+        profilePower: 0, // Will be calculated below
+        quantity: item.quantity || 1, // Include quantity from database
+        obtainedAt: item.obtained_at,
+        userId: user.id, // Store user ID for stats lookup
+      };
+    });
+
+    // Fetch real stats for all users in the collection
+    if (transformedCollection.length > 0) {
+      console.log('📊 Fetching real stats for collection users...');
+      const userIds = transformedCollection.map(item => item.userId);
+      
+      try {
+        // Fetch follower counts for all users
+        const { data: followerCounts } = await supabase
+          .from('follows')
+          .select('following_id')
+          .in('following_id', userIds);
+        
+        // Count stats per user
+        const followerStats = new Map();
+        
+        followerCounts?.forEach(follow => {
+          const count = followerStats.get(follow.following_id) || 0;
+          followerStats.set(follow.following_id, count + 1);
+        });
+        
+        // Update collection with real stats
+        transformedCollection.forEach(item => {
+          const followerCount = followerStats.get(item.userId) || 0;
+          
+          item.followers = followerCount;
+          
+          // Calculate profile power based on followers, rarity, and quantity
+          // Formula: ((followers * 2) + rarity_multiplier) * quantity
+          const rarityMultipliers = {
+            mythic: 1000,
+            legendary: 500,
+            epic: 250,
+            rare: 100,
+            uncommon: 50,
+            common: 25
+          };
+          
+          const basePower = (followerCount * 2) + (rarityMultipliers[item.rarity] || 25);
+          item.profilePower = basePower * item.quantity; // Multiply by quantity
+          
+          // Remove userId field as it's only used internally
+          delete item.userId;
+        });
+        
+        console.log('✅ Updated collection with real stats');
+      } catch (statsError) {
+        console.error('❌ Error fetching real stats, using fallback values:', statsError);
+        // Fallback to reasonable defaults if stats fetch fails
+        transformedCollection.forEach(item => {
+          item.followers = 0;
+          item.profilePower = (25 * item.quantity); // Base power * quantity
+          // Remove userId field as it's only used internally
+          delete item.userId;
+        });
+      }
+    }
+
+    console.log(`✅ Successfully fetched ${transformedCollection.length} items from user collection`);
+    return transformedCollection;
+  } catch (error) {
+    console.error('❌ Error fetching user collection:', error);
+    return [];
+  }
+};
+
+// Add profile to user's collection
+export const addToUserCollection = async (userId: string, collectedUserId: string, rarity: string): Promise<boolean> => {
+  try {
+    console.log('🎮 Adding profile to collection:', { userId, collectedUserId, rarity });
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, cannot add to collection');
+      return false;
+    }
+    
+    // Check if the profile is already in the collection
+    const { data: existingCollection } = await supabase
+      .from('user_collections')
+      .select('id, quantity')
+      .eq('user_id', userId)
+      .eq('collected_user_id', collectedUserId)
+      .single();
+    
+    if (existingCollection) {
+      // Profile already exists, increment quantity
+      const { error: updateError } = await supabase
+        .from('user_collections')
+        .update({ 
+          quantity: existingCollection.quantity + 1,
+          obtained_at: new Date().toISOString() // Update timestamp to latest pull
+        })
+        .eq('id', existingCollection.id);
+      
+      if (updateError) {
+        console.error('❌ Error updating profile quantity:', updateError);
+        return false;
+      }
+      
+      console.log(`✅ Increased quantity for existing profile (now ${existingCollection.quantity + 1})`);
+      return true;
+    }
+    
+    // Profile doesn't exist, add new entry
+    const { error } = await supabase
+      .from('user_collections')
+      .insert({
+        user_id: userId,
+        collected_user_id: collectedUserId,
+        rarity: rarity,
+        quantity: 1,
+        obtained_at: new Date().toISOString()
+      });
+
+    if (error) {
+      // If table doesn't exist, log warning but don't fail
+      if (error.code === 'PGRST116' || error.message.includes('relation "user_collections" does not exist')) {
+        console.log('📋 user_collections table does not exist yet, cannot save collection');
+        console.log('💡 Please run the SQL script to create the user_collections table');
+        return false;
+      }
+      
+      console.error('❌ Error adding to collection:', error);
+      return false;
+    }
+
+    console.log('✅ Successfully added new profile to collection');
+    return true;
+  } catch (error) {
+    console.error('❌ Error adding to collection:', error);
+    return false;
+  }
+};
+
+// Get random users for gacha system
+export const getRandomUsers = async (limit: number = 10, currentUserId?: string): Promise<any[]> => {
+  try {
+    console.log('🎲 Fetching random users for gacha system', { limit, currentUserId });
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, returning empty array');
+      return [];
+    }
+    
+    // Build query with optional user exclusion
+    let query = supabase
+      .from('users')
+      .select(`
+        id,
+        first_name,
+        last_name,
+        custom_handle,
+        handle,
+        profile_image_url,
+        avatar_url,
+        banner_image_url,
+        bio,
+        created_at
+      `)
+      .not('profile_image_url', 'is', null); // Only users with profile images
+    
+    // Exclude current user if provided
+    if (currentUserId) {
+      query = query.not('id', 'eq', currentUserId);
+      console.log('🚫 Excluding current user from gacha pool:', currentUserId);
+    }
+    
+    const { data: users, error } = await query
+      .limit(limit * 2) // Get more than needed to ensure we have enough
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error fetching random users:', error);
+      return [];
+    }
+
+    // Shuffle the users and take the requested amount
+    const shuffledUsers = (users || []).sort(() => Math.random() - 0.5).slice(0, limit);
+    
+    const transformedUsers = shuffledUsers.map((user: any) => {
+      // Calculate profile power based on various factors
+      const joinDate = new Date(user.created_at);
+      const daysSinceJoin = Math.floor((Date.now() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
+      const profilePower = Math.min(1000, Math.max(50, daysSinceJoin * 2 + Math.random() * 100));
+      
+      // Determine rarity - hardcoded for bots, random for regular users
+      let rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
+      
+      // Hardcoded rarities for bots - check handle first, then name
+      const userHandle = user.handle.toLowerCase();
+      const userName = (user.first_name || user.custom_handle || user.handle).toLowerCase();
+      
+      // Debug logging for bot detection
+      console.log('🔍 Checking user for bot detection:', {
+        handle: user.handle,
+        first_name: user.first_name,
+        custom_handle: user.custom_handle,
+        userHandle,
+        userName
+      });
+      
+      if (userHandle.includes('crimsontalon') || userName.includes('crimsontalon')) {
+        rarity = 'mythic';
+        console.log('🎯 Bot detected: Crimsontalon → Mythic');
+      } else if (userHandle.includes('solarius') || userName.includes('solarius')) {
+        rarity = 'legendary';
+        console.log('🎯 Bot detected: Solarius → Legendary');
+      } else if (userHandle.includes('prisma') || userName.includes('prisma')) {
+        rarity = 'epic';
+        console.log('🎯 Bot detected: Prisma → Epic');
+      } else if (userHandle.includes('skye') || userName.includes('skye')) {
+        rarity = 'rare';
+        console.log('🎯 Bot detected: Skye → Rare');
+      } else if (userHandle.includes('thorne') || userName.includes('thorne')) {
+        rarity = 'uncommon';
+        console.log('🎯 Bot detected: Thorne → Uncommon');
+      } else if (userHandle.includes('obsidian') || userName.includes('obsidian')) {
+        rarity = 'common';
+        console.log('🎯 Bot detected: Obsidian → Common');
+      } else {
+        // Random rarity for regular users
+        const rarityRoll = Math.random();
+        if (rarityRoll < 0.01) rarity = 'mythic';
+        else if (rarityRoll < 0.05) rarity = 'legendary';
+        else if (rarityRoll < 0.15) rarity = 'epic';
+        else if (rarityRoll < 0.35) rarity = 'rare';
+        else if (rarityRoll < 0.65) rarity = 'uncommon';
+        else rarity = 'common';
+      }
+      
+      return {
+        id: user.id,
+        name: user.first_name || user.custom_handle || user.handle,
+        handle: `@${user.handle}`,
+        rarity: rarity,
+        imageUrl: user.profile_image_url || user.avatar_url,
+        bio: user.bio || 'A mysterious bird in the Chirp flock!',
+        followers: Math.floor(Math.random() * 100000) + 1000,
+        chirps: Math.floor(Math.random() * 5000) + 100,
+        profilePower: Math.floor(profilePower),
+        obtainedAt: new Date().toISOString(),
+      };
+    });
+
+    console.log(`✅ Successfully fetched ${transformedUsers.length} random users for gacha`);
+    return transformedUsers;
+  } catch (error) {
+    console.error('❌ Error fetching random users:', error);
+    return [];
+  }
+};
+
 // Get user by handle (for mentions)
 export const getUserByHandle = async (handle: string): Promise<any> => {
   try {
@@ -3084,6 +3560,69 @@ export const toggleUserNotifications = async (userId: string, targetUserId: stri
     // Fallback: return true (notifications enabled) for any other errors
     console.log('🔄 Using fallback: notifications enabled');
     return true;
+  }
+};
+
+// Crystal Balance Functions
+export const getUserCrystalBalance = async (userId: string): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('crystal_balance')
+      .eq('id', userId)
+      .single();
+    
+    if (error) throw error;
+    
+    return data?.crystal_balance || 0;
+  } catch (error) {
+    console.error('❌ Error fetching crystal balance:', error);
+    return 0;
+  }
+};
+
+export const awardCrystals = async (userId: string, amount: number, reason: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        crystal_balance: supabase.raw(`crystal_balance + ${amount}`)
+      })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    
+    console.log(`💎 Awarded ${amount} crystals for ${reason} to user:`, userId.substring(0, 8) + '...');
+    return true;
+  } catch (error) {
+    console.error('❌ Error awarding crystals:', error);
+    return false;
+  }
+};
+
+export const deductCrystalBalance = async (userId: string, amount: number): Promise<boolean> => {
+  try {
+    // First check if user has enough crystals
+    const currentBalance = await getUserCrystalBalance(userId);
+    if (currentBalance < amount) {
+      console.log('❌ Insufficient crystals for deduction');
+      return false;
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        crystal_balance: supabase.raw(`crystal_balance - ${amount}`)
+      })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    
+    console.log(`💎 Deducted ${amount} crystals from user:`, userId.substring(0, 8) + '...');
+    return true;
+  } catch (error) {
+    console.error('❌ Error deducting crystals:', error);
+    return false;
   }
 };
 

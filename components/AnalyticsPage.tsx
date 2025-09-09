@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getUserCollection } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import ChirpCrystalIcon from './icons/ChirpCrystalIcon';
 
@@ -54,30 +56,129 @@ interface AnalyticsPageProps {
 export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData>({
-    totalProfiles: 8,
-    totalValue: 1250,
-    averageRarity: 3.2,
-    completionRate: 45,
+    totalProfiles: 0,
+    totalValue: 0,
+    averageRarity: 0,
+    completionRate: 0,
     rarityBreakdown: {
-      mythic: 1,
-      legendary: 2,
-      epic: 2,
-      rare: 1,
-      uncommon: 1,
-      common: 1,
+      mythic: 0,
+      legendary: 0,
+      epic: 0,
+      rare: 0,
+      uncommon: 0,
+      common: 0,
     },
-    recentAcquisitions: [
-      { name: 'Cyber Ninja', rarity: 'mythic', date: '2025-01-15' },
-      { name: 'Forest Guardian', rarity: 'legendary', date: '2025-01-14' },
-      { name: 'Space Explorer', rarity: 'epic', date: '2025-01-13' },
-    ],
+    recentAcquisitions: [],
     crystalStats: {
-      totalEarned: 2500,
-      totalSpent: 1200,
-      currentBalance: 1300,
-      rollsPerformed: 12,
+      totalEarned: 0,
+      totalSpent: 0,
+      currentBalance: 0,
+      rollsPerformed: 0,
     },
   });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadAnalyticsData();
+  }, []);
+
+  const loadAnalyticsData = async () => {
+    try {
+      setIsLoading(true);
+      
+      if (!user?.id) {
+        console.log('No user ID available for analytics');
+        return;
+      }
+
+      // Load user's collection
+      const collection = await getUserCollection(user.id);
+      
+      // Calculate analytics from real data
+      const calculatedAnalytics = calculateAnalytics(collection, user);
+      setAnalytics(calculatedAnalytics);
+      
+    } catch (error) {
+      console.error('Error loading analytics data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const calculateAnalytics = (collection: any[], user: any): AnalyticsData => {
+    const totalProfiles = collection.length;
+    
+    // Calculate rarity breakdown
+    const rarityBreakdown = {
+      mythic: 0,
+      legendary: 0,
+      epic: 0,
+      rare: 0,
+      uncommon: 0,
+      common: 0,
+    };
+
+    collection.forEach(profile => {
+      if (rarityBreakdown.hasOwnProperty(profile.rarity)) {
+        rarityBreakdown[profile.rarity as keyof typeof rarityBreakdown]++;
+      }
+    });
+
+    // Calculate average rarity (1=common, 6=mythic)
+    const rarityValues = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
+    const totalRarityValue = collection.reduce((sum, profile) => {
+      return sum + (rarityValues[profile.rarity as keyof typeof rarityValues] || 1);
+    }, 0);
+    const averageRarity = totalProfiles > 0 ? totalRarityValue / totalProfiles : 0;
+
+    // Calculate total value (estimated crystal value based on rarity)
+    const rarityValues_crystal = { common: 50, uncommon: 100, rare: 200, epic: 400, legendary: 800, mythic: 1500 };
+    const totalValue = collection.reduce((sum, profile) => {
+      return sum + (rarityValues_crystal[profile.rarity as keyof typeof rarityValues_crystal] || 50);
+    }, 0);
+
+    // Get recent acquisitions (last 5, sorted by obtainedAt)
+    const recentAcquisitions = collection
+      .sort((a, b) => new Date(b.obtainedAt || 0).getTime() - new Date(a.obtainedAt || 0).getTime())
+      .slice(0, 5)
+      .map(profile => ({
+        name: profile.name,
+        rarity: profile.rarity,
+        date: profile.obtainedAt || new Date().toISOString(),
+      }));
+
+    // Calculate crystal stats
+    const currentBalance = typeof user.crystalBalance === 'number' ? user.crystalBalance : 
+                          (user.crystalBalance?.balance || 0);
+    
+    // Estimate rolls performed based on collection size (rough estimate)
+    const rollsPerformed = Math.max(totalProfiles, Math.floor(totalProfiles * 1.2));
+    
+    // Estimate total spent (assuming average cost per roll)
+    const totalSpent = rollsPerformed * 100; // Assuming mostly single rolls
+    
+    // Estimate total earned (current balance + total spent)
+    const totalEarned = currentBalance + totalSpent;
+
+    // Calculate completion rate (assuming there are ~100 total profiles available)
+    const estimatedTotalProfiles = 100;
+    const completionRate = Math.min(100, Math.round((totalProfiles / estimatedTotalProfiles) * 100));
+
+    return {
+      totalProfiles,
+      totalValue,
+      averageRarity,
+      completionRate,
+      rarityBreakdown,
+      recentAcquisitions,
+      crystalStats: {
+        totalEarned,
+        totalSpent,
+        currentBalance,
+        rollsPerformed,
+      },
+    };
+  };
 
   const StatCard = ({ title, value, subtitle, color = '#7c3aed' }: {
     title: string;
@@ -124,7 +225,7 @@ export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onClose}>
@@ -137,10 +238,16 @@ export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Overview Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Collection Overview</Text>
-          <View style={styles.statsGrid}>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading analytics...</Text>
+          </View>
+        ) : (
+          <>
+            {/* Overview Stats */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Collection Overview</Text>
+              <View style={styles.statsGrid}>
                          <StatCard 
                title="Total Profiles" 
                value={analytics.totalProfiles} 
@@ -235,8 +342,10 @@ export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
             ))}
           </View>
         </View>
+          </>
+        )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -249,7 +358,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
-    paddingTop: 12,
     paddingBottom: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -437,5 +545,16 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748b',
+    textAlign: 'center',
   },
 });

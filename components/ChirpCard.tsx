@@ -700,8 +700,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       activeOpacity={0.95}
     >
       <View style={styles.header} pointerEvents="box-none">
-        <TouchableOpacity onPress={handleAvatarPress}>
-          <UserAvatar user={chirp.author} size="md" />
+        <TouchableOpacity onPress={handleAvatarPress} style={{ marginLeft: 0 }}>
+          <UserAvatar user={chirp.author} size="md" showFrame={true} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <View style={styles.nameRow}>
@@ -759,42 +759,44 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         </Text>
       )}
 
-      <Text style={styles.content}>
-        {chirp.content.split(/(@\w+|#\w+|\*\*[^*]+\*\*)/).map((part, index) => {
-          if (part.startsWith('@')) {
-            return (
-              <TouchableOpacity 
-                key={index}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`);
-                  // TODO: Implement notification to mentioned user
-                }}
-              >
-                <Text style={styles.mentionText}>{part}</Text>
-              </TouchableOpacity>
-            );
-          } else if (part.startsWith('#')) {
-            return (
-              <TouchableOpacity 
-                key={index}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  const cleanHashtag = part.replace('#', '');
-                  router.push(`/hashtag/${cleanHashtag}`);
-                }}
-              >
-                <Text style={styles.hashtagText}>{part}</Text>
-              </TouchableOpacity>
-            );
-          } else if (part.startsWith('**') && part.endsWith('**')) {
-            // Bold text formatting
-            const boldText = part.slice(2, -2);
-            return <Text key={index} style={styles.boldText}>{boldText}</Text>;
-          }
-          return <Text key={index}>{part}</Text>;
-        })}
-      </Text>
+      {chirp.content.trim() && (
+        <Text style={styles.content}>
+          {chirp.content.split(/(@\w+|#\w+|\*\*[^*]+\*\*)/).map((part, index) => {
+            if (part.startsWith('@')) {
+              return (
+                <TouchableOpacity 
+                  key={index}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`);
+                    // TODO: Implement notification to mentioned user
+                  }}
+                >
+                  <Text style={styles.mentionText}>{part}</Text>
+                </TouchableOpacity>
+              );
+            } else if (part.startsWith('#')) {
+              return (
+                <TouchableOpacity 
+                  key={index}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    const cleanHashtag = part.replace('#', '');
+                    router.push(`/hashtag/${cleanHashtag}`);
+                  }}
+                >
+                  <Text style={styles.hashtagText}>{part}</Text>
+                </TouchableOpacity>
+              );
+            } else if (part.startsWith('**') && part.endsWith('**')) {
+              // Bold text formatting
+              const boldText = part.slice(2, -2);
+              return <Text key={index} style={styles.boldText}>{boldText}</Text>;
+            }
+            return <Text key={index}>{part}</Text>;
+          })}
+        </Text>
+      )}
 
       {/* Display chirp image if available */}
       {chirp.imageUrl && (
@@ -804,8 +806,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
             imageWidth={chirp.imageWidth}
             imageHeight={chirp.imageHeight}
-            maxWidth={300} // Custom max width for ChirpCard
-            maxHeight={180} // Custom max height for ChirpCard (smaller than default)
+            maxWidth={400} // Increased from 330 to 400 (much wider)
+            maxHeight={300} // Increased from 180 to 300 to allow wider images
             onImagePress={() => {
               console.log('Image pressed:', chirp.imageUrl?.substring(0, 50) + '...');
               setShowImageViewer(true);
@@ -1039,13 +1041,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   imageContainer: {
-    marginTop: 0,           // Removed top margin
-    marginBottom: 4,
+    marginTop: 4,           // Added padding between content and image
+    marginBottom: 12,       // Added padding under the image
+    marginLeft: 20,         // Align with chirp text content left edge
+    marginRight: 20,        // Add right margin to prevent overflow
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#ffffff', // Match ChirpCard background
     alignItems: 'center',      // Center the image horizontally
     justifyContent: 'center',   // Center the image vertically
+    width: '90%',              // Use 90% width to prevent overflow
   },
   weeklySummaryContainer: {
     backgroundColor: '#f8f4ff',
@@ -1082,12 +1087,12 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center', // Changed from 'flex-start' to 'center' for vertical centering
     marginBottom: 2,
   },
   headerContent: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 12, // Increased padding to move content further left
   },
   nameRow: {
     flexDirection: 'row',
@@ -1097,6 +1102,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#14171a',
+    lineHeight: 20, // Added line height for better spacing
   },
   handleContainer: {
     marginTop: 2,
@@ -1105,6 +1111,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     color: '#a78bfa',
+    lineHeight: 18, // Added line height for better spacing
   },
   crownIcon: {
     fontSize: 12,
@@ -1154,14 +1161,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: '#14171a',
-    marginLeft: 52, // Align with avatar
-    marginBottom: 0, // Removed margin to reduce spacing
+    marginLeft: 20, // Moved further left (reduced from 40)
+    marginBottom: 8, // Added padding between content and image
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginLeft: 52, // Align with avatar
+    marginLeft: 20, // Moved further left (reduced from 40)
     marginRight: 8, // Reduced right margin
     paddingTop: 0, // Reduced from 4 to 0
     overflow: 'visible', // Allow buttons to be visible

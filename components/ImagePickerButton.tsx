@@ -81,9 +81,8 @@ export default function ImagePickerButton({
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.8,
+        allowsEditing: false, // Disable cropping to support any aspect ratio
+        quality: 0.6, // Reduced quality to prevent large images
         base64: false,
       });
 
@@ -109,9 +108,8 @@ export default function ImagePickerButton({
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.8,
+        allowsEditing: false, // Disable cropping to support any aspect ratio
+        quality: 0.6, // Reduced quality to prevent large images
         base64: false,
       });
 

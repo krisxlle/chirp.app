@@ -11,6 +11,7 @@ import {
     View,
 } from 'react-native';
 import {
+    GestureHandlerRootView,
     PanGestureHandler,
     PinchGestureHandler,
     State,
@@ -110,7 +111,7 @@ export default function ImageViewerModal({
       statusBarTranslucent={true}
     >
       <StatusBar hidden={true} />
-      <View style={styles.container}>
+      <GestureHandlerRootView style={styles.container}>
         {/* Close button */}
         <TouchableOpacity 
           style={styles.closeButton} 
@@ -189,7 +190,7 @@ export default function ImageViewerModal({
             </LinearGradient>
           </View>
         )}
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

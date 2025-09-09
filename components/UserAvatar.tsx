@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { determineUserRarity } from '../utils/rarityUtils';
+import ProfileFrame from './ProfileFrame';
 
 interface UserAvatarProps {
   user?: {
@@ -9,12 +11,15 @@ interface UserAvatarProps {
     email: string;
     profileImageUrl?: string;
     avatarUrl?: string;
+    handle?: string;
+    customHandle?: string;
   } | null;
   size?: "sm" | "md" | "lg" | "xl" | number;
   style?: any;
+  showFrame?: boolean;
 }
 
-export default function UserAvatar({ user, size = "md", style }: UserAvatarProps) {
+export default function UserAvatar({ user, size = "md", style, showFrame = false }: UserAvatarProps) {
   const [imageError, setImageError] = useState(false);
   
   // Handle numeric size values
@@ -52,7 +57,7 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
   const textSizeStyles = getTextSizeStyles();
 
   if (!user) {
-    return (
+    const avatarContent = (
       <View style={[
         styles.avatar,
         sizeStyles,
@@ -64,6 +69,16 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
         </Text>
       </View>
     );
+
+    if (showFrame) {
+      return (
+        <ProfileFrame rarity="common" size={(typeof size === 'number' ? size : sizeStyles.width) * 1.125}>
+          {avatarContent}
+        </ProfileFrame>
+      );
+    }
+
+    return avatarContent;
   }
 
   // Generate a consistent color based on user ID
@@ -124,11 +139,12 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
     : displayName.substring(0, 2).toUpperCase();
 
   if (processedImageUrl && !imageError) {
-    return (
+    const avatarContent = (
       <View style={[sizeStyles, style]}>
         <Image
           source={{ uri: processedImageUrl }}
           style={[styles.avatar, sizeStyles]}
+          resizeMode="cover" // Use cover to fill the space without cropping
           onError={(error) => {
             console.log('Avatar image failed to load:', error.message || 'unknown error');
             setImageError(true);
@@ -136,9 +152,20 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
         />
       </View>
     );
+
+    if (showFrame) {
+      const rarity = determineUserRarity(user);
+      return (
+        <ProfileFrame rarity={rarity} size={(typeof size === 'number' ? size : sizeStyles.width) * 1.125}>
+          {avatarContent}
+        </ProfileFrame>
+      );
+    }
+
+    return avatarContent;
   }
 
-  return (
+  const avatarContent = (
     <View style={[
       styles.avatar,
       sizeStyles,
@@ -150,6 +177,17 @@ export default function UserAvatar({ user, size = "md", style }: UserAvatarProps
       </Text>
     </View>
   );
+
+  if (showFrame) {
+    const rarity = determineUserRarity(user);
+    return (
+      <ProfileFrame rarity={rarity} size={(typeof size === 'number' ? size : sizeStyles.width) * 1.125}>
+        {avatarContent}
+      </ProfileFrame>
+    );
+  }
+
+  return avatarContent;
 }
 
 const styles = StyleSheet.create({
