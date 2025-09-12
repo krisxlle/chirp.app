@@ -545,7 +545,7 @@ export default function UserProfileScreen() {
                       </Text>
                     );
                   }
-                  return <Text key={index}>{part}</Text>;
+                  return <Text key={index} style={styles.bio}>{part}</Text>;
                 })}
               </Text>
             )}
@@ -980,6 +980,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#7c3aed',
     lineHeight: 20,
+    fontWeight: 'normal',
   },
   linkText: {
     fontSize: 14,
