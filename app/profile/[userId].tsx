@@ -64,6 +64,7 @@ export default function UserProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingChirps, setLoadingChirps] = useState(false);
+  const [loadingShowcase, setLoadingShowcase] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [chirps, setChirps] = useState<any[]>([]);
   const [replies, setReplies] = useState<any[]>([]);
@@ -83,6 +84,7 @@ export default function UserProfileScreen() {
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [showcase, setShowcase] = useState<any[]>([]);
   const [showShowcaseSelector, setShowShowcaseSelector] = useState(false);
+  const [profileDataLoaded, setProfileDataLoaded] = useState(false);
 
   const router = useRouter();
 
@@ -161,14 +163,14 @@ export default function UserProfileScreen() {
           notificationsEnabled: followStatusData.notificationsEnabled || false
         });
         
+        setProfileDataLoaded(true);
         setLoading(false);
-        console.log('✅ Profile data loaded, now loading chirps...');
+        console.log('✅ Profile data loaded, UI ready for interaction');
         
-        // Load chirps separately (slower)
-        await loadUserChirps(userId);
-        
-        // Load showcase separately
-        await loadShowcase(userId);
+        // Load chirps and showcase in background (non-blocking)
+        loadUserChirps(userId);
+        // Only load showcase if user switches to showcase tab
+        // loadShowcase(userId);
       } catch (error) {
         console.error('❌ Error fetching user profile:', error);
       } finally {
@@ -179,6 +181,14 @@ export default function UserProfileScreen() {
 
     fetchUserProfile();
   }, [userId, currentUserId]);
+
+  // Load showcase data when user switches to showcase tab
+  useEffect(() => {
+    if (activeTab === 'gacha' && profileDataLoaded && showcase.length === 0 && !loadingShowcase) {
+      console.log('🎮 Loading showcase data for tab switch');
+      loadShowcase(userId);
+    }
+  }, [activeTab, profileDataLoaded, showcase.length, loadingShowcase, userId]);
 
   const loadUserChirps = async (targetUserId: string) => {
     try {
@@ -204,6 +214,7 @@ export default function UserProfileScreen() {
 
   const loadShowcase = async (targetUserId: string) => {
     try {
+      setLoadingShowcase(true);
       console.log('🎮 Loading showcase for user:', targetUserId);
       const { getUserShowcase } = await import('../../lib/database/mobile-db-supabase');
       const userShowcase = await getUserShowcase(targetUserId);
@@ -212,6 +223,8 @@ export default function UserProfileScreen() {
     } catch (error) {
       console.error('❌ Error loading showcase:', error);
       setShowcase([]);
+    } finally {
+      setLoadingShowcase(false);
     }
   };
 
@@ -637,7 +650,12 @@ export default function UserProfileScreen() {
                 )}
               </View>
               
-              {showcase.length === 0 ? (
+              {loadingShowcase ? (
+                <View style={styles.loadingShowcaseState}>
+                  <ActivityIndicator size="small" color="#7c3aed" />
+                  <Text style={styles.loadingShowcaseText}>Loading showcase...</Text>
+                </View>
+              ) : showcase.length === 0 ? (
                 <View style={styles.emptyShowcaseState}>
                   <Text style={styles.emptyShowcaseIcon}>🎴</Text>
                   <Text style={styles.emptyShowcaseTitle}>
@@ -1181,6 +1199,17 @@ const styles = StyleSheet.create({
   emptyShowcaseState: {
     alignItems: 'center',
     paddingVertical: 40,
+  },
+  loadingShowcaseState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  loadingShowcaseText: {
+    fontSize: 14,
+    color: '#657786',
+    marginLeft: 8,
   },
   emptyShowcaseIcon: {
     fontSize: 48,

@@ -257,23 +257,34 @@ function getMockChirps(): MobileChirp[] {
   }));
 }
 
-// Optimized user stats with single query
+// Optimized user stats with caching and single query
 export async function getUserStats(userId: string) {
   try {
     console.log('🔄 Fetching user stats:', userId);
     const startTime = Date.now();
+    
+    // Check cache first
+    const cacheKey = `user_stats_${userId}`;
+    const cached = chirpCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
+      console.log('✅ Returning cached user stats');
+      return cached.data;
+    }
     
     // Quick connection check
     const isConnected = await ensureDatabaseInitialized();
     
     if (!isConnected) {
       console.log('🔄 Database not connected, returning zero stats');
-      return {
+      const zeroStats = {
         chirps: 0,
         followers: 0,
         following: 0,
         likes: 0
       };
+      // Cache zero stats for offline mode
+      chirpCache.set(cacheKey, { data: zeroStats, timestamp: Date.now(), ttl: 30000 });
+      return zeroStats;
     }
     
     // Optimized: Use separate count queries instead of RPC
@@ -283,13 +294,18 @@ export async function getUserStats(userId: string) {
       supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId)
     ]);
     
-    console.log(`✅ User stats fetched in ${Date.now() - startTime}ms`);
-    return {
+    const stats = {
       chirps: chirpsResult.count || 0,
       followers: followersResult.count || 0,
       following: followingResult.count || 0,
       likes: 0 // Simplified for now
     };
+    
+    // Cache the result with shorter TTL for stats (they change more frequently)
+    chirpCache.set(cacheKey, { data: stats, timestamp: Date.now(), ttl: 60000 }); // 1 minute cache
+    
+    console.log(`✅ User stats fetched in ${Date.now() - startTime}ms`);
+    return stats;
   } catch (error) {
     console.error('❌ Error fetching user stats:', truncateError(error));
     return { chirps: 0, followers: 0, following: 0, likes: 0 };
@@ -2692,10 +2708,19 @@ export const unfollowUser = async (followerId: string, followingId: string): Pro
 };
 
 
-// Get user profile by ID
+// Get user profile by ID with caching
 export const getUserProfile = async (userId: string): Promise<any> => {
   try {
     console.log('🔄 Fetching user profile:', userId);
+    
+    // Check cache first
+    const cacheKey = `user_profile_${userId}`;
+    const cached = chirpCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
+      console.log('✅ Returning cached user profile');
+      return cached.data;
+    }
+    
     await ensureDatabaseInitialized();
     
     if (!isDatabaseConnected) {
@@ -2743,6 +2768,9 @@ export const getUserProfile = async (userId: string): Promise<any> => {
       isChirpPlus: false,
       showChirpPlusBadge: false
     };
+
+    // Cache the result with longer TTL for user profiles (they change less frequently)
+    chirpCache.set(cacheKey, { data: transformedUser, timestamp: Date.now(), ttl: 300000 }); // 5 minutes cache
 
     console.log('✅ Successfully fetched user profile');
     return transformedUser;
