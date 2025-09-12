@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
 
@@ -15,11 +17,18 @@ export default function SearchScreen() {
   ];
 
   return (
-    <ThemedView style={styles.container}>
-      {/* Header */}
-      <ThemedView style={styles.header}>
-        <ThemedText type="title">🔍 Search</ThemedText>
-      </ThemedView>
+    <SafeAreaView style={styles.safeArea}>
+      <ThemedView style={styles.container}>
+        {/* Header with back button */}
+        <ThemedView style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ThemedText style={styles.backButtonText}>←</ThemedText>
+          </TouchableOpacity>
+          <ThemedText type="title" style={styles.headerTitle}>🔍 Search</ThemedText>
+        </ThemedView>
 
       {/* Search Input */}
       <ThemedView style={styles.searchSection}>
@@ -89,18 +98,41 @@ export default function SearchScreen() {
           </ThemedView>
         )}
       </ScrollView>
-    </ThemedView>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+    borderRadius: 20,
+    backgroundColor: '#f7f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 40,
+    minHeight: 40,
+  },
+  backButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    flex: 1,
   },
   searchSection: {
     padding: 16,
