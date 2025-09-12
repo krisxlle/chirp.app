@@ -3045,6 +3045,151 @@ export async function getProfilePowerBreakdown(userId: string): Promise<{
   }
 }
 
+// Get collection feed chirps from user's gacha collection
+export async function getCollectionFeedChirps(userId: string, limit: number = 10, offset: number = 0): Promise<any[]> {
+  try {
+    console.log('🎮 Fetching collection feed chirps for user:', userId);
+    
+    // Check cache first
+    const cacheKey = `collection_feed_${userId}_${limit}_${offset}`;
+    const cached = chirpCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
+      console.log('✅ Returning cached collection feed');
+      return cached.data;
+    }
+    
+    const isConnected = await ensureDatabaseInitialized();
+    if (!isConnected) {
+      console.log('🔄 Database not connected, returning empty array');
+      return [];
+    }
+
+    // First, get the user's collection to find which profiles they have
+    const { data: collectionData, error: collectionError } = await supabase
+      .from('user_collections')
+      .select('profile_id, rarity, quantity')
+      .eq('user_id', userId);
+
+    if (collectionError) {
+      console.error('❌ Error fetching user collection:', collectionError);
+      return [];
+    }
+
+    if (!collectionData || collectionData.length === 0) {
+      console.log('📊 User has no collection, returning empty feed');
+      return [];
+    }
+
+    const collectedProfileIds = collectionData.map(item => item.profile_id);
+    console.log('🎮 Found', collectedProfileIds.length, 'collected profiles');
+
+    // Get chirps from collected profiles with image data included
+    const { data: chirps, error } = await withTimeout(
+      supabase
+        .from('chirps')
+        .select(`
+          id,
+          content,
+          created_at,
+          author_id,
+          reply_to_id,
+          is_weekly_summary,
+          image_url,
+          image_alt_text,
+          image_width,
+          image_height,
+          users!inner(
+            id,
+            first_name,
+            last_name,
+            email,
+            custom_handle,
+            handle,
+            profile_image_url,
+            avatar_url,
+            banner_image_url
+          )
+        `)
+        .in('author_id', collectedProfileIds)
+        .is('reply_to_id', null)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1),
+      6000, // 6 second timeout
+      'fetching collection feed chirps'
+    );
+
+    if (error) {
+      console.error('❌ Error fetching collection feed chirps:', error);
+      return [];
+    }
+
+    if (!chirps || chirps.length === 0) {
+      console.log('📊 No chirps found from collected profiles');
+      return [];
+    }
+
+    console.log(`📊 Found ${chirps.length} chirps from collected profiles`);
+
+    // Process image data
+    const imageMap = new Map();
+    chirps.forEach((chirp: any) => {
+      if (chirp.image_url) {
+        imageMap.set(chirp.id, {
+          imageUrl: chirp.image_url,
+          imageAltText: chirp.image_alt_text,
+          imageWidth: chirp.image_width,
+          imageHeight: chirp.image_height
+        });
+      }
+    });
+
+    // Transform chirps to match expected format
+    const transformedChirps = chirps.map((chirp: any) => ({
+      id: chirp.id,
+      content: chirp.content,
+      createdAt: chirp.created_at,
+      authorId: chirp.author_id,
+      replyToId: chirp.reply_to_id,
+      isWeeklySummary: chirp.is_weekly_summary,
+      author: {
+        id: chirp.users.id,
+        firstName: chirp.users.first_name || 'User',
+        lastName: chirp.users.last_name || '',
+        email: chirp.users.email,
+        customHandle: chirp.users.custom_handle || chirp.users.handle,
+        handle: chirp.users.handle,
+        profileImageUrl: chirp.users.profile_image_url,
+        avatarUrl: chirp.users.profile_image_url,
+        bannerImageUrl: chirp.users.banner_image_url
+      },
+      imageUrl: chirp.image_url,
+      imageAltText: chirp.image_alt_text,
+      imageWidth: chirp.image_width,
+      imageHeight: chirp.image_height,
+      likes: 0, // Will be populated by addLikeStatusToChirps
+      replies: 0, // Will be populated by addLikeStatusToChirps
+      userHasLiked: false // Will be populated by addLikeStatusToChirps
+    }));
+
+    // Add like status and engagement data
+    const chirpsWithLikes = await addLikeStatusToChirps(transformedChirps, userId);
+
+    // Cache the result
+    chirpCache.set(cacheKey, { 
+      data: chirpsWithLikes, 
+      timestamp: Date.now(), 
+      ttl: 300000 // 5 minutes cache
+    });
+
+    console.log(`✅ Collection feed loaded: ${chirpsWithLikes.length} chirps`);
+    return chirpsWithLikes;
+
+  } catch (error) {
+    console.error('❌ Error in getCollectionFeedChirps:', error);
+    return [];
+  }
+}
+
 // Get user's gacha collection
 export const getUserCollection = async (userId: string): Promise<any[]> => {
   try {

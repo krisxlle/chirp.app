@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive } from '../hooks/useResponsive';
-import { getForYouChirps } from '../lib/api/mobile-api';
+import { getForYouChirps, getCollectionFeedChirps } from '../lib/api/mobile-api';
 import { clearChirpCache } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
@@ -23,9 +23,11 @@ export default function HomePage() {
   
   // State for chirps with pagination support
   const [forYouChirps, setForYouChirps] = useState<any[]>([]);
+  const [collectionChirps, setCollectionChirps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreChirps, setHasMoreChirps] = useState(true);
+  const [hasMoreCollectionChirps, setHasMoreCollectionChirps] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(0);
   
   // Pagination constants
@@ -61,77 +63,150 @@ export default function HomePage() {
       setIsLoading(false);
     }
   }, []);
+
+  // Load initial collection chirps function
+  const loadInitialCollectionChirps = useCallback(async (forceRefresh = false) => {
+    if (!user?.id) return;
+    
+    try {
+      // Don't reload if we have recent data and not forcing refresh
+      const now = Date.now();
+      if (!forceRefresh && collectionChirps.length > 0 && (now - lastRefresh) < 60000) {
+        console.log('🔄 HomePage: Using cached collection chirps (last refresh:', now - lastRefresh, 'ms ago)');
+        return;
+      }
+      
+      setIsLoading(true);
+      console.log('🔄 HomePage: Loading initial collection chirps from database...', forceRefresh ? '(force refresh)' : '');
+      const startTime = Date.now();
+      
+      const realChirps = await getCollectionFeedChirps(user.id, INITIAL_LIMIT, 0);
+      const loadTime = Date.now() - startTime;
+      
+      console.log(`✅ HomePage: Loaded ${realChirps.length} initial collection chirps from database in ${loadTime}ms`);
+      
+      setCollectionChirps(realChirps);
+      setLastRefresh(now);
+      setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
+    } catch (error) {
+      console.error('❌ HomePage: Error loading initial collection chirps from database:', error);
+      console.log('🔄 HomePage: Keeping existing collection chirps array');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id, collectionChirps.length, lastRefresh]);
   
   // Load more chirps function for pagination
   const loadMoreChirps = useCallback(async () => {
-    if (isLoadingMore || !hasMoreChirps) return;
+    if (isLoadingMore) return;
+    
+    // Check which feed type we're loading more for
+    const isForYouFeed = feedType === 'forYou';
+    const hasMore = isForYouFeed ? hasMoreChirps : hasMoreCollectionChirps;
+    const currentChirps = isForYouFeed ? forYouChirps : collectionChirps;
+    
+    if (!hasMore) return;
     
     try {
       setIsLoadingMore(true);
-      console.log('🔄 HomePage: Loading more chirps...');
+      console.log(`🔄 HomePage: Loading more ${feedType} chirps...`);
       const startTime = Date.now();
       
-      const moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, forYouChirps.length);
-      const loadTime = Date.now() - startTime;
+      let moreChirps;
+      if (isForYouFeed) {
+        moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, currentChirps.length);
+      } else {
+        if (!user?.id) return;
+        moreChirps = await getCollectionFeedChirps(user.id, LOAD_MORE_LIMIT, currentChirps.length);
+      }
       
-      console.log(`✅ HomePage: Loaded ${moreChirps.length} more chirps in ${loadTime}ms`);
+      const loadTime = Date.now() - startTime;
+      console.log(`✅ HomePage: Loaded ${moreChirps.length} more ${feedType} chirps in ${loadTime}ms`);
       
       if (moreChirps.length > 0) {
-        setForYouChirps(prevChirps => {
-          // Create a map to track existing chirp IDs
-          const existingIds = new Set(prevChirps.map(chirp => chirp.id));
-          // Filter out any duplicate chirps
-          const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
-          return [...prevChirps, ...uniqueNewChirps];
-        });
-        setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
+        if (isForYouFeed) {
+          setForYouChirps(prevChirps => {
+            // Create a map to track existing chirp IDs
+            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
+            // Filter out any duplicate chirps
+            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
+            return [...prevChirps, ...uniqueNewChirps];
+          });
+          setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
+        } else {
+          setCollectionChirps(prevChirps => {
+            // Create a map to track existing chirp IDs
+            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
+            // Filter out any duplicate chirps
+            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
+            return [...prevChirps, ...uniqueNewChirps];
+          });
+          setHasMoreCollectionChirps(moreChirps.length === LOAD_MORE_LIMIT);
+        }
       } else {
-        setHasMoreChirps(false);
+        if (isForYouFeed) {
+          setHasMoreChirps(false);
+        } else {
+          setHasMoreCollectionChirps(false);
+        }
       }
     } catch (error) {
-      console.error('❌ HomePage: Error loading more chirps:', error);
+      console.error(`❌ HomePage: Error loading more ${feedType} chirps:`, error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMoreChirps]);
+  }, [feedType, isLoadingMore, hasMoreChirps, hasMoreCollectionChirps, forYouChirps.length, collectionChirps.length, user?.id]);
   
   // Load initial chirps on mount
   useEffect(() => {
     // Only load chirps if user is available
-    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id);
+    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id, 'feedType:', feedType);
     if (user) {
-      loadInitialChirps();
+      if (feedType === 'forYou') {
+        loadInitialChirps();
+      } else {
+        loadInitialCollectionChirps();
+      }
     } else {
       console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
     }
-  }, [user, loadInitialChirps]);
+  }, [user, feedType, loadInitialChirps, loadInitialCollectionChirps]);
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {
-    console.log('🔄 HomePage: Force refreshing chirps...');
+    console.log(`🔄 HomePage: Force refreshing ${feedType} chirps...`);
     try {
       setIsLoading(true);
       clearChirpCache(); // Clear cache before refreshing
       
       const startTime = Date.now();
-      const realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
+      let realChirps;
+      
+      if (feedType === 'forYou') {
+        realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
+        setForYouChirps(realChirps);
+        setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
+      } else {
+        if (!user?.id) return;
+        realChirps = await getCollectionFeedChirps(user.id, INITIAL_LIMIT, 0);
+        setCollectionChirps(realChirps);
+        setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
+      }
+      
       const loadTime = Date.now() - startTime;
+      console.log(`✅ HomePage: Refreshed ${realChirps.length} ${feedType} chirps from database in ${loadTime}ms`);
       
-      console.log(`✅ HomePage: Refreshed ${realChirps.length} chirps from database in ${loadTime}ms`);
-      
-      setForYouChirps(realChirps);
       setLastRefresh(Date.now());
-      setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
     } catch (error) {
-      console.error('❌ HomePage: Error refreshing chirps:', error);
+      console.error(`❌ HomePage: Error refreshing ${feedType} chirps:`, error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [feedType, user?.id]);
   
   // Function to update chirp like count
   const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
-    setForYouChirps(prevChirps => 
+    const updateChirp = (prevChirps: any[]) => 
       prevChirps.map(chirp => 
         chirp.id === chirpId 
           ? { 
@@ -140,19 +215,29 @@ export default function HomePage() {
               userHasLiked: newLikeCount > (chirp.reactionCount || 0)
             }
           : chirp
-      )
-    );
-  }, []);
+      );
+    
+    if (feedType === 'forYou') {
+      setForYouChirps(updateChirp);
+    } else {
+      setCollectionChirps(updateChirp);
+    }
+  }, [feedType]);
 
   const handleChirpReplyUpdate = useCallback((chirpId: string) => {
-    setForYouChirps(prevChirps => 
+    const updateChirp = (prevChirps: any[]) => 
       prevChirps.map(chirp => 
         chirp.id === chirpId 
           ? { ...chirp, replyCount: (chirp.replyCount || 0) + 1 }
           : chirp
-      )
-    );
-  }, []);
+      );
+    
+    if (feedType === 'forYou') {
+      setForYouChirps(updateChirp);
+    } else {
+      setCollectionChirps(updateChirp);
+    }
+  }, [feedType]);
   
   // Function to add a new chirp to the For You feed
   const handleNewChirp = useCallback(async (content: string, imageData?: {
@@ -369,11 +454,39 @@ export default function HomePage() {
                  ) : (
            // Collection Feed
            <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
-             <View style={styles.emptyState}>
-               <BirdIcon size={50} color="#7c3aed" />
-               <Text style={styles.emptyTitle}>Collection Feed</Text>
-               <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
-             </View>
+             {collectionChirps.length === 0 && !isLoading ? (
+               <View style={styles.emptyState}>
+                 <BirdIcon size={50} color="#7c3aed" />
+                 <Text style={styles.emptyTitle}>No Collection Chirps</Text>
+                 <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
+               </View>
+             ) : (
+               <>
+                 {collectionChirps.map((chirp, index) => (
+                   <ChirpCard 
+                     key={`${chirp.id}-${index}`} 
+                     chirp={chirp} 
+                     onLikeUpdate={handleChirpLikeUpdate}
+                     onReplyUpdate={handleChirpReplyUpdate}
+                   />
+                 ))}
+                 
+                 {/* Load More Button */}
+                 {hasMoreCollectionChirps && (
+                   <TouchableOpacity 
+                     style={styles.loadMoreButton} 
+                     onPress={loadMoreChirps}
+                     disabled={isLoadingMore}
+                   >
+                     {isLoadingMore ? (
+                       <ActivityIndicator color="#7c3aed" size="small" />
+                     ) : (
+                       <Text style={styles.loadMoreText}>Load More Collection Chirps</Text>
+                     )}
+                   </TouchableOpacity>
+                 )}
+               </>
+             )}
            </View>
          )}
       </ScrollView>

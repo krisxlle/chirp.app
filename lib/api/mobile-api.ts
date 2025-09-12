@@ -1,5 +1,5 @@
 // Mobile API client using Supabase directly
-import { createChirp as createChirpSupabase, getForYouChirps as getForYouChirpsSupabase, getUserChirps as getUserChirpsSupabase, getUserReplies as getUserRepliesSupabase, getUserStats as getUserStatsSupabase } from '../database/mobile-db-supabase';
+import { createChirp as createChirpSupabase, getForYouChirps as getForYouChirpsSupabase, getUserChirps as getUserChirpsSupabase, getUserReplies as getUserRepliesSupabase, getUserStats as getUserStatsSupabase, getCollectionFeedChirps as getCollectionFeedChirpsSupabase } from '../database/mobile-db-supabase';
 
 // API base URL - using Supabase directly
 const API_BASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
@@ -67,6 +67,11 @@ export const getUserReplies = async (userId: string) => {
 export const getUserStats = async (userId: string) => {
   console.log('Fetching user stats via Supabase:', userId);
   return await getUserStatsSupabase(userId);
+};
+
+export const getCollectionFeedChirps = async (userId: string, limit: number = 10, offset: number = 0) => {
+  console.log('Fetching collection feed chirps via Supabase:', userId);
+  return await getCollectionFeedChirpsSupabase(userId, limit, offset);
 };
 
 // Push notification functions (temporarily disabled since backend server is removed)
