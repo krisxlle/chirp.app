@@ -3010,17 +3010,35 @@ export async function getProfilePowerBreakdown(userId: string): Promise<{
     const likesContribution = totalLikes;
     const commentsContribution = totalComments * 2;
     const basePower = likesContribution + commentsContribution;
-    const collectionContribution = basePower * (rarityFactor - 1); // Extra power from collection
     const finalPower = Math.round(basePower * rarityFactor);
     
     // Ensure minimum power of 100
     const totalPower = Math.max(100, finalPower);
+    
+    // Calculate breakdown components that sum to total power
+    // Distribute the total power proportionally among the components
+    const totalBasePower = likesContribution + commentsContribution;
+    let breakdownLikesContribution = 0;
+    let breakdownCommentsContribution = 0;
+    let collectionContribution = 0;
+    
+    if (totalBasePower > 0) {
+      // Calculate proportional contributions
+      breakdownLikesContribution = Math.round((likesContribution / totalBasePower) * totalPower);
+      breakdownCommentsContribution = Math.round((commentsContribution / totalBasePower) * totalPower);
+      
+      // Collection contribution is the difference between total power and base power
+      collectionContribution = totalPower - totalBasePower;
+    } else {
+      // If no base power, all power comes from collection bonus
+      collectionContribution = totalPower;
+    }
 
     const breakdown = {
       totalPower,
-      likesContribution: Math.round(likesContribution),
-      commentsContribution: Math.round(commentsContribution),
-      collectionContribution: Math.round(collectionContribution),
+      likesContribution: breakdownLikesContribution,
+      commentsContribution: breakdownCommentsContribution,
+      collectionContribution: Math.max(0, collectionContribution),
       rarityFactor: Math.round(rarityFactor * 100) / 100, // Round to 2 decimal places
       totalLikes,
       totalComments
