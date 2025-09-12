@@ -91,14 +91,14 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
       setUserChirps(chirpsData || []);
       setUserReplies(repliesData || []);
       
-      // Calculate profile power based on stats
-      const profilePower = calculateProfilePower(chirpsData || [], repliesData || [], statsData);
+      // Calculate profile power using the new comprehensive algorithm
+      const calculatedPower = await calculateProfilePower(authUser.id);
       
       // Update stats with API data
       setStats({
         followers: statsData.followers || 0,
         following: statsData.following || 0,
-        profilePower: profilePower
+        profilePower: calculatedPower
       });
       
       console.log('ProfilePage: Data loaded successfully');
@@ -108,54 +108,15 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
     }
   }, [authUser?.id]);
 
-  // Algorithm to calculate profile power based on engagement
-  const calculateProfilePower = (chirps: any[], replies: any[], stats: any) => {
-    let totalPower = 0;
-    
-    // Base power from followers (each follower = 10 points)
-    totalPower += (stats.followers || 0) * 10;
-    
-    // Power from chirps (each chirp = 5 points)
-    totalPower += chirps.length * 5;
-    
-    // Power from replies (each reply = 3 points)
-    totalPower += replies.length * 3;
-    
-    // Power from engagement on chirps
-    chirps.forEach(chirp => {
-      // Reaction power (each reaction = 1 point)
-      totalPower += (chirp.reactionCount || 0) * 1;
-      
-      // Reply power (each reply = 2 points)
-      totalPower += (chirp.replyCount || 0) * 2;
-    });
-    
-    // Power from engagement on replies
-    replies.forEach(reply => {
-      // Reaction power (each reaction = 1 point)
-      totalPower += (reply.reactionCount || 0) * 1;
-      
-      // Reply power (each reply = 2 points)
-      totalPower += (reply.replyCount || 0) * 2;
-    });
-    
-    // Activity bonus (more active users get bonus)
-    const totalPosts = chirps.length + replies.length;
-    if (totalPosts >= 10) totalPower += 100; // Active user bonus
-    if (totalPosts >= 25) totalPower += 200; // Very active user bonus
-    if (totalPosts >= 50) totalPower += 300; // Power user bonus
-    
-    // Engagement rate bonus (high engagement rate = more power)
-    const totalEngagement = chirps.reduce((sum, chirp) => 
-      sum + (chirp.reactionCount || 0) + (chirp.replyCount || 0), 0
-    );
-    const engagementRate = totalPosts > 0 ? totalEngagement / totalPosts : 0;
-    
-    if (engagementRate >= 5) totalPower += 150; // High engagement bonus
-    if (engagementRate >= 10) totalPower += 300; // Very high engagement bonus
-    
-    // Minimum power of 100, maximum reasonable power of 2000
-    return Math.max(100, Math.min(2000, Math.round(totalPower)));
+  // Use the new comprehensive profile power calculation
+  const calculateProfilePower = async (userId: string) => {
+    try {
+      const { calculateProfilePower } = await import('../lib/database/mobile-db-supabase');
+      return await calculateProfilePower(userId);
+    } catch (error) {
+      console.error('❌ Error calculating profile power:', error);
+      return 100; // Fallback to base power
+    }
   };
 
   useEffect(() => {

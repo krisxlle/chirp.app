@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import type { MobileChirp } from './mobile-types';
 // Temporarily comment out problematic imports
 // import { notificationService } from '../../services/notificationService';
-// import ForYouAlgorithm from '../../services/forYouAlgorithm';
+import { ForYouAlgorithm } from '../../services/forYouAlgorithm';
 
 // Platform-specific storage
 let storage: any;
@@ -829,18 +829,14 @@ export async function getForYouChirps(limit: number = 20, offset: number = 0): P
     }
 
     // Use the optimized For You algorithm with pagination
-    // Temporarily disabled to fix Metro bundler issue
-    // const personalizedChirps = await ForYouAlgorithm.getForYouFeed({
-    //   userId: currentUserId,
-    //   limit,
-    //   offset,
-    //   includeReplies: false,
-    //   prioritizeFollowed: true,
-    //   useCache: true
-    // });
-
-    // Fallback to basic feed for now
-    const personalizedChirps = await getBasicForYouFeed(limit, offset);
+    const personalizedChirps = await ForYouAlgorithm.getForYouFeed({
+      userId: currentUserId,
+      limit,
+      offset,
+      includeReplies: false,
+      prioritizeFollowed: true,
+      useCache: true
+    });
 
     // Add like status for current user (for all pages to ensure like buttons work correctly)
     const chirpsWithLikeStatus = await addLikeStatusToChirps(personalizedChirps, currentUserId);
@@ -2783,8 +2779,128 @@ export const getUserProfile = async (userId: string): Promise<any> => {
 // Get user by ID (alias for getUserProfile)
 export const getUserById = getUserProfile;
 
-// Get user's gacha collection
-export const getUserCollection = async (userId: string): Promise<any[]> => {
+// Calculate comprehensive profile power based on engagement and collection rarity
+export async function calculateProfilePower(userId: string): Promise<number> {
+  try {
+    console.log('🔢 Calculating profile power for user:', userId);
+    
+    // Check cache first
+    const cacheKey = `profile_power_${userId}`;
+    const cached = chirpCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
+      console.log('✅ Returning cached profile power');
+      return cached.data;
+    }
+    
+    const isConnected = await ensureDatabaseInitialized();
+    if (!isConnected) {
+      console.log('🔄 Database not connected, returning base power');
+      return 100; // Base power when DB is not connected
+    }
+
+    // Get user's chirp IDs first
+    const { data: userChirps, error: chirpsError } = await supabase
+      .from('chirps')
+      .select('id')
+      .eq('author_id', userId);
+
+    if (chirpsError) {
+      console.error('❌ Error fetching user chirps:', chirpsError);
+    }
+
+    const userChirpIds = userChirps?.map(chirp => chirp.id) || [];
+
+    // Get total likes on user's chirps
+    let totalLikes = 0;
+    if (userChirpIds.length > 0) {
+      const { data: likesData, error: likesError } = await supabase
+        .from('reactions')
+        .select('id')
+        .in('chirp_id', userChirpIds);
+
+      if (likesError) {
+        console.error('❌ Error fetching likes:', likesError);
+      } else {
+        totalLikes = likesData?.length || 0;
+      }
+    }
+
+    // Get total comments on user's chirps (replies to their chirps)
+    let totalComments = 0;
+    if (userChirpIds.length > 0) {
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('chirps')
+        .select('id')
+        .not('reply_to_id', 'is', null)
+        .in('reply_to_id', userChirpIds);
+
+      if (commentsError) {
+        console.error('❌ Error fetching comments:', commentsError);
+      } else {
+        totalComments = commentsData?.length || 0;
+      }
+    }
+
+    // Get user's collection to calculate rarity factor
+    const { data: collectionData, error: collectionError } = await supabase
+      .from('user_collections')
+      .select('rarity, quantity')
+      .eq('user_id', userId);
+
+    if (collectionError) {
+      console.error('❌ Error fetching collection:', collectionError);
+    }
+
+    // Calculate rarity factor based on collected profiles
+    const rarityMultipliers = {
+      mythic: 5.0,
+      legendary: 3.0,
+      epic: 2.0,
+      rare: 1.5,
+      uncommon: 1.2,
+      common: 1.0
+    };
+
+    let rarityFactor = 1.0;
+    if (collectionData && collectionData.length > 0) {
+      const totalRarityValue = collectionData.reduce((sum, item) => {
+        const multiplier = rarityMultipliers[item.rarity as keyof typeof rarityMultipliers] || 1.0;
+        return sum + (multiplier * item.quantity);
+      }, 0);
+      
+      const totalQuantity = collectionData.reduce((sum, item) => sum + item.quantity, 0);
+      rarityFactor = totalQuantity > 0 ? totalRarityValue / totalQuantity : 1.0;
+    }
+
+    // Calculate profile power: (total likes + comments * 2) * rarity factor
+    const basePower = totalLikes + (totalComments * 2);
+    const finalPower = Math.round(basePower * rarityFactor);
+    
+    // Ensure minimum power of 100
+    const profilePower = Math.max(100, finalPower);
+
+    console.log('🔢 Profile power calculation:', {
+      userId,
+      totalLikes,
+      totalComments,
+      rarityFactor: rarityFactor.toFixed(2),
+      basePower,
+      finalPower: profilePower
+    });
+
+    // Cache the result for 5 minutes
+    chirpCache.set(cacheKey, { 
+      data: profilePower, 
+      timestamp: Date.now(), 
+      ttl: 300000 // 5 minutes
+    });
+
+    return profilePower;
+  } catch (error) {
+    console.error('❌ Error calculating profile power:', error);
+    return 100; // Fallback to base power
+  }
+}
   try {
     console.log('🎮 Fetching user collection:', userId);
     await ensureDatabaseInitialized();

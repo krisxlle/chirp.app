@@ -133,7 +133,8 @@ export default function UserProfileScreen() {
           getUserById, 
           getUserStats, 
           checkFollowStatus,
-          checkBlockStatus
+          checkBlockStatus,
+          calculateProfilePower
         } = await import('../../lib/database/mobile-db-supabase');
 
         // Fetch essential profile data first (fast)
@@ -141,19 +142,21 @@ export default function UserProfileScreen() {
           userData, 
           userStats,
           followStatusData,
-          isBlocked
+          isBlocked,
+          profilePower
         ] = await Promise.all([
           getUserById(userId),
           getUserStats(userId),
           // Only check follow status if viewing someone else's profile
           currentUserId && currentUserId !== userId ? checkFollowStatus(userId, currentUserId) : Promise.resolve({ isFollowing: false, isBlocked: false, notificationsEnabled: false }),
-          currentUserId && currentUserId !== userId ? checkBlockStatus(currentUserId, userId) : false
+          currentUserId && currentUserId !== userId ? checkBlockStatus(currentUserId, userId) : false,
+          calculateProfilePower(userId)
         ]);
         
         // Update profile state immediately
         setUser(userData);
         setStats({
-          profilePower: Math.floor((userStats.chirps * 10) + (userStats.likes * 5) + (userStats.followers * 2) + (userStats.following * 1)),
+          profilePower: profilePower,
           following: userStats.following,
           followers: userStats.followers
         });

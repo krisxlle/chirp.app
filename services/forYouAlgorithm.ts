@@ -47,10 +47,13 @@ export class ForYouAlgorithm {
   private static readonly FOLLOWED_WEIGHT = 3.0; // Chirps from followed users get 3x boost
   private static readonly RECENCY_WEIGHT = 1.5; // Recent chirps get 1.5x boost
   private static readonly ENGAGEMENT_WEIGHT = 1.2; // High engagement chirps get 1.2x boost
+  private static readonly PROFILE_POWER_WEIGHT = 0.1; // Profile power influence (0.1 per 100 power points)
   
-  // Performance optimization: Cache for following lists
+  // Performance optimization: Cache for following lists and profile power
   private static followingCache = new Map<string, { data: string[], timestamp: number }>();
+  private static profilePowerCache = new Map<string, { data: number, timestamp: number }>();
   private static readonly FOLLOWING_CACHE_TTL = 300000; // 5 minutes
+  private static readonly PROFILE_POWER_CACHE_TTL = 300000; // 5 minutes
 
   /**
    * Get personalized "For You" feed for a user - OPTIMIZED VERSION
@@ -208,6 +211,31 @@ export class ForYouAlgorithm {
   }
 
   /**
+   * Get profile power for a user with caching
+   */
+  private static async getProfilePower(userId: string): Promise<number> {
+    try {
+      // Check cache first
+      const cached = this.profilePowerCache.get(userId);
+      if (cached && (Date.now() - cached.timestamp) < this.PROFILE_POWER_CACHE_TTL) {
+        return cached.data;
+      }
+
+      // Import and call the profile power calculation function
+      const { calculateProfilePower } = await import('../lib/database/mobile-db-supabase');
+      const profilePower = await calculateProfilePower(userId);
+      
+      // Cache the result
+      this.profilePowerCache.set(userId, { data: profilePower, timestamp: Date.now() });
+      
+      return profilePower;
+    } catch (error) {
+      console.error('❌ Error getting profile power:', error);
+      return 100; // Fallback to base power
+    }
+  }
+
+  /**
    * Clear following cache for a user (call when user follows/unfollows someone)
    */
   static clearFollowingCache(userId: string): void {
@@ -216,12 +244,32 @@ export class ForYouAlgorithm {
   }
 
   /**
-   * Rank chirps using personalized algorithm
+   * Clear profile power cache for a user (call when user's engagement changes)
+   */
+  static clearProfilePowerCache(userId: string): void {
+    this.profilePowerCache.delete(userId);
+    console.log('🗑️ Cleared profile power cache for user:', userId);
+  }
+
+  /**
+   * Rank chirps using personalized algorithm with profile power
    */
   private static async rankChirps(chirps: Chirp[], userId: string, followingIds: string[]): Promise<Chirp[]> {
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000;
     const oneWeekMs = 7 * oneDayMs;
+
+    // Get profile power for all unique authors
+    const authorIds = [...new Set(chirps.map(chirp => chirp.author.id))];
+    const profilePowers = new Map<string, number>();
+    
+    // Fetch profile powers in parallel
+    const powerPromises = authorIds.map(async (authorId) => {
+      const power = await this.getProfilePower(authorId);
+      profilePowers.set(authorId, power);
+    });
+    
+    await Promise.all(powerPromises);
 
     return chirps
       .map(chirp => {
@@ -248,6 +296,17 @@ export class ForYouAlgorithm {
         } else if (totalEngagement > 5) {
           score *= 1.1; // Small boost for moderate engagement
         }
+
+        // Boost for high profile power users
+        const authorProfilePower = profilePowers.get(chirp.author.id) || 100;
+        const powerBoost = 1 + (authorProfilePower * this.PROFILE_POWER_WEIGHT / 100);
+        score *= powerBoost;
+
+        console.log('🎯 Profile power boost for', chirp.author.handle, ':', {
+          profilePower: authorProfilePower,
+          powerBoost: powerBoost.toFixed(2),
+          finalScore: score.toFixed(2)
+        });
 
         // Penalty for own content (optional - you might want to see your own posts)
         // if (chirp.author.id === userId) {
