@@ -688,7 +688,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
   });
 
   // Transform chirps efficiently without individual count queries (prevents timeouts)
-  // chirpIds already declared above for image query
+  const chirpIds = chirps.map((chirp: any) => chirp.id);
   
   // Get reaction counts efficiently (simplified for speed)
   const reactionCounts = chirpIds.length > 0 ? await withTimeout(
