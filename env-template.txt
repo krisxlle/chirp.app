@@ -1,0 +1,5 @@
+# Gmail Configuration for Support Email System
+# Rename this file to .env to enable email functionality
+
+GMAIL_USER=joinchirp@gmail.com
+GMAIL_PASSWORD=hitj gpsk mfsa tohn
