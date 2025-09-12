@@ -8,7 +8,7 @@ export interface MobileChirp {
   reactionCount: number;
   replyCount: number;
   reactions: any[];
-  replies: any[];
+  replies?: any[];
   repostOfId?: string;
   originalChirp?: MobileChirp;
   imageUrl?: string;

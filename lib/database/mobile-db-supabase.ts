@@ -357,8 +357,7 @@ export async function getUserChirps(userId: string) {
         .eq('author_id', userId)
         .is('reply_to_id', null)
         .order('created_at', { ascending: false })
-        .limit(3)
-        .then(result => result),
+        .limit(3),
       3000, // Reduced to 3 second timeout
       'fetching user chirps'
     );
@@ -573,8 +572,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
     supabase
       .from('chirps')
       .select('id, content, created_at, author_id')
-      .limit(5)
-      .then(result => result),
+      .limit(5),
     8000, // 8 second timeout for quick check
     'checking for chirps'
   ).catch(() => ({ data: null, error: new Error('Connection timeout') }));
@@ -608,8 +606,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
       `)
       .is('reply_to_id', null)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-      .then(result => result), // Use range for proper pagination
+      .range(offset, offset + limit - 1), // Use range for proper pagination
     4000, // Reduced timeout to 4 seconds
     'fetching basic chirps'
   );
@@ -640,8 +637,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
     supabase
       .from('users')
       .select('id, first_name, custom_handle, handle, profile_image_url')
-      .in('id', authorIds)
-      .then(result => result),
+      .in('id', authorIds),
     3000, // Reduced timeout to 3 seconds
     'fetching user data'
   ).catch(() => ({ data: [] })) : { data: [] };
@@ -666,8 +662,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
           counts.set(item.chirp_id, (counts.get(item.chirp_id) || 0) + 1);
         });
         return counts;
-      })
-      .then(result => result),
+      }),
     5000, // 5 second timeout
     'fetching reaction counts'
   ).catch((error) => {
@@ -687,8 +682,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
           counts.set(item.reply_to_id, (counts.get(item.reply_to_id) || 0) + 1);
         });
         return counts;
-      })
-      .then(result => result),
+      }),
     5000, // 5 second timeout
     'fetching reply counts'
   ).catch((error) => {
@@ -1420,8 +1414,7 @@ export const createChirp = async (
           .from('chirps')
           .insert(chirpWithoutImage)
           .select('id')
-          .single()
-          .then(result => result),
+          .single(),
         10000, // 10 second timeout for basic chirp creation
         'creating chirp without image'
       );
@@ -1454,8 +1447,7 @@ export const createChirp = async (
               banner_image_url
             )
           `)
-          .single()
-          .then(result => result),
+          .single(),
         20000, // 20 second timeout for image update
         'updating chirp with image data'
       );
@@ -1480,8 +1472,7 @@ export const createChirp = async (
               banner_image_url
             )
           `)
-          .single()
-          .then(result => result),
+          .single(),
         15000, // 15 second timeout for chirps without images
         'creating chirp without image data'
       );
