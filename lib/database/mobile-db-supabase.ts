@@ -2884,6 +2884,125 @@ export const getUserCollection = async (userId: string): Promise<any[]> => {
   }
 };
 
+// Get user's showcase profiles (up to 6 selected profiles)
+export const getUserShowcase = async (userId: string): Promise<any[]> => {
+  try {
+    console.log('🎮 Fetching user showcase:', userId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, returning empty showcase');
+      return [];
+    }
+    
+    // Get showcase profiles from user_collections where is_showcase = true
+    const { data: showcase, error } = await supabase
+      .from('user_collections')
+      .select(`
+        id,
+        user_id,
+        collected_user_id,
+        rarity,
+        quantity,
+        obtained_at,
+        is_showcase,
+        showcase_order,
+        collected_user:users!collected_user_id (
+          id,
+          first_name,
+          last_name,
+          custom_handle,
+          handle,
+          profile_image_url,
+          avatar_url,
+          banner_image_url,
+          bio,
+          created_at
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('is_showcase', true)
+      .order('showcase_order', { ascending: true })
+      .limit(6);
+
+    if (error) {
+      console.error('❌ Error fetching user showcase:', error);
+      return [];
+    }
+
+    // Transform the data to match the expected format
+    const transformedShowcase = (showcase || []).map((item: any) => ({
+      id: item.collected_user.id,
+      name: `${item.collected_user.first_name || ''} ${item.collected_user.last_name || ''}`.trim() || 'User',
+      handle: item.collected_user.custom_handle || item.collected_user.handle,
+      bio: item.collected_user.bio || '',
+      imageUrl: item.collected_user.profile_image_url || item.collected_user.avatar_url,
+      rarity: item.rarity,
+      quantity: item.quantity,
+      obtainedAt: item.obtained_at,
+      followers: 0, // Will be populated if needed
+      profilePower: 0, // Will be populated if needed
+      showcaseOrder: item.showcase_order
+    }));
+
+    console.log(`✅ Successfully fetched ${transformedShowcase.length} showcase profiles`);
+    return transformedShowcase;
+  } catch (error) {
+    console.error('❌ Error fetching user showcase:', error);
+    return [];
+  }
+};
+
+// Update user's showcase profiles
+export const updateUserShowcase = async (userId: string, profileIds: string[]): Promise<boolean> => {
+  try {
+    console.log('🎮 Updating user showcase:', { userId, profileIds });
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, cannot update showcase');
+      return false;
+    }
+
+    // First, remove all profiles from showcase
+    const { error: removeError } = await supabase
+      .from('user_collections')
+      .update({ is_showcase: false, showcase_order: null })
+      .eq('user_id', userId);
+
+    if (removeError) {
+      console.error('❌ Error removing profiles from showcase:', removeError);
+      return false;
+    }
+
+    // Then add selected profiles to showcase (max 6)
+    const profilesToShowcase = profileIds.slice(0, 6);
+    
+    for (let i = 0; i < profilesToShowcase.length; i++) {
+      const profileId = profilesToShowcase[i];
+      const { error: updateError } = await supabase
+        .from('user_collections')
+        .update({ 
+          is_showcase: true, 
+          showcase_order: i + 1 
+        })
+        .eq('user_id', userId)
+        .eq('collected_user_id', profileId);
+
+      if (updateError) {
+        console.error('❌ Error adding profile to showcase:', updateError);
+        return false;
+      }
+    }
+
+    console.log(`✅ Successfully updated showcase with ${profilesToShowcase.length} profiles`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error updating user showcase:', error);
+    return false;
+  }
+};
+
 // Add profile to user's collection
 export const addToUserCollection = async (userId: string, collectedUserId: string, rarity: string): Promise<boolean> => {
   try {

@@ -349,7 +349,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab === 'chirps' ? 'Chirps' : tab === 'comments' ? 'Comments' : 'Collection'}
+              {tab === 'chirps' ? 'Chirps' : tab === 'comments' ? 'Comments' : 'Showcase'}
             </Text>
           </TouchableOpacity>
         ))}

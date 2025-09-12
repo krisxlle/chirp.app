@@ -20,6 +20,7 @@ import ChirpCard from '../../components/ChirpCard';
 import FollowersFollowingModal from '../../components/FollowersFollowingModal';
 import LinkIcon from '../../components/icons/LinkIcon';
 import NotificationIcon from '../../components/icons/NotificationIcon';
+import ShowcaseSelector from '../../components/ShowcaseSelector';
 import UserAvatar from '../../components/UserAvatar';
 import { DEFAULT_BANNER_URL } from '../../constants/DefaultBanner';
 
@@ -80,8 +81,35 @@ export default function UserProfileScreen() {
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [showcase, setShowcase] = useState<any[]>([]);
+  const [showShowcaseSelector, setShowShowcaseSelector] = useState(false);
 
   const router = useRouter();
+
+  // Helper functions for rarity
+  const getRarityColor = (rarity: string) => {
+    const colors: { [key: string]: string } = {
+      'common': '#9CA3AF',
+      'uncommon': '#10B981', 
+      'rare': '#3B82F6',
+      'epic': '#8B5CF6',
+      'legendary': '#F59E0B',
+      'mythic': '#EF4444'
+    };
+    return colors[rarity] || '#9CA3AF';
+  };
+
+  const getRarityName = (rarity: string) => {
+    const names: { [key: string]: string } = {
+      'common': 'Common',
+      'uncommon': 'Uncommon',
+      'rare': 'Rare', 
+      'epic': 'Epic',
+      'legendary': 'Legendary',
+      'mythic': 'Mythic'
+    };
+    return names[rarity] || 'Common';
+  };
 
   useEffect(() => {
     console.log('🚀 Profile useEffect triggered with userId:', userId, 'currentUserId:', currentUserId);
@@ -138,6 +166,9 @@ export default function UserProfileScreen() {
         
         // Load chirps separately (slower)
         await loadUserChirps(userId);
+        
+        // Load showcase separately
+        await loadShowcase(userId);
       } catch (error) {
         console.error('❌ Error fetching user profile:', error);
       } finally {
@@ -168,6 +199,19 @@ export default function UserProfileScreen() {
     } catch (error) {
       console.error('❌ Error loading chirps:', error);
       setLoadingChirps(false);
+    }
+  };
+
+  const loadShowcase = async (targetUserId: string) => {
+    try {
+      console.log('🎮 Loading showcase for user:', targetUserId);
+      const { getUserShowcase } = await import('../../lib/database/mobile-db-supabase');
+      const userShowcase = await getUserShowcase(targetUserId);
+      setShowcase(userShowcase);
+      console.log('✅ Showcase loaded successfully:', userShowcase.length, 'profiles');
+    } catch (error) {
+      console.error('❌ Error loading showcase:', error);
+      setShowcase([]);
     }
   };
 
@@ -542,7 +586,7 @@ export default function UserProfileScreen() {
             onPress={() => setActiveTab('gacha')}
           >
             <Text style={[styles.tabText, activeTab === 'gacha' && styles.activeTabText]}>
-              Collection
+              Showcase
             </Text>
           </TouchableOpacity>
         </View>
@@ -574,19 +618,66 @@ export default function UserProfileScreen() {
           )}
           
           {activeTab === 'gacha' && (
-            <View style={styles.gachaContainer}>
-              <View style={styles.collectionHeader}>
-                <Text style={styles.collectionTitle}>Collection</Text>
-                <Text style={styles.collectionSubtitle}>Profile cards collected by {user?.custom_handle || user?.handle}</Text>
+            <View style={styles.showcaseContainer}>
+              <View style={styles.showcaseHeader}>
+                <Text style={styles.showcaseTitle}>Showcase</Text>
+                <Text style={styles.showcaseSubtitle}>
+                  {userId === currentUserId 
+                    ? "Your featured profiles" 
+                    : `Featured profiles by ${user?.custom_handle || user?.handle}`
+                  }
+                </Text>
+                {userId === currentUserId && (
+                  <TouchableOpacity 
+                    style={styles.editShowcaseButton}
+                    onPress={() => setShowShowcaseSelector(true)}
+                  >
+                    <Text style={styles.editShowcaseButtonText}>Edit Showcase</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               
-              <View style={styles.emptyCollectionState}>
-                <Text style={styles.emptyCollectionIcon}>🎴</Text>
-                <Text style={styles.emptyCollectionTitle}>No cards collected yet</Text>
-                <Text style={styles.emptyCollectionText}>
-                  This user hasn't collected any profile cards from the gacha system yet.
-                </Text>
-              </View>
+              {showcase.length === 0 ? (
+                <View style={styles.emptyShowcaseState}>
+                  <Text style={styles.emptyShowcaseIcon}>🎴</Text>
+                  <Text style={styles.emptyShowcaseTitle}>
+                    {userId === currentUserId ? "No profiles showcased yet" : "No profiles showcased"}
+                  </Text>
+                  <Text style={styles.emptyShowcaseText}>
+                    {userId === currentUserId 
+                      ? "Select up to 6 profiles from your collection to showcase them here."
+                      : "This user hasn't selected any profiles for their showcase yet."
+                    }
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.showcaseGrid}>
+                  {showcase.map((profile, index) => (
+                    <View key={profile.id} style={styles.showcaseCard}>
+                      <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(profile.rarity) }]}>
+                        <Text style={styles.rarityText}>{getRarityName(profile.rarity)}</Text>
+                      </View>
+                      
+                      <View style={styles.profileFrameContainer}>
+                        {profile.imageUrl ? (
+                          <Image 
+                            source={{ uri: profile.imageUrl }} 
+                            style={styles.showcaseProfileImage} 
+                          />
+                        ) : (
+                          <View style={[styles.showcaseProfilePlaceholder, { backgroundColor: getRarityColor(profile.rarity) }]}>
+                            <Text style={styles.showcaseProfileText}>{profile.name.charAt(0)}</Text>
+                          </View>
+                        )}
+                      </View>
+                      
+                      <Text style={styles.showcaseProfileName} numberOfLines={1}>{profile.name}</Text>
+                      <Text style={styles.showcaseProfileHandle} numberOfLines={1}>@{profile.handle}</Text>
+                      <Text style={styles.showcaseProfileBio} numberOfLines={2}>{profile.bio}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -636,6 +727,15 @@ export default function UserProfileScreen() {
         type="following"
         title="Following"
       />
+
+      {/* Showcase Selector Modal */}
+      {userId === currentUserId && (
+        <ShowcaseSelector
+          visible={showShowcaseSelector}
+          onClose={() => setShowShowcaseSelector(false)}
+          onShowcaseUpdated={() => loadShowcase(userId)}
+        />
+      )}
     </View>
   );
 }
@@ -1047,5 +1147,129 @@ const styles = StyleSheet.create({
   },
   destructiveText: {
     color: '#ef4444',
+  },
+  // Showcase styles
+  showcaseContainer: {
+    padding: 20,
+  },
+  showcaseHeader: {
+    marginBottom: 20,
+  },
+  showcaseTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  showcaseSubtitle: {
+    fontSize: 16,
+    color: '#657786',
+    marginBottom: 12,
+  },
+  editShowcaseButton: {
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  editShowcaseButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyShowcaseState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyShowcaseIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyShowcaseTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  emptyShowcaseText: {
+    fontSize: 14,
+    color: '#657786',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  showcaseGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  showcaseCard: {
+    width: (screenWidth - 60) / 2,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    position: 'relative',
+  },
+  rarityBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 1,
+  },
+  rarityText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  profileFrameContainer: {
+    width: 60,
+    height: 60,
+    alignSelf: 'center',
+    marginVertical: 8,
+  },
+  showcaseProfileImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
+  },
+  showcaseProfilePlaceholder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  showcaseProfileText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  showcaseProfileName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  showcaseProfileHandle: {
+    fontSize: 12,
+    color: '#657786',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  showcaseProfileBio: {
+    fontSize: 11,
+    color: '#657786',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
