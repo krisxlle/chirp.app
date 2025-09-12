@@ -281,7 +281,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
                return (
                  <Text 
                    key={index}
-                   style={styles.mentionText}
+                   style={[styles.bio, styles.mentionText]}
                    onPress={async () => {
                      try {
                        const { getUserByHandle } = await import('../lib/database/mobile-db-supabase');
@@ -302,7 +302,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
                  </Text>
                );
              }
-             return <Text key={index} style={styles.bio}>{part}</Text>;
+             return <Text key={index}>{part}</Text>;
            })}
          </Text>
 
@@ -628,9 +628,6 @@ const styles = StyleSheet.create({
   },
   mentionText: {
     color: '#7c3aed',
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: 'normal',
   },
   linkText: {
     fontSize: 14,

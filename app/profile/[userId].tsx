@@ -524,7 +524,7 @@ export default function UserProfileScreen() {
                     return (
                       <Text 
                         key={index} 
-                        style={styles.mentionText}
+                        style={[styles.bio, styles.mentionText]}
                         onPress={async () => {
                           try {
                             const { getUserByHandle } = await import('../../lib/database/mobile-db-supabase');
@@ -545,7 +545,7 @@ export default function UserProfileScreen() {
                       </Text>
                     );
                   }
-                  return <Text key={index} style={styles.bio}>{part}</Text>;
+                  return <Text key={index}>{part}</Text>;
                 })}
               </Text>
             )}
@@ -977,10 +977,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   mentionText: {
-    fontSize: 15,
     color: '#7c3aed',
-    lineHeight: 20,
-    fontWeight: 'normal',
   },
   linkText: {
     fontSize: 14,
