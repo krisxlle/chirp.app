@@ -138,7 +138,7 @@ export class ForYouAlgorithm {
       // Reduce limit to prevent timeouts
       const safeLimit = Math.min(limit, 10);
       
-      // Ultra-simplified query for maximum speed
+      // Ultra-simplified query for maximum speed with image data included
       const query = supabase
         .from('chirps')
         .select(`
@@ -147,6 +147,10 @@ export class ForYouAlgorithm {
           created_at,
           reply_to_id,
           is_weekly_summary,
+          image_url,
+          image_alt_text,
+          image_width,
+          image_height,
           users!inner(
             id,
             first_name,

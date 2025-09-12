@@ -591,13 +591,17 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
         id,
         content,
         created_at,
-        author_id
+        author_id,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height
       `)
       .is('reply_to_id', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1), // Use range for proper pagination
-    8000, // Increased timeout for better reliability
-    'fetching basic chirps'
+    6000, // Reduced timeout since we're including image data
+    'fetching basic chirps with images'
   );
 
   if (error) {
@@ -620,49 +624,30 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
 
   console.log(`📊 Found ${chirps.length} chirps in database`);
 
-  // Fetch image data separately for chirps that have images (to avoid timeout)
-  console.log('🔍 Fetching image data separately...');
-  const chirpIds = chirps.map((chirp: any) => chirp.id);
-  console.log('🔍 Chirp IDs to fetch image data for:', chirpIds);
-  
-  const { data: imageData, error: imageError } = await withTimeout(
-    supabase
-      .from('chirps')
-      .select('id, image_url, image_alt_text, image_width, image_height')
-      .in('id', chirpIds)
-      .not('image_url', 'is', null),
-    5000, // 5 second timeout for image data
-    'fetching image data'
-  ).catch((error) => {
-    console.error('❌ Image data query failed:', error);
-    return { data: [], error: error };
-  });
-
-  // Create a map of chirp ID to image data
+  // Image data is now included in the main query, so we can process it directly
+  console.log('🔍 Processing image data from main query...');
   const imageMap = new Map();
-  if (imageData && !imageError) {
-    console.log('✅ Image data query successful, processing', imageData.length, 'images');
-    imageData.forEach((img: any) => {
-      console.log('🖼️ Processing image for chirp', img.id, ':', {
-        hasImageUrl: !!img.image_url,
-        imageUrl: img.image_url?.substring(0, 50) + '...',
-        imageWidth: img.image_width,
-        imageHeight: img.image_height
+  
+  chirps.forEach((chirp: any) => {
+    if (chirp.image_url) {
+      console.log('🖼️ Processing image for chirp', chirp.id, ':', {
+        hasImageUrl: !!chirp.image_url,
+        imageUrl: chirp.image_url?.substring(0, 50) + '...',
+        imageWidth: chirp.image_width,
+        imageHeight: chirp.image_height
       });
-      imageMap.set(img.id, {
-        imageUrl: img.image_url,
-        imageAltText: img.image_alt_text,
-        imageWidth: img.image_width,
-        imageHeight: img.image_height
+      imageMap.set(chirp.id, {
+        imageUrl: chirp.image_url,
+        imageAltText: chirp.image_alt_text,
+        imageWidth: chirp.image_width,
+        imageHeight: chirp.image_height
       });
-    });
-    console.log(`🖼️ Found image data for ${imageData.length} chirps`);
-  } else {
-    console.log('⚠️ Could not fetch image data, continuing without images');
-    if (imageError) {
-      console.error('❌ Image data error:', imageError);
+    } else {
+      console.log('🖼️ No image data found for chirp', chirp.id);
     }
-  }
+  });
+  
+  console.log(`🖼️ Found image data for ${imageMap.size}/${chirps.length} chirps`);
   
   // Debug: Check if any chirps have image data
   console.log(`🖼️ Chirps with images: ${imageMap.size}/${chirps.length}`);
