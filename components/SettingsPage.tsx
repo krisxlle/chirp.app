@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { updateUserProfile, uploadBannerImage, uploadProfileImage, getUserStats, calculateProfilePower, getProfilePowerBreakdown } from '../lib/database/mobile-db-supabase';
+import { updateUserProfile, uploadBannerImage, uploadProfileImage, getUserStats, calculateProfilePower, getProfilePowerBreakdown, getUserProfile } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import GearIcon from './icons/GearIcon';
 import UserAvatar from './UserAvatar';
@@ -464,15 +464,16 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     try {
       setIsLoadingAnalytics(true);
       
-      // Load user stats and profile power breakdown
-      const [userStats, powerBreakdown] = await Promise.all([
+      // Load user stats, profile power breakdown, and user profile
+      const [userStats, powerBreakdown, userProfile] = await Promise.all([
         getUserStats(user.id),
-        getProfilePowerBreakdown(user.id)
+        getProfilePowerBreakdown(user.id),
+        getUserProfile(user.id)
       ]);
       
-      // Calculate account age
-      const accountAge = user?.createdAt ? 
-        Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+      // Calculate account age using the correct creation date from database
+      const accountAge = userProfile?.joinedAt ? 
+        Math.floor((Date.now() - new Date(userProfile.joinedAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
       
       // Calculate engagement rate (likes + comments per chirp)
       const engagementRate = userStats.chirps > 0 ? 
