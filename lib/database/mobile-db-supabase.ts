@@ -829,14 +829,18 @@ export async function getForYouChirps(limit: number = 20, offset: number = 0): P
     }
 
     // Use the optimized For You algorithm with pagination
-    const personalizedChirps = await ForYouAlgorithm.getForYouFeed({
-      userId: currentUserId,
-      limit,
-      offset,
-      includeReplies: false,
-      prioritizeFollowed: true,
-      useCache: true
-    });
+    // Temporarily disabled due to timeout issues - using basic feed for now
+    // const personalizedChirps = await ForYouAlgorithm.getForYouFeed({
+    //   userId: currentUserId,
+    //   limit,
+    //   offset,
+    //   includeReplies: false,
+    //   prioritizeFollowed: true,
+    //   useCache: true
+    // });
+
+    // Fallback to basic feed to prevent timeouts
+    const personalizedChirps = await getBasicForYouFeed(limit, offset);
 
     // Add like status for current user (for all pages to ensure like buttons work correctly)
     const chirpsWithLikeStatus = await addLikeStatusToChirps(personalizedChirps, currentUserId);
