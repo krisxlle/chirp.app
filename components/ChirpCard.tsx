@@ -21,6 +21,11 @@ const createReply = async (content: string, chirpId: string, userId: string): Pr
   try {
     console.log('📝 Creating reply to chirp:', chirpId, 'by user:', userId);
     
+    // Check if chirp has a temporary ID
+    if (String(chirpId).startsWith('temp_')) {
+      throw new Error('Cannot reply to chirp with temporary ID. Please wait for the chirp to be processed.');
+    }
+    
     // Import supabase client directly
     const { supabase } = await import('../lib/database/mobile-db-supabase');
     
@@ -127,6 +132,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   useEffect(() => {
     const verifyLikeStatus = async () => {
       if (!user?.id || !chirp.id) return;
+      
+      // Skip verification for temporary IDs
+      if (String(chirp.id).startsWith('temp_')) {
+        console.log('⚠️ Skipping like verification for temporary chirp ID:', chirp.id);
+        return;
+      }
       
       try {
         const { supabase } = await import('../lib/database/mobile-db-supabase');
@@ -260,6 +271,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     try {
       if (!user?.id) {
         Alert.alert('Sign in required', 'Please sign in to like chirps.');
+        return;
+      }
+
+      // Check if chirp has a temporary ID (starts with 'temp_')
+      if (String(chirp.id).startsWith('temp_')) {
+        console.log('⚠️ Cannot like chirp with temporary ID:', chirp.id);
+        Alert.alert('Please wait', 'This chirp is still being processed. Please wait a moment and try again.');
         return;
       }
 
@@ -831,15 +849,24 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.likeButton, userHasLiked && styles.likedButton]} 
+          style={[
+            styles.likeButton, 
+            userHasLiked && styles.likedButton,
+            String(chirp.id).startsWith('temp_') && styles.disabledButton
+          ]} 
           onPress={(e) => {
             e.stopPropagation();
             handleLike();
           }}
+          disabled={String(chirp.id).startsWith('temp_')}
         >
           <HeartIcon 
             size={18} 
-            color={userHasLiked ? "#7c3aed" : "#657786"} 
+            color={
+              String(chirp.id).startsWith('temp_') 
+                ? "#ccc" 
+                : userHasLiked ? "#7c3aed" : "#657786"
+            } 
             filled={userHasLiked}
           />
           <TouchableOpacity 
@@ -848,8 +875,13 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
               handleLikesPress();
             }}
             style={styles.likeCountButton}
+            disabled={String(chirp.id).startsWith('temp_')}
           >
-            <Text style={[styles.actionText, userHasLiked && { color: "#7c3aed" }]}>
+            <Text style={[
+              styles.actionText, 
+              userHasLiked && { color: "#7c3aed" },
+              String(chirp.id).startsWith('temp_') && { color: "#ccc" }
+            ]}>
               {likes}
             </Text>
           </TouchableOpacity>
@@ -1203,6 +1235,9 @@ const styles = StyleSheet.create({
   },
   likedButton: {
     // Removed purple background - just keep the heart icon color change
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   likeCountButton: {
     marginLeft: 8,
