@@ -524,24 +524,32 @@ export async function getUserReplies(userId: string) {
 // Helper function to add like status to chirps
 async function addLikeStatusToChirps(chirps: any[], currentUserId: string): Promise<any[]> {
   if (!currentUserId || chirps.length === 0) {
-    return chirps.map(chirp => ({ ...chirp, userHasLiked: false }));
+    return chirps.map(chirp => ({ ...chirp, userHasLiked: false, likes: 0 }));
   }
 
   const chirpIds = chirps.map(c => c.id);
-  const { data: userLikes } = await supabase
-    .from('reactions')
-    .select('chirp_id')
-    .eq('user_id', currentUserId)
-    .in('chirp_id', chirpIds);
+  
+  // Fetch user's likes and like counts in parallel
+  const [userLikes, reactionCounts] = await Promise.all([
+    supabase.from('reactions').select('chirp_id').eq('user_id', currentUserId).in('chirp_id', chirpIds),
+    chirpIds.length > 0 ? supabase.from('reactions').select('chirp_id', { count: 'exact' }).in('chirp_id', chirpIds).then(({ data }) => {
+      const counts = new Map();
+      data?.forEach((item: any) => {
+        counts.set(item.chirp_id, item.count || 0);
+      });
+      return counts;
+    }) : Promise.resolve(new Map())
+  ]);
 
   const userLikesMap = new Map();
-  userLikes?.forEach(like => {
+  userLikes.data?.forEach(like => {
     userLikesMap.set(like.chirp_id, true);
   });
 
   return chirps.map(chirp => ({
     ...chirp,
-    userHasLiked: userLikesMap.get(chirp.id) || false
+    userHasLiked: userLikesMap.get(chirp.id) || false,
+    likes: reactionCounts.get(chirp.id) || 0
   }));
 }
 
