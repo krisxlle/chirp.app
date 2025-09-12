@@ -465,9 +465,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       setIsLoadingAnalytics(true);
       
       // Load user stats, profile power breakdown, and user profile
+      // Force refresh profile power to ensure latest calculation
       const [userStats, powerBreakdown, userProfile] = await Promise.all([
         getUserStats(user.id),
-        getProfilePowerBreakdown(user.id),
+        getProfilePowerBreakdown(user.id, true), // Force refresh
         getUserProfile(user.id)
       ]);
       

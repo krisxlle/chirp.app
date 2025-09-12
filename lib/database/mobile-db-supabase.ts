@@ -4,7 +4,6 @@ import { Platform } from 'react-native';
 import type { MobileChirp } from './mobile-types';
 // Temporarily comment out problematic imports
 // import { notificationService } from '../../services/notificationService';
-import { ForYouAlgorithm } from '../../services/forYouAlgorithm';
 
 // Platform-specific storage
 let storage: any;
@@ -2726,16 +2725,20 @@ export const getUserProfile = async (userId: string): Promise<any> => {
 export const getUserById = getUserProfile;
 
 // Calculate comprehensive profile power based on engagement and collection rarity
-export async function calculateProfilePower(userId: string): Promise<number> {
+export async function calculateProfilePower(userId: string, forceRefresh: boolean = false): Promise<number> {
   try {
     console.log('🔢 Calculating profile power for user:', userId);
     
-    // Check cache first
+    // Check cache first (unless forcing refresh)
     const cacheKey = `profile_power_${userId}`;
-    const cached = chirpCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
-      console.log('✅ Returning cached profile power');
-      return cached.data;
+    if (!forceRefresh) {
+      const cached = chirpCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
+        console.log('✅ Returning cached profile power');
+        return cached.data;
+      }
+    } else {
+      console.log('🔄 Force refreshing profile power calculation');
     }
     
     const isConnected = await ensureDatabaseInitialized();
@@ -2834,11 +2837,11 @@ export async function calculateProfilePower(userId: string): Promise<number> {
       finalPower: profilePower
     });
 
-    // Cache the result for 5 minutes
+    // Cache the result for 30 seconds to ensure frequent updates
     chirpCache.set(cacheKey, { 
       data: profilePower, 
       timestamp: Date.now(), 
-      ttl: 300000 // 5 minutes
+      ttl: 30000 // 30 seconds - much more frequent updates
     });
 
     return profilePower;
@@ -2848,7 +2851,7 @@ export async function calculateProfilePower(userId: string): Promise<number> {
   }
 }
 
-export async function getProfilePowerBreakdown(userId: string): Promise<{
+export async function getProfilePowerBreakdown(userId: string, forceRefresh: boolean = false): Promise<{
   totalPower: number;
   likesContribution: number;
   commentsContribution: number;
@@ -2859,6 +2862,13 @@ export async function getProfilePowerBreakdown(userId: string): Promise<{
 }> {
   try {
     console.log('🔢 Getting profile power breakdown for user:', userId);
+    
+    // If force refresh, clear the profile power cache
+    if (forceRefresh) {
+      const cacheKey = `profile_power_${userId}`;
+      chirpCache.delete(cacheKey);
+      console.log('🔄 Cleared profile power cache for force refresh');
+    }
     
     const isConnected = await ensureDatabaseInitialized();
     if (!isConnected) {
@@ -3000,6 +3010,13 @@ export async function getProfilePowerBreakdown(userId: string): Promise<{
       totalComments: 12
     };
   }
+}
+
+// Clear profile power cache for a user
+export function clearProfilePowerCache(userId: string): void {
+  const cacheKey = `profile_power_${userId}`;
+  chirpCache.delete(cacheKey);
+  console.log('🔄 Cleared profile power cache for user:', userId);
 }
 
 // Get collection feed chirps from user's gacha collection

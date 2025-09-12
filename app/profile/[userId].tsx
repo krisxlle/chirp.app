@@ -150,7 +150,7 @@ export default function UserProfileScreen() {
           // Only check follow status if viewing someone else's profile
           currentUserId && currentUserId !== userId ? checkFollowStatus(userId, currentUserId) : Promise.resolve({ isFollowing: false, isBlocked: false, notificationsEnabled: false }),
           currentUserId && currentUserId !== userId ? checkBlockStatus(currentUserId, userId) : false,
-          calculateProfilePower(userId)
+          calculateProfilePower(userId, true) // Force refresh profile power
         ]);
         
         // Update profile state immediately
