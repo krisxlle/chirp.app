@@ -275,13 +275,13 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
             <Text style={styles.displayName}>{displayName}</Text>
           </View>
           <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
-                 <Text style={styles.bio}>
+                 <View style={styles.bioContainer}>
            {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
              if (part.startsWith('@')) {
                return (
-                 <Text 
+                 <TouchableOpacity 
                    key={index}
-                   style={[styles.bio, styles.mentionText]}
+                   style={styles.mentionContainer}
                    onPress={async () => {
                      try {
                        const { getUserByHandle } = await import('../lib/database/mobile-db-supabase');
@@ -298,13 +298,13 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
                      }
                    }}
                  >
-                   {part}
-                 </Text>
+                   <Text style={styles.mentionText}>{part}</Text>
+                 </TouchableOpacity>
                );
              }
-             return <Text key={index}>{part}</Text>;
+             return <Text key={index} style={styles.bio}>{part}</Text>;
            })}
-         </Text>
+         </View>
 
         {/* Link in Bio */}
         {user.linkInBio && (
@@ -620,14 +620,24 @@ const styles = StyleSheet.create({
     color: '#657786',
     marginBottom: 12,
   },
+  bioContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    marginBottom: 12,
+  },
   bio: {
     fontSize: 15,
     color: '#14171a',
-    marginBottom: 12,
     lineHeight: 20,
   },
+  mentionContainer: {
+    alignItems: 'baseline',
+  },
   mentionText: {
+    fontSize: 15,
     color: '#7c3aed',
+    lineHeight: 20,
   },
   linkText: {
     fontSize: 14,
