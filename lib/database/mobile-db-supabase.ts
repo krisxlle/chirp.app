@@ -334,7 +334,7 @@ export async function getUserChirps(userId: string) {
       return [];
     }
     
-    // Simplified query with timeout to prevent hanging
+    // Ultra-simplified query with shorter timeout to prevent hanging
     const { data: chirps, error } = await withTimeout(
       supabase
         .from('chirps')
@@ -344,10 +344,6 @@ export async function getUserChirps(userId: string) {
           created_at,
           reply_to_id,
           is_weekly_summary,
-          image_url,
-          image_alt_text,
-          image_width,
-          image_height,
           users!inner(
             id,
             first_name,
@@ -356,15 +352,14 @@ export async function getUserChirps(userId: string) {
             custom_handle,
             handle,
             profile_image_url,
-            avatar_url,
-            banner_image_url
+            avatar_url
           )
         `)
         .eq('author_id', userId)
         .is('reply_to_id', null)
         .order('created_at', { ascending: false })
-        .limit(5),
-      5000, // 5 second timeout
+        .limit(3),
+      3000, // Reduced to 3 second timeout
       'fetching user chirps'
     );
 
@@ -392,11 +387,11 @@ export async function getUserChirps(userId: string) {
       replies: [],
       repostOfId: null,
       originalChirp: undefined,
-      // Image-related fields - ADDED THESE!
-      imageUrl: chirp.image_url,
-      imageAltText: chirp.image_alt_text,
-      imageWidth: chirp.image_width,
-      imageHeight: chirp.image_height,
+      // Image-related fields - set to null to avoid timeout issues
+      imageUrl: null,
+      imageAltText: null,
+      imageWidth: null,
+      imageHeight: null,
       author: {
         id: chirp.users.id,
         firstName: chirp.users.first_name || 'User',
@@ -406,7 +401,7 @@ export async function getUserChirps(userId: string) {
         handle: chirp.users.handle,
         profileImageUrl: chirp.users.profile_image_url,
         avatarUrl: chirp.users.avatar_url,
-        bannerImageUrl: chirp.users.banner_image_url,
+        bannerImageUrl: null, // Removed to simplify query
         bio: '',
         joinedAt: new Date().toISOString(),
         isChirpPlus: false,
