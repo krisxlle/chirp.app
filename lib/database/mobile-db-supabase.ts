@@ -2906,6 +2906,142 @@ export async function calculateProfilePower(userId: string): Promise<number> {
   }
 }
 
+export async function getProfilePowerBreakdown(userId: string): Promise<{
+  totalPower: number;
+  likesContribution: number;
+  commentsContribution: number;
+  collectionContribution: number;
+  rarityFactor: number;
+  totalLikes: number;
+  totalComments: number;
+}> {
+  try {
+    console.log('🔢 Getting profile power breakdown for user:', userId);
+    
+    const isConnected = await ensureDatabaseInitialized();
+    if (!isConnected) {
+      console.log('🔄 Database not connected, returning base breakdown');
+      return {
+        totalPower: 100,
+        likesContribution: 50,
+        commentsContribution: 50,
+        collectionContribution: 0,
+        rarityFactor: 1,
+        totalLikes: 25,
+        totalComments: 12
+      };
+    }
+
+    // Get user's chirp IDs first
+    const { data: userChirps, error: chirpsError } = await supabase
+      .from('chirps')
+      .select('id')
+      .eq('author_id', userId);
+
+    if (chirpsError) {
+      console.error('❌ Error fetching user chirps:', chirpsError);
+    }
+
+    const userChirpIds = userChirps?.map(chirp => chirp.id) || [];
+
+    // Get total likes on user's chirps
+    let totalLikes = 0;
+    if (userChirpIds.length > 0) {
+      const { data: likesData, error: likesError } = await supabase
+        .from('reactions')
+        .select('id')
+        .in('chirp_id', userChirpIds);
+
+      if (likesError) {
+        console.error('❌ Error fetching likes:', likesError);
+      } else {
+        totalLikes = likesData?.length || 0;
+      }
+    }
+
+    // Get total comments on user's chirps (replies to their chirps)
+    let totalComments = 0;
+    if (userChirpIds.length > 0) {
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('chirps')
+        .select('id')
+        .not('reply_to_id', 'is', null)
+        .in('reply_to_id', userChirpIds);
+
+      if (commentsError) {
+        console.error('❌ Error fetching comments:', commentsError);
+      } else {
+        totalComments = commentsData?.length || 0;
+      }
+    }
+
+    // Get user's collection to calculate rarity factor
+    const { data: collectionData, error: collectionError } = await supabase
+      .from('user_collections')
+      .select('rarity, quantity')
+      .eq('user_id', userId);
+
+    if (collectionError) {
+      console.error('❌ Error fetching collection:', collectionError);
+    }
+
+    // Calculate rarity factor based on collected profiles
+    const rarityMultipliers = {
+      mythic: 5.0,
+      legendary: 3.0,
+      epic: 2.0,
+      rare: 1.5,
+      uncommon: 1.2,
+      common: 1.0
+    };
+
+    let rarityFactor = 1.0;
+    if (collectionData && collectionData.length > 0) {
+      const totalRarityValue = collectionData.reduce((sum, item) => {
+        const multiplier = rarityMultipliers[item.rarity as keyof typeof rarityMultipliers] || 1.0;
+        return sum + (multiplier * item.quantity);
+      }, 0);
+      
+      const totalQuantity = collectionData.reduce((sum, item) => sum + item.quantity, 0);
+      rarityFactor = totalQuantity > 0 ? totalRarityValue / totalQuantity : 1.0;
+    }
+
+    // Calculate base power components
+    const likesContribution = totalLikes;
+    const commentsContribution = totalComments * 2;
+    const basePower = likesContribution + commentsContribution;
+    const collectionContribution = basePower * (rarityFactor - 1); // Extra power from collection
+    const finalPower = Math.round(basePower * rarityFactor);
+    
+    // Ensure minimum power of 100
+    const totalPower = Math.max(100, finalPower);
+
+    const breakdown = {
+      totalPower,
+      likesContribution: Math.round(likesContribution),
+      commentsContribution: Math.round(commentsContribution),
+      collectionContribution: Math.round(collectionContribution),
+      rarityFactor: Math.round(rarityFactor * 100) / 100, // Round to 2 decimal places
+      totalLikes,
+      totalComments
+    };
+
+    console.log('✅ Profile power breakdown calculated:', breakdown);
+    return breakdown;
+  } catch (error) {
+    console.error('❌ Error getting profile power breakdown:', error);
+    return {
+      totalPower: 100,
+      likesContribution: 50,
+      commentsContribution: 50,
+      collectionContribution: 0,
+      rarityFactor: 1,
+      totalLikes: 25,
+      totalComments: 12
+    };
+  }
+}
+
 // Get user's gacha collection
 export const getUserCollection = async (userId: string): Promise<any[]> => {
   try {

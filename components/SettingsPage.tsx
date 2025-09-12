@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { updateUserProfile, uploadBannerImage, uploadProfileImage, getUserStats, calculateProfilePower } from '../lib/database/mobile-db-supabase';
+import { updateUserProfile, uploadBannerImage, uploadProfileImage, getUserStats, calculateProfilePower, getProfilePowerBreakdown } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import GearIcon from './icons/GearIcon';
 import UserAvatar from './UserAvatar';
@@ -234,7 +234,13 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     accountAge: 0,
     engagementRate: 0,
     topChirp: null as any,
-    recentActivity: [] as any[]
+    recentActivity: [] as any[],
+    powerBreakdown: {
+      likesContribution: 0,
+      commentsContribution: 0,
+      collectionContribution: 0,
+      rarityFactor: 1
+    }
   });
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -458,10 +464,10 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     try {
       setIsLoadingAnalytics(true);
       
-      // Load user stats and profile power
-      const [userStats, profilePower] = await Promise.all([
+      // Load user stats and profile power breakdown
+      const [userStats, powerBreakdown] = await Promise.all([
         getUserStats(user.id),
-        calculateProfilePower(user.id)
+        getProfilePowerBreakdown(user.id)
       ]);
       
       // Calculate account age
@@ -473,16 +479,22 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         ((userStats.likes + userStats.followers) / userStats.chirps) : 0;
       
       setAnalyticsData({
-        profilePower,
+        profilePower: powerBreakdown.totalPower,
         totalChirps: userStats.chirps,
-        totalLikes: userStats.likes,
-        totalComments: userStats.followers, // Using followers as proxy for comments
+        totalLikes: powerBreakdown.totalLikes,
+        totalComments: powerBreakdown.totalComments,
         followers: userStats.followers,
         following: userStats.following,
         accountAge,
         engagementRate,
         topChirp: null, // Could be implemented later
-        recentActivity: [] // Could be implemented later
+        recentActivity: [], // Could be implemented later
+        powerBreakdown: {
+          likesContribution: powerBreakdown.likesContribution,
+          commentsContribution: powerBreakdown.commentsContribution,
+          collectionContribution: powerBreakdown.collectionContribution,
+          rarityFactor: powerBreakdown.rarityFactor
+        }
       });
       
     } catch (error) {
@@ -763,6 +775,87 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
             <Text style={styles.analyticsStatDescription}>
               Based on likes, comments, and collection rarity
             </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Profile Power Breakdown */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardTitleContainer}>
+            <Text style={styles.cardTitle}>Power Breakdown</Text>
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.breakdownContainer}>
+            {/* Likes Contribution */}
+            <View style={styles.breakdownItem}>
+              <View style={styles.breakdownHeader}>
+                <Text style={styles.breakdownLabel}>Likes</Text>
+                <Text style={styles.breakdownValue}>{analyticsData.powerBreakdown.likesContribution}</Text>
+              </View>
+              <View style={styles.breakdownBar}>
+                <View 
+                  style={[
+                    styles.breakdownBarFill, 
+                    { 
+                      width: `${Math.min(100, (analyticsData.powerBreakdown.likesContribution / analyticsData.profilePower) * 100)}%`,
+                      backgroundColor: '#10b981'
+                    }
+                  ]} 
+                />
+              </View>
+            </View>
+
+            {/* Comments Contribution */}
+            <View style={styles.breakdownItem}>
+              <View style={styles.breakdownHeader}>
+                <Text style={styles.breakdownLabel}>Comments (×2)</Text>
+                <Text style={styles.breakdownValue}>{analyticsData.powerBreakdown.commentsContribution}</Text>
+              </View>
+              <View style={styles.breakdownBar}>
+                <View 
+                  style={[
+                    styles.breakdownBarFill, 
+                    { 
+                      width: `${Math.min(100, (analyticsData.powerBreakdown.commentsContribution / analyticsData.profilePower) * 100)}%`,
+                      backgroundColor: '#3b82f6'
+                    }
+                  ]} 
+                />
+              </View>
+            </View>
+
+            {/* Collection Contribution */}
+            <View style={styles.breakdownItem}>
+              <View style={styles.breakdownHeader}>
+                <Text style={styles.breakdownLabel}>Collection Bonus</Text>
+                <Text style={styles.breakdownValue}>+{analyticsData.powerBreakdown.collectionContribution}</Text>
+              </View>
+              <View style={styles.breakdownBar}>
+                <View 
+                  style={[
+                    styles.breakdownBarFill, 
+                    { 
+                      width: `${Math.min(100, (analyticsData.powerBreakdown.collectionContribution / analyticsData.profilePower) * 100)}%`,
+                      backgroundColor: '#8b5cf6'
+                    }
+                  ]} 
+                />
+              </View>
+            </View>
+
+            {/* Rarity Factor */}
+            <View style={styles.rarityFactorContainer}>
+              <Text style={styles.rarityFactorLabel}>Collection Rarity Factor</Text>
+              <Text style={styles.rarityFactorValue}>{analyticsData.powerBreakdown.rarityFactor}x</Text>
+              <Text style={styles.rarityFactorDescription}>
+                {analyticsData.powerBreakdown.rarityFactor === 1.0 
+                  ? 'No collection bonus' 
+                  : `Multiplies base power by ${analyticsData.powerBreakdown.rarityFactor}`
+                }
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -1411,9 +1504,68 @@ const styles = StyleSheet.create({
      alignItems: 'center',
      justifyContent: 'center',
    },
-   refreshButtonText: {
-     color: '#ffffff',
-     fontSize: 16,
-     fontWeight: '600',
-   },
- });
+  refreshButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Breakdown styles
+  breakdownContainer: {
+    gap: 16,
+  },
+  breakdownItem: {
+    marginBottom: 12,
+  },
+  breakdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  breakdownLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  breakdownValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#7c3aed',
+  },
+  breakdownBar: {
+    height: 8,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  breakdownBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  rarityFactorContainer: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  rarityFactorLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  rarityFactorValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#7c3aed',
+    marginBottom: 4,
+  },
+  rarityFactorDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+});
