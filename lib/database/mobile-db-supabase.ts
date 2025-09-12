@@ -3037,7 +3037,7 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
     const collectedProfileIds = collectionData.map(item => item.collected_user_id);
     console.log('🎮 Found', collectedProfileIds.length, 'collected profiles');
 
-    // Get chirps from collected profiles with image data included
+    // Get chirps from collected profiles (simplified query to avoid timeout)
     const { data: chirps, error } = await withTimeout(
       supabase
         .from('chirps')
@@ -3048,10 +3048,6 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
           author_id,
           reply_to_id,
           is_weekly_summary,
-          image_url,
-          image_alt_text,
-          image_width,
-          image_height,
           users!inner(
             id,
             first_name,
@@ -3068,7 +3064,7 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
         .is('reply_to_id', null)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1),
-      6000, // 6 second timeout
+      4000, // Reduced timeout to 4 seconds
       'fetching collection feed chirps'
     );
 
@@ -3083,19 +3079,6 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
     }
 
     console.log(`📊 Found ${chirps.length} chirps from collected profiles`);
-
-    // Process image data
-    const imageMap = new Map();
-    chirps.forEach((chirp: any) => {
-      if (chirp.image_url) {
-        imageMap.set(chirp.id, {
-          imageUrl: chirp.image_url,
-          imageAltText: chirp.image_alt_text,
-          imageWidth: chirp.image_width,
-          imageHeight: chirp.image_height
-        });
-      }
-    });
 
     // Transform chirps to match expected format
     const transformedChirps = chirps.map((chirp: any) => ({
@@ -3116,10 +3099,10 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
         avatarUrl: chirp.users.profile_image_url,
         bannerImageUrl: chirp.users.banner_image_url
       },
-      imageUrl: chirp.image_url,
-      imageAltText: chirp.image_alt_text,
-      imageWidth: chirp.image_width,
-      imageHeight: chirp.image_height,
+      imageUrl: null, // Set to null to avoid timeout issues
+      imageAltText: null,
+      imageWidth: null,
+      imageHeight: null,
       likes: 0, // Will be populated by addLikeStatusToChirps
       replies: 0, // Will be populated by addLikeStatusToChirps
       userHasLiked: false // Will be populated by addLikeStatusToChirps
