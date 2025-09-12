@@ -94,7 +94,7 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, collectionChirps.length, lastRefresh]);
+  }, [user?.id]);
   
   // Load more chirps function for pagination
   const loadMoreChirps = useCallback(async () => {
@@ -155,7 +155,7 @@ export default function HomePage() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [feedType, isLoadingMore, hasMoreChirps, hasMoreCollectionChirps, forYouChirps.length, collectionChirps.length, user?.id]);
+  }, [feedType, user?.id]);
   
   // Load initial chirps on mount
   useEffect(() => {
@@ -170,7 +170,7 @@ export default function HomePage() {
     } else {
       console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
     }
-  }, [user, feedType, loadInitialChirps, loadInitialCollectionChirps]);
+  }, [user?.id, feedType]);
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {
