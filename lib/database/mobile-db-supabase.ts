@@ -2901,6 +2901,9 @@ export async function calculateProfilePower(userId: string): Promise<number> {
     return 100; // Fallback to base power
   }
 }
+
+// Get user's gacha collection
+export const getUserCollection = async (userId: string): Promise<any[]> => {
   try {
     console.log('🎮 Fetching user collection:', userId);
     await ensureDatabaseInitialized();
