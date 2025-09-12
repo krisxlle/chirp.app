@@ -600,17 +600,13 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
         id,
         content,
         created_at,
-        author_id,
-        image_url,
-        image_alt_text,
-        image_width,
-        image_height
+        author_id
       `)
       .is('reply_to_id', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1), // Use range for proper pagination
-    6000, // Reduced timeout since we're including image data
-    'fetching basic chirps with images'
+    4000, // Reduced timeout to 4 seconds
+    'fetching basic chirps'
   );
 
   if (error) {
@@ -633,44 +629,6 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
 
   console.log(`📊 Found ${chirps.length} chirps in database`);
 
-  // Image data is now included in the main query, so we can process it directly
-  console.log('🔍 Processing image data from main query...');
-  const imageMap = new Map();
-  
-  chirps.forEach((chirp: any) => {
-    if (chirp.image_url) {
-      console.log('🖼️ Processing image for chirp', chirp.id, ':', {
-        hasImageUrl: !!chirp.image_url,
-        imageUrl: chirp.image_url?.substring(0, 50) + '...',
-        imageWidth: chirp.image_width,
-        imageHeight: chirp.image_height
-      });
-      imageMap.set(chirp.id, {
-        imageUrl: chirp.image_url,
-        imageAltText: chirp.image_alt_text,
-        imageWidth: chirp.image_width,
-        imageHeight: chirp.image_height
-      });
-    } else {
-      console.log('🖼️ No image data found for chirp', chirp.id);
-    }
-  });
-  
-  console.log(`🖼️ Found image data for ${imageMap.size}/${chirps.length} chirps`);
-  
-  // Debug: Check if any chirps have image data
-  console.log(`🖼️ Chirps with images: ${imageMap.size}/${chirps.length}`);
-  if (imageMap.size > 0) {
-    const firstImageChirp = Array.from(imageMap.entries())[0];
-    console.log('🖼️ Sample chirp with image:', {
-      id: firstImageChirp[0],
-      hasImageUrl: !!firstImageChirp[1].imageUrl,
-      imageUrl: firstImageChirp[1].imageUrl?.substring(0, 50) + '...',
-      imageWidth: firstImageChirp[1].imageWidth,
-      imageHeight: firstImageChirp[1].imageHeight
-    });
-  }
-
   // Get user data for the chirps (separate query for better performance)
   const authorIds = [...new Set((chirps || []).map((chirp: any) => chirp.author_id))];
   const userData = authorIds.length > 0 ? await withTimeout(
@@ -678,7 +636,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
       .from('users')
       .select('id, first_name, custom_handle, handle, profile_image_url')
       .in('id', authorIds),
-    5000, // 5 second timeout for user data
+    3000, // Reduced timeout to 3 seconds
     'fetching user data'
   ).catch(() => ({ data: [] })) : { data: [] };
 
@@ -732,19 +690,6 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
 
   const transformedChirps = (chirps || []).map((chirp: any) => {
     const user = userMap.get(chirp.author_id);
-    const imageData = imageMap.get(chirp.id);
-    
-    // Debug logging for image data assignment
-    if (imageData) {
-      console.log('🖼️ Assigning image data to chirp', chirp.id, ':', {
-        hasImageUrl: !!imageData.imageUrl,
-        imageUrl: imageData.imageUrl?.substring(0, 50) + '...',
-        imageWidth: imageData.imageWidth,
-        imageHeight: imageData.imageHeight
-      });
-    } else {
-      console.log('🖼️ No image data found for chirp', chirp.id);
-    }
     
     return {
       id: chirp.id.toString(),
@@ -759,11 +704,11 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
       repostOfId: null,
       originalChirp: undefined,
       userHasLiked: false,
-      // Image-related fields - from separate query
-      imageUrl: imageData?.imageUrl || null,
-      imageAltText: imageData?.imageAltText || null,
-      imageWidth: imageData?.imageWidth || null,
-      imageHeight: imageData?.imageHeight || null,
+      // Image-related fields - set to null since we're not fetching them
+      imageUrl: null,
+      imageAltText: null,
+      imageWidth: null,
+      imageHeight: null,
       author: {
         id: user?.id || chirp.author_id || 'unknown',
         firstName: user?.first_name || 'User',
