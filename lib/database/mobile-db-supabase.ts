@@ -3021,7 +3021,7 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
     // First, get the user's collection to find which profiles they have
     const { data: collectionData, error: collectionError } = await supabase
       .from('user_collections')
-      .select('profile_id, rarity, quantity')
+      .select('collected_user_id, rarity, quantity')
       .eq('user_id', userId);
 
     if (collectionError) {
@@ -3034,7 +3034,7 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
       return [];
     }
 
-    const collectedProfileIds = collectionData.map(item => item.profile_id);
+    const collectedProfileIds = collectionData.map(item => item.collected_user_id);
     console.log('🎮 Found', collectedProfileIds.length, 'collected profiles');
 
     // Get chirps from collected profiles with image data included
