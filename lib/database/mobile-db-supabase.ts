@@ -2743,8 +2743,8 @@ export async function calculateProfilePower(userId: string, forceRefresh: boolea
     
     const isConnected = await ensureDatabaseInitialized();
     if (!isConnected) {
-      console.log('🔄 Database not connected, returning base power');
-      return 100; // Base power when DB is not connected
+      console.log('🔄 Database not connected, returning minimum power');
+      return 0; // Minimum power when DB is not connected
     }
 
     // Get user's chirp IDs first
@@ -2825,8 +2825,8 @@ export async function calculateProfilePower(userId: string, forceRefresh: boolea
     const basePower = totalLikes + (totalComments * 2);
     const finalPower = Math.round(basePower * rarityFactor);
     
-    // Ensure minimum power of 100
-    const profilePower = Math.max(100, finalPower);
+    // Ensure minimum power of 0
+    const profilePower = Math.max(0, finalPower);
 
     console.log('🔢 Profile power calculation:', {
       userId,
@@ -2847,7 +2847,7 @@ export async function calculateProfilePower(userId: string, forceRefresh: boolea
     return profilePower;
   } catch (error) {
     console.error('❌ Error calculating profile power:', error);
-    return 100; // Fallback to base power
+    return 0; // Fallback to minimum power
   }
 }
 
@@ -2872,15 +2872,15 @@ export async function getProfilePowerBreakdown(userId: string, forceRefresh: boo
     
     const isConnected = await ensureDatabaseInitialized();
     if (!isConnected) {
-      console.log('🔄 Database not connected, returning base breakdown');
+      console.log('🔄 Database not connected, returning minimum breakdown');
       return {
-        totalPower: 100,
-        likesContribution: 50,
-        commentsContribution: 50,
+        totalPower: 0,
+        likesContribution: 0,
+        commentsContribution: 0,
         collectionContribution: 0,
         rarityFactor: 1,
-        totalLikes: 25,
-        totalComments: 12
+        totalLikes: 0,
+        totalComments: 0
       };
     }
 
@@ -2964,8 +2964,8 @@ export async function getProfilePowerBreakdown(userId: string, forceRefresh: boo
     const basePower = likesContribution + commentsContribution;
     const finalPower = Math.round(basePower * rarityFactor);
     
-    // Ensure minimum power of 100
-    const totalPower = Math.max(100, finalPower);
+    // Ensure minimum power of 0
+    const totalPower = Math.max(0, finalPower);
     
     // Calculate breakdown components that sum to total power
     // Distribute the total power proportionally among the components
@@ -3001,13 +3001,13 @@ export async function getProfilePowerBreakdown(userId: string, forceRefresh: boo
   } catch (error) {
     console.error('❌ Error getting profile power breakdown:', error);
     return {
-      totalPower: 100,
-      likesContribution: 50,
-      commentsContribution: 50,
+      totalPower: 0,
+      likesContribution: 0,
+      commentsContribution: 0,
       collectionContribution: 0,
       rarityFactor: 1,
-      totalLikes: 25,
-      totalComments: 12
+      totalLikes: 0,
+      totalComments: 0
     };
   }
 }
