@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
+import SearchIcon from '../../components/icons/SearchIcon';
 
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
@@ -27,7 +28,10 @@ export default function SearchScreen() {
           >
             <ThemedText style={styles.backButtonText}>←</ThemedText>
           </TouchableOpacity>
-          <ThemedText type="title" style={styles.headerTitle}>🔍 Search</ThemedText>
+          <View style={styles.headerTitleContainer}>
+            <SearchIcon size={20} color="#657786" />
+            <ThemedText type="defaultSemiBold" style={styles.headerTitle}>Search</ThemedText>
+          </View>
         </ThemedView>
 
       {/* Search Input */}
@@ -113,26 +117,33 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
   },
   backButton: {
-    padding: 8,
+    padding: 6,
     marginRight: 12,
-    borderRadius: 20,
+    borderRadius: 18,
     backgroundColor: '#f7f9fa',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 36,
+    minHeight: 36,
   },
   backButtonText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
   },
-  headerTitle: {
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  headerTitle: {
+    marginLeft: 8,
+    fontSize: 18,
   },
   searchSection: {
     padding: 16,
