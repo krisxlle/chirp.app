@@ -1,7 +1,7 @@
 // Fixed notification service method
 // Replace the getNotifications method in your notificationService.ts with this
 
-async getNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
+async function getNotifications(userId, limit = 50) {
   try {
     console.log('🔔 Fetching notifications for user:', userId);
 

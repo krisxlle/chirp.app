@@ -11,7 +11,7 @@ const THORNE_BOT_CONFIG = {
   email: 'thorne.bot@chirp.app',
   firstName: 'Thorne',
   lastName: 'Justice',
-  bio: 'A passionate green bird fighting for social justice, equality, and positive change! Standing up for what's right and inspiring others to make a difference. 🌱🪶',
+  bio: 'A passionate green bird fighting for social justice, equality, and positive change! Standing up for what\'s right and inspiring others to make a difference.',
   profileImageUrl: 'https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/green-bird-pfp-1757364127842.png',
   postingSchedule: {
     morning: '08:30', // 8:30 AM - morning activism call
