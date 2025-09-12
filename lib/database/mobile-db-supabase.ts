@@ -334,39 +334,48 @@ export async function getUserChirps(userId: string) {
       return [];
     }
     
-    // Single optimized query with joins
-    const { data: chirps, error } = await supabase
-      .from('chirps')
-      .select(`
-        id,
-        content,
-        created_at,
-        reply_to_id,
-        is_weekly_summary,
-        image_url,
-        image_alt_text,
-        image_width,
-        image_height,
-        users!inner(
+    // Simplified query with timeout to prevent hanging
+    const { data: chirps, error } = await withTimeout(
+      supabase
+        .from('chirps')
+        .select(`
           id,
-          first_name,
-          last_name,
-          email,
-          custom_handle,
-          handle,
-          profile_image_url,
-          avatar_url,
-          banner_image_url
-        )
-      `)
-      .eq('author_id', userId)
-      .is('reply_to_id', null)
-      .or('is_thread_starter.is.true,thread_id.is.null')
-      .order('created_at', { ascending: false })
-      .limit(5);
+          content,
+          created_at,
+          reply_to_id,
+          is_weekly_summary,
+          image_url,
+          image_alt_text,
+          image_width,
+          image_height,
+          users!inner(
+            id,
+            first_name,
+            last_name,
+            email,
+            custom_handle,
+            handle,
+            profile_image_url,
+            avatar_url,
+            banner_image_url
+          )
+        `)
+        .eq('author_id', userId)
+        .is('reply_to_id', null)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      5000, // 5 second timeout
+      'fetching user chirps'
+    );
 
     if (error) {
       console.error('❌ Error fetching user chirps:', error);
+      // Cache empty result to prevent repeated failed queries
+      chirpCache.set(cacheKey, { 
+        data: [], 
+        timestamp: Date.now(), 
+        ttl: 60000 // Cache empty result for 1 minute
+      });
       return [];
     }
 
