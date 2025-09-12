@@ -1002,12 +1002,8 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           <TouchableOpacity 
             style={styles.supportButton}
             onPress={() => {
-              // Navigate to support page
-              if (typeof window !== 'undefined' && window.location) {
-                window.location.href = '/support';
-              } else {
-                router.push('/support');
-              }
+              // Navigate to support page using React Native router
+              router.push('/support');
             }}
           >
             <SupportIcon size={20} color="#7c3aed" />
