@@ -467,7 +467,7 @@ export default function HomePage() {
                      key={`${chirp.id}-${index}`} 
                      chirp={chirp} 
                      onLikeUpdate={handleChirpLikeUpdate}
-                     onReplyUpdate={handleChirpReplyUpdate}
+                     onReplyPosted={handleChirpReplyUpdate}
                    />
                  ))}
                  
@@ -614,6 +614,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#657786',
     fontStyle: 'italic',
+  },
+  loadMoreButton: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginVertical: 16,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+  },
+  loadMoreText: {
+    fontSize: 14,
+    color: '#7c3aed',
+    fontWeight: '600',
   },
   endOfFeedContainer: {
     alignItems: 'center',

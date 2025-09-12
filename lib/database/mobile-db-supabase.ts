@@ -1420,7 +1420,8 @@ export const createChirp = async (
           .from('chirps')
           .insert(chirpWithoutImage)
           .select('id')
-          .single(),
+          .single()
+          .then(result => result),
         10000, // 10 second timeout for basic chirp creation
         'creating chirp without image'
       );
@@ -1453,7 +1454,8 @@ export const createChirp = async (
               banner_image_url
             )
           `)
-          .single(),
+          .single()
+          .then(result => result),
         20000, // 20 second timeout for image update
         'updating chirp with image data'
       );
@@ -1478,7 +1480,8 @@ export const createChirp = async (
               banner_image_url
             )
           `)
-          .single(),
+          .single()
+          .then(result => result),
         15000, // 15 second timeout for chirps without images
         'creating chirp without image data'
       );

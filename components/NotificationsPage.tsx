@@ -68,8 +68,12 @@ export default function NotificationsPage() {
         read: notification.read,
         actor: notification.actor ? {
           id: notification.actor.id,
+          firstName: notification.actor.firstName,
           customHandle: notification.actor.customHandle,
-          handle: notification.actor.handle
+          handle: notification.actor.handle,
+          email: notification.actor.email || 'unknown@example.com',
+          profileImageUrl: notification.actor.profileImageUrl,
+          avatarUrl: notification.actor.avatarUrl
         } : null
       });
       
