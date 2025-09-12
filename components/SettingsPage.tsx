@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { updateUserProfile, uploadBannerImage, uploadProfileImage } from '../lib/database/mobile-db-supabase';
+import { updateUserProfile, uploadBannerImage, uploadProfileImage, getUserStats, calculateProfilePower } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import GearIcon from './icons/GearIcon';
 import UserAvatar from './UserAvatar';
@@ -224,10 +224,30 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
   const [linkInBio, setLinkInBio] = useState(user?.linkInBio || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [analyticsData, setAnalyticsData] = useState({
+    profilePower: 0,
+    totalChirps: 0,
+    totalLikes: 0,
+    totalComments: 0,
+    followers: 0,
+    following: 0,
+    accountAge: 0,
+    engagementRate: 0,
+    topChirp: null as any,
+    recentActivity: [] as any[]
+  });
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [selectedBannerImage, setSelectedBannerImage] = useState<string | null>(null);
   const [isUploadingBannerImage, setIsUploadingBannerImage] = useState(false);
+
+  // Load analytics data when analytics tab is selected
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      loadAnalyticsData();
+    }
+  }, [activeTab]);
 
   const pickImage = async () => {
     try {
@@ -429,6 +449,46 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       Alert.alert('Error', 'Failed to update profile. Please try again.');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const loadAnalyticsData = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoadingAnalytics(true);
+      
+      // Load user stats and profile power
+      const [userStats, profilePower] = await Promise.all([
+        getUserStats(user.id),
+        calculateProfilePower(user.id)
+      ]);
+      
+      // Calculate account age
+      const accountAge = user?.createdAt ? 
+        Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+      
+      // Calculate engagement rate (likes + comments per chirp)
+      const engagementRate = userStats.chirps > 0 ? 
+        ((userStats.likes + userStats.followers) / userStats.chirps) : 0;
+      
+      setAnalyticsData({
+        profilePower,
+        totalChirps: userStats.chirps,
+        totalLikes: userStats.likes,
+        totalComments: userStats.followers, // Using followers as proxy for comments
+        followers: userStats.followers,
+        following: userStats.following,
+        accountAge,
+        engagementRate,
+        topChirp: null, // Could be implemented later
+        recentActivity: [] // Could be implemented later
+      });
+      
+    } catch (error) {
+      console.error('Error loading analytics data:', error);
+    } finally {
+      setIsLoadingAnalytics(false);
     }
   };
 
@@ -687,6 +747,100 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     </View>
   );
 
+  const renderAnalyticsTab = () => (
+    <View style={styles.tabContent}>
+      {/* Profile Power */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardTitleContainer}>
+            <Text style={styles.cardTitle}>Profile Power</Text>
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.analyticsStatCard}>
+            <Text style={styles.analyticsStatValue}>{analyticsData.profilePower}</Text>
+            <Text style={styles.analyticsStatLabel}>Current Power</Text>
+            <Text style={styles.analyticsStatDescription}>
+              Based on likes, comments, and collection rarity
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Account Stats */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardTitleContainer}>
+            <Text style={styles.cardTitle}>Account Statistics</Text>
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.analyticsGrid}>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatValue}>{analyticsData.totalChirps}</Text>
+              <Text style={styles.analyticsStatLabel}>Total Chirps</Text>
+            </View>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatValue}>{analyticsData.totalLikes}</Text>
+              <Text style={styles.analyticsStatLabel}>Total Likes</Text>
+            </View>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatValue}>{analyticsData.followers}</Text>
+              <Text style={styles.analyticsStatLabel}>Followers</Text>
+            </View>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatValue}>{analyticsData.following}</Text>
+              <Text style={styles.analyticsStatLabel}>Following</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Engagement Metrics */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardTitleContainer}>
+            <Text style={styles.cardTitle}>Engagement Metrics</Text>
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <View style={styles.analyticsGrid}>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatValue}>{analyticsData.engagementRate.toFixed(1)}</Text>
+              <Text style={styles.analyticsStatLabel}>Engagement Rate</Text>
+              <Text style={styles.analyticsStatDescription}>Likes per chirp</Text>
+            </View>
+            <View style={styles.analyticsStatItem}>
+              <Text style={styles.analyticsStatValue}>{analyticsData.accountAge}</Text>
+              <Text style={styles.analyticsStatLabel}>Account Age</Text>
+              <Text style={styles.analyticsStatDescription}>Days since joining</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Refresh Button */}
+      <TouchableOpacity
+        style={styles.refreshButton}
+        onPress={loadAnalyticsData}
+        disabled={isLoadingAnalytics}
+      >
+        <LinearGradient
+          colors={['#7c3aed', '#ec4899']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.refreshButtonGradient}
+        >
+          {isLoadingAnalytics ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <Text style={styles.refreshButtonText}>Refresh Analytics</Text>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderAccountTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.card}>
@@ -808,6 +962,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScrollView}>
           <View style={styles.tabsButtonContainer}>
             <TabButton id="profile" title="Profile" active={activeTab === 'profile'} />
+            <TabButton id="analytics" title="Analytics" active={activeTab === 'analytics'} />
             <TabButton id="account" title="Account" active={activeTab === 'account'} />
           </View>
         </ScrollView>
@@ -826,6 +981,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           keyboardShouldPersistTaps="handled"
         >
           {activeTab === 'profile' && renderProfileTab()}
+          {activeTab === 'analytics' && renderAnalyticsTab()}
           {activeTab === 'account' && renderAccountTab()}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -1197,5 +1353,67 @@ const styles = StyleSheet.create({
      color: '#9ca3af',
      fontSize: 12,
      marginTop: 4,
+   },
+   // Analytics styles
+   analyticsStatCard: {
+     backgroundColor: '#f8fafc',
+     borderRadius: 16,
+     padding: 20,
+     alignItems: 'center',
+     borderWidth: 1,
+     borderColor: '#e2e8f0',
+   },
+   analyticsStatValue: {
+     fontSize: 32,
+     fontWeight: 'bold',
+     color: '#7c3aed',
+     marginBottom: 8,
+   },
+   analyticsStatLabel: {
+     fontSize: 16,
+     fontWeight: '600',
+     color: '#1f2937',
+     marginBottom: 4,
+   },
+   analyticsStatDescription: {
+     fontSize: 14,
+     color: '#64748b',
+     textAlign: 'center',
+   },
+   analyticsGrid: {
+     flexDirection: 'row',
+     flexWrap: 'wrap',
+     justifyContent: 'space-between',
+   },
+   analyticsStatItem: {
+     width: '48%',
+     backgroundColor: '#f8fafc',
+     borderRadius: 12,
+     padding: 16,
+     marginBottom: 12,
+     alignItems: 'center',
+     borderWidth: 1,
+     borderColor: '#e2e8f0',
+   },
+   refreshButton: {
+     borderRadius: 12,
+     marginTop: 16,
+     shadowColor: '#7c3aed',
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.3,
+     shadowRadius: 4,
+     elevation: 3,
+   },
+   refreshButtonGradient: {
+     paddingHorizontal: 24,
+     paddingVertical: 12,
+     borderRadius: 12,
+     alignItems: 'center',
+     justifyContent: 'center',
+   },
+   refreshButtonText: {
+     color: '#ffffff',
+     fontSize: 16,
+     fontWeight: '600',
    },
  });
