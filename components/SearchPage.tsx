@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getTrendingHashtags, searchChirps, searchUsers } from '../lib/database/mobile-db-supabase';
 import ChirpCard from './ChirpCard';
 import UserAvatar from './UserAvatar';
@@ -69,21 +70,28 @@ export default function SearchPage() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header - exactly like original */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search..."
-              placeholderTextColor="#657786"
-              value={query}
-              onChangeText={setQuery}
-            />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header with back button */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search..."
+                placeholderTextColor="#657786"
+                value={query}
+                onChangeText={setQuery}
+              />
+            </View>
           </View>
         </View>
-      </View>
 
       {/* Tabs - like original */}
       <View style={styles.tabsContainer}>
@@ -218,11 +226,16 @@ export default function SearchPage() {
           <Text style={styles.feedbackButtonText}>Feedback</Text>
         </LinearGradient>
       </TouchableOpacity>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fafafa',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fafafa',
@@ -239,6 +252,21 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: '#f7f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 40,
+    minHeight: 40,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: '#1a1a1a',
+    fontWeight: '600',
   },
   searchContainer: {
     flex: 1,
