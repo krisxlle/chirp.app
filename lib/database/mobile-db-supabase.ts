@@ -3036,6 +3036,7 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
 
     const collectedProfileIds = collectionData.map(item => item.collected_user_id);
     console.log('🎮 Found', collectedProfileIds.length, 'collected profiles');
+    console.log('🚫 Excluding user\'s own chirps from collection feed');
 
     // Get chirps from collected profiles (simplified query to avoid timeout)
     const { data: chirps, error } = await withTimeout(
@@ -3061,6 +3062,7 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
           )
         `)
         .in('author_id', collectedProfileIds)
+        .neq('author_id', userId) // Exclude user's own chirps
         .is('reply_to_id', null)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1),
