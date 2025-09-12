@@ -1842,6 +1842,13 @@ export const uploadBannerImage = async (userId: string, imageUri: string): Promi
 export const getChirpReplies = async (chirpId: string): Promise<any[]> => {
   try {
     console.log('🔄 Fetching replies for chirp:', chirpId);
+    
+    // Check if chirp has a temporary ID - return empty array for temp chirps
+    if (String(chirpId).startsWith('temp_')) {
+      console.log('⚠️ Skipping replies fetch for temporary chirp ID:', chirpId);
+      return [];
+    }
+    
     await ensureDatabaseInitialized();
     
     if (!isDatabaseConnected) {
@@ -1983,6 +1990,13 @@ export const createReply = async (content: string, chirpId: string, userId: stri
 export const getChirpById = async (chirpId: string): Promise<any> => {
   try {
     console.log('🔄 Fetching chirp by ID:', chirpId);
+    
+    // Check if chirp has a temporary ID - return null for temp chirps
+    if (String(chirpId).startsWith('temp_')) {
+      console.log('⚠️ Skipping chirp fetch for temporary chirp ID:', chirpId);
+      return null;
+    }
+    
     await ensureDatabaseInitialized();
     
     if (!isDatabaseConnected) {
@@ -2072,6 +2086,13 @@ export const getChirpById = async (chirpId: string): Promise<any> => {
 export const getThreadedChirps = async (threadId: string): Promise<any[]> => {
   try {
     console.log('🔄 Fetching threaded chirps for thread:', threadId);
+    
+    // Check if thread has a temporary ID - return empty array for temp threads
+    if (String(threadId).startsWith('temp_')) {
+      console.log('⚠️ Skipping threaded chirps fetch for temporary thread ID:', threadId);
+      return [];
+    }
+    
     await ensureDatabaseInitialized();
     if (!isDatabaseConnected) {
       console.log('🔄 Database not connected, cannot fetch threaded chirps');
