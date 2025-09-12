@@ -1,11 +1,16 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { addToUserCollection, getRandomUsers, getUserCollection } from '../lib/database/mobile-db-supabase';
 import AnalyticsPage from './AnalyticsPage';
 import { useAuth } from './AuthContext';
+import BirdIcon from './icons/BirdIcon';
 import ChirpCrystalIcon from './icons/ChirpCrystalIcon';
+import ChirpLogo from './icons/ChirpLogo';
+import CollectionIcon from './icons/CollectionIcon';
+import GachaIcon from './icons/GachaIcon';
+import HeartIcon from './icons/HeartIcon';
 import PhotocardProfileModal from './PhotocardProfileModal';
 import ProfileFrame from './ProfileFrame';
 
@@ -122,6 +127,216 @@ export default function GachaPage() {
   const [selectedPhotocard, setSelectedPhotocard] = useState<ProfileCard | null>(null);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showCrystalInfoModal, setShowCrystalInfoModal] = useState(false);
+  
+  // Animation values for loading
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const scaleAnim = useState(new Animated.Value(0.8))[0];
+  
+  // Floating icons animations
+  const floatingAnims = useState(() => 
+    Array.from({ length: 10 }, () => ({
+      translateY: new Animated.Value(0),
+      translateX: new Animated.Value(0),
+      rotate: new Animated.Value(0),
+      scale: new Animated.Value(0.5),
+      opacity: new Animated.Value(0),
+    }))
+  )[0];
+  
+  // Sparkle animations
+  const sparkleAnims = useState(() => 
+    Array.from({ length: 15 }, () => ({
+      translateY: new Animated.Value(0),
+      translateX: new Animated.Value(0),
+      rotate: new Animated.Value(0),
+      scale: new Animated.Value(0),
+      opacity: new Animated.Value(0),
+    }))
+  )[0];
+
+  // Animation functions
+  const startLoadingAnimation = () => {
+    // Reset main animations
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0.8);
+    
+    // Reset floating animations
+    floatingAnims.forEach(anim => {
+      anim.translateY.setValue(0);
+      anim.translateX.setValue(0);
+      anim.rotate.setValue(0);
+      anim.scale.setValue(0.5);
+      anim.opacity.setValue(0);
+    });
+    
+    // Reset sparkle animations
+    sparkleAnims.forEach(anim => {
+      anim.translateY.setValue(0);
+      anim.translateX.setValue(0);
+      anim.rotate.setValue(0);
+      anim.scale.setValue(0);
+      anim.opacity.setValue(0);
+    });
+    
+    // Start main fade animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Start floating animations with staggered timing
+    floatingAnims.forEach((anim, index) => {
+      const delay = index * 200; // Stagger each icon by 200ms
+      
+      setTimeout(() => {
+        Animated.parallel([
+          // Fade in
+          Animated.timing(anim.opacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          // Scale up
+          Animated.timing(anim.scale, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          // Start floating movement
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(anim.translateY, {
+                toValue: -20,
+                duration: 1000,
+                useNativeDriver: true,
+              }),
+              Animated.timing(anim.translateY, {
+                toValue: 20,
+                duration: 1000,
+                useNativeDriver: true,
+              }),
+            ])
+          ),
+          // Start horizontal drift
+          Animated.loop(
+            Animated.timing(anim.translateX, {
+              toValue: Math.random() * 40 - 20, // Random drift between -20 and 20
+              duration: 2000 + Math.random() * 1000, // Random duration between 2-3 seconds
+              useNativeDriver: true,
+            })
+          ),
+          // Start rotation
+          Animated.loop(
+            Animated.timing(anim.rotate, {
+              toValue: 1,
+              duration: 3000 + Math.random() * 2000, // Random rotation speed
+              useNativeDriver: true,
+            })
+          ),
+        ]).start();
+      }, delay);
+    });
+    
+    // Start sparkle animations with coordinated timing
+    sparkleAnims.forEach((anim, index) => {
+      const delay = index * 100; // Faster stagger for sparkles
+      
+      setTimeout(() => {
+        Animated.parallel([
+          // Fade in and scale up
+          Animated.timing(anim.opacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim.scale, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          // Coordinated circular motion
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(anim.translateY, {
+                toValue: Math.sin(index * 0.5) * 30,
+                duration: 2000,
+                useNativeDriver: true,
+              }),
+              Animated.timing(anim.translateY, {
+                toValue: Math.sin(index * 0.5 + Math.PI) * 30,
+                duration: 2000,
+                useNativeDriver: true,
+              }),
+            ])
+          ),
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(anim.translateX, {
+                toValue: Math.cos(index * 0.5) * 30,
+                duration: 2000,
+                useNativeDriver: true,
+              }),
+              Animated.timing(anim.translateX, {
+                toValue: Math.cos(index * 0.5 + Math.PI) * 30,
+                duration: 2000,
+                useNativeDriver: true,
+              }),
+            ])
+          ),
+          // Fast rotation
+          Animated.loop(
+            Animated.timing(anim.rotate, {
+              toValue: 1,
+              duration: 1000,
+              useNativeDriver: true,
+            })
+          ),
+        ]).start();
+      }, delay);
+    });
+  };
+
+  const stopLoadingAnimation = () => {
+    // Fade out main overlay
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0.8,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Fade out floating icons
+    floatingAnims.forEach(anim => {
+      Animated.timing(anim.opacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+    
+    // Fade out sparkles
+    sparkleAnims.forEach(anim => {
+      Animated.timing(anim.opacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
 
   // Helper function to get current crystal balance
   const getCurrentCrystalBalance = (): number => {
@@ -256,6 +471,7 @@ export default function GachaPage() {
     }
 
     setIsRolling(true);
+    startLoadingAnimation();
     
     // Simulate capsule opening animation
     setTimeout(async () => {
@@ -354,9 +570,11 @@ export default function GachaPage() {
         }
         
         setIsRolling(false);
+        stopLoadingAnimation();
       } catch (error) {
         console.error('Error in capsule opening:', error);
         setIsRolling(false);
+        stopLoadingAnimation();
       }
     }, 2000); // 2 second animation
   };
@@ -402,6 +620,103 @@ export default function GachaPage() {
           style={styles.bannerImage}
           resizeMode="contain"
         />
+        
+        {/* Loading Animation Overlay */}
+        {isRolling && (
+          <Animated.View 
+            style={[
+              styles.loadingOverlay,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={['#C671FF', '#FF61A6', '#f5a5e0']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.loadingGradient}
+            >
+            {/* Floating Icons */}
+            {floatingAnims.map((anim, index) => {
+              const icons = [
+                <ChirpCrystalIcon key="crystal" size={28} color="#C671FF" />,
+                <GachaIcon key="gacha" size={28} color="#FF61A6" />,
+                <CollectionIcon key="collection" size={28} color="#f5a5e0" />,
+                <HeartIcon key="heart" size={28} color="#C671FF" />,
+                <BirdIcon key="bird" size={28} color="#FF61A6" />,
+                <ChirpLogo key="logo" size={28} color="#f5a5e0" />,
+                <ChirpCrystalIcon key="crystal2" size={28} color="#f5a5e0" />,
+                <GachaIcon key="gacha2" size={28} color="#C671FF" />,
+                <CollectionIcon key="collection2" size={28} color="#FF61A6" />,
+                <HeartIcon key="heart2" size={28} color="#f5a5e0" />,
+              ];
+              
+              return (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.floatingIcon,
+                    {
+                      left: `${10 + (index * 9)}%`, // Distribute icons across the screen
+                      top: `${15 + (index * 8)}%`,
+                      opacity: anim.opacity,
+                      transform: [
+                        { translateY: anim.translateY },
+                        { translateX: anim.translateX },
+                        { scale: anim.scale },
+                        {
+                          rotate: anim.rotate.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0deg', '360deg'],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  {icons[index]}
+                </Animated.View>
+              );
+            })}
+            
+            {/* Sparkles */}
+            {sparkleAnims.map((anim, index) => (
+              <Animated.View
+                key={`sparkle-${index}`}
+                style={[
+                  styles.sparkle,
+                  {
+                    left: `${Math.random() * 80 + 10}%`, // Random horizontal position
+                    top: `${Math.random() * 60 + 20}%`, // Random vertical position
+                    opacity: anim.opacity,
+                    transform: [
+                      { translateY: anim.translateY },
+                      { translateX: anim.translateX },
+                      { scale: anim.scale },
+                      {
+                        rotate: anim.rotate.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '360deg'],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <Text style={styles.sparkleText}>✨</Text>
+              </Animated.View>
+            ))}
+            
+              {/* Loading Text */}
+              <View style={styles.loadingTextContainer}>
+                <Text style={styles.loadingText}>Drawing capsules...</Text>
+                <Text style={styles.loadingSubtext}>Please wait</Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        )}
         
         {/* Capsule Buttons Overlay */}
         <View style={styles.capsuleButtonsOverlay}>
@@ -850,10 +1165,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pulledCardImage: {
-    width: 120,
-    height: 120,
+    width: '100%',
+    height: '100%',
     borderRadius: 60,
-    marginBottom: 16,
   },
   pulledCardName: {
     fontSize: 24,
@@ -916,8 +1230,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cardImage: {
-    width: 80,
-    height: 80,
+    width: '100%',
+    height: '100%',
     borderRadius: 8,
   },
   rarityBadge: {
@@ -959,5 +1273,74 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // Loading animation styles
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  loadingGradient: {
+    flex: 1,
+    opacity: 0.9,
+  },
+  floatingIcon: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  sparkle: {
+    position: 'absolute',
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sparkleText: {
+    fontSize: 20,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  loadingTextContainer: {
+    position: 'absolute',
+    bottom: '30%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  loadingSubtext: {
+    fontSize: 18,
+    color: 'white',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

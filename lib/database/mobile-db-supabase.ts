@@ -521,12 +521,12 @@ async function addLikeStatusToChirps(chirps: any[], currentUserId: string): Prom
 }
 
 // Fallback function for basic feed without personalization
-async function getBasicForYouFeed(): Promise<any[]> {
+async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promise<any[]> {
   console.log('🔍 Testing database connection and checking for chirps...');
   console.log('🔍 Database connection status:', isDatabaseConnected);
   
-  // Check cache first
-  const cacheKey = 'basic_feed';
+  // Check cache first with pagination support
+  const cacheKey = `basic_feed_${limit}_${offset}`;
   const cached = chirpCache.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
     console.log('✅ Returning cached basic feed');
@@ -567,7 +567,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
   }
 
   // Ultra-simplified query for maximum speed (without image fields to avoid timeout)
-  console.log('🔍 Starting main chirp query without image fields for speed...');
+  console.log(`🔍 Starting main chirp query with pagination: limit=${limit}, offset=${offset}`);
   const { data: chirps, error } = await withTimeout(
     supabase
       .from('chirps')
@@ -579,7 +579,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
       `)
       .is('reply_to_id', null)
       .order('created_at', { ascending: false })
-      .limit(10), // Further reduced limit
+      .range(offset, offset + limit - 1), // Use range for proper pagination
     8000, // Increased timeout for better reliability
     'fetching basic chirps'
   );
@@ -587,7 +587,7 @@ async function getBasicForYouFeed(): Promise<any[]> {
   if (error) {
     console.error('❌ Error fetching basic chirps:', error);
     console.log('🔄 Falling back to mock data due to timeout');
-    const mockData = getMockChirps().slice(0, 10);
+    const mockData = getMockChirps().slice(offset, offset + limit);
     // Cache the mock data to prevent repeated database calls
     chirpCache.set(cacheKey, { 
       data: mockData, 
@@ -809,7 +809,7 @@ export async function getForYouChirps(limit: number = 20, offset: number = 0): P
     if (!currentUserId) {
       console.log('🔄 No authenticated user, returning basic feed');
       // Fallback to basic feed without personalization
-      return await getBasicForYouFeed();
+      return await getBasicForYouFeed(limit, offset);
     }
 
     // Use the optimized For You algorithm with pagination
@@ -824,7 +824,7 @@ export async function getForYouChirps(limit: number = 20, offset: number = 0): P
     // });
 
     // Fallback to basic feed for now
-    const personalizedChirps = await getBasicForYouFeed();
+    const personalizedChirps = await getBasicForYouFeed(limit, offset);
 
     // Add like status for current user (for all pages to ensure like buttons work correctly)
     const chirpsWithLikeStatus = await addLikeStatusToChirps(personalizedChirps, currentUserId);

@@ -278,11 +278,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   profileImage: {
-    width: 60,
-    height: 60,
+    width: '100%',
+    height: '100%',
     borderRadius: 30,
-    alignSelf: 'center',
-    marginBottom: 8,
   },
   profileImagePlaceholder: {
     width: 60,

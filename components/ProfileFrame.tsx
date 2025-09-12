@@ -20,9 +20,9 @@ const rarityFrameImages = {
 export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {
   const frameImage = rarityFrameImages[rarity];
   
-  // Make frame bigger and profile picture smaller
-  const frameSize = size * 1.8; // Keep frame size the same (80% larger)
-  const profileSize = Math.max(frameSize * 0.18, frameSize - 110); // Make profile smaller (18% of frame size - 10% smaller)
+  // Calculate proper sizing for frame and profile picture
+  const frameSize = size * 1.8; // Frame is 80% larger than the base size
+  const profileSize = frameSize * 0.5; // Profile picture should be 40% of frame size for better fit in grids
   
   return (
     <View style={[styles.container, { width: frameSize, height: frameSize }, style]}>
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
+    top: '30%', // Move profile picture down just slightly for better alignment
   },
   frame: {
     position: 'absolute',
