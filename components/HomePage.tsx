@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive } from '../hooks/useResponsive';
 import { getCollectionFeedChirps, getForYouChirps } from '../lib/api/mobile-api';
@@ -29,6 +29,9 @@ export default function HomePage() {
   const [hasMoreChirps, setHasMoreChirps] = useState(true);
   const [hasMoreCollectionChirps, setHasMoreCollectionChirps] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(0);
+  
+  // State for compose modal
+  const [showComposeModal, setShowComposeModal] = useState(false);
   
   // Pagination constants
   const INITIAL_LIMIT = 10; // Load fewer chirps initially for faster startup
@@ -502,6 +505,49 @@ export default function HomePage() {
          )}
       </ScrollView>
 
+      {/* Floating Compose Button */}
+      <TouchableOpacity
+        style={styles.floatingComposeButton}
+        onPress={() => setShowComposeModal(true)}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={['#7c3aed', '#ec4899']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.floatingButtonGradient}
+        >
+          <Text style={styles.floatingButtonText}>+</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+
+      {/* Compose Modal */}
+      <Modal
+        visible={showComposeModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowComposeModal(false)}
+      >
+        <View style={styles.composeModalContainer}>
+          <View style={styles.composeModalHeader}>
+            <TouchableOpacity
+              style={styles.composeModalCloseButton}
+              onPress={() => setShowComposeModal(false)}
+            >
+              <Text style={styles.composeModalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.composeModalTitle}>Compose Chirp</Text>
+            <View style={styles.composeModalSpacer} />
+          </View>
+          <ComposeChirp 
+            onPost={async (content, imageData) => {
+              await handleNewChirp(content, imageData);
+              setShowComposeModal(false);
+            }} 
+          />
+        </View>
+      </Modal>
+
       {/* Profile Modal */}
       <ProfileModal visible={false} userId="" onClose={() => {}} />
     </SafeAreaView>
@@ -652,5 +698,65 @@ const styles = StyleSheet.create({
     color: '#657786',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  // Floating Compose Button Styles
+  floatingComposeButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  floatingButtonGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+  },
+  // Compose Modal Styles
+  composeModalContainer: {
+    flex: 1,
+    backgroundColor: '#fafafa',
+  },
+  composeModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  composeModalCloseButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  composeModalCloseText: {
+    fontSize: 16,
+    color: '#7c3aed',
+    fontWeight: '600',
+  },
+  composeModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  composeModalSpacer: {
+    width: 60, // Same width as close button to center the title
   },
 });
