@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive } from '../hooks/useResponsive';
-import { getForYouChirps, getCollectionFeedChirps } from '../lib/api/mobile-api';
+import { getCollectionFeedChirps, getForYouChirps } from '../lib/api/mobile-api';
 import { clearChirpCache } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
@@ -171,6 +171,17 @@ export default function HomePage() {
       console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
     }
   }, [user?.id, feedType]);
+
+  // Clear chirps when user changes to prevent showing old user's data
+  useEffect(() => {
+    console.log('🔄 HomePage: User changed, clearing cached chirps');
+    setForYouChirps([]);
+    setCollectionChirps([]);
+    setHasMoreChirps(true);
+    setHasMoreCollectionChirps(true);
+    setLastRefresh(0);
+    clearChirpCache(); // Clear database cache as well
+  }, [user?.id]);
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {

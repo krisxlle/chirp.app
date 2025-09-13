@@ -123,6 +123,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await storage.removeItem('user');
       await storage.removeItem('userSignedOut');
       
+      // Clear all caches to prevent showing old user's data
+      const { clearChirpCache } = await import('../lib/database/mobile-db-supabase');
+      clearChirpCache();
+      
       // Authenticate user with username and password using Supabase
       console.log('🔐 Using Supabase authentication for username:', username);
       const { authenticateUserByUsername } = await import('../lib/database/mobile-db-supabase');
