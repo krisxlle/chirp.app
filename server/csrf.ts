@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
 import { Csrf } from "csrf";
+import { NextFunction, Request, Response } from "express";
 
 // Create CSRF instance
 const csrf = new Csrf();

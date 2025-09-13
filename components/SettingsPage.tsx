@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { updateUserProfile, uploadBannerImage, uploadProfileImage, getUserStats, calculateProfilePower, getProfilePowerBreakdown, getUserProfile } from '../lib/database/mobile-db-supabase';
+import { getProfilePowerBreakdown, getUserProfile, getUserStats, updateUserProfile, uploadBannerImage, uploadProfileImage } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import GearIcon from './icons/GearIcon';
 import UserAvatar from './UserAvatar';
