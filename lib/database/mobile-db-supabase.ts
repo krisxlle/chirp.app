@@ -327,11 +327,17 @@ export async function getUserChirps(userId: string) {
     console.log('🔄 Fetching user chirps:', userId);
     const startTime = Date.now();
     
-    // Check cache first
+    // Check cache first with longer TTL to prevent repeated timeout attempts
     const cacheKey = `user_chirps_${userId}`;
     const cached = chirpCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < cached.ttl) {
       console.log('✅ Returning cached user chirps');
+      return cached.data;
+    }
+    
+    // If we've failed recently, return cached data even if expired to prevent repeated timeouts
+    if (cached && (Date.now() - cached.timestamp) < 300000) { // 5 minutes
+      console.log('⚠️ Returning stale cached user chirps to prevent timeout');
       return cached.data;
     }
     
@@ -343,7 +349,7 @@ export async function getUserChirps(userId: string) {
       return [];
     }
     
-    // Ultra-simplified query with shorter timeout to prevent hanging
+    // Ultra-simplified query with very short timeout to prevent hanging
     const { data: chirps, error } = await withTimeout(
       supabase
         .from('chirps')
@@ -367,18 +373,18 @@ export async function getUserChirps(userId: string) {
         .eq('author_id', userId)
         .is('reply_to_id', null)
         .order('created_at', { ascending: false })
-        .limit(3),
-      3000, // Reduced to 3 second timeout
+        .limit(1), // Reduced to just 1 chirp
+      2000, // Reduced to 2 second timeout
       'fetching user chirps'
     );
 
     if (error) {
       console.error('❌ Error fetching user chirps:', error);
-      // Cache empty result to prevent repeated failed queries
+      // Cache empty result with longer TTL to prevent repeated failed queries
       chirpCache.set(cacheKey, { 
         data: [], 
         timestamp: Date.now(), 
-        ttl: 60000 // Cache empty result for 1 minute
+        ttl: 300000 // Cache empty result for 5 minutes
       });
       return [];
     }
@@ -418,8 +424,8 @@ export async function getUserChirps(userId: string) {
       }
     }));
     
-    // Cache the result
-    chirpCache.set(cacheKey, { data: transformedChirps, timestamp: Date.now(), ttl: CACHE_TTL });
+    // Cache the result with longer TTL to reduce database load
+    chirpCache.set(cacheKey, { data: transformedChirps, timestamp: Date.now(), ttl: 300000 }); // 5 minutes
     
     console.log(`✅ User chirps fetched in ${Date.now() - startTime}ms`);
     return transformedChirps;
