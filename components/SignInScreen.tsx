@@ -75,6 +75,10 @@ export default function SignInScreen() {
   const [customHandle, setCustomHandle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
   const [handleValidation, setHandleValidation] = useState<{
     available: boolean;
     message: string;
@@ -246,6 +250,41 @@ export default function SignInScreen() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail.trim()) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    setIsForgotPasswordLoading(true);
+    setForgotPasswordMessage('');
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotPasswordEmail.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setForgotPasswordMessage('Password reset instructions have been sent to your email');
+        setShowForgotPassword(false);
+        setForgotPasswordEmail('');
+      } else {
+        setForgotPasswordMessage(data.message || 'Failed to send reset email');
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      setForgotPasswordMessage('Failed to send reset email. Please try again.');
+    } finally {
+      setIsForgotPasswordLoading(false);
+    }
+  };
+
 
   return (
     <View style={styles.container}>
@@ -323,6 +362,16 @@ export default function SignInScreen() {
             autoCorrect={false}
           />
 
+          {/* Forgot Password Link - only show for sign in */}
+          {!isSignUp && (
+            <TouchableOpacity
+              style={styles.forgotPasswordButton}
+              onPress={() => setShowForgotPassword(true)}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          )}
+
           {isSignUp && (
             <>
               <TextInput
@@ -396,6 +445,63 @@ export default function SignInScreen() {
           
         </View>
 
+        {/* Forgot Password Modal */}
+        {showForgotPassword && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Reset Password</Text>
+              <Text style={styles.modalSubtitle}>
+                Enter your email address and we'll send you instructions to reset your password.
+              </Text>
+              
+              <TextInput
+                style={styles.emailInput}
+                placeholder="Enter your email"
+                placeholderTextColor="#9ca3af"
+                value={forgotPasswordEmail}
+                onChangeText={setForgotPasswordEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              
+              {forgotPasswordMessage ? (
+                <Text style={[
+                  styles.forgotPasswordMessage,
+                  forgotPasswordMessage.includes('sent') ? styles.successMessage : styles.errorMessage
+                ]}>
+                  {forgotPasswordMessage}
+                </Text>
+              ) : null}
+              
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => {
+                    setShowForgotPassword(false);
+                    setForgotPasswordEmail('');
+                    setForgotPasswordMessage('');
+                  }}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.modalSubmitButton}
+                  onPress={handleForgotPassword}
+                  disabled={isForgotPasswordLoading}
+                >
+                  {isForgotPasswordLoading ? (
+                    <ActivityIndicator color="#ffffff" size="small" />
+                  ) : (
+                    <Text style={styles.modalSubmitText}>Send Reset Email</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Footer */}
         <Text style={styles.footerText}>
           New to Chirp? Start building your profile collection now.
@@ -455,12 +561,15 @@ const styles = StyleSheet.create({
   },
   featuresContainer: {
     marginBottom: 40,
+    alignItems: 'center', // Center the features container
   },
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
     paddingHorizontal: 16,
+    justifyContent: 'center', // Center each feature horizontally
+    maxWidth: 300, // Limit width for better centering
   },
   featureText: {
     fontSize: 16,
@@ -473,6 +582,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     marginBottom: 20,
+    maxWidth: 400, // Add max width for web responsiveness
+    alignSelf: 'center', // Center the container
+    width: '100%', // Full width up to max width
   },
   signInTitle: {
     fontSize: 24,
@@ -539,5 +651,99 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.8,
     lineHeight: 20,
+  },
+  // Forgot Password Styles
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 16,
+  },
+  forgotPasswordText: {
+    color: '#7c3aed',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  // Modal Styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    margin: 20,
+    maxWidth: 400,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#6b7280',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalSubmitButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginLeft: 8,
+    borderRadius: 12,
+    backgroundColor: '#7c3aed',
+    alignItems: 'center',
+  },
+  modalSubmitText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  forgotPasswordMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  successMessage: {
+    color: '#059669',
+    backgroundColor: '#d1fae5',
+  },
+  errorMessage: {
+    color: '#dc2626',
+    backgroundColor: '#fee2e2',
   },
 });

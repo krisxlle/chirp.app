@@ -2,6 +2,7 @@ import { insertChirpSchema, insertFeedbackSchema, insertFollowSchema, insertNoti
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { isAuthenticated, setupAuth } from "./auth";
 import { processMentions } from "./mentionUtils";
 import { generatePersonalizedProfile, generateUserAvatar, generateUserBanner, generateUserBio, generateUserInterests, generateWeeklySummary } from "./openai";
 import {
@@ -13,7 +14,6 @@ import {
     supportLimiter,
     uploadLimiter
 } from "./rateLimiting";
-import { isAuthenticated, setupAuth } from "./auth";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -169,6 +169,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Forgot password endpoint
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if user exists or not for security
+        return res.json({ message: "If an account with that email exists, password reset instructions have been sent" });
+      }
+
+      // Generate reset token (in a real implementation, you'd use a proper token system)
+      const resetToken = crypto.randomUUID();
+      
+      // Store reset token with expiration (you'd typically store this in a database)
+      // For now, we'll just log it for development
+      console.log(`Password reset token for ${email}: ${resetToken}`);
+      
+      // In a real implementation, you would:
+      // 1. Store the reset token in the database with expiration
+      // 2. Send an email with the reset link
+      // 3. Use a proper email service
+      
+      // For now, we'll simulate sending an email
+      console.log(`Password reset email would be sent to: ${email}`);
+      console.log(`Reset link: ${process.env.NODE_ENV === 'production' ? 'https://chirp.app' : 'http://localhost:5000'}/reset-password?token=${resetToken}`);
+      
+      res.json({ message: "If an account with that email exists, password reset instructions have been sent" });
+    } catch (error) {
+      console.error("Error processing forgot password request:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
     }
   });
 

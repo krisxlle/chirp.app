@@ -51,6 +51,7 @@ export interface IStorage {
   updateWeeklyAnalyticsPreference(email: string, enabled: boolean): Promise<boolean>;
   updateUserHandle(id: string, newHandle: string): Promise<User>;
   getUserByHandle(handle: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   
   // Chirp operations
@@ -323,6 +324,14 @@ export class DatabaseStorage implements IStorage {
         sql`LOWER(${users.handle}) = LOWER(${handle})`,
         sql`LOWER(${users.customHandle}) = LOWER(${handle})`
       ));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
     return user;
   }
 
