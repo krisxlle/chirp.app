@@ -83,8 +83,18 @@ let connectionTestPromise: Promise<boolean> | null = null;
 let lastConnectionTest = 0;
 const CONNECTION_CACHE_DURATION = 30000; // 30 seconds
 
-// Performance optimization: Cache for chirps data
-const chirpCache = new Map<string, { data: any, timestamp: number, ttl: number }>();
+// Secure random number generator for security-sensitive operations
+const getSecureRandom = (): number => {
+  // Use crypto.getRandomValues for cryptographically secure randomness
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] / (0xffffffff + 1); // Convert to 0-1 range
+};
+
+const getSecureRandomInt = (min: number, max: number): number => {
+  const random = getSecureRandom();
+  return Math.floor(random * (max - min + 1)) + min;
+};
 const CACHE_TTL = 300000; // 5 minutes for chirp cache (increased for better performance)
 const PAGINATION_CACHE_TTL = 600000; // 10 minutes for pagination cache
 const BASIC_FEED_CACHE_TTL = 600000; // 10 minutes for basic feed cache
@@ -232,8 +242,8 @@ function getMockChirps(): MobileChirp[] {
     createdAt: new Date(Date.now() - (index * 1000 * 60 * 30)).toISOString(), // 30 min intervals
     replyToId: null,
     isWeeklySummary: false,
-    reactionCount: Math.floor(Math.random() * 50) + 5,
-    replyCount: Math.floor(Math.random() * 20) + 1,
+    reactionCount: getSecureRandomInt(5, 55),
+    replyCount: getSecureRandomInt(1, 21),
     reactions: [],
     replies: [],
     repostOfId: null,
@@ -250,8 +260,8 @@ function getMockChirps(): MobileChirp[] {
       bannerImageUrl: null,
       bio: `This is user ${index + 1}'s bio`,
       joinedAt: new Date(Date.now() - (index * 1000 * 60 * 60 * 24 * 30)).toISOString(), // 30 day intervals
-      isChirpPlus: Math.random() > 0.8,
-      showChirpPlusBadge: Math.random() > 0.8
+      isChirpPlus: getSecureRandom() > 0.8,
+      showChirpPlusBadge: getSecureRandom() > 0.8
     }
   }));
 }
@@ -1186,7 +1196,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
     
     // Try storage upload first
     const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
+    const randomId = crypto.randomUUID().replace(/-/g, '').substring(0, 13);
     const fileName = `${timestamp}-${randomId}.jpg`;
     
     console.log('📤 Attempting storage upload with filename:', fileName);
@@ -3510,13 +3520,13 @@ export const getRandomUsers = async (limit: number = 10, currentUserId?: string)
     }
 
     // Shuffle the users and take the requested amount
-    const shuffledUsers = (users || []).sort(() => Math.random() - 0.5).slice(0, limit);
+    const shuffledUsers = (users || []).sort(() => getSecureRandom() - 0.5).slice(0, limit);
     
     const transformedUsers = shuffledUsers.map((user: any) => {
       // Calculate profile power based on various factors
       const joinDate = new Date(user.created_at);
       const daysSinceJoin = Math.floor((Date.now() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
-      const profilePower = Math.min(1000, Math.max(50, daysSinceJoin * 2 + Math.random() * 100));
+      const profilePower = Math.min(1000, Math.max(50, daysSinceJoin * 2 + getSecureRandom() * 100));
       
       // Determine rarity - hardcoded for bots, random for regular users
       let rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
@@ -3553,8 +3563,8 @@ export const getRandomUsers = async (limit: number = 10, currentUserId?: string)
         rarity = 'common';
         console.log('🎯 Bot detected: Obsidian → Common');
       } else {
-        // Random rarity for regular users
-        const rarityRoll = Math.random();
+        // Random rarity for regular users (using cryptographically secure randomness)
+        const rarityRoll = getSecureRandom();
         if (rarityRoll < 0.01) rarity = 'mythic';
         else if (rarityRoll < 0.05) rarity = 'legendary';
         else if (rarityRoll < 0.15) rarity = 'epic';
@@ -3570,8 +3580,8 @@ export const getRandomUsers = async (limit: number = 10, currentUserId?: string)
         rarity: rarity,
         imageUrl: user.profile_image_url || user.avatar_url,
         bio: user.bio || 'A mysterious bird in the Chirp flock!',
-        followers: Math.floor(Math.random() * 100000) + 1000,
-        chirps: Math.floor(Math.random() * 5000) + 100,
+        followers: getSecureRandomInt(1000, 101000),
+        chirps: getSecureRandomInt(100, 5100),
         profilePower: Math.floor(profilePower),
         obtainedAt: new Date().toISOString(),
       };
