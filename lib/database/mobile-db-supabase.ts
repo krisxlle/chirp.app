@@ -447,7 +447,6 @@ export async function getUserChirps(userId: string) {
     chirpCache.set(cacheKey, { data: transformedChirps, timestamp: Date.now(), ttl: 300000 }); // 5 minutes
     
     // Reset circuit breaker on success
-    const failureKey = `user_chirps_failures_${userId}`;
     chirpCache.delete(failureKey);
     
     console.log(`✅ User chirps fetched in ${Date.now() - startTime}ms`);
