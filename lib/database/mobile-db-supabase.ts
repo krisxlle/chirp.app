@@ -340,6 +340,14 @@ export async function getUserChirps(userId: string) {
       console.log('⚠️ Returning stale cached user chirps to prevent timeout');
       return cached.data;
     }
+
+    // Circuit breaker: if we've failed too many times, return empty array immediately
+    const failureKey = `user_chirps_failures_${userId}`;
+    const failures = chirpCache.get(failureKey);
+    if (failures && failures.data >= 3) {
+      console.log('🚫 Circuit breaker: Too many failures, returning empty array');
+      return [];
+    }
     
     // Quick connection check
     const isConnected = await ensureDatabaseInitialized();
@@ -374,12 +382,23 @@ export async function getUserChirps(userId: string) {
         .is('reply_to_id', null)
         .order('created_at', { ascending: false })
         .limit(1), // Reduced to just 1 chirp
-      2000, // Reduced to 2 second timeout
+      1000, // Reduced to 1 second timeout
       'fetching user chirps'
     );
 
     if (error) {
       console.error('❌ Error fetching user chirps:', error);
+      
+      // Track failure for circuit breaker
+      const failureKey = `user_chirps_failures_${userId}`;
+      const currentFailures = chirpCache.get(failureKey);
+      const failureCount = currentFailures ? currentFailures.data + 1 : 1;
+      chirpCache.set(failureKey, { 
+        data: failureCount, 
+        timestamp: Date.now(), 
+        ttl: 600000 // 10 minutes
+      });
+      
       // Cache empty result with longer TTL to prevent repeated failed queries
       chirpCache.set(cacheKey, { 
         data: [], 
@@ -426,6 +445,10 @@ export async function getUserChirps(userId: string) {
     
     // Cache the result with longer TTL to reduce database load
     chirpCache.set(cacheKey, { data: transformedChirps, timestamp: Date.now(), ttl: 300000 }); // 5 minutes
+    
+    // Reset circuit breaker on success
+    const failureKey = `user_chirps_failures_${userId}`;
+    chirpCache.delete(failureKey);
     
     console.log(`✅ User chirps fetched in ${Date.now() - startTime}ms`);
     return transformedChirps;
