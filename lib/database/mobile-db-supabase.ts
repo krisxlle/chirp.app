@@ -865,8 +865,10 @@ export const clearConnectionCache = () => {
 export const authenticateUserByUsername = async (username: string, password: string) => {
   try {
     console.log('🔐 Attempting to authenticate user by username:', username);
+    console.log('🔐 Password provided:', password ? 'Yes' : 'No');
     await ensureDatabaseInitialized();
     
+    console.log('🔐 Database connected:', isDatabaseConnected);
     if (!isDatabaseConnected) {
       console.log('🔄 Database not connected, cannot authenticate');
       throw new Error('Database not connected');
@@ -878,40 +880,49 @@ export const authenticateUserByUsername = async (username: string, password: str
     let profileError = null;
 
     // Try custom_handle first (case-insensitive)
+    console.log('🔍 Searching by custom_handle:', username);
     const { data: customHandleUser, error: customHandleError } = await supabase
       .from('users')
       .select('*')
       .ilike('custom_handle', username)
       .single();
 
+    console.log('🔍 Custom handle result:', customHandleUser ? 'Found' : 'Not found', 'Error:', customHandleError?.code);
     if (customHandleUser) {
       userProfile = customHandleUser;
+      console.log('✅ Found user by custom_handle:', userProfile.id);
     } else if (customHandleError?.code !== 'PGRST116') { // PGRST116 = no rows found
       console.log('❌ Error searching by custom_handle:', customHandleError);
       return null;
     } else {
       // Try handle if custom_handle didn't work (case-insensitive)
+      console.log('🔍 Searching by handle:', username);
       const { data: handleUser, error: handleError } = await supabase
         .from('users')
         .select('*')
         .ilike('handle', username)
         .single();
 
+      console.log('🔍 Handle result:', handleUser ? 'Found' : 'Not found', 'Error:', handleError?.code);
       if (handleUser) {
         userProfile = handleUser;
+        console.log('✅ Found user by handle:', userProfile.id);
       } else if (handleError?.code !== 'PGRST116') {
         console.log('❌ Error searching by handle:', handleError);
         return null;
       } else {
         // Try email if handle didn't work (for users logging in with email)
+        console.log('🔍 Searching by email:', username);
         const { data: emailUser, error: emailError } = await supabase
           .from('users')
           .select('*')
           .eq('email', username)
           .single();
 
+        console.log('🔍 Email result:', emailUser ? 'Found' : 'Not found', 'Error:', emailError?.code);
         if (emailUser) {
           userProfile = emailUser;
+          console.log('✅ Found user by email:', userProfile.id);
         } else if (emailError?.code !== 'PGRST116') {
           console.log('❌ Error searching by email:', emailError);
           return null;
