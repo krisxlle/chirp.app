@@ -908,7 +908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Prompt is required" });
       }
 
-      console.log(`Generating ${type || 'unknown'} images for user ${userId} with prompt:`, JSON.stringify(prompt));
+      console.log('Generating', type || 'unknown', 'images for user', userId, 'with prompt:', JSON.stringify(prompt));
 
       // Get user details for personalized generation
       const user = await storage.getUser(userId);
@@ -1688,8 +1688,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // For SMS invitations, we'll simulate sending an SMS with the link
       // In a real implementation, you'd use a service like Twilio
-      console.log(`SMS invitation would be sent to ${phone || email}:`);
-      console.log(`Hey ${name}! Join me on Chirp, a fun social app: ${inviteLink}`);
+      console.log('SMS invitation would be sent to', phone || email, ':');
+      console.log('Hey', name, '! Join me on Chirp, a fun social app:', inviteLink);
       
       res.json({ 
         message: "Contact invitation sent successfully",

@@ -87,18 +87,18 @@ export async function sendFeedbackNotification(feedback: any, userClaims?: any):
     // Log the feedback details to console for immediate visibility
     console.log("🐤 NEW CHIRP FEEDBACK RECEIVED:");
     console.log("==================================");
-    console.log(`Name: ${feedback.name || 'Anonymous'}`);
-    console.log(`Category: ${feedback.category}`);
-    console.log(`Email: ${feedback.email || 'Not provided'}`);
-    console.log(`User: ${userClaims ? `${userClaims.email} (ID: ${userClaims.sub})` : 'Anonymous'}`);
-    console.log(`Time: ${new Date().toLocaleString()}`);
+    console.log('Name:', feedback.name || 'Anonymous');
+    console.log('Category:', feedback.category);
+    console.log('Email:', feedback.email || 'Not provided');
+    console.log('User:', userClaims ? userClaims.email + ' (ID: ' + userClaims.sub + ')' : 'Anonymous');
+    console.log('Time:', new Date().toLocaleString());
     console.log("----------------------------------");
-    console.log(`Message:\n${feedback.message}`);
+    console.log('Message:\n' + feedback.message);
     console.log("==================================");
     
     // Check Gmail credentials
-    console.log(`🔍 Gmail User: ${process.env.GMAIL_USER ? 'SET' : 'NOT SET'}`);
-    console.log(`🔍 Gmail Password: ${process.env.GMAIL_PASSWORD ? 'SET' : 'NOT SET'}`);
+    console.log('🔍 Gmail User:', process.env.GMAIL_USER ? 'SET' : 'NOT SET');
+    console.log('🔍 Gmail Password:', process.env.GMAIL_PASSWORD ? 'SET' : 'NOT SET');
     
     // Send email via Gmail if credentials are configured
     if (process.env.GMAIL_USER && process.env.GMAIL_PASSWORD) {
@@ -270,24 +270,24 @@ interface WeeklyStats {
 export async function sendWeeklyAnalyticsEmail(stats: WeeklyStats): Promise<boolean> {
   try {
     // Log to console first
-    console.log(`📊 WEEKLY ANALYTICS for ${stats.userName}:`);
+    console.log('📊 WEEKLY ANALYTICS for', stats.userName, ':');
     console.log("=====================================");
-    console.log(`User: ${stats.userName} (@${stats.userHandle})`);
-    console.log(`Week: ${stats.weekStartDate} - ${stats.weekEndDate}`);
-    console.log(`Chirps Posted: ${stats.chirpsPosted}`);
-    console.log(`New Followers: ${stats.newFollowers} (Total: ${stats.totalFollowers})`);
-    console.log(`Engagement Rate: ${stats.engagementRate}%`);
-    console.log(`Viral Potential: ${stats.viralPotential}/10`);
+    console.log('User:', stats.userName, '(@' + stats.userHandle + ')');
+    console.log('Week:', stats.weekStartDate, '-', stats.weekEndDate);
+    console.log('Chirps Posted:', stats.chirpsPosted);
+    console.log('New Followers:', stats.newFollowers, '(Total:', stats.totalFollowers + ')');
+    console.log('Engagement Rate:', stats.engagementRate + '%');
+    console.log('Viral Potential:', stats.viralPotential + '/10');
     console.log("=====================================");
 
     // Send email if Gmail is configured
     if (process.env.GMAIL_USER && process.env.GMAIL_PASSWORD) {
-      console.log(`📧 Sending weekly analytics email to ${stats.userEmail}...`);
+      console.log('📧 Sending weekly analytics email to', stats.userEmail, '...');
       const emailSent = await sendWeeklyEmailViaGmail(stats);
       if (emailSent) {
-        console.log(`✅ Weekly analytics email sent to ${stats.userEmail}`);
+        console.log('✅ Weekly analytics email sent to', stats.userEmail);
       } else {
-        console.warn(`⚠️ Failed to send weekly analytics email to ${stats.userEmail}`);
+        console.warn('⚠️ Failed to send weekly analytics email to', stats.userEmail);
       }
       return emailSent;
     } else {

@@ -282,25 +282,25 @@ export async function sendWeeklyAnalyticsToAllUsers(): Promise<void> {
     const weekStart = new Date(weekEnd);
     weekStart.setDate(weekEnd.getDate() - 7);
 
-    console.log(`Generating weekly analytics for week: ${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]}`);
+    console.log('Generating weekly analytics for week:', weekStart.toISOString().split('T')[0], 'to', weekEnd.toISOString().split('T')[0]);
 
     // Get all users who have email addresses and have opted in to weekly analytics
     const allUsers = await storage.getAllUsers();
     const usersWithEmail = allUsers.filter(user => user.email && user.weeklyAnalyticsEnabled !== false);
 
-    console.log(`Found ${usersWithEmail.length} users with email addresses`);
+    console.log('Found', usersWithEmail.length, 'users with email addresses');
 
     for (const user of usersWithEmail) {
       try {
-        console.log(`Generating analytics for user ${user.id} (${user.email})`);
+        console.log('Generating analytics for user', user.id, '(' + user.email + ')');
         const stats = await generateWeeklyAnalytics(user.id, weekStart, weekEnd);
         
         if (stats) {
           const emailSent = await sendWeeklyAnalyticsEmail(stats);
           if (emailSent) {
-            console.log(`Weekly analytics email sent successfully to ${user.email}`);
+            console.log('Weekly analytics email sent successfully to', user.email);
           } else {
-            console.error(`Failed to send weekly analytics email to ${user.email}`);
+            console.error('Failed to send weekly analytics email to', user.email);
           }
         }
         

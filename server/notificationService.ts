@@ -62,7 +62,7 @@ class NotificationService {
       const pushTokens = await storage.getUserPushTokens(notification.userId);
       
       if (pushTokens.length === 0) {
-        console.log(`No push tokens found for user ${notification.userId}`);
+        console.log('No push tokens found for user', notification.userId);
         return;
       }
 

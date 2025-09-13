@@ -28,8 +28,8 @@ export async function downloadAndSaveImage(imageUrl: string, userId: string, ima
     const filePath = path.join(IMAGES_DIR, filename);
     const publicUrl = `/generated-images/${filename}`;
     
-    console.log(`Downloading image from: ${imageUrl}`);
-    console.log(`Saving to: ${filePath}`);
+    console.log('Downloading image from:', imageUrl);
+    console.log('Saving to:', filePath);
     
     // Download the image
     const response = await axios({
@@ -42,7 +42,7 @@ export async function downloadAndSaveImage(imageUrl: string, userId: string, ima
     // Save the image to disk
     await fs.writeFile(filePath, Buffer.from(response.data));
     
-    console.log(`Image saved successfully: ${publicUrl}`);
+    console.log('Image saved successfully:', publicUrl);
     
     // Update user profile with the new URL
     if (imageType === 'avatar') {
@@ -70,7 +70,7 @@ export async function cleanupOldImages() {
       
       if (now - stats.mtime.getTime() > maxAge) {
         await fs.unlink(filePath);
-        console.log(`Cleaned up old image: ${file}`);
+        console.log('Cleaned up old image:', file);
       }
     }
   } catch (error) {

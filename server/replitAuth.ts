@@ -133,9 +133,9 @@ export async function setupAuth(app: Express) {
       ? process.env.REPLIT_DOMAINS!.split(",")[0]
       : req.hostname;
     
-    console.log(`Login attempt for hostname: ${hostname}, strategy: replitauth:${hostname}`);
-    console.log(`Available domains: ${process.env.REPLIT_DOMAINS}`);
-    console.log(`Request hostname: ${req.hostname}`);
+    console.log('Login attempt for hostname:', hostname, ', strategy: replitauth:' + hostname);
+    console.log('Available domains:', process.env.REPLIT_DOMAINS);
+    console.log('Request hostname:', req.hostname);
     
     // Verify strategy exists
     const strategy = passport._strategy(`replitauth:${hostname}`);
@@ -162,7 +162,7 @@ export async function setupAuth(app: Express) {
       ? process.env.REPLIT_DOMAINS!.split(",")[0]
       : req.hostname;
     
-    console.log(`Callback attempt for hostname: ${hostname}, strategy: replitauth:${hostname}`);
+    console.log('Callback attempt for hostname:', hostname, ', strategy: replitauth:' + hostname);
     
     passport.authenticate(`replitauth:${hostname}`, (err, user, info) => {
       if (err) {
