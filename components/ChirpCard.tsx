@@ -1071,6 +1071,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    maxWidth: 600, // Max width for web responsiveness
+    alignSelf: 'center', // Center the card horizontally
+    width: '100%', // Full width up to max width
   },
   imageContainer: {
     marginTop: 4,           // Added padding between content and image
