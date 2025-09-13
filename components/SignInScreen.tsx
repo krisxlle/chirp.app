@@ -2,15 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { checkHandleAvailability, signInWithSupabase, signUp } from '../lib/database/mobile-db-supabase';
@@ -109,6 +109,10 @@ export default function SignInScreen() {
   };
 
   const handleSignIn = async () => {
+    console.log('🚀 handleSignIn function called!');
+    console.log('🚀 Username:', username);
+    console.log('🚀 Password provided:', password ? 'Yes' : 'No');
+    
     if (!username.trim()) {
       Alert.alert('Error', 'Please enter your username or email');
       return;
@@ -327,7 +331,7 @@ export default function SignInScreen() {
           
           <View style={styles.feature}>
             <BotIcon size={24} color="#ffffff" />
-            <Text style={styles.featureText}>Raise your profile power</Text>
+            <Text style={styles.featureText}>Raise your profile power and get more views</Text>
           </View>
         </View>
 
