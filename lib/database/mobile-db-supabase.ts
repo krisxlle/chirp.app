@@ -81,6 +81,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let isDatabaseConnected = false;
 let connectionTestPromise: Promise<boolean> | null = null;
 let lastConnectionTest = 0;
+
+// Cache for chirp data to improve performance
+const chirpCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+// Cache TTL constants
 const CONNECTION_CACHE_DURATION = 30000; // 30 seconds
 
 // Secure random number generator for security-sensitive operations
