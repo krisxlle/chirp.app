@@ -2050,7 +2050,7 @@ export const getChirpById = async (chirpId: string): Promise<any> => {
     // Get reaction count and like status
     const [reactionCount, userHasLiked] = await Promise.all([
       supabase.from('reactions').select('id', { count: 'exact' }).eq('chirp_id', chirpId).then(({ count }) => count || 0),
-      currentUserId ? supabase.from('reactions').select('id').eq('chirp_id', chirpId).eq('user_id', currentUserId).single().then(({ data }) => !!data) : Promise.resolve(false)
+      currentUserId ? supabase.from('reactions').select('id').eq('chirp_id', chirpId).eq('user_id', currentUserId).maybeSingle().then(({ data }) => !!data) : Promise.resolve(false)
     ]);
 
     const transformedChirp = {

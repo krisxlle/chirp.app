@@ -146,7 +146,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           .select('id')
           .eq('chirp_id', String(chirp.id))
           .eq('user_id', String(user.id))
-          .single();
+          .maybeSingle();
         
         // Update state if it doesn't match database
         if (existingLike && !userHasLiked) {
@@ -330,9 +330,9 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           .select('id')
           .eq('chirp_id', chirpIdStr)
           .eq('user_id', userIdStr)
-          .single();
+          .maybeSingle();
 
-        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+        if (checkError) {
           console.error('❌ Error checking existing like:', checkError);
           Alert.alert('Error', 'Failed to check like status. Please try again.');
           return;
@@ -717,7 +717,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       onPress={handleChirpPress}
       activeOpacity={0.95}
     >
-      <View style={styles.header} pointerEvents="box-none">
+      <View style={[styles.header, { pointerEvents: 'box-none' }]}>
         <TouchableOpacity onPress={handleAvatarPress} style={{ marginLeft: 0 }}>
           <UserAvatar user={chirp.author} size="md" showFrame={true} />
         </TouchableOpacity>
@@ -836,7 +836,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       
       {/* Debug logging for image data - moved to useEffect to avoid JSX issues */}
 
-      <View style={styles.actions} pointerEvents="box-none">
+      <View style={[styles.actions, { pointerEvents: 'box-none' }]}>
         <TouchableOpacity 
           style={styles.actionButton} 
           onPress={(e) => {
@@ -902,7 +902,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       
       {/* Reply Input */}
       {showReplyInput && (
-        <View style={styles.replyContainer} pointerEvents="box-none">
+        <View style={[styles.replyContainer, { pointerEvents: 'box-none' }]}>
           <TextInput
             style={styles.replyInput}
             placeholder={`Reply to ${displayName}...`}
@@ -1066,10 +1066,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
     elevation: 3,
     maxWidth: 600, // Max width for web responsiveness
     alignSelf: 'center', // Center the card horizontally
@@ -1090,20 +1087,14 @@ const styles = StyleSheet.create({
   weeklySummaryContainer: {
     backgroundColor: '#f8f4ff',
     borderRadius: 16,
-    shadowColor: '#d946ef',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    boxShadow: '0 4px 12px rgba(217, 70, 239, 0.15)',
     elevation: 6,
   },
   highlightedContainer: {
     backgroundColor: '#fef3e8',
     borderColor: '#f59e0b',
     borderWidth: 2,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)',
     elevation: 8,
   },
   replyContainer: {
@@ -1429,10 +1420,7 @@ const styles = StyleSheet.create({
     padding: 20,
     minWidth: 280,
     maxWidth: 320,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
     elevation: 8,
   },
   modalTitle: {

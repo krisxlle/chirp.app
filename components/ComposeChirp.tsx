@@ -392,10 +392,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 16, // Use hardcoded value instead of padding.screen.horizontal
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
     elevation: 3,
     maxWidth: 600, // Max width for web responsiveness
     alignSelf: 'center', // Center the component horizontally
@@ -462,10 +459,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0 3px 8px rgba(124, 58, 237, 0.3)',
     elevation: 5,
   },
   postButtonDisabled: {
