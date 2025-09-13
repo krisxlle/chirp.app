@@ -1,5 +1,5 @@
+import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { storage } from './storage';
-import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 
 interface PushNotificationPayload {
   title: string;

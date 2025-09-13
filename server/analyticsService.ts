@@ -1,5 +1,5 @@
+import { sendWeeklyAnalyticsEmail } from "./emailService";
 import { storage } from "./storage";
-import { generateWeeklySummary } from "./openai";
 // Import interface separately to avoid circular dependency
 interface WeeklyStats {
   userId: string;
@@ -36,7 +36,6 @@ interface WeeklyStats {
   viralPotential: number; // 1-10 score
   recommendations: string[];
 }
-import { sendWeeklyAnalyticsEmail } from "./emailService";
 
 export async function generateWeeklyAnalytics(userId: string, weekStartDate: Date, weekEndDate: Date): Promise<WeeklyStats | null> {
   try {

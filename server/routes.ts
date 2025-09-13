@@ -13,7 +13,7 @@ import {
     supportLimiter,
     uploadLimiter
 } from "./rateLimiting";
-import { isAuthenticated, setupAuth } from "./replitAuth";
+import { isAuthenticated, setupAuth } from "./auth";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1683,7 +1683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate the invite link - always use production URL for invitations
-      const baseUrl = 'https://cc097ec5-adc9-4cf9-b6df-c4d57a132b5d-00-25ezwedp5eajv.spock.replit.dev';
+      const baseUrl = process.env.NODE_ENV === 'production' ? 'https://chirp.app' : 'http://localhost:5000';
       const inviteLink = `${baseUrl}/invite/${shareCode}`;
       
       // For SMS invitations, we'll simulate sending an SMS with the link

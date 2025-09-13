@@ -14,7 +14,15 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
   // Skip CSRF for API routes that don't need it (like public endpoints)
   if (req.path.startsWith('/api/push-tokens') || 
       req.path.startsWith('/api/support') ||
-      req.path.startsWith('/api/notifications')) {
+      req.path.startsWith('/api/notifications') ||
+      req.path.startsWith('/api/feedback') ||
+      req.path.startsWith('/api/bot/')) {
+    return next();
+  }
+
+  // Skip CSRF for routes that don't modify state or are read-only
+  if (req.path.startsWith('/api/test/') ||
+      req.path.startsWith('/api/admin/trigger-weekly-analytics')) {
     return next();
   }
 

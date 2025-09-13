@@ -33,7 +33,7 @@ import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, not, or
 import { db } from "./db";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations (required for authentication)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserProfile(id: string, updates: {
@@ -1469,7 +1469,7 @@ export class DatabaseStorage implements IStorage {
       shareCode,
     }).returning();
     
-    const shareUrl = `${process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000'}/invite/${shareCode}`;
+    const shareUrl = `${process.env.NODE_ENV === 'production' ? 'https://chirp.app' : 'http://localhost:5000'}/invite/${shareCode}`;
     
     return { shareCode, shareUrl };
   }

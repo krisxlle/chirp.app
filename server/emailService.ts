@@ -423,7 +423,7 @@ async function sendWeeklyEmailViaGmail(stats: WeeklyStats): Promise<boolean> {
           This email was sent automatically from Chirp Social Platform
         </p>
         <p style="color: #9ca3af; margin: 0; font-size: 11px;">
-          Don't want weekly analytics? <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/api/unsubscribe/weekly-analytics?email=${encodeURIComponent(stats.userEmail)}" style="color: #7c3aed; text-decoration: underline;">Unsubscribe here</a>
+          Don't want weekly analytics? <a href="${process.env.NODE_ENV === 'production' ? 'https://chirp.app' : 'http://localhost:5000'}/api/unsubscribe/weekly-analytics?email=${encodeURIComponent(stats.userEmail)}" style="color: #7c3aed; text-decoration: underline;">Unsubscribe here</a>
         </p>
       </div>
 
