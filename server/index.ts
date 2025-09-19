@@ -81,7 +81,20 @@ app.use((req, res, next) => {
   try {
     console.log('🚀 Starting Chirp server...');
     
-    const server = await registerRoutes(app);
+    let server;
+    try {
+      server = await registerRoutes(app);
+    } catch (routeError) {
+      console.error('❌ Error during route registration:', routeError);
+      
+      // If there's a path-to-regexp error during route registration, start minimal server immediately
+      if (routeError.message && routeError.message.includes('path-to-regexp')) {
+        throw routeError; // Re-throw to trigger the fallback
+      }
+      
+      // For other route errors, also trigger fallback
+      throw routeError;
+    }
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
@@ -127,8 +140,13 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     
-    // If there's a path-to-regexp error, start a minimal server
-    if (error.message && error.message.includes('path-to-regexp')) {
+    // If there's a path-to-regexp error or any route-related error, start a minimal server
+    if (error.message && (
+      error.message.includes('path-to-regexp') || 
+      error.message.includes('Missing parameter name') ||
+      error.message.includes('route') ||
+      error.message.includes('registerRoutes')
+    )) {
       console.log('🔄 Starting minimal server due to path-to-regexp error...');
       
       const port = parseInt(process.env.PORT || '5000', 10);
