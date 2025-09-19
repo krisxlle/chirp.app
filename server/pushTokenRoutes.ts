@@ -1,5 +1,5 @@
-import { insertPushTokenSchema } from '@shared/schema';
 import { Router } from 'express';
+import { insertPushTokenSchema } from '../shared/schema';
 import { storage } from './storage';
 
 const router = Router();

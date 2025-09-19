@@ -1,7 +1,7 @@
-import { storage } from "./storage";
-import { eq, desc, and, or, sql, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { chirps, follows, reactions, users } from "../shared/schema";
 import { db } from "./db";
-import { chirps, users, reactions, follows } from "@shared/schema";
+import { storage } from "./storage";
 
 interface UserEngagementProfile {
   userId: string;

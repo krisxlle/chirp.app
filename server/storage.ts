@@ -1,3 +1,4 @@
+import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, not, or, sql } from "drizzle-orm";
 import {
     type Chirp,
     chirps,
@@ -28,8 +29,7 @@ import {
     vipCodes,
     weeklySummaries,
     type WeeklySummary
-} from "@shared/schema";
-import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, not, or, sql } from "drizzle-orm";
+} from "../shared/schema";
 import { db } from "./db";
 
 export interface IStorage {

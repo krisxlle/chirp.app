@@ -1,7 +1,7 @@
-import { insertChirpSchema, insertFeedbackSchema, insertFollowSchema, insertNotificationSchema, insertPushTokenSchema, insertReactionSchema } from "@shared/schema";
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { insertChirpSchema, insertFeedbackSchema, insertFollowSchema, insertNotificationSchema, insertPushTokenSchema, insertReactionSchema } from "../shared/schema";
 import { isAuthenticated, setupAuth } from "./auth";
 import { processMentions } from "./mentionUtils";
 import { generatePersonalizedProfile, generateUserAvatar, generateUserBanner, generateUserBio, generateUserInterests, generateWeeklySummary } from "./openai";
