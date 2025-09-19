@@ -2,8 +2,12 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "npx tsx server/index.ts"
+startCommand = "node test-server.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
+
+[env]
+NODE_ENV = "production"
+PORT = "5000"
