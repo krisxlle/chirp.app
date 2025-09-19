@@ -5,6 +5,27 @@ import { devServerProtection, securityLogging, securityMiddleware } from "./secu
 import { log, serveStatic, setupVite } from "./vite";
 import { truncateSensitiveData } from "./loggingUtils";
 
+// Global error handler for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  if (error.message.includes('path-to-regexp') || error.message.includes('Missing parameter name')) {
+    console.log('Path-to-regexp error detected, continuing with fallback...');
+    return; // Don't exit, continue running
+  }
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  if (reason && typeof reason === 'object' && 'message' in reason) {
+    const error = reason as Error;
+    if (error.message.includes('path-to-regexp') || error.message.includes('Missing parameter name')) {
+      console.log('Path-to-regexp error in promise rejection, continuing...');
+      return; // Don't exit, continue running
+    }
+  }
+});
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

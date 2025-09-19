@@ -45,7 +45,13 @@
         "babel": {
           "include": ["@babel/plugin-proposal-export-namespace-from"]
         }
-      }
+      },
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
     },
     "plugins": [
       "expo-router",
@@ -69,7 +75,7 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     },
     "extra": {
       "router": {},
