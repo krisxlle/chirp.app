@@ -1,0 +1,4 @@
+# Ignore Dockerfile to use Railway's built-in Node.js support
+Dockerfile
+docker-compose.yml
+.dockerignore
