@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Clipboard, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Clipboard, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
 import HeartIcon from './icons/HeartIcon';
@@ -14,6 +14,7 @@ import { useAuth } from './AuthContext';
 
 // Import real Supabase functions
 import { deleteChirp } from '../lib/database/mobile-db-supabase';
+import { CrystalService } from '../services/crystalService';
 import { notificationService } from '../services/notificationService';
 
 // Temporary inline createReply function to bypass import issues
@@ -107,7 +108,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 
   // Debug logging removed to reduce log spam
 
-  const { user } = useAuth();
+  const { user, refreshCrystalBalance } = useAuth();
   
   // Safety check for user - if user is not available, show a loading state
   if (!user) {
@@ -161,6 +162,19 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
     
     verifyLikeStatus();
   }, [user?.id, chirp.id]); // Only run when user or chirp changes
+  
+  // Debug image data
+  useEffect(() => {
+    if (chirp.imageUrl) {
+      console.log('🖼️ ChirpCard has image:', {
+        imageUrl: chirp.imageUrl?.substring(0, 50) + '...',
+        imageWidth: chirp.imageWidth,
+        imageHeight: chirp.imageHeight,
+        hasImageUrl: !!chirp.imageUrl,
+        platform: Platform.OS
+      });
+    }
+  }, [chirp.imageUrl, chirp.imageWidth, chirp.imageHeight]);
   
   // Real-time timestamp updates
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -259,6 +273,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       if (onReplyPosted) {
         onReplyPosted(chirpIdStr);
       }
+      
+      // Award crystals for commenting
+      await CrystalService.awardCommentCrystals(userIdStr, chirpIdStr);
+      
+      // Refresh crystal balance in AuthContext
+      await refreshCrystalBalance();
       
       console.log('Reply posted successfully');
     } catch (error) {
@@ -379,6 +399,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
         
         // Create notification for the chirp author
         await notificationService.createLikeNotification(userIdStr, chirpIdStr);
+        
+        // Award crystals for liking
+        await CrystalService.awardLikeCrystals(userIdStr, chirpIdStr);
+        
+        // Refresh crystal balance in AuthContext
+        await refreshCrystalBalance();
         
         console.log('✅ Like added successfully');
       }
@@ -779,7 +805,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 
       {chirp.content.trim() && (
         <Text style={styles.content}>
-          {chirp.content.split(/(@\w+|#\w+|\*\*[^*]+\*\*)/).map((part, index) => {
+          {chirp.content.split(/(@\w+|#\w+|\*\*[^*]+\*\*)/).filter(part => part.trim()).map((part, index) => {
             if (part.startsWith('@')) {
               return (
                 <TouchableOpacity 
@@ -902,44 +928,103 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
       
       {/* Reply Input */}
       {showReplyInput && (
-        <View style={[styles.replyContainer, { pointerEvents: 'box-none' }]}>
-          <TextInput
-            style={styles.replyInput}
-            placeholder={`Reply to ${displayName}...`}
-            value={replyText}
-            onChangeText={setReplyText}
-            multiline
-            maxLength={280}
-          />
-          <View style={styles.replyButtons}>
-            <TouchableOpacity 
-              style={styles.cancelButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                setShowReplyInput(false);
-              }}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.submitButtonContainer, !replyText.trim() && styles.submitButtonDisabled]}
-              onPress={(e) => {
-                e.stopPropagation();
-                submitReply();
-              }}
-              disabled={!replyText.trim()}
-            >
-              <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.submitButton}
+        Platform.OS === 'web' ? (
+          <div 
+            style={{ pointerEvents: 'auto' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            <View style={styles.replyContainer}>
+              <TextInput
+                style={styles.replyInput}
+                placeholder={`Reply to ${displayName}...`}
+                value={replyText}
+                onChangeText={setReplyText}
+                multiline
+                maxLength={280}
+                onPressIn={(e) => e.stopPropagation()}
+                onPressOut={(e) => e.stopPropagation()}
+              />
+            </View>
+            <View style={styles.replyButtons}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  setShowReplyInput(false);
+                }}
               >
-                <Text style={styles.submitButtonText}>Reply</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.submitButtonContainer, !replyText.trim() && styles.submitButtonDisabled]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  submitReply();
+                }}
+                disabled={!replyText.trim()}
+              >
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.submitButton}
+                >
+                  <Text style={styles.submitButtonText}>Reply</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </div>
+        ) : (
+          <View 
+            style={[styles.replyContainer, { pointerEvents: 'auto' }]}
+            onStartShouldSetResponder={() => true}
+            onMoveShouldSetResponder={() => true}
+            onResponderGrant={() => {}}
+            onResponderMove={() => {}}
+            onResponderRelease={() => {}}
+          >
+            <TextInput
+              style={styles.replyInput}
+              placeholder={`Reply to ${displayName}...`}
+              value={replyText}
+              onChangeText={setReplyText}
+              multiline
+              maxLength={280}
+              onPressIn={(e) => e.stopPropagation()}
+              onPressOut={(e) => e.stopPropagation()}
+            />
+            <View style={styles.replyButtons}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  setShowReplyInput(false);
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.submitButtonContainer, !replyText.trim() && styles.submitButtonDisabled]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  submitReply();
+                }}
+                disabled={!replyText.trim()}
+              >
+                <LinearGradient
+                  colors={['#7c3aed', '#ec4899']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.submitButton}
+                >
+                  <Text style={styles.submitButtonText}>Reply</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )
       )}
 
       {/* Custom Options Modal */}

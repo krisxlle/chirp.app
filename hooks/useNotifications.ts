@@ -77,7 +77,7 @@ export const useNotifications = (userId?: string) => {
       setNotifications(prev => 
         prev.map(n => 
           n.id === notificationId 
-            ? { ...n, is_read: true }
+            ? { ...n, read: true }
             : n
         )
       );

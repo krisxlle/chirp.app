@@ -4,6 +4,7 @@ import {
     Alert,
     Dimensions,
     Image,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -112,6 +113,90 @@ export default function ChirpImage({
           </TouchableOpacity>
         </View>
       </View>
+    );
+  }
+
+  // Web-specific image component
+  const WebImage = () => {
+    if (Platform.OS === 'web') {
+      console.log('🌐 Rendering web image:', {
+        imageUrl: imageUrl?.substring(0, 50) + '...',
+        displayWidth,
+        displayHeight,
+        imageAltText
+      });
+      
+      return (
+        <img
+          src={imageUrl}
+          alt={imageAltText}
+          style={{
+            width: displayWidth,
+            height: displayHeight,
+            objectFit: 'cover',
+            borderRadius: 8,
+            cursor: 'pointer',
+            backgroundColor: '#f0f0f0' // Add background color to see if container is there
+          }}
+          onLoad={() => {
+            console.log('✅ Web image loaded successfully');
+            handleImageLoad();
+          }}
+          onError={(e) => {
+            console.log('❌ Web image failed to load:', e);
+            handleImageError();
+          }}
+          onClick={onImagePress}
+        />
+      );
+    }
+    return null;
+  };
+
+  if (Platform.OS === 'web') {
+    return (
+      <div style={{
+        width: displayWidth,
+        height: displayHeight,
+        borderRadius: 12,
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        <WebImage />
+        {imageLoading && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white'
+          }}>
+            Loading...
+          </div>
+        )}
+        {imageError && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#f0f0f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666',
+            fontSize: '14px'
+          }}>
+            Failed to load image
+          </div>
+        )}
+      </div>
     );
   }
 

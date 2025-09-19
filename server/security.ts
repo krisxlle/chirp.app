@@ -38,6 +38,7 @@ export function securityMiddleware(req: Request, res: Response, next: NextFuncti
 // Check if origin is allowed
 function isAllowedOrigin(origin: string): boolean {
   const allowedOrigins = [
+    // Development origins
     'http://localhost:3000',
     'http://localhost:5000',
     'http://127.0.0.1:3000',
@@ -47,9 +48,28 @@ function isAllowedOrigin(origin: string): boolean {
     // Add your computer's IP for mobile testing
     process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:5000` : null,
     process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:3000` : null,
+    // Production domains
+    process.env.PRODUCTION_DOMAIN ? `https://${process.env.PRODUCTION_DOMAIN}` : null,
+    process.env.PRODUCTION_DOMAIN ? `http://${process.env.PRODUCTION_DOMAIN}` : null,
+    // Allow any subdomain of the production domain
+    process.env.PRODUCTION_DOMAIN ? `https://*.${process.env.PRODUCTION_DOMAIN}` : null,
+    process.env.PRODUCTION_DOMAIN ? `http://*.${process.env.PRODUCTION_DOMAIN}` : null,
   ].filter(Boolean);
   
-  return allowedOrigins.includes(origin);
+  // Check exact matches first
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+  
+  // Check subdomain patterns for production domain
+  if (process.env.PRODUCTION_DOMAIN) {
+    const domainPattern = new RegExp(`^https?://[a-zA-Z0-9-]+\\.${process.env.PRODUCTION_DOMAIN.replace('.', '\\.')}$`);
+    if (domainPattern.test(origin)) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 // Development server protection middleware

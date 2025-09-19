@@ -374,7 +374,7 @@ export default function ProfileModal({ visible, userId, onClose }: ProfileModalP
               
               {user.bio && (
                 <Text style={styles.bio}>
-                  {user.bio.split(/(@\w+)/).map((part, index) => {
+                  {user.bio.split(/(@\w+)/).filter(part => part.trim()).map((part, index) => {
                     if (part.startsWith('@')) {
                       return (
                         <TouchableOpacity 

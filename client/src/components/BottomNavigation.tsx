@@ -1,8 +1,8 @@
-import { Home, Search, Bell, User } from "lucide-react";
-import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { Bell, Home, Search, Sparkles, User } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function BottomNavigation() {
   const [location, setLocation] = useLocation();
@@ -32,6 +32,12 @@ export default function BottomNavigation() {
       path: "/notifications", 
       isActive: location === "/notifications",
       badge: unreadCount?.count > 0 ? unreadCount.count : null,
+    },
+    {
+      icon: Sparkles,
+      label: "Gacha",
+      path: "/gacha",
+      isActive: location === "/gacha",
     },
     {
       icon: User,

@@ -75,6 +75,33 @@
     background-clip: text;
   }
   
+  .profile-container {
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+  }
+  
+  .profile-content {
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  
+  /* Force profile width constraints with highest specificity */
+  main[class*="pb-20"] {
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  
+  div[style*="maxWidth: '600px'"] {
+    max-width: 600px !important;
+    margin: 0 auto !important;
+  }
+  
   .mood-reaction {
     @apply transition-transform duration-200 ease-in-out;
   }
@@ -105,4 +132,18 @@
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.8; transform: scale(0.95); }
   }
+}
+
+/* Global overrides for profile page width - highest specificity */
+html body main.pb-20 {
+  max-width: 600px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+html body div[style*="maxWidth: '600px'"] {
+  max-width: 600px !important;
+  margin: 0 auto !important;
 }

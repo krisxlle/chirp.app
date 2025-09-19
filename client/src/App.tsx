@@ -1,27 +1,28 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import BottomNavigation from "@/components/BottomNavigation";
+import SignupContactsPrompt from "@/components/SignupContactsPrompt";
+import { FloatingFeedback } from "@/components/ui/floating-feedback";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import NotFound from "@/pages/not-found";
-import Landing from "@/pages/Landing";
+import AdminFeedback from "@/pages/AdminFeedback";
+import AdminInfluencerCodes from "@/pages/AdminInfluencerCodes";
 import Auth from "@/pages/Auth";
+import ChirpDetail from "@/pages/ChirpDetail";
+import Gacha from "@/pages/Gacha";
 import Home from "@/pages/Home";
-import Search from "@/pages/Search";
+import Landing from "@/pages/Landing";
+import NotFound from "@/pages/not-found";
 import Notifications from "@/pages/Notifications";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import Profile from "@/pages/Profile";
+import Search from "@/pages/Search";
 import Settings from "@/pages/Settings";
 import Subscribe from "@/pages/Subscribe";
-import AdminInfluencerCodes from "@/pages/AdminInfluencerCodes";
-import AdminFeedback from "@/pages/AdminFeedback";
-import ChirpDetail from "@/pages/ChirpDetail";
-import TermsOfService from "@/pages/TermsOfService";
-import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import Support from "@/pages/Support";
-import BottomNavigation from "@/components/BottomNavigation";
-import { FloatingFeedback } from "@/components/ui/floating-feedback";
-import SignupContactsPrompt from "@/components/SignupContactsPrompt";
+import TermsOfService from "@/pages/TermsOfService";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Route, Switch } from "wouter";
+import { queryClient } from "./lib/queryClient";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -50,6 +51,7 @@ function Router() {
             <Route path="/profile/:userId?" component={Profile} />
             <Route path="/settings" component={Settings} />
             <Route path="/subscribe" component={Subscribe} />
+            <Route path="/gacha" component={Gacha} />
             <Route path="/admin/influencer-codes" component={AdminInfluencerCodes} />
             <Route path="/admin/feedback" component={AdminFeedback} />
             <Route path="/chirp/:id" component={ChirpDetail} />

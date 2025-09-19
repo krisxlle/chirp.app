@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive } from '../hooks/useResponsive';
 import { getCollectionFeedChirps, getForYouChirps } from '../lib/api/mobile-api';
@@ -396,6 +396,7 @@ export default function HomePage() {
         </View>
       </View>
 
+
       {/* Chirps Feed with Infinite Scroll */}
       <ScrollView 
         style={styles.feed} 
@@ -421,7 +422,7 @@ export default function HomePage() {
         }}
         scrollEventThrottle={400}
       >
-        {/* Compose Chirp - Now part of the scrollable feed */}
+        {/* Compose Chirp - Now scrolls with feed */}
         <View style={styles.composeContainer}>
           <ComposeChirp onPost={handleNewChirp} />
         </View>
@@ -517,7 +518,9 @@ export default function HomePage() {
           end={{ x: 1, y: 0 }}
           style={styles.floatingButtonGradient}
         >
-          <Text style={styles.floatingButtonText}>+</Text>
+          <View style={styles.floatingButtonIconContainer}>
+            <Text style={styles.floatingButtonText}>+</Text>
+          </View>
         </LinearGradient>
       </TouchableOpacity>
 
@@ -635,9 +638,10 @@ const styles = StyleSheet.create({
   composeContainer: {
     paddingTop: 8,
     paddingBottom: 8,
+    backgroundColor: '#fafafa', // Match the main container background
   },
   chirpsContainer: {
-    paddingBottom: 80, // Extra padding to clear navigation bar
+    paddingBottom: Platform.OS === 'web' ? 200 : 120, // Extra padding to clear navigation bar and show compose button (much more for web)
   },
   emptyState: {
     alignItems: 'center',
@@ -700,7 +704,7 @@ const styles = StyleSheet.create({
   // Floating Compose Button Styles
   floatingComposeButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: Platform.OS === 'web' ? 80 : 20, // More space from bottom on web to clear nav bar
     right: 20,
     width: 56,
     height: 56,
@@ -716,11 +720,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  floatingButtonIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+  },
   floatingButtonText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
+    lineHeight: 24, // Ensure consistent line height
+    includeFontPadding: false, // Remove extra padding on Android
+    transform: [{ translateY: -3 }], // Shift icon up to center it perfectly
   },
   // Compose Modal Styles
   composeModalContainer: {

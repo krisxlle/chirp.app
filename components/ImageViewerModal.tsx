@@ -4,6 +4,7 @@ import {
     Dimensions,
     Image,
     Modal,
+    Platform,
     StatusBar,
     StyleSheet,
     Text,
@@ -102,6 +103,30 @@ export default function ImageViewerModal({
     setImageLoaded(false);
   };
 
+  // Web-specific image component
+  const WebImage = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <img
+          src={imageUrl}
+          alt={imageAltText || 'Chirp image'}
+          style={{
+            maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain',
+            transform: `scale(${scale}) translate(${translateX}px, ${translateY}px)`,
+            transition: 'transform 0.1s ease-out',
+            cursor: scale > 1 ? 'grab' : 'pointer'
+          }}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          onClick={scale === 1 ? handleClose : undefined}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <Modal
       visible={visible}
@@ -148,23 +173,27 @@ export default function ImageViewerModal({
                   </TouchableOpacity>
                 </View>
               ) : (
-                <Image
-                  source={{ uri: imageUrl }}
-                  style={[
-                    styles.image,
-                    {
-                      transform: [
-                        { scale: scale },
-                        { translateX: translateX },
-                        { translateY: translateY },
-                      ],
-                    },
-                  ]}
-                  resizeMode="contain"
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                  accessibilityLabel={imageAltText || 'Chirp image'}
-                />
+                Platform.OS === 'web' ? (
+                  <WebImage />
+                ) : (
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={[
+                      styles.image,
+                      {
+                        transform: [
+                          { scale: scale },
+                          { translateX: translateX },
+                          { translateY: translateY },
+                        ],
+                      },
+                    ]}
+                    resizeMode="contain"
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    accessibilityLabel={imageAltText || 'Chirp image'}
+                  />
+                )
               )}
             </View>
           </PanGestureHandler>

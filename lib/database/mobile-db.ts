@@ -2052,13 +2052,13 @@ export async function getUserCrystalBalance(userId: string): Promise<number> {
 
     if (error) {
       console.error('Error getting user crystal balance:', error);
-      return 500000; // Default fallback
+      return 100; // Default fallback
     }
 
-    return data?.crystal_balance || 500000;
+    return data?.crystal_balance || 100;
   } catch (error) {
     console.error('Error getting user crystal balance:', error);
-    return 500000; // Default fallback
+    return 100; // Default fallback
   }
 }
 

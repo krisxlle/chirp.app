@@ -131,7 +131,7 @@ export default function ChirpScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)/')}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Chirp</Text>
@@ -148,7 +148,7 @@ export default function ChirpScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)/')}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Chirp</Text>
@@ -165,7 +165,7 @@ export default function ChirpScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)/')}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chirp</Text>
@@ -207,7 +207,6 @@ export default function ChirpScreen() {
         {/* Replies Section - Separated from main chirp */}
         {replies.length > 0 && (
           <View style={styles.repliesSection}>
-            <Text style={styles.repliesHeader}>Replies</Text>
             {replies.map((reply) => (
               <ChirpCard 
                 key={reply.id} 
@@ -291,16 +290,6 @@ const styles = StyleSheet.create({
   },
   repliesSection: {
     marginTop: 8,
-  },
-  repliesHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#14171a',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e1e8ed',
   },
   threadedSection: {
     marginTop: 0,

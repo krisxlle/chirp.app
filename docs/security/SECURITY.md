@@ -84,6 +84,13 @@ Chirp implements the following security measures:
 - Secure database connections
 - Regular security updates and dependency management
 - Environment variable protection for sensitive configuration
+- Production domain validation and CORS protection
+- Rate limiting on all API endpoints
+- Security headers (HSTS, CSP, X-Frame-Options, etc.)
+- Nginx reverse proxy with SSL termination
+- Health check endpoints for monitoring
+- Docker containerization for isolated deployment
+- Firewall configuration for port restrictions
 
 #### Privacy Protection
 - Minimal data collection principle

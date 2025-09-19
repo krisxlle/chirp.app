@@ -56,6 +56,7 @@ interface AuthContextType {
   signIn: (username: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
+  refreshCrystalBalance: () => Promise<void>;
   isAuthenticated: boolean;
   clearSession: () => Promise<void>;
 }
@@ -156,7 +157,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           profileImageUrl: dbUser.profile_image_url,
           avatarUrl: dbUser.profile_image_url,
           bannerImageUrl: dbUser.banner_image_url,
-          bio: dbUser.bio
+          bio: dbUser.bio,
+          crystalBalance: dbUser.crystal_balance || 0
         };
         
         await storage.setItem('user', JSON.stringify(user));
@@ -217,6 +219,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshCrystalBalance = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { getUserCrystalBalance } = await import('../lib/database/mobile-db-supabase');
+      const crystalBalance = await getUserCrystalBalance(user.id);
+      
+      if (user.crystalBalance !== crystalBalance) {
+        await updateUser({ crystalBalance });
+        console.log('💎 Refreshed crystal balance:', crystalBalance);
+      }
+    } catch (error) {
+      console.error('Error refreshing crystal balance:', error);
+    }
+  };
+
   // Check if current user is valid in database and switch to @chirp if not
   useEffect(() => {
     const validateUser = async () => {
@@ -250,6 +268,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     updateUser,
+    refreshCrystalBalance,
     isAuthenticated: !!user,
     clearSession
   };

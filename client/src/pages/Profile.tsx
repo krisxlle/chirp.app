@@ -125,6 +125,31 @@ export default function Profile() {
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
 
+  // Add CSS-in-JS styles directly to the component
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      main.pb-20 {
+        max-width: 600px !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+      }
+      div[style*="maxWidth: '600px'"] {
+        max-width: 600px !important;
+        margin: 0 auto !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+
   // Determine if this is own profile
   const isOwnProfile = !userIdOrHandle || userIdOrHandle === currentUser?.id;
   
@@ -480,22 +505,24 @@ export default function Profile() {
       </header>
 
       {/* Content */}
-      <main className="pb-20">
+      <main className="pb-20" style={{ maxWidth: '600px', margin: '0 auto', width: '100%', paddingLeft: '24px', paddingRight: '24px' }}>
         {resolveLoading || (!user && !isOwnProfile) ? (
-          <div className="p-4">
-            <div className="h-32 bg-gray-200 animate-pulse rounded-t-2xl relative">
-              <div className="absolute bottom-0 left-4 transform translate-y-1/2">
-                <Skeleton className="w-20 h-20 rounded-full" />
+          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <div className="p-4">
+              <div className="h-32 bg-gray-200 animate-pulse rounded-t-2xl relative">
+                <div className="absolute bottom-0 left-4 transform translate-y-1/2">
+                  <Skeleton className="w-20 h-20 rounded-full" />
+                </div>
               </div>
-            </div>
-            <div className="mt-12 space-y-4">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-full" />
-              <div className="flex space-x-6">
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-8 w-16" />
+              <div className="mt-12 space-y-4">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-full" />
+                <div className="flex space-x-6">
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-8 w-16" />
+                </div>
               </div>
             </div>
           </div>
@@ -504,20 +531,21 @@ export default function Profile() {
             {/* Profile Header */}
             <div className="bg-white">
               {/* Banner */}
-              <div className="h-40 gradient-bg relative overflow-hidden"> {/* 160px height for better 3:1 ratio on desktop */}
-                <img
-                  src={(user as any)?.bannerImageUrl || DEFAULT_BANNER_URL}
-                  alt="Profile banner"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  onError={(e) => {
-                    console.log('Banner image failed to load, using default');
-                    e.currentTarget.src = DEFAULT_BANNER_URL;
-                  }}
-                />
-
+              <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                <div className="h-40 gradient-bg relative overflow-hidden"> {/* 160px height for better 3:1 ratio on desktop */}
+                  <img
+                    src={(user as any)?.bannerImageUrl || DEFAULT_BANNER_URL}
+                    alt="Profile banner"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log('Banner image failed to load, using default');
+                      e.currentTarget.src = DEFAULT_BANNER_URL;
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="px-4 pb-4">
+              <div style={{ maxWidth: '600px', margin: '0 auto', paddingLeft: '24px', paddingRight: '24px' }} className="pb-4">
                 {/* Avatar and Follow Button */}
                 <div className="flex items-end justify-between -mt-10 mb-4">
                   <div className="relative z-10">
@@ -725,55 +753,57 @@ export default function Profile() {
                     </div>
                   </div>
                 ) : (
-                  <Tabs defaultValue="chirps" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="chirps">Chirps</TabsTrigger>
-                      <TabsTrigger value="replies">Replies</TabsTrigger>
-                      <TabsTrigger value="moods">Mood Reacted</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="chirps" className="mt-0">
-                    {chirpsLoading ? (
-                      <div className="space-y-4 mt-4">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                          <div key={i} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex space-x-3">
-                              <Skeleton className="w-10 h-10 rounded-full" />
-                              <div className="flex-1 space-y-2">
-                                <Skeleton className="h-4 w-32" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-3/4" />
+                  <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                    <Tabs defaultValue="chirps" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="chirps">Chirps</TabsTrigger>
+                        <TabsTrigger value="replies">Replies</TabsTrigger>
+                        <TabsTrigger value="moods">Mood Reacted</TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="chirps" className="mt-0">
+                      {chirpsLoading ? (
+                        <div className="space-y-4 mt-4">
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex space-x-3">
+                                <Skeleton className="w-10 h-10 rounded-full" />
+                                <div className="flex-1 space-y-2">
+                                  <Skeleton className="h-4 w-32" />
+                                  <Skeleton className="h-4 w-full" />
+                                  <Skeleton className="h-4 w-3/4" />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (chirps as any).length === 0 ? (
-                      <div className="text-center py-8">
-                        <div className="text-4xl mb-4">🐦</div>
-                        <p className="text-gray-500">
-                          {isOwnProfile ? "You haven't chirped yet!" : "No chirps yet"}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-0 mt-4 border border-gray-200 rounded-lg overflow-hidden">
-                        {(chirps as any).map((chirp: any, index: number) => (
-                          <div key={chirp.id} className={index > 0 ? "border-t border-gray-200" : ""}>
-                            <ChirpCard chirp={chirp} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                    <TabsContent value="replies" className="mt-4">
-                      <RepliesTab userId={userId} />
+                          ))}
+                        </div>
+                      ) : (chirps as any).length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-4">🐦</div>
+                          <p className="text-gray-500">
+                            {isOwnProfile ? "You haven't chirped yet!" : "No chirps yet"}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-0 mt-4 border border-gray-200 rounded-lg overflow-hidden">
+                          {(chirps as any).map((chirp: any, index: number) => (
+                            <div key={chirp.id} className={index > 0 ? "border-t border-gray-200" : ""}>
+                              <ChirpCard chirp={chirp} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </TabsContent>
                     
-                    <TabsContent value="moods" className="mt-4">
-                      <MoodReactedTab userId={userId} />
-                    </TabsContent>
-                  </Tabs>
+                      <TabsContent value="replies" className="mt-4">
+                        <RepliesTab userId={userId} />
+                      </TabsContent>
+                      
+                      <TabsContent value="moods" className="mt-4">
+                        <MoodReactedTab userId={userId} />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
                 )}
               </div>
             </div>

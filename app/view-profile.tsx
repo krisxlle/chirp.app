@@ -21,6 +21,7 @@ export default function ViewProfile() {
   
   console.log('📋 Received params:', params);
   console.log('🆔 Using userId:', userId);
+  console.log('🔍 Full params object:', JSON.stringify(params, null, 2));
   
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -123,7 +124,7 @@ export default function ViewProfile() {
           
           {user.bio && (
             <Text style={styles.bio}>
-              {user.bio.split(/(@\w+)/).map((part, index) => {
+              {user.bio.split(/(@\w+)/).filter(part => part.trim()).map((part, index) => {
                 if (part.startsWith('@')) {
                   return (
                     <TouchableOpacity 

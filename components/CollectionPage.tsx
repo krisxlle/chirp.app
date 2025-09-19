@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getUserCollection } from '../lib/database/mobile-db-supabase';
 import AnalyticsPage from './AnalyticsPage';
 import { useAuth } from './AuthContext';
@@ -17,6 +18,7 @@ interface ProfileCard {
   profilePower: number;
   quantity: number; // Number of copies owned
   obtainedAt?: string;
+  userId?: string; // The actual user ID for navigation
 }
 
 
@@ -54,7 +56,21 @@ export default function CollectionPage() {
     try {
       setIsLoading(true);
       if (user?.id) {
+        console.log('🎮 Loading collection for user:', user.id);
         const userCollection = await getUserCollection(user.id);
+        console.log('🎮 Raw collection data:', userCollection);
+        console.log('🎮 Collection length:', userCollection.length);
+        
+        // Log each profile's data structure
+        userCollection.forEach((profile, index) => {
+          console.log(`🎮 Profile ${index}:`, {
+            id: profile.id,
+            userId: profile.userId,
+            name: profile.name,
+            handle: profile.handle
+          });
+        });
+        
         setCollection(userCollection);
         console.log('🎮 CollectionPage loaded user collection:', userCollection.length, 'items');
       } else {
@@ -96,12 +112,21 @@ export default function CollectionPage() {
           <Text style={styles.headerTitle}>My Collection</Text>
           <Text style={styles.headerSubtitle}>Your collected profile cards</Text>
         </View>
-        <TouchableOpacity 
-          style={styles.analyticsIconButton}
-          onPress={() => setShowAnalytics(true)}
-        >
-          <AnalyticsIcon size={20} color="#ffffff" />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <Text style={styles.refreshButtonText}>🔄</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.analyticsIconButton}
+            onPress={() => setShowAnalytics(true)}
+          >
+            <AnalyticsIcon size={20} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -132,7 +157,33 @@ export default function CollectionPage() {
           ) : (
             <View style={styles.profileGrid}>
               {collection.map((profile) => (
-                <View key={profile.id} style={styles.profileCard}>
+                <TouchableOpacity 
+                  key={profile.id} 
+                  style={styles.profileCard}
+                  onPress={() => {
+                    console.log('🔍 Profile card clicked - Full profile object:', JSON.stringify(profile, null, 2));
+                    console.log('🔍 Profile card clicked - Specific fields:', {
+                      profileId: profile.id,
+                      userId: profile.userId,
+                      name: profile.name,
+                      handle: profile.handle,
+                      userIdType: typeof profile.userId,
+                      userIdExists: profile.userId !== undefined
+                    });
+                    
+                    // Try to navigate even if userId is undefined to see what happens
+                    if (profile.userId) {
+                      console.log('✅ Using profile.userId for navigation');
+                      router.push(`/profile/${profile.userId}`);
+                    } else {
+                      console.log('⚠️ profile.userId is undefined, trying fallback...');
+                      // Try using the profile.id as a fallback (it might be the user ID)
+                      console.log('⚠️ Attempting navigation with profile.id as fallback');
+                      router.push(`/profile/${profile.id}`);
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
                   <View style={[styles.rarityBadge, { backgroundColor: rarityColors[profile.rarity] }]}>
                     <Text style={styles.rarityText}>{rarityNames[profile.rarity]}</Text>
                   </View>
@@ -176,7 +227,7 @@ export default function CollectionPage() {
                       Opened: {new Date(profile.obtainedAt).toLocaleDateString()}
                     </Text>
                   )}
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
@@ -205,6 +256,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -214,6 +270,18 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#6b7280',
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#C671FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  refreshButtonText: {
+    fontSize: 18,
+    color: '#ffffff',
   },
   analyticsIconButton: {
     width: 44,
@@ -235,6 +303,8 @@ const styles = StyleSheet.create({
   },
   collectionSection: {
     padding: 20,
+    maxWidth: Platform.OS === 'web' ? 1600 : undefined, // Increased from 1200 to 1600 for larger cards
+    alignSelf: 'center', // Center the collection section on web
   },
   emptyCollection: {
     alignItems: 'center',
@@ -255,13 +325,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   profileCard: {
-    width: '48%',
-    backgroundColor: '#f9fafb',
+    width: Platform.OS === 'web' ? 400 : '48%', // Fixed width on web, percentage on mobile
+    backgroundColor: Platform.OS === 'web' ? '#f3e8ff' : '#f9fafb', // Light lilac purple on web
     borderRadius: 12,
-    padding: 12,
+    padding: Platform.OS === 'web' ? 20 : 12, // More padding on web for better spacing
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    alignItems: 'center', // Center content within the card
   },
   rarityBadge: {
     position: 'absolute',
@@ -318,20 +389,22 @@ const styles = StyleSheet.create({
   },
   profileStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around', // Changed from space-between to space-around for better spacing
     marginBottom: 6,
+    paddingHorizontal: Platform.OS === 'web' ? 10 : 0, // Add horizontal padding on web
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
+    minWidth: Platform.OS === 'web' ? 60 : 40, // Ensure minimum width to prevent overlap
   },
   statValue: {
-    fontSize: 12,
+    fontSize: Platform.OS === 'web' ? 14 : 12, // Larger font on web
     fontWeight: 'bold',
     color: '#1f2937',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: Platform.OS === 'web' ? 12 : 10, // Larger font on web
     color: '#6b7280',
   },
   obtainedDate: {

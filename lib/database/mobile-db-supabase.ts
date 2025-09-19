@@ -327,9 +327,9 @@ export async function getUserStats(userId: string) {
 }
 
 // Optimized user chirps with caching and single query
-export async function getUserChirps(userId: string) {
+export async function getUserChirps(userId: string, retryCount = 0) {
   try {
-    console.log('🔄 Fetching user chirps:', userId);
+    console.log('🔄 Fetching user chirps:', userId, retryCount > 0 ? `(retry ${retryCount})` : '');
     const startTime = Date.now();
     
     // Check cache first with longer TTL to prevent repeated timeout attempts
@@ -362,7 +362,7 @@ export async function getUserChirps(userId: string) {
       return [];
     }
     
-    // Ultra-simplified query with very short timeout to prevent hanging
+    // Simplified query with shorter timeout to prevent hanging
     const { data: chirps, error } = await withTimeout(
       supabase
         .from('chirps')
@@ -376,18 +376,16 @@ export async function getUserChirps(userId: string) {
             id,
             first_name,
             last_name,
-            email,
             custom_handle,
             handle,
-            profile_image_url,
-            avatar_url
+            profile_image_url
           )
         `)
         .eq('author_id', userId)
         .is('reply_to_id', null)
         .order('created_at', { ascending: false })
-        .limit(1), // Reduced to just 1 chirp
-      1000, // Reduced to 1 second timeout
+        .limit(10), // Reduced limit to prevent timeouts
+      2000, // Reduced timeout to 2 seconds
       'fetching user chirps'
     );
 
@@ -404,6 +402,13 @@ export async function getUserChirps(userId: string) {
         ttl: 600000 // 10 minutes
       });
       
+      // Retry logic for temporary errors (500, timeout, etc.)
+      if (retryCount < 2 && (error.message?.includes('500') || error.message?.includes('timeout') || error.message?.includes('network'))) {
+        console.log(`🔄 Retrying chirps fetch (attempt ${retryCount + 1})`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+        return getUserChirps(userId, retryCount + 1);
+      }
+      
       // Cache empty result with longer TTL to prevent repeated failed queries
       chirpCache.set(cacheKey, { 
         data: [], 
@@ -413,25 +418,77 @@ export async function getUserChirps(userId: string) {
       return [];
     }
 
-    // Transform data efficiently without individual reply count queries (prevents timeouts)
-    const transformedChirps = (chirps || []).map((chirp: any) => ({
-      id: chirp.id.toString(),
-      content: chirp.content,
-      createdAt: chirp.created_at,
-      replyToId: chirp.reply_to_id,
-      isWeeklySummary: chirp.is_weekly_summary || false,
-      reactionCount: 0,
-      replyCount: 0, // Simplified - remove individual count queries to prevent timeouts
-      reactions: [],
-      replies: [],
-      repostOfId: null,
-      originalChirp: undefined,
-      // Image-related fields - set to null to avoid timeout issues
-      imageUrl: null,
-      imageAltText: null,
-      imageWidth: null,
-      imageHeight: null,
-      author: {
+    // Get like counts and reply counts for all chirps in parallel queries
+    const chirpIds = chirps?.map((chirp: any) => chirp.id) || [];
+    let likeCounts = new Map();
+    let replyCounts = new Map();
+    
+    console.log('🔍 Debugging like counts for chirpIds:', chirpIds);
+    
+    if (chirpIds.length > 0) {
+      try {
+        // Get like counts
+        const { data: likesData, error: likesError } = await supabase
+          .from('reactions')
+          .select('chirp_id')
+          .in('chirp_id', chirpIds)
+          .eq('type', 'like'); // Only get likes, not other reaction types
+        
+        console.log('🔍 Like query result:', { likesData, likesError });
+        
+        // Count likes per chirp
+        likesData?.forEach((like: any) => {
+          const count = likeCounts.get(like.chirp_id) || 0;
+          likeCounts.set(like.chirp_id, count + 1);
+        });
+        
+        console.log('🔍 Final like counts map:', Object.fromEntries(likeCounts));
+        
+        // Get reply counts
+        const { data: repliesData, error: repliesError } = await supabase
+          .from('chirps')
+          .select('reply_to_id')
+          .in('reply_to_id', chirpIds);
+        
+        console.log('🔍 Reply query result:', { repliesData, repliesError });
+        
+        // Count replies per chirp
+        repliesData?.forEach((reply: any) => {
+          const count = replyCounts.get(reply.reply_to_id) || 0;
+          replyCounts.set(reply.reply_to_id, count + 1);
+        });
+        
+        console.log('🔍 Final reply counts map:', Object.fromEntries(replyCounts));
+        
+      } catch (error) {
+        console.error('❌ Error fetching like/reply counts:', error);
+      }
+    }
+
+    // Transform data efficiently with proper like counts and reply counts
+    const transformedChirps = (chirps || []).map((chirp: any) => {
+      const reactionCount = likeCounts.get(chirp.id) || 0;
+      const replyCount = replyCounts.get(chirp.id) || 0;
+      console.log(`🔍 Chirp ${chirp.id} reaction count:`, reactionCount, 'reply count:', replyCount);
+      
+      return {
+        id: chirp.id.toString(),
+        content: chirp.content,
+        createdAt: chirp.created_at,
+        replyToId: chirp.reply_to_id,
+        isWeeklySummary: chirp.is_weekly_summary || false,
+        reactionCount: reactionCount,
+        replyCount: replyCount, // Use actual reply count instead of hardcoded 0
+        reactions: [],
+        replies: [],
+        repostOfId: null,
+        originalChirp: undefined,
+        // Image-related fields - set to null to avoid timeout issues
+        imageUrl: null,
+        imageAltText: null,
+        imageWidth: null,
+        imageHeight: null,
+        author: {
         id: chirp.users.id,
         firstName: chirp.users.first_name || 'User',
         lastName: chirp.users.last_name || '',
@@ -446,7 +503,8 @@ export async function getUserChirps(userId: string) {
         isChirpPlus: false,
         showChirpPlusBadge: false
       }
-    }));
+      };
+    });
     
     // Cache the result with longer TTL to reduce database load
     chirpCache.set(cacheKey, { data: transformedChirps, timestamp: Date.now(), ttl: 300000 }); // 5 minutes
@@ -636,7 +694,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
     });
   }
 
-  // Ultra-simplified query for maximum speed (without image fields to avoid timeout)
+  // Ultra-simplified query for maximum speed (now includes image fields)
   console.log(`🔍 Starting main chirp query with pagination: limit=${limit}, offset=${offset}`);
   const { data: chirps, error } = await withTimeout(
     supabase
@@ -645,12 +703,16 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
         id,
         content,
         created_at,
-        author_id
+        author_id,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height
       `)
       .is('reply_to_id', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1), // Use range for proper pagination
-    4000, // Reduced timeout to 4 seconds
+    8000, // Increased timeout to 8 seconds to match other queries
     'fetching basic chirps'
   );
 
@@ -681,7 +743,7 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
       .from('users')
       .select('id, first_name, custom_handle, handle, profile_image_url')
       .in('id', authorIds),
-    3000, // Reduced timeout to 3 seconds
+    8000, // Increased timeout to 8 seconds to match other queries
     'fetching user data'
   ).catch(() => ({ data: [] })) : { data: [] };
 
@@ -749,11 +811,11 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
       repostOfId: null,
       originalChirp: undefined,
       userHasLiked: false,
-      // Image-related fields - set to null since we're not fetching them
-      imageUrl: null,
-      imageAltText: null,
-      imageWidth: null,
-      imageHeight: null,
+      // Image-related fields - now using actual data from database
+      imageUrl: chirp.image_url,
+      imageAltText: chirp.image_alt_text,
+      imageWidth: chirp.image_width,
+      imageHeight: chirp.image_height,
       author: {
         id: user?.id || chirp.author_id || 'unknown',
         firstName: user?.first_name || 'User',
@@ -1139,6 +1201,7 @@ export const signUp = async (email: string, password: string, name: string, cust
         bio: '',
         profile_image_url: null,
         banner_image_url: null,
+        crystal_balance: 100,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -1875,6 +1938,10 @@ export const getChirpReplies = async (chirpId: string): Promise<any[]> => {
         created_at,
         reply_to_id,
         is_weekly_summary,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
         users(
           id,
           first_name,
@@ -1928,6 +1995,11 @@ export const getChirpReplies = async (chirpId: string): Promise<any[]> => {
       repostOfId: null,
       originalChirp: undefined,
       userHasLiked: userLikes.has(reply.id),
+      // Image-related fields
+      imageUrl: reply.image_url,
+      imageAltText: reply.image_alt_text,
+      imageWidth: reply.image_width,
+      imageHeight: reply.image_height,
       author: {
         id: reply.users.id,
         firstName: reply.users.first_name || 'User',
@@ -2026,6 +2098,10 @@ export const getChirpById = async (chirpId: string): Promise<any> => {
         thread_id,
         thread_order,
         is_thread_starter,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
         users(
           id,
           first_name,
@@ -2069,6 +2145,11 @@ export const getChirpById = async (chirpId: string): Promise<any> => {
       repostOfId: null,
       originalChirp: undefined,
       userHasLiked,
+      // Image-related fields
+      imageUrl: chirp.image_url,
+      imageAltText: chirp.image_alt_text,
+      imageWidth: chirp.image_width,
+      imageHeight: chirp.image_height,
       author: {
         id: (chirp.users as any).id,
         firstName: (chirp.users as any).first_name || 'User',
@@ -2113,6 +2194,7 @@ export const getThreadedChirps = async (threadId: string): Promise<any[]> => {
       .from('chirps')
       .select(`
         id, content, created_at, reply_to_id, is_weekly_summary, thread_id, thread_order, is_thread_starter,
+        image_url, image_alt_text, image_width, image_height,
         users(id, first_name, last_name, custom_handle, handle, profile_image_url, banner_image_url)
       `)
       .eq('thread_id', threadId)
@@ -2147,6 +2229,11 @@ export const getThreadedChirps = async (threadId: string): Promise<any[]> => {
       threadId: chirp.thread_id, threadOrder: chirp.thread_order, isThreadStarter: chirp.is_thread_starter,
       reactionCount: reactionCounts.get(chirp.id) || 0, replyCount: 0, reactions: [], replies: [], repostOfId: null, originalChirp: undefined,
       userHasLiked: userLikes.has(chirp.id),
+      // Image-related fields
+      imageUrl: chirp.image_url,
+      imageAltText: chirp.image_alt_text,
+      imageWidth: chirp.image_width,
+      imageHeight: chirp.image_height,
       author: {
         id: chirp.users.id, firstName: chirp.users.first_name || 'User', lastName: chirp.users.last_name || '',
         email: chirp.users.email, customHandle: chirp.users.custom_handle || chirp.users.handle,
@@ -2706,7 +2793,9 @@ export const unfollowUser = async (followerId: string, followingId: string): Pro
 // Get user profile by ID with caching
 export const getUserProfile = async (userId: string): Promise<any> => {
   try {
-    console.log('🔄 Fetching user profile:', userId);
+    console.log('🔄 Fetching user profile for userId:', userId);
+    console.log('🔄 UserId type:', typeof userId);
+    console.log('🔄 UserId length:', userId?.length);
     
     // Check cache first
     const cacheKey = `user_profile_${userId}`;
@@ -2741,6 +2830,10 @@ export const getUserProfile = async (userId: string): Promise<any> => {
       `)
       .eq('id', userId)
       .single();
+
+    console.log('🔄 Database query result:', { user, error });
+    console.log('🔄 User found:', !!user);
+    console.log('🔄 Error details:', error);
 
     if (error) {
       console.error('❌ Error fetching user profile:', error);
@@ -3252,7 +3345,17 @@ export const getUserCollection = async (userId: string): Promise<any[]> => {
 
     const transformedCollection = (collection || []).map((item: any) => {
       const user = item.collected_user;
-      return {
+      
+      console.log('🔄 Raw collection item:', JSON.stringify({
+        itemId: item.id,
+        collectedUserId: item.collected_user_id,
+        userObject: user,
+        userId: user?.id,
+        userName: user?.first_name || user?.custom_handle || user?.handle,
+        userObjectKeys: user ? Object.keys(user) : 'user is null/undefined'
+      }, null, 2));
+      
+      const transformedItem = {
         id: item.id,
         name: user.first_name || user.custom_handle || user.handle,
         handle: `@${user.handle}`,
@@ -3263,8 +3366,19 @@ export const getUserCollection = async (userId: string): Promise<any[]> => {
         profilePower: 0, // Will be calculated below
         quantity: item.quantity || 1, // Include quantity from database
         obtainedAt: item.obtained_at,
-        userId: user.id, // Store user ID for stats lookup
+        userId: user.id || item.collected_user_id, // Store user ID for stats lookup - fallback to collected_user_id
       };
+      
+      console.log('🔄 Transformed collection item:', JSON.stringify({
+        id: transformedItem.id,
+        userId: transformedItem.userId,
+        name: transformedItem.name,
+        handle: transformedItem.handle,
+        userIdType: typeof transformedItem.userId,
+        userIdExists: transformedItem.userId !== undefined
+      }, null, 2));
+      
+      return transformedItem;
     });
 
     // Fetch real stats for all users in the collection
@@ -3307,8 +3421,8 @@ export const getUserCollection = async (userId: string): Promise<any[]> => {
           const basePower = (followerCount * 2) + (rarityMultipliers[item.rarity] || 25);
           item.profilePower = basePower * item.quantity; // Multiply by quantity
           
-          // Remove userId field as it's only used internally
-          delete item.userId;
+          // Keep userId field for navigation purposes
+          // Note: userId is needed for profile navigation in CollectionPage
         });
         
         console.log('✅ Updated collection with real stats');
@@ -4171,19 +4285,83 @@ export const getUserCrystalBalance = async (userId: string): Promise<number> => 
 
 export const awardCrystals = async (userId: string, amount: number, reason: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    // First get current balance
+    const { data: userData, error: fetchError } = await supabase
+      .from('users')
+      .select('crystal_balance')
+      .eq('id', userId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    const currentBalance = userData.crystal_balance || 0;
+    const newBalance = currentBalance + amount;
+    
+    // Update with new balance
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ crystal_balance: newBalance })
+      .eq('id', userId);
+    
+    if (updateError) throw updateError;
+    
+    console.log(`💎 Awarded ${amount} crystals for ${reason} to user:`, userId.substring(0, 8) + '...', `(balance: ${currentBalance} → ${newBalance})`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error awarding crystals:', error);
+    return false;
+  }
+};
+
+export const awardCrystalsWithReference = async (userId: string, amount: number, reason: string, referenceId: string): Promise<boolean> => {
+  try {
+    // First check if user has already earned crystals for this reference
+    const { data: existingTransaction, error: checkError } = await supabase
+      .from('crystal_transactions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('transaction_type', 'reward')
+      .eq('reference_id', referenceId)
+      .eq('amount', amount)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+      console.error('❌ Error checking existing crystal transaction:', checkError);
+      return false;
+    }
+
+    if (existingTransaction) {
+      console.log(`⚠️ User has already earned ${amount} crystals for ${reason} (reference: ${referenceId})`);
+      return false; // Already earned crystals for this action
+    }
+
+    // Update user's crystal balance
+    const { error: updateError } = await supabase
       .from('users')
       .update({ 
         crystal_balance: supabase.raw(`crystal_balance + ${amount}`)
       })
       .eq('id', userId);
     
-    if (error) throw error;
+    if (updateError) throw updateError;
+
+    // Record the transaction
+    const { error: transactionError } = await supabase
+      .from('crystal_transactions')
+      .insert({
+        user_id: userId,
+        amount: amount,
+        transaction_type: 'reward',
+        description: `Earned ${amount} crystals for ${reason}`,
+        reference_id: referenceId
+      });
+
+    if (transactionError) throw transactionError;
     
-    console.log(`💎 Awarded ${amount} crystals for ${reason} to user:`, userId.substring(0, 8) + '...');
+    console.log(`💎 Awarded ${amount} crystals for ${reason} to user:`, userId.substring(0, 8) + '...', `(reference: ${referenceId})`);
     return true;
   } catch (error) {
-    console.error('❌ Error awarding crystals:', error);
+    console.error('❌ Error awarding crystals with reference:', error);
     return false;
   }
 };

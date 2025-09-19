@@ -8,6 +8,7 @@ import {
     ImageBackground,
     Linking,
     Modal,
+    Platform,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -20,9 +21,11 @@ import ChirpCard from '../../components/ChirpCard';
 import FollowersFollowingModal from '../../components/FollowersFollowingModal';
 import LinkIcon from '../../components/icons/LinkIcon';
 import NotificationIcon from '../../components/icons/NotificationIcon';
+import ProfileFrame from '../../components/ProfileFrame';
 import ShowcaseSelector from '../../components/ShowcaseSelector';
 import UserAvatar from '../../components/UserAvatar';
 import { DEFAULT_BANNER_URL } from '../../constants/DefaultBanner';
+import { determineUserRarity } from '../../utils/rarityUtils';
 
 interface User {
   id: string;
@@ -205,12 +208,19 @@ export default function UserProfileScreen() {
         getUserReplies(targetUserId)
       ]);
       
-      setChirps(userChirps);
-      setReplies(userReplies);
-      setLoadingChirps(false);
+      // Ensure we have valid arrays
+      const validChirps = Array.isArray(userChirps) ? userChirps : [];
+      const validReplies = Array.isArray(userReplies) ? userReplies : [];
+      
+      setChirps(validChirps);
+      setReplies(validReplies);
       console.log('✅ Chirps loaded successfully');
     } catch (error) {
       console.error('❌ Error loading chirps:', error);
+      // Set empty arrays on error to prevent undefined state
+      setChirps([]);
+      setReplies([]);
+    } finally {
       setLoadingChirps(false);
     }
   };
@@ -219,15 +229,27 @@ export default function UserProfileScreen() {
     try {
       setLoadingShowcase(true);
       console.log('🎮 Loading showcase for user:', targetUserId);
+      
+      // Add a small delay to prevent rapid state changes that might cause glitches
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { getUserShowcase } = await import('../../lib/database/mobile-db-supabase');
       const userShowcase = await getUserShowcase(targetUserId);
-      setShowcase(userShowcase);
-      console.log('✅ Showcase loaded successfully:', userShowcase.length, 'profiles');
+      
+      // Ensure we have a valid array
+      const validShowcase = Array.isArray(userShowcase) ? userShowcase : [];
+      
+      setShowcase(validShowcase);
+      console.log('✅ Showcase loaded successfully:', validShowcase.length, 'profiles');
     } catch (error) {
       console.error('❌ Error loading showcase:', error);
+      // Set empty array on error to prevent undefined state
       setShowcase([]);
     } finally {
-      setLoadingShowcase(false);
+      // Add a small delay before setting loading to false to prevent glitches
+      setTimeout(() => {
+        setLoadingShowcase(false);
+      }, 200);
     }
   };
 
@@ -460,16 +482,21 @@ export default function UserProfileScreen() {
         <View style={styles.profileSection}>
           {/* Avatar positioned to overlap banner */}
           <View style={styles.avatarContainer}>
-            <UserAvatar 
-              user={{
-                id: user.id,
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                email: user.email || '',
-                profileImageUrl: user.profileImageUrl || undefined
-              }} 
-              size="xl"
-            />
+            <ProfileFrame 
+              rarity={determineUserRarity(user)}
+              size={120}
+            >
+              <UserAvatar 
+                user={{
+                  id: user.id,
+                  firstName: user.firstName || '',
+                  lastName: user.lastName || '',
+                  email: user.email || '',
+                  profileImageUrl: user.profileImageUrl || undefined
+                }} 
+                size="xl"
+              />
+            </ProfileFrame>
           </View>
 
           {/* Action buttons positioned to the right */}
@@ -522,7 +549,7 @@ export default function UserProfileScreen() {
             {/* Bio */}
             {user.bio && (
               <View style={styles.bioContainer}>
-                {user.bio.split(/(@\w+)/).map((part, index) => {
+                {user.bio.split(/(@\w+)/).filter(part => part.trim()).map((part, index) => {
                   if (part.startsWith('@')) {
                     return (
                       <TouchableOpacity 
@@ -658,7 +685,7 @@ export default function UserProfileScreen() {
                   <ActivityIndicator size="small" color="#7c3aed" />
                   <Text style={styles.loadingShowcaseText}>Loading showcase...</Text>
                 </View>
-              ) : showcase.length === 0 ? (
+              ) : (!showcase || showcase.length === 0) ? (
                 <View style={styles.emptyShowcaseState}>
                   <Text style={styles.emptyShowcaseIcon}>🎴</Text>
                   <Text style={styles.emptyShowcaseTitle}>
@@ -673,10 +700,10 @@ export default function UserProfileScreen() {
                 </View>
               ) : (
                 <View style={styles.showcaseGrid}>
-                  {showcase.map((profile, index) => (
-                    <View key={profile.id} style={styles.showcaseCard}>
-                      <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(profile.rarity) }]}>
-                        <Text style={styles.rarityText}>{getRarityName(profile.rarity)}</Text>
+                  {showcase.filter(profile => profile && profile.id).map((profile, index) => (
+                    <View key={profile.id || index} style={styles.showcaseCard}>
+                      <View style={[styles.rarityBadge, { backgroundColor: getRarityColor(profile.rarity || 'common') }]}>
+                        <Text style={styles.rarityText}>{getRarityName(profile.rarity || 'common')}</Text>
                       </View>
                       
                       <View style={styles.profileFrameContainer}>
@@ -686,15 +713,15 @@ export default function UserProfileScreen() {
                             style={styles.showcaseProfileImage} 
                           />
                         ) : (
-                          <View style={[styles.showcaseProfilePlaceholder, { backgroundColor: getRarityColor(profile.rarity) }]}>
-                            <Text style={styles.showcaseProfileText}>{profile.name.charAt(0)}</Text>
+                          <View style={[styles.showcaseProfilePlaceholder, { backgroundColor: getRarityColor(profile.rarity || 'common') }]}>
+                            <Text style={styles.showcaseProfileText}>{(profile.name || 'U').charAt(0)}</Text>
                           </View>
                         )}
                       </View>
                       
-                      <Text style={styles.showcaseProfileName} numberOfLines={1}>{profile.name}</Text>
-                      <Text style={styles.showcaseProfileHandle} numberOfLines={1}>@{profile.handle}</Text>
-                      <Text style={styles.showcaseProfileBio} numberOfLines={2}>{profile.bio}</Text>
+                      <Text style={styles.showcaseProfileName} numberOfLines={1}>{profile.name || 'Unknown User'}</Text>
+                      <Text style={styles.showcaseProfileHandle} numberOfLines={1}>@{profile.handle || 'unknown'}</Text>
+                      <Text style={styles.showcaseProfileBio} numberOfLines={2}>{profile.bio || 'No bio available'}</Text>
                     </View>
                   ))}
                 </View>
@@ -762,7 +789,9 @@ export default function UserProfileScreen() {
 }
 
 const { width: screenWidth } = Dimensions.get('window');
-const bannerHeight = Math.round(screenWidth / 3); // Proper 3:1 aspect ratio
+// Calculate banner height based on actual banner width (considering web max-width)
+const bannerWidth = Platform.OS === 'web' ? Math.min(screenWidth, 600) : screenWidth;
+const bannerHeight = Math.round(bannerWidth / 3); // Proper 3:1 aspect ratio
 
 const styles = StyleSheet.create({
   container: {
@@ -852,6 +881,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600, // Match profile section width
+      alignSelf: 'center', // Center the banner
+      width: '100%',
+    }),
   },
   bannerImageWrapper: {
     width: '100%',
@@ -879,16 +913,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600, // Limit width on web
+      alignSelf: 'center', // Center the profile section
+      width: '100%',
+    }),
   },
   avatarContainer: {
     position: 'absolute',
-    top: -(bannerHeight * 0.25) - 22, // Position so only top half overlaps banner (half of avatar height)
-    left: 16,
-    borderRadius: 44, // (80px avatar + 8px border) / 2 = 44px for perfect circle
-    borderWidth: 4,
-    borderColor: '#ffffff',
-    width: 88, // 80px avatar + 8px border (4px each side)
-    height: 88, // 80px avatar + 8px border (4px each side) 
+    top: -(bannerHeight * 0.5) - 36, // Halfway overlapping banner (50% overlap)
+    left: Platform.OS === 'web' ? 24 : 16, // Align with bio padding
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10, // Ensure avatar is above other elements
@@ -898,7 +932,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: Platform.OS === 'web' ? 24 : 16, // More padding on web
     paddingTop: 8, // Reduced top padding
     paddingBottom: 8,
     marginTop: 10,
@@ -954,7 +988,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   userInfo: {
-    paddingHorizontal: 16,
+    paddingHorizontal: Platform.OS === 'web' ? 24 : 16, // More padding on web
     paddingTop: 8, // Further reduced padding for tighter layout
     paddingBottom: 16,
   },
@@ -1055,6 +1089,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     backgroundColor: '#ffffff',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600, // Match other sections
+      alignSelf: 'center', // Center the tabs
+      width: '100%',
+    }),
   },
   tab: {
     flex: 1,
@@ -1077,6 +1116,11 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     backgroundColor: '#ffffff',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600, // Match other sections
+      alignSelf: 'center', // Center the tab content
+      width: '100%',
+    }),
   },
   chirpsContainer: {
     borderTopWidth: 1,

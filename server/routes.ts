@@ -17,6 +17,16 @@ import {
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for production monitoring
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0'
+    });
+  });
+
   // Serve generated images from public/generated-images
   app.use('/generated-images', express.static("public/generated-images"));
   

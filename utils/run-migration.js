@@ -11,7 +11,7 @@ async function addCrystalBalanceColumn() {
   try {
     // Add crystal_balance column
     const { error: alterError } = await supabase.rpc('exec_sql', {
-      sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS crystal_balance INTEGER DEFAULT 500000;'
+      sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS crystal_balance INTEGER DEFAULT 100;'
     });
 
     if (alterError) {
@@ -21,7 +21,7 @@ async function addCrystalBalanceColumn() {
 
     // Update existing users
     const { error: updateError } = await supabase.rpc('exec_sql', {
-      sql: 'UPDATE users SET crystal_balance = 500000 WHERE crystal_balance IS NULL;'
+      sql: 'UPDATE users SET crystal_balance = 100 WHERE crystal_balance IS NULL;'
     });
 
     if (updateError) {

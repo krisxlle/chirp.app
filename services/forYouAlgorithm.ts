@@ -12,6 +12,11 @@ export interface Chirp {
   replies: any[];
   repostOfId?: string;
   originalChirp?: any;
+  // Image data
+  imageUrl?: string;
+  imageAltText?: string;
+  imageWidth?: number;
+  imageHeight?: number;
   author: {
     id: string;
     firstName: string;
@@ -197,6 +202,11 @@ export class ForYouAlgorithm {
         replies: [],
         repostOfId: undefined,
         originalChirp: undefined,
+        // Add image data
+        imageUrl: chirp.image_url,
+        imageAltText: chirp.image_alt_text,
+        imageWidth: chirp.image_width,
+        imageHeight: chirp.image_height,
         author: {
           id: chirp.users.id,
           firstName: chirp.users.first_name || 'User',
@@ -379,6 +389,10 @@ export class ForYouAlgorithm {
           created_at,
           reply_to_id,
           is_weekly_summary,
+          image_url,
+          image_alt_text,
+          image_width,
+          image_height,
           users!inner(
             id,
             first_name,
@@ -414,6 +428,11 @@ export class ForYouAlgorithm {
         replies: [],
         repostOfId: undefined,
         originalChirp: undefined,
+        // Add image data
+        imageUrl: chirp.image_url,
+        imageAltText: chirp.image_alt_text,
+        imageWidth: chirp.image_width,
+        imageHeight: chirp.image_height,
         author: {
           id: chirp.users.id,
           firstName: chirp.users.first_name || 'User',

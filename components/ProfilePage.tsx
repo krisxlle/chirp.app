@@ -1,30 +1,34 @@
 import { router } from 'expo-router';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    ImageBackground,
-    Linking,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  ImageBackground,
+  Linking,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { DEFAULT_BANNER_URL } from '../constants/DefaultBanner';
+import { determineUserRarity } from '../utils/rarityUtils';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import FollowersFollowingModal from './FollowersFollowingModal';
 import BirdIcon from './icons/BirdIcon';
 import GearIcon from './icons/GearIcon';
 import LinkIcon from './icons/LinkIcon';
+import ProfileFrame from './ProfileFrame';
 import SettingsPage from './SettingsPage';
 import UserAvatar from './UserAvatar';
 
 interface User {
   id: string;
   firstName?: string;
+  lastName?: string;
   email: string;
   customHandle?: string;
   handle?: string;
@@ -44,7 +48,7 @@ interface ProfileStats {
 
 interface ProfilePageProps {
   onNavigateToProfile?: (tab: string) => void;
-}
+};
 
 export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNavigateToProfile }, ref) {
   const { user: authUser } = useAuth();
@@ -179,7 +183,8 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
 
   return (
     <ScrollView 
-      style={styles.container}
+      style={styles.scrollView}
+      showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -191,8 +196,9 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
         />
       }
     >
-      {/* Header */}
-      <View style={styles.header}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => Alert.alert('Navigate', 'Go back to previous screen')}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
@@ -220,7 +226,21 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
       <View style={styles.profileSection}>
         {/* Profile Avatar */}
         <View style={styles.avatarContainer}>
-          <UserAvatar user={user} size="xl" />
+          <ProfileFrame 
+            rarity={determineUserRarity(user)}
+            size={Platform.OS === 'web' ? 108 : 120}
+          >
+            <UserAvatar 
+              user={{
+                id: user.id,
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                email: user.email || '',
+                profileImageUrl: user.profileImageUrl || undefined
+              }} 
+              size="xl" 
+            />
+          </ProfileFrame>
         </View>
 
         {/* Action Buttons */}
@@ -237,7 +257,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
           </View>
           <Text style={styles.handle}>@{user.customHandle || user.handle}</Text>
                  <View style={styles.bioContainer}>
-           {user.bio && user.bio.split(/(@\w+)/).map((part, index) => {
+           {user.bio && user.bio.split(/(@\w+)/).filter(part => part.trim()).map((part, index) => {
              if (part.startsWith('@')) {
                return (
                  <TouchableOpacity 
@@ -390,19 +410,22 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
         type="following"
         title="Following"
       />
+      </View>
     </ScrollView>
   );
 });
 
 const { width: screenWidth } = Dimensions.get('window');
-const bannerHeight = Math.round(screenWidth / 3); // 3:1 aspect ratio
+const bannerWidth = Platform.OS === 'web' ? Math.min(screenWidth, 600) : screenWidth;
+const bannerHeight = Math.round(bannerWidth / 3); // Proper 3:1 aspect ratio
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
-    paddingTop: 20, // Add top padding
-    paddingBottom: 40, // Increased bottom padding to avoid iPhone home indicator
+    backgroundColor: '#ffffff',
+  },
+  scrollView: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -451,6 +474,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600, // Match profile section width
+      alignSelf: 'center', // Center the banner
+      width: '100%',
+    }),
   },
   bannerImageWrapper: {
     width: '100%',
@@ -478,6 +506,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10, // Ensure avatar is above other elements
+    ...(Platform.OS === 'web' && {
+      left: 24, // Add left padding on web
+      transform: [{ scale: 0.9 }], // Make 10% smaller
+    }),
   },
   profileSection: {
     backgroundColor: '#ffffff',
@@ -490,6 +522,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600, // Limit width on web
+      alignSelf: 'center', // Center the profile section
+      width: '100%',
+    }),
   },
   actionButtons: {
     flexDirection: 'row',
@@ -651,6 +688,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   statItem: {
     flex: 1,
@@ -805,6 +847,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
     paddingHorizontal: 16,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   tab: {
     flex: 1,

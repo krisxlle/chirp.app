@@ -22,7 +22,7 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
   
   // Calculate proper sizing for frame and profile picture
   const frameSize = size * 1.8; // Frame is 80% larger than the base size
-  const profileSize = frameSize * 0.5; // Profile picture should be 40% of frame size for better fit in grids
+  const profileSize = frameSize * 0.45; // Increased from 0.5 to 0.65 for better fit
   
   return (
     <View style={[styles.container, { width: frameSize, height: frameSize }, style]}>
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    top: '30%', // Move profile picture down just slightly for better alignment
+    top: '30%', // Centered vertically in the frame
   },
   frame: {
     position: 'absolute',

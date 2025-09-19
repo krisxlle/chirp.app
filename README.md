@@ -145,8 +145,68 @@ chirp.app/
 - **Android**: Build with EAS Build for Google Play
 
 ### Web Deployment
-- **Static Hosting**: Deploy web version to Vercel/Netlify
-- **Domain**: Configure custom domain for web app
+
+#### Production Deployment Options
+
+**Option 1: Direct Server Deployment**
+```bash
+# Set up environment variables
+cp env.production.example .env
+# Edit .env with your production values
+
+# Deploy using the deployment script
+npm run deploy
+```
+
+**Option 2: Docker Deployment**
+```bash
+# Build Docker image
+npm run docker:build
+
+# Run with Docker Compose
+npm run docker:compose
+```
+
+**Option 3: Manual Deployment**
+```bash
+# Build for production
+npm run build:production
+
+# Start production server
+npm run start:production
+```
+
+#### Required Environment Variables for Production
+
+Create a `.env` file with the following variables:
+
+```env
+NODE_ENV=production
+PORT=5000
+PRODUCTION_DOMAIN=yourdomain.com
+DATABASE_URL=your_supabase_database_url
+SESSION_SECRET=your_secure_session_secret
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+CSRF_SECRET=your_csrf_secret
+```
+
+#### Security Configuration
+
+1. **SSL Certificate**: Set up HTTPS with a valid SSL certificate
+2. **Nginx Configuration**: Use the provided `nginx.conf` for reverse proxy
+3. **Firewall**: Configure firewall to only allow ports 80, 443, and 22
+4. **Domain Setup**: Point your domain DNS to your server IP
+
+#### Authentication Flow
+
+The web application automatically redirects unauthenticated users to the sign-in page. Users must authenticate through the configured authentication system before accessing the main application.
+
+#### Monitoring
+
+- Health check endpoint: `GET /api/health`
+- Monitor logs for suspicious activity
+- Set up uptime monitoring for your domain
 
 ## 🤝 Contributing
 

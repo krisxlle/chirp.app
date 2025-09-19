@@ -363,7 +363,15 @@ export default function GachaPage() {
   // Load user's collection from database
   useEffect(() => {
     loadUserCollection();
+    refreshCrystalBalance(); // Refresh crystal balance when component loads
   }, []);
+
+  // Refresh crystal balance when user changes
+  useEffect(() => {
+    if (user?.id) {
+      refreshCrystalBalance();
+    }
+  }, [user?.id]);
 
   const loadUserCollection = async () => {
     try {
@@ -385,19 +393,16 @@ export default function GachaPage() {
   const refreshCrystalBalance = async () => {
     if (user?.id) {
       try {
-        // TEMPORARILY DISABLED: Load crystal balance from database
-        // This will be re-enabled once the crystal_balance column is added to Supabase
-        console.log('💎 Using default crystal balance until column is added to Supabase');
-        /*
+        console.log('💎 Refreshing crystal balance for user:', user.id);
         const { getUserCrystalBalance } = await import('../lib/database/mobile-db-supabase');
         const crystalBalance = await getUserCrystalBalance(user.id);
-        // Update the user object in AuthContext
-        if (user.crystalBalance !== crystalBalance) {
-          // We need to trigger a re-render by updating the user state
-          // This will be handled by the AuthContext when it detects the change
-          console.log('💎 Refreshed crystal balance:', crystalBalance);
-        }
-        */
+        
+        console.log('💎 Database crystal balance:', crystalBalance);
+        console.log('💎 Current user crystal balance:', user.crystalBalance);
+        
+        // Always update the user object to ensure it's current
+        await updateUser({ crystalBalance });
+        console.log('💎 Updated crystal balance to:', crystalBalance);
       } catch (error) {
         console.error('Error refreshing crystal balance:', error);
       }
@@ -538,21 +543,9 @@ export default function GachaPage() {
           }
           
           try {
-            // TEMPORARILY ENABLED: Deduct crystal balance from database
-            // This will be re-enabled once the crystal_balance column is added to Supabase
-            console.log('💎 Crystal deduction enabled for testing');
+            // Deduct crystal balance from database
+            console.log('💎 Deducting crystals from database...');
             
-            // For now, just update the local user state to simulate crystal deduction
-            // This will be replaced with actual database calls once the column is added
-            const currentBalance = getCurrentCrystalBalance();
-            const newBalance = currentBalance - cost;
-            console.log(`💎 Deducted ${cost} crystals. New balance: ${newBalance}`);
-            
-            // Update the user's crystal balance in AuthContext
-            await updateUser({ crystalBalance: newBalance });
-            console.log('💎 Crystal balance updated in AuthContext');
-            
-            /*
             const { deductCrystalBalance } = await import('../lib/database/mobile-db-supabase');
             const success = await deductCrystalBalance(user.id, cost);
             
@@ -562,10 +555,19 @@ export default function GachaPage() {
               console.log('💎 Crystal balance updated successfully');
             } else {
               console.error('Failed to deduct crystal balance');
+              // If database deduction fails, still update local state as fallback
+              const currentBalance = getCurrentCrystalBalance();
+              const newBalance = currentBalance - cost;
+              await updateUser({ crystalBalance: newBalance });
+              console.log('💎 Fallback: Updated crystal balance in AuthContext');
             }
-            */
           } catch (error) {
             console.error('Error deducting crystal balance:', error);
+            // Fallback to local state update if database fails
+            const currentBalance = getCurrentCrystalBalance();
+            const newBalance = currentBalance - cost;
+            await updateUser({ crystalBalance: newBalance });
+            console.log('💎 Fallback: Updated crystal balance in AuthContext');
           }
         }
         
@@ -601,7 +603,10 @@ export default function GachaPage() {
       <View style={styles.crystalBalanceContainer}>
         <TouchableOpacity
           style={styles.crystalBalanceCard}
-          onPress={() => setShowCrystalInfoModal(true)}
+          onPress={() => {
+            setShowCrystalInfoModal(true);
+            refreshCrystalBalance(); // Refresh when tapped
+          }}
           activeOpacity={0.7}
         >
           <View style={styles.crystalBalanceContent}>

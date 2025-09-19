@@ -1065,16 +1065,18 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
-          style={styles.content} 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          {activeTab === 'profile' && renderProfileTab()}
-          {activeTab === 'analytics' && renderAnalyticsTab()}
-          {activeTab === 'account' && renderAccountTab()}
-        </ScrollView>
+        <View style={styles.contentWrapper}>
+          <ScrollView 
+            style={styles.content} 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContentContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {activeTab === 'profile' && renderProfileTab()}
+            {activeTab === 'analytics' && renderAnalyticsTab()}
+            {activeTab === 'account' && renderAccountTab()}
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -1130,6 +1132,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e1e8ed',
     paddingVertical: 12,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   tabsScrollView: {
     paddingHorizontal: 16,
@@ -1178,6 +1185,14 @@ const styles = StyleSheet.create({
   },
   keyboardAvoidingView: {
     flex: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600,
+      alignSelf: 'center',
+      width: '100%',
+    }),
   },
   scrollContentContainer: {
     paddingBottom: 100, // Extra padding at bottom for keyboard clearance

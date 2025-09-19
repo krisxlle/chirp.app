@@ -34,8 +34,9 @@ export async function setupVite(app: Express, server: Server) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        // Define allowed origins for development
+        // Define allowed origins for development and production
         const allowedOrigins = [
+          // Development origins
           'http://localhost:3000',
           'http://localhost:5000',
           'http://127.0.0.1:3000',
@@ -45,6 +46,9 @@ export async function setupVite(app: Express, server: Server) {
           // Add your computer's IP for mobile testing
           process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:5000` : null,
           process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:3000` : null,
+          // Production domains
+          process.env.PRODUCTION_DOMAIN ? `https://${process.env.PRODUCTION_DOMAIN}` : null,
+          process.env.PRODUCTION_DOMAIN ? `http://${process.env.PRODUCTION_DOMAIN}` : null,
         ].filter(Boolean);
         
         // Check if origin is allowed
