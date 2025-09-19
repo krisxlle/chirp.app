@@ -11,9 +11,13 @@ const IMAGES_DIR = path.join(process.cwd(), 'public', 'generated-images');
 
 async function ensureImagesDirectory() {
   try {
-    await fs.mkdir(IMAGES_DIR, { recursive: true });
+    await fs.access(IMAGES_DIR);
+    console.log('Images directory already exists');
   } catch (error) {
-    console.log('Images directory already exists or created successfully');
+    // Directory doesn't exist, create it
+    console.log('Creating images directory:', IMAGES_DIR);
+    await fs.mkdir(IMAGES_DIR, { recursive: true });
+    console.log('Images directory created successfully');
   }
 }
 

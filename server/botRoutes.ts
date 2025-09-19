@@ -1,6 +1,27 @@
 import { Express } from 'express';
 import { botScheduler } from '../services/botScheduler';
-import { botService } from '../services/botService';
+
+// Simple bot service stub for production
+const botService = {
+  async initialize() {
+    console.log('🤖 Bot service initialization disabled in production');
+    return true;
+  },
+  
+  getBotUserId() {
+    return null; // No bot user ID in production
+  },
+  
+  getBotConfig() {
+    return {
+      postingSchedule: {
+        morning: '09:00',
+        evening: '18:00'
+      },
+      isEnabled: false
+    };
+  }
+};
 
 export function registerBotRoutes(app: Express): void {
   // Initialize bot endpoint
