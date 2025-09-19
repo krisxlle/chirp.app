@@ -1,4 +1,6 @@
 import express, { NextFunction, type Request, Response } from "express";
+import fs from 'fs';
+import path from 'path';
 import { generalApiLimiter } from "./rateLimiting";
 import { registerRoutes } from "./routes";
 import { devServerProtection, securityLogging, securityMiddleware } from "./security";
@@ -76,44 +78,107 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  try {
+    console.log('🚀 Starting Chirp server...');
     
-    // Try to initialize schedulers if they exist
-    try {
-      const { initializeScheduler, initializeNotificationScheduler } = require('./scheduler');
-      if (initializeScheduler) initializeScheduler();
-      if (initializeNotificationScheduler) initializeNotificationScheduler();
-    } catch (error) {
-      log('Scheduler modules not found, skipping initialization');
+    const server = await registerRoutes(app);
+
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+
+      res.status(status).json({ message });
+      throw err;
+    });
+
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
     }
-  });
+
+    // ALWAYS serve the app on the port specified in the environment variable PORT
+    // Other ports are firewalled. Default to 5000 if not specified.
+    // this serves both the API and the client.
+    // It is the only port that is not firewalled.
+    const port = parseInt(process.env.PORT || '5000', 10);
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${port}`);
+      
+      // Try to initialize schedulers if they exist
+      try {
+        const { initializeScheduler, initializeNotificationScheduler } = require('./scheduler');
+        if (initializeScheduler) initializeScheduler();
+        if (initializeNotificationScheduler) initializeNotificationScheduler();
+      } catch (error) {
+        log('Scheduler modules not found, skipping initialization');
+      }
+    });
+    
+    console.log('✅ Chirp server started successfully');
+    
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    
+    // If there's a path-to-regexp error, start a minimal server
+    if (error.message && error.message.includes('path-to-regexp')) {
+      console.log('🔄 Starting minimal server due to path-to-regexp error...');
+      
+      const port = parseInt(process.env.PORT || '5000', 10);
+      
+      // Create a minimal server
+      const minimalApp = express();
+      minimalApp.use(express.json());
+      
+      // Health check endpoint
+      minimalApp.get('/api/health', (req, res) => {
+        res.json({ 
+          status: 'healthy', 
+          timestamp: new Date().toISOString(),
+          environment: process.env.NODE_ENV || 'development',
+          version: '1.0.0',
+          mode: 'minimal'
+        });
+      });
+      
+      // Serve static files
+      const distPath = path.join(process.cwd(), 'dist');
+      if (fs.existsSync(distPath)) {
+        minimalApp.use(express.static(distPath));
+        console.log('📁 Serving static files from:', distPath);
+      }
+      
+      // Fallback for SPA routing
+      minimalApp.get('*', (req, res) => {
+        if (req.path.startsWith('/api/')) {
+          return res.status(404).json({ error: 'API endpoint not found' });
+        }
+        
+        const indexPath = path.join(distPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.json({ 
+            message: 'Chirp server is running in minimal mode', 
+            note: 'Full server failed to start due to path-to-regexp error'
+          });
+        }
+      });
+      
+      minimalApp.listen(port, '0.0.0.0', () => {
+        console.log(`🚀 Minimal server running on port ${port}`);
+        console.log('⚠️  Running in minimal mode - some features may be unavailable');
+      });
+    } else {
+      // For other errors, exit
+      process.exit(1);
+    }
+  }
 })();
