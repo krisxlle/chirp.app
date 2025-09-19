@@ -5,7 +5,7 @@ import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
 import { createLogger, createServer as createViteServer } from "vite";
-import viteConfig from "../vite.config";
+// viteConfig will be imported dynamically when needed
 import { generalApiLimiter } from "./rateLimiting";
 
 const viteLogger = createLogger();
@@ -22,6 +22,9 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  // Import viteConfig dynamically only when needed
+  const viteConfig = await import("../config/vite.config");
+  
   const serverOptions = {
     middlewareMode: true,
     hmr: { 
@@ -66,7 +69,7 @@ export async function setupVite(app: Express, server: Server) {
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
+    ...viteConfig.default,
     configFile: false,
     customLogger: {
       ...viteLogger,
