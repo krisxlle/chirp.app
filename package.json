@@ -3,7 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "npx tsx server/index.ts",
+    "start": "node simple-production-server.js",
     "start-server": "npx tsx server/index.ts",
     "start:production": "NODE_ENV=production npx tsx server/index.ts",
     "start:prod": "NODE_ENV=production npx tsx server/index.ts",

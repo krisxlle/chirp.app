@@ -54,4 +54,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["npx", "tsx", "server/index.ts"]
+CMD ["node", "simple-production-server.js"]
