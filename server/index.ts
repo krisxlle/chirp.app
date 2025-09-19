@@ -151,11 +151,11 @@ app.use((req, res, next) => {
       
       const port = parseInt(process.env.PORT || '5000', 10);
       
-      // Create a minimal server
+      // Create a completely independent minimal server
       const minimalApp = express();
       minimalApp.use(express.json());
       
-      // Health check endpoint
+      // Health check endpoint - simple and safe
       minimalApp.get('/api/health', (req, res) => {
         res.json({ 
           status: 'healthy', 
@@ -166,33 +166,61 @@ app.use((req, res, next) => {
         });
       });
       
-      // Serve static files
+      // Simple static file serving without complex routing
       const distPath = path.join(process.cwd(), 'dist');
-      if (fs.existsSync(distPath)) {
-        minimalApp.use(express.static(distPath));
-        console.log('📁 Serving static files from:', distPath);
-      }
+      console.log('📁 Checking for static files at:', distPath);
       
-      // Fallback for SPA routing
-      minimalApp.get('*', (req, res) => {
-        if (req.path.startsWith('/api/')) {
-          return res.status(404).json({ error: 'API endpoint not found' });
-        }
+      if (fs.existsSync(distPath)) {
+        console.log('📁 Static files found, setting up serving...');
         
-        const indexPath = path.join(distPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-          res.sendFile(indexPath);
-        } else {
+        // Simple static middleware
+        minimalApp.use((req, res, next) => {
+          if (req.path.startsWith('/api/')) {
+            return next();
+          }
+          
+          const filePath = path.join(distPath, req.path === '/' ? 'index.html' : req.path);
+          
+          // Check if file exists
+          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+            res.sendFile(filePath);
+          } else if (req.path === '/' || !req.path.includes('.')) {
+            // SPA fallback - serve index.html for any non-API route
+            const indexPath = path.join(distPath, 'index.html');
+            if (fs.existsSync(indexPath)) {
+              res.sendFile(indexPath);
+            } else {
+              res.json({ 
+                message: 'Chirp server is running in minimal mode', 
+                note: 'Static files not found'
+              });
+            }
+          } else {
+            res.status(404).json({ error: 'File not found' });
+          }
+        });
+      } else {
+        console.log('⚠️  No static files found at:', distPath);
+        
+        // Fallback response for all routes
+        minimalApp.get('*', (req, res) => {
           res.json({ 
             message: 'Chirp server is running in minimal mode', 
-            note: 'Full server failed to start due to path-to-regexp error'
+            note: 'Static files not found - server started successfully but web app not built'
           });
-        }
-      });
+        });
+      }
       
-      minimalApp.listen(port, '0.0.0.0', () => {
+      // Start the server
+      const server = minimalApp.listen(port, '0.0.0.0', () => {
         console.log(`🚀 Minimal server running on port ${port}`);
         console.log('⚠️  Running in minimal mode - some features may be unavailable');
+        console.log('✅ Health check available at /api/health');
+      });
+      
+      // Handle server errors
+      server.on('error', (err) => {
+        console.error('❌ Minimal server error:', err);
       });
     } else {
       // For other errors, exit
