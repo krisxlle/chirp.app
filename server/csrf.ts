@@ -1,8 +1,8 @@
-import { Csrf } from "csrf";
+import csrf from "csrf";
 import { NextFunction, Request, Response } from "express";
 
 // Create CSRF instance
-const csrf = new Csrf();
+const csrfProtection = csrf();
 
 // CSRF middleware for authentication endpoints
 export function csrfMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -39,7 +39,7 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
 
     // Verify CSRF token
     const secret = req.session?.csrfSecret || 'default-secret';
-    if (!csrf.verify(secret, token)) {
+    if (!csrfProtection.verify(secret, token)) {
       return res.status(403).json({ 
         error: 'Invalid CSRF token',
         message: 'CSRF token verification failed'
@@ -59,12 +59,12 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
 // Generate CSRF token for client
 export function generateCsrfToken(req: Request): string {
   const secret = req.session?.csrfSecret || 'default-secret';
-  return csrf.create(secret);
+  return csrfProtection.create(secret);
 }
 
 // Initialize CSRF secret in session
 export function initCsrfSecret(req: Request): void {
   if (!req.session?.csrfSecret) {
-    req.session.csrfSecret = csrf.secretSync();
+    req.session.csrfSecret = csrfProtection.secretSync();
   }
 }
