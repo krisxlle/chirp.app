@@ -3,13 +3,19 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { storage } from './storage';
 
+// Create images directory if it doesn't exist
+const IMAGES_DIR = path.join(process.cwd(), 'dist', 'generated-images');
+
 // Initialize the images directory immediately when this module is loaded
 ensureImagesDirectory().catch(console.error);
 
-// Create images directory if it doesn't exist
-const IMAGES_DIR = path.join(process.cwd(), 'public', 'generated-images');
-
 async function ensureImagesDirectory() {
+  // Skip directory creation in production to avoid permission issues
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Skipping directory creation in production');
+    return;
+  }
+  
   try {
     await fs.access(IMAGES_DIR);
     console.log('Images directory already exists');
@@ -63,6 +69,12 @@ export async function downloadAndSaveImage(imageUrl: string, userId: string, ima
 }
 
 export async function cleanupOldImages() {
+  // Skip cleanup in production to avoid permission issues
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Skipping image cleanup in production');
+    return;
+  }
+  
   try {
     // Ensure directory exists before trying to read it
     await ensureImagesDirectory();
