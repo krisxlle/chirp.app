@@ -1,15 +1,39 @@
-import { botService } from './botService';
-
 // Scheduler configuration
 const SCHEDULER_CONFIG = {
   checkInterval: 60000, // Check every minute
   timezone: 'UTC'
 };
 
+// Simple bot service stub for production
+class BotServiceStub {
+  shouldPostNow(): boolean {
+    return false; // Disable automatic posting in production
+  }
+
+  async postNewsChirp(): Promise<boolean> {
+    console.log('🤖 Bot posting disabled in production');
+    return false;
+  }
+
+  getBotConfig() {
+    return {
+      postingSchedule: {
+        morning: '09:00',
+        evening: '18:00'
+      }
+    };
+  }
+}
+
 export class BotScheduler {
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  private botService: BotServiceStub;
   private isRunning = false;
   private lastPostTimes: { [key: string]: Date } = {};
+
+  constructor() {
+    this.botService = new BotServiceStub();
+  }
 
   // Start the scheduler
   start(): void {
@@ -59,7 +83,7 @@ export class BotScheduler {
       console.log(`🤖 Checking posting schedule at ${currentTime}`);
 
       // Check if it's time to post
-      if (botService.shouldPostNow()) {
+      if (this.botService.shouldPostNow()) {
         const timeKey = currentTime;
         
         // Check if we already posted at this time today
@@ -69,7 +93,7 @@ export class BotScheduler {
         if (!lastPostTime || lastPostTime.toDateString() !== today) {
           console.log(`🤖 Time to post at ${currentTime}!`);
           
-          const success = await botService.postNewsChirp();
+          const success = await this.botService.postNewsChirp();
           
           if (success) {
             this.lastPostTimes[timeKey] = now;
@@ -89,7 +113,7 @@ export class BotScheduler {
   // Force a post (for testing)
   async forcePost(): Promise<boolean> {
     console.log('🤖 Force posting bot chirp...');
-    return await botService.postNewsChirp();
+    return await this.botService.postNewsChirp();
   }
 
   // Get scheduler status
@@ -103,7 +127,7 @@ export class BotScheduler {
 
   // Get next posting times
   getNextPostingTimes(): { morning: string; evening: string } {
-    const config = botService.getBotConfig();
+    const config = this.botService.getBotConfig();
     return config.postingSchedule;
   }
 }

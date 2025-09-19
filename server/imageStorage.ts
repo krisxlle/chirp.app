@@ -60,6 +60,8 @@ export async function downloadAndSaveImage(imageUrl: string, userId: string, ima
 
 export async function cleanupOldImages() {
   try {
+    // Ensure directory exists before trying to read it
+    await ensureImagesDirectory();
     const files = await fs.readdir(IMAGES_DIR);
     const now = Date.now();
     const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
