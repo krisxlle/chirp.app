@@ -33,8 +33,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install production dependencies including tsx for TypeScript execution
+RUN npm ci --only=production && npm install tsx && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder --chown=chirp:nodejs /app/dist ./dist
