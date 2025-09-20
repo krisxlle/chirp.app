@@ -78,6 +78,9 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
 
   // 7. Safe static file serving
   safeRoute('Static File Serving', () => {
+    console.log('🔍 DEBUG: Starting static file serving setup...');
+    console.log('🔍 DEBUG: Environment:', app.get("env"));
+    
     if (app.get("env") === "development") {
       console.log('⚠️  Skipping Vite setup in safe mode');
     } else {
@@ -93,29 +96,39 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       
       console.log('📁 Dist directory found, setting up static serving...');
       
-      // Simple static file serving without complex middleware
-      app.use(express.static(distPath));
-      
-      // Simple SPA fallback without complex patterns
-      app.get('*', (req, res) => {
-        // Skip API routes
-        if (req.path.startsWith('/api/')) {
-          return res.status(404).json({ error: 'API endpoint not found' });
-        }
+      try {
+        console.log('🔍 DEBUG: About to call express.static...');
+        // Simple static file serving without complex middleware
+        app.use(express.static(distPath));
+        console.log('✅ express.static configured successfully');
         
-        // Serve index.html for SPA routing
-        const indexPath = path.join(distPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-          res.sendFile(indexPath);
-        } else {
-          res.json({ 
-            message: 'Chirp app is running', 
-            note: 'Static files available but index.html not found'
-          });
-        }
-      });
-      
-      console.log('✅ Safe static file serving configured');
+        console.log('🔍 DEBUG: About to set up SPA fallback...');
+        // Simple SPA fallback without complex patterns
+        app.get('*', (req, res) => {
+          console.log('🔍 DEBUG: SPA fallback called for:', req.path);
+          // Skip API routes
+          if (req.path.startsWith('/api/')) {
+            return res.status(404).json({ error: 'API endpoint not found' });
+          }
+          
+          // Serve index.html for SPA routing
+          const indexPath = path.join(distPath, 'index.html');
+          if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+          } else {
+            res.json({ 
+              message: 'Chirp app is running', 
+              note: 'Static files available but index.html not found'
+            });
+          }
+        });
+        console.log('✅ SPA fallback configured successfully');
+        
+        console.log('✅ Safe static file serving configured');
+      } catch (error) {
+        console.error('❌ Error in static file serving setup:', error);
+        throw error;
+      }
     }
   });
 
