@@ -1,0 +1,36 @@
+{
+  "cli": {
+    "version": ">= 16.17.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "entitlements": {
+          "com.apple.developer.in-app-payments": true
+        }
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "entitlements": {
+          "com.apple.developer.in-app-payments": true
+        }
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "ios": {
+        "entitlements": {
+          "com.apple.developer.in-app-payments": true
+        }
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
