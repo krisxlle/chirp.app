@@ -3,6 +3,7 @@ import SignupContactsPrompt from "@/components/SignupContactsPrompt";
 import { FloatingFeedback } from "@/components/ui/floating-feedback";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/components/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "./lib/queryClient";
 import AdminFeedback from "@/pages/AdminFeedback";
@@ -72,12 +73,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 
