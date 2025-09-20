@@ -88,9 +88,12 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       
       const distPath = path.join(process.cwd(), "dist");
       console.log('📁 Checking for dist directory:', distPath);
+      console.log('📁 Current working directory:', process.cwd());
+      console.log('📁 Directory contents:', fs.readdirSync(process.cwd()));
       
       if (!fs.existsSync(distPath)) {
         console.log('⚠️  Dist directory not found, skipping static file serving');
+        console.log('📁 Available directories:', fs.readdirSync(process.cwd()).filter(item => fs.statSync(item).isDirectory()));
         return;
       }
       
