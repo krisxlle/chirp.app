@@ -136,8 +136,8 @@ export function serveStatic(app: Express) {
   // Apply additional rate limiting to catch-all routes
   app.use(generalApiLimiter);
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  // fall through to index.html if the file doesn't exist (SPA routing)
+  app.get("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
