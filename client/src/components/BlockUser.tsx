@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "./ui/button";
 import { Shield, ShieldOff } from "lucide-react";
 import { useToast } from "./hooks/use-toast";
-import { apiRequest } from "./queryClient";
+import { apiRequest } from "./api";
 import { isUnauthorizedError } from "./authUtils.ts";
 import {
   AlertDialog,
@@ -143,3 +143,5 @@ export default function BlockUser({ userId, username }: BlockUserProps) {
     </AlertDialog>
   );
 }
+
+

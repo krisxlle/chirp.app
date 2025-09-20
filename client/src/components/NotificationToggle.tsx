@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "./queryClient";
+import { apiRequest } from "./api";
 import { useToast } from "./hooks/use-toast";
 import { Button } from "./ui/button";
 import { Bell, BellOff } from "lucide-react";
@@ -73,3 +73,5 @@ export default function NotificationToggle({ userId }: NotificationToggleProps) 
     </Button>
   );
 }
+
+

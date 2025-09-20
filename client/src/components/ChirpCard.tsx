@@ -13,7 +13,7 @@ import { Textarea } from "./ui/textarea";
 import UserAvatar from "./UserAvatar";
 import { useToast } from "./hooks/use-toast";
 import { useAuth } from "./hooks/useAuth";
-import { apiRequest } from "./queryClient";
+import { apiRequest } from "./api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import html2canvas from 'html2canvas';
@@ -874,3 +874,5 @@ export default function ChirpCard({ chirp }: ChirpCardProps) {
     </article>
   );
 }
+
+

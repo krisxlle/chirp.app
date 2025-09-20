@@ -7,7 +7,7 @@ import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
 import { Users, UserPlus, Mail, Search, X, MessageSquare } from "lucide-react";
 import { useToast } from "./hooks/use-toast";
-import { apiRequest } from "./queryClient";
+import { apiRequest } from "./api";
 import UserAvatar from "./UserAvatar";
 import { isUnauthorizedError } from "./authUtils.ts";
 
@@ -550,3 +550,5 @@ export default function ContactsIntegration({ isOpen, onClose, isSignup = false 
     </Dialog>
   );
 }
+
+

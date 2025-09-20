@@ -382,3 +382,5 @@ export function PersonalityQuiz({ onComplete, onClose, isGenerating }: Personali
     </Card>
   );
 }
+
+

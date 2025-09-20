@@ -1,3 +1,5 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Route, Switch } from "wouter";
 import { AuthProvider } from "./components/AuthContext";
 import BottomNavigation from "./components/BottomNavigation";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
@@ -21,8 +23,6 @@ import Settings from "./pages/Settings";
 import Subscribe from "./pages/Subscribe";
 import Support from "./pages/Support";
 import TermsOfService from "./pages/TermsOfService";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Route, Switch } from "wouter";
 
 // Create queryClient directly here to avoid import issues
 const queryClient = new QueryClient({

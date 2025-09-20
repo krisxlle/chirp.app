@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "./queryClient";
+import { apiRequest } from "./api";
 import { useAuth } from "./hooks/useAuth";
 import { useToast } from "./hooks/use-toast";
 import { isUnauthorizedError } from "./authUtils.ts";
@@ -148,3 +148,5 @@ export default function ComposeChirp() {
     </div>
   );
 }
+
+

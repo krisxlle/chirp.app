@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent } from "./ui/card";
 import { X, Plus, Send, Sparkles } from "lucide-react";
-import { apiRequest } from "./queryClient";
+import { apiRequest } from "./api";
 import { useToast } from "./hooks/use-toast";
 import { useAuth } from "./hooks/useAuth";
 
@@ -205,3 +205,5 @@ export default function ThreadComposer({ onClose, className, initialContent = ''
     </Card>
   );
 }
+
+

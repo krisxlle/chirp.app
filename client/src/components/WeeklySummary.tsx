@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Sparkles, TrendingUp, Heart, MessageSquare, BarChart3, Clock, Share } from "lucide-react";
-import { apiRequest } from "./queryClient";
+import { apiRequest } from "./api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "./hooks/use-toast";
 
@@ -291,3 +291,5 @@ export default function WeeklySummary({ userId }: WeeklySummaryProps) {
     </Card>
   );
 }
+
+
