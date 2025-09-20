@@ -1,2 +1,4 @@
-# SPA fallback for Vercel
-/*    /index.html   200
+# SPA fallback for Vercel - only for non-asset routes
+/assets/*  /assets/:splat  200
+/api/*     /api/:splat     200
+/*         /index.html     200
