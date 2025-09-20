@@ -1,0 +1,209 @@
+/* Metro-style CSS classes to match React Native StyleSheet patterns */
+
+/* Base Metro styling */
+.metro-container {
+  background-color: var(--metro-background);
+  min-height: 100vh;
+}
+
+.metro-safe-area {
+  flex: 1;
+  background-color: var(--metro-background);
+}
+
+/* Header styling */
+.metro-header {
+  background-color: var(--metro-white);
+  border-bottom: 1px solid var(--metro-border);
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.metro-header-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--metro-text);
+}
+
+/* Tab styling */
+.metro-tabs-container {
+  background-color: var(--metro-white);
+  border-bottom: 1px solid var(--metro-border-light);
+  padding: 12px 0;
+}
+
+.metro-tabs-button-container {
+  display: flex;
+  background-color: var(--metro-gray-50);
+  border-radius: 12px;
+  padding: 3px;
+}
+
+.metro-tab-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--metro-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.metro-tab-button-active {
+  background-color: var(--metro-purple);
+  color: var(--metro-white);
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+}
+
+/* Card styling */
+.metro-card {
+  background-color: var(--metro-white);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.metro-chirp-card {
+  background-color: var(--metro-white);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 3px 0;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Button styling */
+.metro-button-primary {
+  background-color: var(--metro-purple);
+  color: var(--metro-white);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.metro-button-primary:hover {
+  background-color: #6d28d9;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+.metro-button-secondary {
+  background-color: var(--metro-gray-50);
+  color: var(--metro-text-muted);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.metro-button-secondary:hover {
+  background-color: var(--metro-gray-100);
+}
+
+/* Input styling */
+.metro-input {
+  border: 1px solid var(--metro-gray-300);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  color: var(--metro-text);
+  background-color: var(--metro-white);
+}
+
+.metro-input:focus {
+  outline: none;
+  border-color: var(--metro-purple);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+/* Text styling */
+.metro-text-primary {
+  color: var(--metro-text);
+}
+
+.metro-text-secondary {
+  color: var(--metro-text-secondary);
+}
+
+.metro-text-muted {
+  color: var(--metro-text-muted);
+}
+
+.metro-text-purple {
+  color: var(--metro-purple);
+}
+
+/* Spacing utilities */
+.metro-p-xs { padding: 2px; }
+.metro-p-sm { padding: 4px; }
+.metro-p-md { padding: 8px; }
+.metro-p-lg { padding: 12px; }
+.metro-p-xl { padding: 16px; }
+.metro-p-2xl { padding: 20px; }
+.metro-p-3xl { padding: 24px; }
+.metro-p-4xl { padding: 32px; }
+
+.metro-m-xs { margin: 2px; }
+.metro-m-sm { margin: 4px; }
+.metro-m-md { margin: 8px; }
+.metro-m-lg { margin: 12px; }
+.metro-m-xl { margin: 16px; }
+.metro-m-2xl { margin: 20px; }
+.metro-m-3xl { margin: 24px; }
+.metro-m-4xl { margin: 32px; }
+
+/* Border radius utilities */
+.metro-rounded-sm { border-radius: 4px; }
+.metro-rounded-md { border-radius: 8px; }
+.metro-rounded-lg { border-radius: 12px; }
+.metro-rounded-xl { border-radius: 16px; }
+.metro-rounded-full { border-radius: 50%; }
+
+/* Shadow utilities */
+.metro-shadow-light {
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+}
+
+.metro-shadow-medium {
+  box-shadow: 0 4px 12px rgba(217, 70, 239, 0.15);
+}
+
+.metro-shadow-strong {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .metro-card,
+  .metro-chirp-card {
+    margin: 8px;
+    max-width: none;
+  }
+  
+  .metro-header {
+    padding: 8px 12px;
+  }
+  
+  .metro-tabs-container {
+    padding: 8px 0;
+  }
+}

@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Metro-specific styles */
+@import './styles/metro-styles.css';
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(20, 14.3%, 4.1%);
@@ -29,6 +32,32 @@
   --purple-gradient-end: hsl(296, 85%, 72%);
   --purple-light: hsl(300, 100%, 97%);
   --purple-dark: hsl(271, 81%, 56%);
+  
+  /* Metro-specific colors to match React Native StyleSheet */
+  --metro-background: #fafafa;
+  --metro-white: #ffffff;
+  --metro-card: #ffffff;
+  --metro-border: #e5e7eb;
+  --metro-border-light: #e1e8ed;
+  --metro-border-muted: #f0f0f0;
+  --metro-text: #1a1a1a;
+  --metro-text-muted: #657786;
+  --metro-text-secondary: #374151;
+  --metro-purple: #7c3aed;
+  --metro-purple-light: #f8f4ff;
+  --metro-purple-gradient-start: #C671FF;
+  --metro-purple-gradient-end: #FF61A6;
+  --metro-purple-accent: #f5a5e0;
+  --metro-gray-50: #f7f9fa;
+  --metro-gray-100: #f0f0f0;
+  --metro-gray-200: #e5e7eb;
+  --metro-gray-300: #d1d5db;
+  --metro-gray-400: #9ca3af;
+  --metro-gray-500: #6b7280;
+  --metro-gray-600: #4b5563;
+  --metro-gray-700: #374151;
+  --metro-gray-800: #1f2937;
+  --metro-gray-900: #111827;
 }
 
 .dark {

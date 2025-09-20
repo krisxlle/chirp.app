@@ -27,6 +27,7 @@ const storage = {
   }
 };
 
+// User interface with ChirpPlus properties
 interface User {
   id: string;
   email: string;
@@ -40,6 +41,8 @@ interface User {
   bannerImageUrl?: string;
   bio?: string;
   crystalBalance?: number;
+  isChirpPlus?: boolean;
+  showChirpPlusBadge?: boolean;
 }
 
 interface AuthContextType {
@@ -113,7 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         lastName: '',
         customHandle: username.toLowerCase(),
         profileImageUrl: undefined,
-        crystalBalance: 100
+        crystalBalance: 100,
+        isChirpPlus: false,
+        showChirpPlusBadge: false
       };
       
       await storage.setItem('user', JSON.stringify(mockUser));
