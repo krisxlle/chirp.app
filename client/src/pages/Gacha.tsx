@@ -2,7 +2,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { HelpCircle, Sparkles } from 'lucide-react';
 import React, { useState } from 'react';
@@ -390,7 +389,7 @@ export default function Gacha() {
           <DialogHeader>
             <DialogTitle>10-Roll Results!</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
+          <div className="max-h-[60vh] overflow-y-auto">
             <div className="space-y-4">
               <p className="text-center text-gray-600">You pulled {pulledCards.length} profiles!</p>
               <div className="grid grid-cols-2 gap-4">
@@ -424,7 +423,7 @@ export default function Gacha() {
                 Close
               </Button>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
