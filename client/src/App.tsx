@@ -4,7 +4,6 @@ import { FloatingFeedback } from "@/components/ui/floating-feedback";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import { queryClient } from "./lib/queryClient";
 import AdminFeedback from "@/pages/AdminFeedback";
 import AdminInfluencerCodes from "@/pages/AdminInfluencerCodes";
 import Auth from "@/pages/Auth";
@@ -21,9 +20,23 @@ import Settings from "@/pages/Settings";
 import Subscribe from "@/pages/Subscribe";
 import Support from "@/pages/Support";
 import TermsOfService from "@/pages/TermsOfService";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Route, Switch } from "wouter";
 import { AuthProvider } from "../../components/AuthContext";
+
+// Create queryClient directly here to avoid import issues
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
