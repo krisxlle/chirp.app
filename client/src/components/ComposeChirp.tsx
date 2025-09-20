@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "../lib/authUtils.ts";
+import { isUnauthorizedError } from "./authUtils.ts";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "@/components/UserAvatar";

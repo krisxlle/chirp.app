@@ -9,7 +9,7 @@ import { Users, UserPlus, Mail, Search, X, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import UserAvatar from "@/components/UserAvatar";
-import { isUnauthorizedError } from "../lib/authUtils.ts";
+import { isUnauthorizedError } from "./authUtils.ts";
 
 interface Contact {
   name: string;
