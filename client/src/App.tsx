@@ -13,7 +13,7 @@ import AdminInfluencerCodes from "./pages/AdminInfluencerCodes";
 import Auth from "./pages/Auth";
 import ChirpDetail from "./pages/ChirpDetail";
 import Gacha from "./pages/Gacha";
-import Home from "./pages/Home";
+import HomePage from "./pages/HomePage";
 import NotFound from "./pages/not-found";
 import Notifications from "./pages/Notifications";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -62,7 +62,7 @@ function Router() {
       <Switch>
         {isAuthenticated ? (
           <>
-            <Route path="/" component={Home} />
+            <Route path="/" component={HomePage} />
             <Route path="/search" component={Search} />
             <Route path="/notifications" component={Notifications} />
             <Route path="/profile/:userId?" component={Profile} />

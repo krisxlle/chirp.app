@@ -10,7 +10,7 @@ import UserAvatar from "./UserAvatar";
 import ThreadComposer from "./ThreadComposer";
 import { Sparkles, MessageSquare } from "lucide-react";
 
-export default function ComposeChirp() {
+export default function ComposeChirp({ onPost }: { onPost?: (content: string, imageData?: any) => void }) {
   const [content, setContent] = useState("");
   const [isThreadMode, setIsThreadMode] = useState(false);
   const { user } = useAuth();
@@ -35,6 +35,10 @@ export default function ComposeChirp() {
         title: "Chirp posted!",
         description: "Your chirp has been shared with the world.",
       });
+      // Call the onPost callback if provided
+      if (onPost) {
+        onPost(content);
+      }
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
