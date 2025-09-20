@@ -98,12 +98,20 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       }
       
       console.log('📁 Dist directory found, setting up static serving...');
+      console.log('📁 Dist directory contents:', fs.readdirSync(distPath));
+      console.log('📁 Checking for index.html:', fs.existsSync(path.join(distPath, 'index.html')));
       
       try {
         console.log('🔍 DEBUG: About to call express.static...');
         // Simple static file serving without complex middleware
         app.use(express.static(distPath));
         console.log('✅ express.static configured successfully');
+        
+        // Add debugging middleware to see what requests are coming in
+        app.use((req, res, next) => {
+          console.log('🔍 DEBUG: Request received:', req.method, req.path);
+          next();
+        });
         
         console.log('🔍 DEBUG: About to set up SPA fallback...');
         // Use a safer SPA fallback pattern
