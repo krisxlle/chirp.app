@@ -19,6 +19,7 @@ export default defineConfig({
       '@/utils': path.resolve(__dirname, 'client/src/utils'),
       '@/constants': path.resolve(__dirname, 'client/src/constants'),
     },
+    extensions: ['.js', '.ts', '.tsx', '.jsx', '.json'],
   },
   server: {
     port: 5000,
