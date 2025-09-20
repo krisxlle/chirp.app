@@ -9,9 +9,10 @@ import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
-import { Search, Plus, RefreshCw } from 'lucide-react';
+import { Search, Plus, RefreshCw, Sparkles, MessageSquare } from 'lucide-react';
 
 export default function HomePage() {
+  // Get user from AuthContext
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -25,15 +26,18 @@ export default function HomePage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreChirps, setHasMoreChirps] = useState(true);
   const [hasMoreCollectionChirps, setHasMoreCollectionChirps] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(0);
+  
+  // State for compose modal
   const [showComposeModal, setShowComposeModal] = useState(false);
   
   // Pagination constants
-  const INITIAL_LIMIT = 10;
+  const INITIAL_LIMIT = 10; // Load fewer chirps initially for faster startup
   const LOAD_MORE_LIMIT = 10;
 
-  // Fetch chirps using React Query
+  // Fetch chirps using React Query - equivalent to getForYouChirps/getCollectionFeedChirps
   const { data: chirpsData, isLoading, error, refetch } = useQuery({
-    queryKey: ["chirps", feedType],
+    queryKey: ["chirps", feedType, lastRefresh],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (feedType === 'forYou') {
@@ -47,7 +51,7 @@ export default function HomePage() {
       return response;
     },
     enabled: !!user,
-    staleTime: 30000, // 30 seconds
+    staleTime: 60000, // 60 seconds cache time like the original
   });
 
   useEffect(() => {
@@ -61,18 +65,21 @@ export default function HomePage() {
     }
   }, [error, toast, setLocation]);
 
-  // Update chirps when data changes
+  // Update chirps when data changes - equivalent to loadInitialChirps/loadInitialCollectionChirps
   useEffect(() => {
     if (chirpsData) {
       if (feedType === 'forYou') {
         setForYouChirps(chirpsData);
+        setHasMoreChirps(chirpsData.length === INITIAL_LIMIT);
       } else {
         setCollectionChirps(chirpsData);
+        setHasMoreCollectionChirps(chirpsData.length === INITIAL_LIMIT);
       }
+      setLastRefresh(Date.now());
     }
   }, [chirpsData, feedType]);
 
-  // Load more chirps function for pagination
+  // Load more chirps function for pagination - equivalent to loadMoreChirps
   const loadMoreChirps = useCallback(async () => {
     if (isLoadingMore) return;
     
@@ -97,10 +104,22 @@ export default function HomePage() {
       
       if (moreChirps.length > 0) {
         if (isForYouFeed) {
-          setForYouChirps(prevChirps => [...prevChirps, ...moreChirps]);
+          setForYouChirps(prevChirps => {
+            // Create a map to track existing chirp IDs
+            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
+            // Filter out any duplicate chirps
+            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
+            return [...prevChirps, ...uniqueNewChirps];
+          });
           setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
         } else {
-          setCollectionChirps(prevChirps => [...prevChirps, ...moreChirps]);
+          setCollectionChirps(prevChirps => {
+            // Create a map to track existing chirp IDs
+            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
+            // Filter out any duplicate chirps
+            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
+            return [...prevChirps, ...uniqueNewChirps];
+          });
           setHasMoreCollectionChirps(moreChirps.length === LOAD_MORE_LIMIT);
         }
       } else {
@@ -117,12 +136,12 @@ export default function HomePage() {
     }
   }, [feedType, isLoadingMore, hasMoreChirps, hasMoreCollectionChirps, forYouChirps, collectionChirps]);
 
-  // Function to refresh chirps
+  // Function to refresh chirps - equivalent to refreshChirps
   const refreshChirps = useCallback(async () => {
     await refetch();
   }, [refetch]);
   
-  // Function to update chirp like count
+  // Function to update chirp like count - equivalent to handleChirpLikeUpdate
   const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
     const updateChirp = (prevChirps: any[]) => 
       prevChirps.map(chirp => 
@@ -157,7 +176,7 @@ export default function HomePage() {
     }
   }, [feedType]);
   
-  // Function to add a new chirp to the For You feed
+  // Function to add a new chirp to the For You feed - equivalent to handleNewChirp
   const handleNewChirp = useCallback(async (content: string, imageData?: {
     imageUrl?: string;
     imageAltText?: string;
@@ -221,7 +240,7 @@ export default function HomePage() {
     }
   }, [user, toast]);
   
-  // Function to handle chirp deletion
+  // Function to handle chirp deletion - equivalent to handleChirpDelete
   const handleChirpDelete = useCallback((deletedChirpId?: string) => {
     if (deletedChirpId) {
       setForYouChirps(prevChirps => 
@@ -231,7 +250,7 @@ export default function HomePage() {
     refreshChirps();
   }, [refreshChirps]);
 
-  // Function to navigate to search page
+  // Function to navigate to search page - equivalent to handleSearchPress
   const handleSearchPress = () => {
     setLocation('/search');
   };
@@ -251,7 +270,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Feed Type Toggle */}
+      {/* Feed Type Toggle - Updated to match original Metro styling */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
@@ -277,9 +296,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Chirps Feed */}
+      {/* Chirps Feed with Infinite Scroll */}
       <div className="flex-1 overflow-y-auto">
-        {/* Compose Chirp */}
+        {/* Compose Chirp - Now scrolls with feed */}
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
           <ComposeChirp onPost={handleNewChirp} />
         </div>
