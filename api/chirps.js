@@ -18,48 +18,102 @@ export default function handler(req, res) {
       content: 'Welcome to Chirp! This is your first chirp. 🐦',
       author: {
         id: '1',
-        name: 'Chirp Team',
+        firstName: 'Chirp',
+        lastName: 'Team',
+        email: 'team@chirp.com',
         handle: 'chirpteam',
-        profileImageUrl: 'https://via.placeholder.com/150'
+        customHandle: 'chirpteam',
+        profileImageUrl: 'https://via.placeholder.com/150',
+        isChirpPlus: true,
+        showChirpPlusBadge: true
       },
       createdAt: new Date().toISOString(),
       likes: 42,
       replies: 5,
       reposts: 3,
       isLiked: false,
-      isReposted: false
+      isReposted: false,
+      reactionCounts: {
+        '👍': 15,
+        '❤️': 20,
+        '😂': 7
+      },
+      userReaction: null,
+      replies: [],
+      repostOf: null,
+      isAiGenerated: false,
+      isWeeklySummary: false,
+      threadId: null,
+      threadOrder: null,
+      isThreadStarter: true
     },
     {
       id: '2',
       content: 'Chirp is now live! Share your thoughts with the world. ✨',
       author: {
         id: '1',
-        name: 'Chirp Team',
+        firstName: 'Chirp',
+        lastName: 'Team',
+        email: 'team@chirp.com',
         handle: 'chirpteam',
-        profileImageUrl: 'https://via.placeholder.com/150'
+        customHandle: 'chirpteam',
+        profileImageUrl: 'https://via.placeholder.com/150',
+        isChirpPlus: true,
+        showChirpPlusBadge: true
       },
       createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
       likes: 28,
       replies: 2,
       reposts: 1,
       isLiked: false,
-      isReposted: false
+      isReposted: false,
+      reactionCounts: {
+        '👍': 10,
+        '❤️': 15,
+        '😂': 3
+      },
+      userReaction: null,
+      replies: [],
+      repostOf: null,
+      isAiGenerated: false,
+      isWeeklySummary: false,
+      threadId: null,
+      threadOrder: null,
+      isThreadStarter: true
     },
     {
       id: '3',
       content: 'Building something amazing with Chirp! The future of social media is here. 🚀',
       author: {
         id: '2',
-        name: 'Kriselle',
+        firstName: 'Kriselle',
+        lastName: 'Tan',
+        email: 'kriselle.t@gmail.com',
         handle: 'kriselle',
-        profileImageUrl: 'https://via.placeholder.com/150'
+        customHandle: 'kriselle',
+        profileImageUrl: 'https://via.placeholder.com/150',
+        isChirpPlus: false,
+        showChirpPlusBadge: false
       },
       createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
       likes: 15,
       replies: 1,
       reposts: 0,
       isLiked: true,
-      isReposted: false
+      isReposted: false,
+      reactionCounts: {
+        '👍': 8,
+        '❤️': 5,
+        '😂': 2
+      },
+      userReaction: '❤️',
+      replies: [],
+      repostOf: null,
+      isAiGenerated: false,
+      isWeeklySummary: false,
+      threadId: null,
+      threadOrder: null,
+      isThreadStarter: true
     }
   ];
 
