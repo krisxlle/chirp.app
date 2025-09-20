@@ -1,6 +1,9 @@
 import React from 'react';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { Route, Switch } from 'wouter';
+import { useAuth } from './hooks/useAuth';
+import Landing from './pages/Landing';
+import Auth from './pages/Auth';
 
 // Create a simple query client
 const queryClient = new QueryClient({
@@ -12,28 +15,42 @@ const queryClient = new QueryClient({
   },
 });
 
-// Simple landing page
-function Landing() {
+// Router component with authentication
+function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h1>Welcome to Chirp!</h1>
-      <p>Your social media app is loading...</p>
-      <button onClick={() => alert('Chirp is working!')}>
-        Test Button
-      </button>
-    </div>
+    <Switch>
+      {!isAuthenticated ? (
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/auth" component={Auth} />
+        </>
+      ) : (
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/auth" component={Auth} />
+        </>
+      )}
+      <Route component={() => <div>Page not found</div>} />
+    </Switch>
   );
 }
 
-// Main App component with routing
+// Main App component
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <div>
-        <Switch>
-          <Route path="/" component={Landing} />
-          <Route component={() => <div>Page not found</div>} />
-        </Switch>
+        <Router />
       </div>
     </QueryClientProvider>
   );
