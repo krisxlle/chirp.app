@@ -30,6 +30,26 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
         version: '1.0.0'
       });
     });
+    
+    // Add a simple test route to verify our server is receiving requests
+    app.get('/test', (req, res) => {
+      res.json({ 
+        message: 'Chirp server is working!', 
+        timestamp: new Date().toISOString(),
+        path: req.path,
+        method: req.method
+      });
+    });
+    
+    // Add a root route test
+    app.get('/', (req, res) => {
+      console.log('🔍 DEBUG: Root route hit!');
+      res.json({ 
+        message: 'Chirp server root route working!', 
+        timestamp: new Date().toISOString(),
+        note: 'This should not be seen if static files are working'
+      });
+    });
   });
 
   // 2. Serve generated images
