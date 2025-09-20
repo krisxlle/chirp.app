@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "../lib/api.ts";
+import { apiRequest } from "./api.ts";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Crown, Gift } from "lucide-react";
 
