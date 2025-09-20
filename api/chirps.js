@@ -28,15 +28,17 @@ export default function handler(req, res) {
         showChirpPlusBadge: true
       },
       createdAt: new Date().toISOString(),
-      likes: 42,
-      replies: 5,
-      reposts: 3,
-      isLiked: false,
-      isReposted: false,
+      updatedAt: new Date().toISOString(),
+      likesCount: 42,
+      repliesCount: 5,
+      repostsCount: 3,
+      sharesCount: 0,
       reactionCounts: {
         '👍': 15,
         '❤️': 20,
-        '😂': 7
+        '😂': 7,
+        '😢': 0,
+        '😡': 0
       },
       userReaction: null,
       replies: [],
@@ -45,7 +47,11 @@ export default function handler(req, res) {
       isWeeklySummary: false,
       threadId: null,
       threadOrder: null,
-      isThreadStarter: true
+      isThreadStarter: true,
+      imageUrl: null,
+      imageAltText: null,
+      imageWidth: null,
+      imageHeight: null
     },
     {
       id: '2',
@@ -62,15 +68,17 @@ export default function handler(req, res) {
         showChirpPlusBadge: true
       },
       createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-      likes: 28,
-      replies: 2,
-      reposts: 1,
-      isLiked: false,
-      isReposted: false,
+      updatedAt: new Date(Date.now() - 3600000).toISOString(),
+      likesCount: 28,
+      repliesCount: 2,
+      repostsCount: 1,
+      sharesCount: 0,
       reactionCounts: {
         '👍': 10,
         '❤️': 15,
-        '😂': 3
+        '😂': 3,
+        '😢': 0,
+        '😡': 0
       },
       userReaction: null,
       replies: [],
@@ -79,7 +87,11 @@ export default function handler(req, res) {
       isWeeklySummary: false,
       threadId: null,
       threadOrder: null,
-      isThreadStarter: true
+      isThreadStarter: true,
+      imageUrl: null,
+      imageAltText: null,
+      imageWidth: null,
+      imageHeight: null
     },
     {
       id: '3',
@@ -96,15 +108,17 @@ export default function handler(req, res) {
         showChirpPlusBadge: false
       },
       createdAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-      likes: 15,
-      replies: 1,
-      reposts: 0,
-      isLiked: true,
-      isReposted: false,
+      updatedAt: new Date(Date.now() - 7200000).toISOString(),
+      likesCount: 15,
+      repliesCount: 1,
+      repostsCount: 0,
+      sharesCount: 0,
       reactionCounts: {
         '👍': 8,
         '❤️': 5,
-        '😂': 2
+        '😂': 2,
+        '😢': 0,
+        '😡': 0
       },
       userReaction: '❤️',
       replies: [],
@@ -113,7 +127,11 @@ export default function handler(req, res) {
       isWeeklySummary: false,
       threadId: null,
       threadOrder: null,
-      isThreadStarter: true
+      isThreadStarter: true,
+      imageUrl: null,
+      imageAltText: null,
+      imageWidth: null,
+      imageHeight: null
     }
   ];
 
@@ -130,8 +148,8 @@ export default function handler(req, res) {
     }
     
     if (trending === 'true') {
-      // For trending, sort by likes
-      filteredChirps = mockChirps.sort((a, b) => b.likes - a.likes);
+      // For trending, sort by likesCount
+      filteredChirps = mockChirps.sort((a, b) => b.likesCount - a.likesCount);
     }
 
     res.status(200).json(filteredChirps);
@@ -140,7 +158,7 @@ export default function handler(req, res) {
 
   // Handle POST /api/chirps (create new chirp)
   if (req.method === 'POST') {
-    const { content } = req.body;
+    const { content, userId, imageData } = req.body;
     
     if (!content) {
       res.status(400).json({
@@ -154,24 +172,43 @@ export default function handler(req, res) {
       id: Date.now().toString(),
       content,
       author: {
-        id: '2', // Mock user ID
-        name: 'Kriselle',
-        handle: 'kriselle',
-        profileImageUrl: 'https://via.placeholder.com/150'
+        id: userId || '1',
+        firstName: 'User',
+        lastName: '',
+        email: 'user@example.com',
+        customHandle: 'user',
+        handle: 'user',
+        profileImageUrl: null,
+        avatarUrl: null,
+        bio: '',
+        isVerified: false,
+        isChirpPlus: false,
+        followersCount: 0,
+        followingCount: 0,
+        chirpsCount: 0
       },
       createdAt: new Date().toISOString(),
-      likes: 0,
-      replies: 0,
-      reposts: 0,
-      isLiked: false,
-      isReposted: false
+      updatedAt: new Date().toISOString(),
+      likesCount: 0,
+      repliesCount: 0,
+      repostsCount: 0,
+      sharesCount: 0,
+      reactionCounts: { '❤️': 0, '👍': 0, '😂': 0, '😢': 0, '😡': 0 },
+      userReaction: null,
+      replies: [],
+      repostOf: null,
+      isAiGenerated: false,
+      isWeeklySummary: false,
+      threadId: null,
+      threadOrder: null,
+      isThreadStarter: true,
+      imageUrl: imageData?.imageUrl || null,
+      imageAltText: imageData?.imageAltText || null,
+      imageWidth: imageData?.imageWidth || null,
+      imageHeight: imageData?.imageHeight || null
     };
 
-    res.status(201).json({
-      chirp: newChirp,
-      message: 'Chirp created successfully!',
-      timestamp: new Date().toISOString()
-    });
+    res.status(201).json(newChirp);
     return;
   }
 
