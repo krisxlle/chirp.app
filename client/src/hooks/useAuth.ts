@@ -1,2 +1,2 @@
-// Re-export the original useAuth from AuthContext
-export { useAuth } from '../../components/AuthContext';
+// Re-export the web-compatible useAuth from AuthContext
+export { useAuth } from '../components/AuthContext';
