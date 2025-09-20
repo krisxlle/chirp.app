@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react";
-import { cn } from "../lib/utils.ts";
+import { cn } from "./ui/utils.ts";
 
 interface BrandIconProps {
   icon: LucideIcon;
