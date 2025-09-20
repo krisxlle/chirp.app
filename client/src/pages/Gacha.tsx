@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { HelpCircle, Sparkles } from 'lucide-react';
 import React, { useState } from 'react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileCard {
   id: string;
@@ -110,6 +110,7 @@ const rarityNames = {
 
 export default function Gacha() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [collection, setCollection] = useState<ProfileCard[]>([]);
   const [isRolling, setIsRolling] = useState(false);
   const [pulledCard, setPulledCard] = useState<ProfileCard | null>(null);
@@ -162,7 +163,11 @@ export default function Gacha() {
     const currentBalance = getCurrentCrystalBalance();
     
     if (currentBalance < cost) {
-      toast.error(`You need ${cost} crystals to open a capsule. Like chirps (+1) or comment (+5) to earn crystals!`);
+      toast({
+        title: "Insufficient Crystals",
+        description: `You need ${cost} crystals to open a capsule. Like chirps (+1) or comment (+5) to earn crystals!`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -199,14 +204,21 @@ export default function Gacha() {
             setShowPulledCard(true);
           }
           
-          toast.success(`Successfully opened ${results.length} capsule${results.length > 1 ? 's' : ''}!`);
+          toast({
+            title: "Capsule Opened!",
+            description: `Successfully opened ${results.length} capsule${results.length > 1 ? 's' : ''}!`,
+          });
         }
         
         setIsRolling(false);
       } catch (error) {
         console.error('Error in capsule opening:', error);
         setIsRolling(false);
-        toast.error('Failed to open capsule. Please try again.');
+        toast({
+          title: "Error",
+          description: "Failed to open capsule. Please try again.",
+          variant: "destructive",
+        });
       }
     }, 2000); // 2 second animation
   };

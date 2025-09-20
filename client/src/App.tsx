@@ -20,7 +20,7 @@ import Settings from "@/pages/Settings";
 import Subscribe from "@/pages/Subscribe";
 import Support from "@/pages/Support";
 import TermsOfService from "@/pages/TermsOfService";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route, Switch } from "wouter";
 import { AuthProvider } from "../../components/AuthContext";
 
