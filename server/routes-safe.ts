@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { log, serveStatic, setupVite } from "./vite";
 
 export async function registerRoutesSafe(app: Express): Promise<Server> {
   console.log('🛠️  Starting safe route registration...');
@@ -64,7 +65,26 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
     });
   });
 
-  // 6. Create HTTP server
+  // 6. Safe error middleware
+  safeRoute('Error Middleware', () => {
+    app.use((err: any, req: any, res: any, next: any) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      res.status(status).json({ message });
+    });
+  });
+
+  // 7. Safe static file serving
+  safeRoute('Static File Serving', () => {
+    if (app.get("env") === "development") {
+      console.log('⚠️  Skipping Vite setup in safe mode');
+    } else {
+      console.log('📁 Setting up static file serving...');
+      serveStatic(app);
+    }
+  });
+
+  // 8. Create HTTP server
   console.log('🌐 Creating HTTP server...');
   const server = createServer(app);
   

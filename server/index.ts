@@ -83,10 +83,13 @@ app.use((req, res, next) => {
     console.log('🚀 Starting Chirp server...');
     
     let server;
+    let usingSafeRoutes = false;
+    
     try {
       console.log('🔄 Trying safe route registration first...');
       server = await registerRoutesSafe(app);
       console.log('✅ Safe route registration successful!');
+      usingSafeRoutes = true;
     } catch (safeRouteError) {
       console.error('❌ Safe route registration failed:', safeRouteError);
       
@@ -94,6 +97,7 @@ app.use((req, res, next) => {
       try {
         server = await registerRoutes(app);
         console.log('✅ Full route registration successful!');
+        usingSafeRoutes = false;
       } catch (routeError) {
         console.error('❌ Error during full route registration:', routeError);
         
@@ -107,21 +111,28 @@ app.use((req, res, next) => {
       }
     }
 
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
+    // Only add additional middleware if not using safe routes (they're already handled)
+    if (!usingSafeRoutes) {
+      console.log('🔧 Adding additional middleware for full routes...');
+      
+      app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || "Internal Server Error";
 
-      res.status(status).json({ message });
-      throw err;
-    });
+        res.status(status).json({ message });
+        throw err;
+      });
 
-    // importantly only setup vite in development and after
-    // setting up all the other routes so the catch-all route
-    // doesn't interfere with the other routes
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
+      // importantly only setup vite in development and after
+      // setting up all the other routes so the catch-all route
+      // doesn't interfere with the other routes
+      if (app.get("env") === "development") {
+        await setupVite(app, server);
+      } else {
+        serveStatic(app);
+      }
     } else {
-      serveStatic(app);
+      console.log('✅ Using safe routes - skipping additional middleware setup');
     }
 
     // ALWAYS serve the app on the port specified in the environment variable PORT
