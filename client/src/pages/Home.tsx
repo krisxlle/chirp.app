@@ -5,7 +5,7 @@ import ComposeChirp from "@/components/ComposeChirp";
 import ChirpCard from "@/components/ChirpCard";
 import ContactsPrompt from "@/components/ContactsPrompt";
 import { useQuery } from "@tanstack/react-query";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { isUnauthorizedError } from "./authUtils.ts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Clock, TrendingUp } from "lucide-react";

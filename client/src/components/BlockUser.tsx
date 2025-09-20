@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, ShieldOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { isUnauthorizedError } from "../lib/authUtils.ts";
 import {
   AlertDialog,
   AlertDialogAction,

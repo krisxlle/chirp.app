@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "./api.ts";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { isUnauthorizedError } from "./authUtils.ts";
 
 interface Feedback {
   id: number;
