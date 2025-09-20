@@ -1,273 +1,260 @@
-import { useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "./api.ts";
-import { useAuth } from "../hooks/useAuth";
-import { useToast } from "../hooks/use-toast";
-import { isUnauthorizedError } from "./authUtils.ts";
-import UserAvatar from "../components/UserAvatar";
-import { Button } from "../components/ui/button";
-import { Skeleton } from "../components/ui/skeleton";
-import { ArrowLeft, Heart, UserPlus, MessageCircle, Smile, AtSign } from "lucide-react";
-import { useLocation } from "wouter";
-import { formatDistanceToNow } from "date-fns";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Bell, Heart, MessageCircle, Repeat2, UserPlus, Sparkles } from 'lucide-react';
+import UserAvatar from '../components/UserAvatar';
+
+interface Notification {
+  id: string;
+  type: 'like' | 'reply' | 'repost' | 'follow' | 'mention' | 'system';
+  message: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    handle: string;
+    profileImageUrl?: string;
+  };
+  chirp?: {
+    id: string;
+    content: string;
+  };
+  timestamp: string;
+  isRead: boolean;
+}
 
 export default function Notifications() {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const queryClient = useQueryClient();
-
-  const { data: notifications = [], isLoading, error } = useQuery({
-    queryKey: ["/api/notifications"],
-    enabled: isAuthenticated,
-  });
-
-  const markAsReadMutation = useMutation({
-    mutationFn: async (notificationId: number) => {
-      await apiRequest(`/api/notifications/${notificationId}/read`, {
-        method: "PATCH",
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to mark notification as read",
-        variant: "destructive",
-      });
-    },
-  });
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, authLoading, toast]);
+    loadNotifications();
+  }, []);
 
-  useEffect(() => {
-    if (error && isUnauthorizedError(error as Error)) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
+  const loadNotifications = async () => {
+    setIsLoading(true);
+    try {
+      // Mock notifications data
+      const mockNotifications: Notification[] = [
+        {
+          id: '1',
+          type: 'like',
+          message: 'liked your chirp',
+          user: {
+            id: '1',
+            firstName: 'Chirp',
+            lastName: 'Team',
+            handle: 'chirpteam',
+            profileImageUrl: 'https://via.placeholder.com/150'
+          },
+          chirp: {
+            id: '1',
+            content: 'Welcome to Chirp! This is your first chirp. 🐦'
+          },
+          timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+          isRead: false
+        },
+        {
+          id: '2',
+          type: 'follow',
+          message: 'started following you',
+          user: {
+            id: '2',
+            firstName: 'Alex',
+            lastName: 'Johnson',
+            handle: 'alexj',
+            profileImageUrl: 'https://via.placeholder.com/150'
+          },
+          timestamp: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
+          isRead: false
+        },
+        {
+          id: '3',
+          type: 'reply',
+          message: 'replied to your chirp',
+          user: {
+            id: '3',
+            firstName: 'Sarah',
+            lastName: 'Wilson',
+            handle: 'sarahw',
+            profileImageUrl: 'https://via.placeholder.com/150'
+          },
+          chirp: {
+            id: '2',
+            content: 'Chirp is now live! Share your thoughts with the world. ✨'
+          },
+          timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
+          isRead: true
+        },
+        {
+          id: '4',
+          type: 'system',
+          message: 'Welcome to Chirp! Complete your profile to get started.',
+          timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+          isRead: true
+        }
+      ];
+
+      setNotifications(mockNotifications);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [error, toast]);
+  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case "follow":
-        return <UserPlus className="h-4 w-4 text-blue-500" />;
-      case "reaction":
+      case 'like':
         return <Heart className="h-4 w-4 text-red-500" />;
-      case "mention":
-        return <AtSign className="h-4 w-4 text-purple-500" />;
-      case "mention_bio":
-        return <AtSign className="h-4 w-4 text-purple-500" />;
-      case "reply":
-        return <MessageCircle className="h-4 w-4 text-green-500" />;
+      case 'reply':
+        return <MessageCircle className="h-4 w-4 text-blue-500" />;
+      case 'repost':
+        return <Repeat2 className="h-4 w-4 text-green-500" />;
+      case 'follow':
+        return <UserPlus className="h-4 w-4 text-purple-500" />;
+      case 'mention':
+        return <MessageCircle className="h-4 w-4 text-orange-500" />;
+      case 'system':
+        return <Sparkles className="h-4 w-4 text-yellow-500" />;
       default:
-        return <MessageCircle className="h-4 w-4 text-gray-500" />;
+        return <Bell className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const getNotificationText = (notification: any) => {
-    let fromUserName = "Someone";
-    
-    if (notification.fromUser) {
-      // Try to get a meaningful name
-      const firstName = notification.fromUser.firstName?.trim();
-      const lastName = notification.fromUser.lastName?.trim();
-      const fullName = [firstName, lastName].filter(Boolean).join(' ');
-      
-      if (fullName) {
-        fromUserName = fullName;
-      } else if (notification.fromUser.customHandle) {
-        fromUserName = notification.fromUser.customHandle;
-      } else if (notification.fromUser.handle) {
-        fromUserName = notification.fromUser.handle;
-      } else {
-        fromUserName = `User ${notification.fromUser.id}`;
-      }
-    }
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
-    switch (notification.type) {
-      case "follow":
-        return `${fromUserName} started following you`;
-      case "reaction":
-        return `${fromUserName} reacted to your chirp`;
-      case "mention":
-        return `${fromUserName} mentioned you in a chirp`;
-      case "mention_bio":
-        return `${fromUserName} mentioned you in their bio`;
-      case "reply":
-        return `${fromUserName} replied to your chirp`;
-      default:
-        return "You have a new notification";
-    }
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
-  const handleNotificationClick = (notification: any) => {
-    if (!notification.read) {
-      markAsReadMutation.mutate(notification.id);
-    }
-
-    // Navigate based on notification type
-    switch (notification.type) {
-      case "follow":
-        if (notification.fromUser) {
-          setLocation(`/profile/${notification.fromUser.id}`);
-        }
-        break;
-      case "mention_bio":
-        // Navigate to the user's profile who mentioned you in their bio
-        if (notification.fromUser) {
-          setLocation(`/profile/${notification.fromUser.id}`);
-        }
-        break;
-      case "mention":
-      case "reaction":
-      case "reply":
-        // Navigate to the specific chirp if available
-        if (notification.chirp) {
-          setLocation(`/chirp/${notification.chirp.id}`);
-        }
-        break;
-      default:
-        // Default to home
-        setLocation("/");
-        break;
-    }
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === notificationId 
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
   };
 
-  if (authLoading || !isAuthenticated) {
+  const markAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(notification => ({ ...notification, isRead: true }))
+    );
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation("/")}
-            className="p-2 flex-shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Bell className="h-5 w-5 text-purple-600" />
+            <h1 className="text-lg font-semibold text-gray-900">Notifications</h1>
+            {unreadCount > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <Button variant="outline" size="sm" onClick={markAllAsRead}>
+              Mark all as read
+            </Button>
+          )}
         </div>
-      </header>
+      </div>
 
-      {/* Content */}
-      <main className="pb-20">
-        {isLoading ? (
-          // Loading skeleton
-          <div className="divide-y divide-gray-200">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="p-4 flex space-x-3">
-                <Skeleton className="w-10 h-10 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="p-8 text-center">
-            <div className="text-4xl mb-4">⚠️</div>
-            <p className="text-gray-500">Failed to load notifications. Please try again.</p>
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="text-6xl mb-4">🔔</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications yet</h3>
-            <p className="text-gray-500">When someone follows you or reacts to your chirps, you'll see it here!</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {notifications.map((notification: any) => (
-              <button
-                key={notification.id}
-                className={`w-full p-4 flex space-x-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left ${
-                  !notification.read ? "bg-blue-50 dark:bg-blue-900/20" : ""
+      {/* Notifications List */}
+      <div className="p-4">
+        {notifications.length > 0 ? (
+          <div className="space-y-4">
+            {notifications.map((notification) => (
+              <Card 
+                key={notification.id} 
+                className={`cursor-pointer transition-colors ${
+                  !notification.isRead ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
                 }`}
-                onClick={() => handleNotificationClick(notification)}
+                onClick={() => markAsRead(notification.id)}
               >
-                <div className="flex-shrink-0">
-                  {notification.fromUser ? (
-                    <UserAvatar user={notification.fromUser} size="sm" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start space-x-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 dark:text-white break-words">
-                        {getNotificationText(notification)}
-                      </p>
-                      
-                      {notification.chirp && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2 break-words">
-                          "{notification.chirp.content}"
-                        </p>
+                <CardContent className="p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      {notification.user ? (
+                        <UserAvatar user={notification.user} size="sm" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                          {getNotificationIcon(notification.type)}
+                        </div>
                       )}
-                      
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                      </p>
                     </div>
                     
-                    <div className="flex-shrink-0 flex items-center space-x-2">
-                      {getNotificationIcon(notification.type)}
-                      {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {notification.user ? (
+                            <div className="flex items-center space-x-2">
+                              <span className="font-semibold text-gray-900">
+                                {notification.user.firstName} {notification.user.lastName}
+                              </span>
+                              <span className="text-gray-500">@{notification.user.handle}</span>
+                              <span className="text-gray-600">{notification.message}</span>
+                            </div>
+                          ) : (
+                            <p className="text-gray-900">{notification.message}</p>
+                          )}
+                          
+                          {notification.chirp && (
+                            <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                              <p className="text-gray-700 text-sm">{notification.chirp.content}</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 ml-4">
+                          {!notification.isRead && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          )}
+                          <span className="text-sm text-gray-500">
+                            {formatTimestamp(notification.timestamp)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
+                </CardContent>
+              </Card>
             ))}
           </div>
+        ) : (
+          <div className="text-center py-12">
+            <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications yet</h3>
+            <p className="text-gray-500">
+              When people interact with your chirps or follow you, you'll see it here.
+            </p>
+          </div>
         )}
-      </main>
-    </>
+      </div>
+    </div>
   );
 }
