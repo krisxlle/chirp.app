@@ -1,0 +1,28 @@
+# Metro bundler ignore file
+# Exclude server-side files from web builds
+
+server/
+services/
+utils/
+scripts/
+docs/
+database/
+monetization/
+lib/database/
+lib/api/
+lib/types/
+shared/
+types/
+*.md
+.env*
+docker-compose.yml
+Dockerfile
+nginx.conf
+railway.toml
+railway.json
+vercel.json
+Procfile
+.nvmrc
+nixpacks.toml
+.railwayignore
+VERCEL_DEPLOYMENT.md

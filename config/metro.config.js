@@ -19,4 +19,13 @@ config.resolver.blockList = [
   new RegExp(path.resolve(__dirname, 'utils/.*')),
 ];
 
+// Additional resolver configuration to prevent server imports
+config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+
+// Block specific problematic modules
+config.resolver.blacklistRE = new RegExp(
+  `(${path.resolve(__dirname, 'server')}|${path.resolve(__dirname, 'services')}|${path.resolve(__dirname, 'utils')})/.*`
+);
+
 module.exports = config;
