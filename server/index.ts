@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { generalApiLimiter } from "./rateLimiting";
 import { registerRoutes } from "./routes";
+import { registerRoutesSafe } from "./routes-safe";
 import { devServerProtection, securityLogging, securityMiddleware } from "./security";
 import { log, serveStatic, setupVite } from "./vite";
 import { truncateSensitiveData } from "./loggingUtils";
@@ -83,17 +84,27 @@ app.use((req, res, next) => {
     
     let server;
     try {
-      server = await registerRoutes(app);
-    } catch (routeError) {
-      console.error('❌ Error during route registration:', routeError);
+      console.log('🔄 Trying safe route registration first...');
+      server = await registerRoutesSafe(app);
+      console.log('✅ Safe route registration successful!');
+    } catch (safeRouteError) {
+      console.error('❌ Safe route registration failed:', safeRouteError);
       
-      // If there's a path-to-regexp error during route registration, start minimal server immediately
-      if (routeError.message && routeError.message.includes('path-to-regexp')) {
-        throw routeError; // Re-throw to trigger the fallback
+      console.log('🔄 Falling back to full route registration...');
+      try {
+        server = await registerRoutes(app);
+        console.log('✅ Full route registration successful!');
+      } catch (routeError) {
+        console.error('❌ Error during full route registration:', routeError);
+        
+        // If there's a path-to-regexp error during route registration, start minimal server immediately
+        if (routeError.message && routeError.message.includes('path-to-regexp')) {
+          throw routeError; // Re-throw to trigger the fallback
+        }
+        
+        // For other route errors, also trigger fallback
+        throw routeError;
       }
-      
-      // For other route errors, also trigger fallback
-      throw routeError;
     }
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
