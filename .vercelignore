@@ -1,0 +1,26 @@
+# Vercel ignore file - exclude server files from build
+server/
+services/
+utils/
+scripts/
+docs/
+database/
+monetization/
+lib/
+shared/
+types/
+*.md
+.env*
+docker-compose.yml
+Dockerfile
+nginx.conf
+railway.toml
+railway.json
+Procfile
+.nvmrc
+nixpacks.toml
+.railwayignore
+VERCEL_DEPLOYMENT.md
+NETLIFY_DEPLOYMENT.md
+netlify.toml
+build-web.sh
