@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useLocation } from 'wouter';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -8,7 +9,15 @@ export default function Auth() {
   const [firstName, setFirstName] = useState('');
   const [customHandle, setCustomHandle] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect to home if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/');
+    }
+  }, [isAuthenticated, setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,13 +27,17 @@ export default function Auth() {
       if (isSignUp) {
         // For sign up, we'll use email as username for now
         const result = await signIn(email, password);
-        if (!result.success) {
+        if (result.success) {
+          setLocation('/');
+        } else {
           alert(result.error || 'Sign up failed');
         }
       } else {
         // For sign in, use email as username
         const result = await signIn(email, password);
-        if (!result.success) {
+        if (result.success) {
+          setLocation('/');
+        } else {
           alert(result.error || 'Sign in failed');
         }
       }
