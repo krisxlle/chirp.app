@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import express from "express";
+import fs from 'fs';
+import path from 'path';
 import { createServer, type Server } from "http";
 import { log, serveStatic, setupVite } from "./vite";
 
@@ -79,8 +81,41 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
     if (app.get("env") === "development") {
       console.log('⚠️  Skipping Vite setup in safe mode');
     } else {
-      console.log('📁 Setting up static file serving...');
-      serveStatic(app);
+      console.log('📁 Setting up safe static file serving...');
+      
+      const distPath = path.join(process.cwd(), "dist");
+      console.log('📁 Checking for dist directory:', distPath);
+      
+      if (!fs.existsSync(distPath)) {
+        console.log('⚠️  Dist directory not found, skipping static file serving');
+        return;
+      }
+      
+      console.log('📁 Dist directory found, setting up static serving...');
+      
+      // Simple static file serving without complex middleware
+      app.use(express.static(distPath));
+      
+      // Simple SPA fallback without complex patterns
+      app.get('*', (req, res) => {
+        // Skip API routes
+        if (req.path.startsWith('/api/')) {
+          return res.status(404).json({ error: 'API endpoint not found' });
+        }
+        
+        // Serve index.html for SPA routing
+        const indexPath = path.join(distPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.json({ 
+            message: 'Chirp app is running', 
+            note: 'Static files available but index.html not found'
+          });
+        }
+      });
+      
+      console.log('✅ Safe static file serving configured');
     }
   });
 
