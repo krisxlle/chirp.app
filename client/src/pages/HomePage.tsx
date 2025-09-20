@@ -1,15 +1,15 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Plus, RefreshCw, Search } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useToast } from '../hooks/use-toast';
-import { apiRequest } from './api';
-import { isUnauthorizedError } from './authUtils';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
-import { Search, Plus, RefreshCw, Sparkles, MessageSquare } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import { apiRequest } from './api';
+import { isUnauthorizedError } from './authUtils';
 
 export default function HomePage() {
   // Get user from AuthContext
@@ -26,7 +26,6 @@ export default function HomePage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreChirps, setHasMoreChirps] = useState(true);
   const [hasMoreCollectionChirps, setHasMoreCollectionChirps] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState(0);
   
   // State for compose modal
   const [showComposeModal, setShowComposeModal] = useState(false);
@@ -37,7 +36,7 @@ export default function HomePage() {
 
   // Fetch chirps using React Query - equivalent to getForYouChirps/getCollectionFeedChirps
   const { data: chirpsData, isLoading, error, refetch } = useQuery({
-    queryKey: ["chirps", feedType, lastRefresh],
+    queryKey: ["chirps", feedType],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (feedType === 'forYou') {
@@ -75,7 +74,6 @@ export default function HomePage() {
         setCollectionChirps(chirpsData);
         setHasMoreCollectionChirps(chirpsData.length === INITIAL_LIMIT);
       }
-      setLastRefresh(Date.now());
     }
   }, [chirpsData, feedType]);
 
