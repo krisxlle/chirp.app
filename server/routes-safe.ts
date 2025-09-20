@@ -103,12 +103,18 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
         console.log('✅ express.static configured successfully');
         
         console.log('🔍 DEBUG: About to set up SPA fallback...');
-        // Simple SPA fallback without complex patterns
-        app.get('*', (req, res) => {
+        // Use a safer SPA fallback pattern
+        app.use((req, res, next) => {
           console.log('🔍 DEBUG: SPA fallback called for:', req.path);
+          
           // Skip API routes
           if (req.path.startsWith('/api/')) {
             return res.status(404).json({ error: 'API endpoint not found' });
+          }
+          
+          // Skip static file requests (they should be handled by express.static)
+          if (req.path.includes('.')) {
+            return next();
           }
           
           // Serve index.html for SPA routing
