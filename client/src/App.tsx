@@ -4,7 +4,7 @@ import { FloatingFeedback } from "@/components/ui/floating-feedback";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import { queryClient } from "@/lib/queryClient.ts";
+import { queryClient } from "./lib/queryClient";
 import AdminFeedback from "@/pages/AdminFeedback";
 import AdminInfluencerCodes from "@/pages/AdminInfluencerCodes";
 import Auth from "@/pages/Auth";
