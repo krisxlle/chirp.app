@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "@/lib/api.ts";
 import { Mail, MessageCircle, Bug, HelpCircle, Shield, FileText } from "lucide-react";
 
 export default function Support() {
