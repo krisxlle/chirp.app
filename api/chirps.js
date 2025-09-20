@@ -23,7 +23,7 @@ export default function handler(req, res) {
         email: 'team@chirp.com',
         handle: 'chirpteam',
         customHandle: 'chirpteam',
-        profileImageUrl: 'https://via.placeholder.com/150',
+        profileImageUrl: null,
         isChirpPlus: true,
         showChirpPlusBadge: true
       },
@@ -57,7 +57,7 @@ export default function handler(req, res) {
         email: 'team@chirp.com',
         handle: 'chirpteam',
         customHandle: 'chirpteam',
-        profileImageUrl: 'https://via.placeholder.com/150',
+        profileImageUrl: null,
         isChirpPlus: true,
         showChirpPlusBadge: true
       },
@@ -91,7 +91,7 @@ export default function handler(req, res) {
         email: 'kriselle.t@gmail.com',
         handle: 'kriselle',
         customHandle: 'kriselle',
-        profileImageUrl: 'https://via.placeholder.com/150',
+        profileImageUrl: null,
         isChirpPlus: false,
         showChirpPlusBadge: false
       },

@@ -48,7 +48,7 @@ export default function Notifications() {
             firstName: 'Chirp',
             lastName: 'Team',
             handle: 'chirpteam',
-            profileImageUrl: 'https://via.placeholder.com/150'
+            profileImageUrl: null
           },
           chirp: {
             id: '1',
@@ -66,7 +66,7 @@ export default function Notifications() {
             firstName: 'Alex',
             lastName: 'Johnson',
             handle: 'alexj',
-            profileImageUrl: 'https://via.placeholder.com/150'
+            profileImageUrl: null
           },
           timestamp: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
           isRead: false
@@ -80,7 +80,7 @@ export default function Notifications() {
             firstName: 'Sarah',
             lastName: 'Wilson',
             handle: 'sarahw',
-            profileImageUrl: 'https://via.placeholder.com/150'
+            profileImageUrl: null
           },
           chirp: {
             id: '2',

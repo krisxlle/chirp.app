@@ -47,7 +47,7 @@ export default function Search() {
               email: 'search@example.com',
               handle: 'searchresult',
               customHandle: 'searchresult',
-              profileImageUrl: 'https://via.placeholder.com/150'
+              profileImageUrl: null
             },
             createdAt: new Date().toISOString(),
             likes: 5,
@@ -74,7 +74,7 @@ export default function Search() {
             email: 'searchuser@example.com',
             handle: 'searchuser',
             customHandle: 'searchuser',
-            profileImageUrl: 'https://via.placeholder.com/150',
+            profileImageUrl: null,
             bio: `User related to ${query}`,
             followers: 150,
             following: 200
