@@ -37,20 +37,22 @@ export default function Auth() {
 
   return (
     <div style={{ 
-      padding: '20px', 
-      maxWidth: '400px', 
-      margin: '0 auto',
       background: 'linear-gradient(135deg, #ec4899, #a855f7)',
       minHeight: '100vh',
+      width: '100vw',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: '20px'
     }}>
       <div style={{
         backgroundColor: 'white',
         padding: '30px',
         borderRadius: '12px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+        maxWidth: '400px',
+        width: '100%'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <h1 style={{ 
