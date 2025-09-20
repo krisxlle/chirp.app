@@ -80,11 +80,7 @@ export default function handler(req, res) {
       filteredChirps = mockChirps.sort((a, b) => b.likes - a.likes);
     }
 
-    res.status(200).json({
-      chirps: filteredChirps,
-      total: filteredChirps.length,
-      timestamp: new Date().toISOString()
-    });
+    res.status(200).json(filteredChirps);
     return;
   }
 
