@@ -1,42 +1,45 @@
-// Vercel serverless function entry point
-import { createServer } from 'http';
-import express from 'express';
-import path from 'path';
-import fs from 'fs';
+// Vercel serverless function for API routes
+export default function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-const app = express();
-app.use(express.json());
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    environment: 'production',
-    platform: 'vercel'
-  });
-});
-
-// Serve static files
-const distPath = path.join(process.cwd(), 'dist');
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  
-  // SPA fallback
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-} else {
-  app.get('*', (req, res) => {
-    res.json({ 
-      message: 'Chirp app - static files not found',
-      note: 'Build may be in progress'
+  // Health check endpoint
+  if (req.url === '/api/health' || req.url === '/health') {
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: 'production',
+      platform: 'vercel',
+      url: req.url,
+      method: req.method
     });
+    return;
+  }
+
+  // Test endpoint
+  if (req.url === '/api/test' || req.url === '/test') {
+    res.status(200).json({
+      message: 'Chirp API is working on Vercel!',
+      timestamp: new Date().toISOString(),
+      url: req.url,
+      method: req.method
+    });
+    return;
+  }
+
+  // Default response for other API routes
+  res.status(404).json({
+    error: 'API endpoint not found',
+    url: req.url,
+    method: req.method,
+    note: 'This is a Vercel serverless function'
   });
 }
-
-// Export for Vercel
-export default app;
