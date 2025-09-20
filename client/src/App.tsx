@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider } from "./components/AuthContext";
 import BottomNavigation from "./components/BottomNavigation";
@@ -7,14 +8,12 @@ import { FloatingFeedback } from "./components/ui/floating-feedback";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { useAuth } from "./hooks/useAuth";
-import { useEffect } from "react";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminInfluencerCodes from "./pages/AdminInfluencerCodes";
 import Auth from "./pages/Auth";
 import ChirpDetail from "./pages/ChirpDetail";
 import Gacha from "./pages/Gacha";
 import Home from "./pages/Home";
-import Landing from "./pages/Landing";
 import NotFound from "./pages/not-found";
 import Notifications from "./pages/Notifications";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -41,14 +40,14 @@ const queryClient = new QueryClient({
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
-  // Redirect unauthenticated users to /auth
+  // Redirect unauthenticated users to /auth only if they're on the root path
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && location === '/') {
       setLocation('/auth');
     }
-  }, [isAuthenticated, isLoading, setLocation]);
+  }, [isAuthenticated, isLoading, setLocation, location]);
 
   if (isLoading) {
     return (
