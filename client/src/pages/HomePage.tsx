@@ -1,5 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
-import { Plus, RefreshCw, Search } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
@@ -10,6 +8,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
 import { isUnauthorizedError } from './authUtils';
+import { Plus, RefreshCw, Search, Bird } from 'lucide-react';
 
 export default function HomePage() {
   // Get user from AuthContext
@@ -23,9 +22,11 @@ export default function HomePage() {
   // State for chirps with pagination support
   const [forYouChirps, setForYouChirps] = useState<any[]>([]);
   const [collectionChirps, setCollectionChirps] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreChirps, setHasMoreChirps] = useState(true);
   const [hasMoreCollectionChirps, setHasMoreCollectionChirps] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(0);
   
   // State for compose modal
   const [showComposeModal, setShowComposeModal] = useState(false);
@@ -34,53 +35,77 @@ export default function HomePage() {
   const INITIAL_LIMIT = 10; // Load fewer chirps initially for faster startup
   const LOAD_MORE_LIMIT = 10;
 
-  // Fetch chirps using React Query - equivalent to getForYouChirps/getCollectionFeedChirps
-  const { data: chirpsData, isLoading, error, refetch } = useQuery({
-    queryKey: ["chirps", feedType],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (feedType === 'forYou') {
-        params.append('personalized', 'true');
-      }
-      if (feedType === 'collection') {
-        params.append('trending', 'true');
+  // Load initial chirps function - OPTIMIZED FOR STARTUP
+  const loadInitialChirps = useCallback(async (forceRefresh = false) => {
+    try {
+      // Don't reload if we have recent data and not forcing refresh
+      const now = Date.now();
+      if (!forceRefresh && forYouChirps.length > 0 && (now - lastRefresh) < 60000) { // Increased cache time
+        console.log('🔄 HomePage: Using cached chirps (last refresh:', now - lastRefresh, 'ms ago)');
+        return;
       }
       
-      const response = await apiRequest(`/api/chirps?${params.toString()}`);
-      return response;
-    },
-    enabled: !!user,
-    staleTime: 60000, // 60 seconds cache time like the original
-  });
-
-  useEffect(() => {
-    if (error && isUnauthorizedError(error as Error)) {
-      toast({
-        title: "Unauthorized",
-        description: "Your session has expired. Please sign in again.",
-        variant: "destructive",
-      });
-      setLocation('/auth');
+      setIsLoading(true);
+      console.log('🔄 HomePage: Loading initial chirps from database...', forceRefresh ? '(force refresh)' : '');
+      const startTime = Date.now();
+      
+      const params = new URLSearchParams();
+      params.append('personalized', 'true');
+      const realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+      const loadTime = Date.now() - startTime;
+      
+      console.log(`✅ HomePage: Loaded ${realChirps.length} initial chirps from database in ${loadTime}ms`);
+      
+      setForYouChirps(realChirps);
+      setLastRefresh(now);
+      setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
+    } catch (error) {
+      console.error('❌ HomePage: Error loading initial chirps from database:', error);
+      console.log('🔄 HomePage: Keeping existing chirps array');
+    } finally {
+      setIsLoading(false);
     }
-  }, [error, toast, setLocation]);
+  }, [forYouChirps.length, lastRefresh]);
 
-  // Update chirps when data changes - equivalent to loadInitialChirps/loadInitialCollectionChirps
-  useEffect(() => {
-    if (chirpsData) {
-      if (feedType === 'forYou') {
-        setForYouChirps(chirpsData);
-        setHasMoreChirps(chirpsData.length === INITIAL_LIMIT);
-      } else {
-        setCollectionChirps(chirpsData);
-        setHasMoreCollectionChirps(chirpsData.length === INITIAL_LIMIT);
+  // Load initial collection chirps function
+  const loadInitialCollectionChirps = useCallback(async (forceRefresh = false) => {
+    if (!user?.id) return;
+    
+    try {
+      // Don't reload if we have recent data and not forcing refresh
+      const now = Date.now();
+      if (!forceRefresh && collectionChirps.length > 0 && (now - lastRefresh) < 60000) {
+        console.log('🔄 HomePage: Using cached collection chirps (last refresh:', now - lastRefresh, 'ms ago)');
+        return;
       }
+      
+      setIsLoading(true);
+      console.log('🔄 HomePage: Loading initial collection chirps from database...', forceRefresh ? '(force refresh)' : '');
+      const startTime = Date.now();
+      
+      const params = new URLSearchParams();
+      params.append('trending', 'true');
+      const realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+      const loadTime = Date.now() - startTime;
+      
+      console.log(`✅ HomePage: Loaded ${realChirps.length} initial collection chirps from database in ${loadTime}ms`);
+      
+      setCollectionChirps(realChirps);
+      setLastRefresh(now);
+      setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
+    } catch (error) {
+      console.error('❌ HomePage: Error loading initial collection chirps from database:', error);
+      console.log('🔄 HomePage: Keeping existing collection chirps array');
+    } finally {
+      setIsLoading(false);
     }
-  }, [chirpsData, feedType]);
-
-  // Load more chirps function for pagination - equivalent to loadMoreChirps
+  }, [user?.id, collectionChirps.length, lastRefresh]);
+  
+  // Load more chirps function for pagination
   const loadMoreChirps = useCallback(async () => {
     if (isLoadingMore) return;
     
+    // Check which feed type we're loading more for
     const isForYouFeed = feedType === 'forYou';
     const hasMore = isForYouFeed ? hasMoreChirps : hasMoreCollectionChirps;
     const currentChirps = isForYouFeed ? forYouChirps : collectionChirps;
@@ -89,6 +114,8 @@ export default function HomePage() {
     
     try {
       setIsLoadingMore(true);
+      console.log(`🔄 HomePage: Loading more ${feedType} chirps...`);
+      const startTime = Date.now();
       
       const params = new URLSearchParams();
       if (isForYouFeed) {
@@ -99,6 +126,9 @@ export default function HomePage() {
       
       const response = await apiRequest(`/api/chirps?${params.toString()}`);
       const moreChirps = response.slice(currentChirps.length, currentChirps.length + LOAD_MORE_LIMIT);
+      
+      const loadTime = Date.now() - startTime;
+      console.log(`✅ HomePage: Loaded ${moreChirps.length} more ${feedType} chirps in ${loadTime}ms`);
       
       if (moreChirps.length > 0) {
         if (isForYouFeed) {
@@ -128,18 +158,73 @@ export default function HomePage() {
         }
       }
     } catch (error) {
-      console.error(`Error loading more ${feedType} chirps:`, error);
+      console.error(`❌ HomePage: Error loading more ${feedType} chirps:`, error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [feedType, isLoadingMore, hasMoreChirps, hasMoreCollectionChirps, forYouChirps, collectionChirps]);
-
-  // Function to refresh chirps - equivalent to refreshChirps
-  const refreshChirps = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+  }, [feedType, user?.id, isLoadingMore, hasMoreChirps, hasMoreCollectionChirps, forYouChirps, collectionChirps]);
   
-  // Function to update chirp like count - equivalent to handleChirpLikeUpdate
+  // Load initial chirps on mount
+  useEffect(() => {
+    // Only load chirps if user is available
+    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id, 'feedType:', feedType);
+    if (user) {
+      if (feedType === 'forYou') {
+        loadInitialChirps();
+      } else {
+        loadInitialCollectionChirps();
+      }
+    } else {
+      console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
+    }
+  }, [user?.id, feedType, loadInitialChirps, loadInitialCollectionChirps]);
+
+  // Clear chirps when user changes to prevent showing old user's data
+  useEffect(() => {
+    console.log('🔄 HomePage: User changed, clearing cached chirps');
+    setForYouChirps([]);
+    setCollectionChirps([]);
+    setHasMoreChirps(true);
+    setHasMoreCollectionChirps(true);
+    setLastRefresh(0);
+  }, [user?.id]);
+  
+  // Function to refresh chirps
+  const refreshChirps = useCallback(async () => {
+    console.log(`🔄 HomePage: Force refreshing ${feedType} chirps...`);
+    try {
+      setIsLoading(true);
+      
+      const startTime = Date.now();
+      let realChirps;
+      
+      if (feedType === 'forYou') {
+        const params = new URLSearchParams();
+        params.append('personalized', 'true');
+        realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+        setForYouChirps(realChirps);
+        setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
+      } else {
+        if (!user?.id) return;
+        const params = new URLSearchParams();
+        params.append('trending', 'true');
+        realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+        setCollectionChirps(realChirps);
+        setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
+      }
+      
+      const loadTime = Date.now() - startTime;
+      console.log(`✅ HomePage: Refreshed ${realChirps.length} ${feedType} chirps from database in ${loadTime}ms`);
+      
+      setLastRefresh(Date.now());
+    } catch (error) {
+      console.error(`❌ HomePage: Error refreshing ${feedType} chirps:`, error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [feedType, user?.id]);
+  
+  // Function to update chirp like count
   const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
     const updateChirp = (prevChirps: any[]) => 
       prevChirps.map(chirp => 
@@ -174,7 +259,7 @@ export default function HomePage() {
     }
   }, [feedType]);
   
-  // Function to add a new chirp to the For You feed - equivalent to handleNewChirp
+  // Function to add a new chirp to the For You feed
   const handleNewChirp = useCallback(async (content: string, imageData?: {
     imageUrl?: string;
     imageAltText?: string;
@@ -238,7 +323,7 @@ export default function HomePage() {
     }
   }, [user, toast]);
   
-  // Function to handle chirp deletion - equivalent to handleChirpDelete
+  // Function to handle chirp deletion
   const handleChirpDelete = useCallback((deletedChirpId?: string) => {
     if (deletedChirpId) {
       setForYouChirps(prevChirps => 
@@ -248,34 +333,41 @@ export default function HomePage() {
     refreshChirps();
   }, [refreshChirps]);
 
-  // Function to navigate to search page - equivalent to handleSearchPress
+  // Function to navigate to search page
   const handleSearchPress = () => {
     setLocation('/search');
   };
 
-  const currentChirps = feedType === 'forYou' ? forYouChirps : collectionChirps;
-  const hasMore = feedType === 'forYou' ? hasMoreChirps : hasMoreCollectionChirps;
+  // Handle scroll for infinite loading (For You feed only)
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200;
+    
+    if (isNearBottom && feedType === 'forYou' && hasMoreChirps && !isLoadingMore) {
+      loadMoreChirps();
+    }
+  };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Home</h1>
-        <div className="flex items-center space-x-2">
+      <header className="bg-white border-b border-gray-200 flex justify-between items-center py-3 px-4">
+        <h1 className="text-2xl font-bold text-gray-900">Home</h1>
+        <div className="flex items-center space-x-3">
           <Button variant="ghost" size="icon" onClick={handleSearchPress}>
-            <Search className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <Search className="h-5 w-5 text-gray-600" />
           </Button>
         </div>
       </header>
 
-      {/* Feed Type Toggle - Updated to match original Metro styling */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+      {/* Feed Type Toggle */}
+      <div className="bg-white border-b border-gray-200 py-3 px-4">
+        <div className="flex bg-gray-100 rounded-lg p-1">
           <button
             className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               feedType === 'forYou'
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
             onClick={() => setFeedType('forYou')}
           >
@@ -285,7 +377,7 @@ export default function HomePage() {
             className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               feedType === 'collection'
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
             onClick={() => setFeedType('collection')}
           >
@@ -295,78 +387,99 @@ export default function HomePage() {
       </div>
 
       {/* Chirps Feed with Infinite Scroll */}
-      <div className="flex-1 overflow-y-auto">
+      <div 
+        className="flex-1 overflow-y-auto"
+        onScroll={handleScroll}
+      >
         {/* Compose Chirp - Now scrolls with feed */}
-        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-white border-b border-gray-200 p-4">
           <ComposeChirp onPost={handleNewChirp} />
         </div>
 
-        {/* Chirps List */}
-        <div className="space-y-0">
-          {isLoading ? (
-            <div className="p-4 space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="p-4 text-center text-red-500">Error loading chirps.</div>
-          ) : currentChirps.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="text-4xl mb-4">💬</div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {feedType === 'forYou' ? 'No chirps yet' : 'No Collection Chirps'}
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                {feedType === 'forYou' 
-                  ? 'Be the first to chirp!' 
-                  : 'Chirps from your gacha collection profiles will appear here'
-                }
-              </p>
-            </div>
-          ) : (
-            <>
-              {currentChirps.map((chirp, index) => (
-                <ChirpCard 
-                  key={`${chirp.id}-${index}`} 
-                  chirp={chirp} 
-                  onLikeUpdate={handleChirpLikeUpdate}
-                  onDeleteSuccess={handleChirpDelete}
-                  onReplyPosted={handleChirpReplyUpdate}
-                  onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
-                />
-              ))}
-              
-              {/* Loading more indicator */}
-              {isLoadingMore && (
-                <div className="flex items-center justify-center py-4">
-                  <RefreshCw className="h-4 w-4 animate-spin text-purple-600 mr-2" />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Loading more chirps...</span>
-                </div>
-              )}
-              
-              {/* Load More Button */}
-              {hasMore && !isLoadingMore && (
-                <div className="p-4">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={loadMoreChirps}
-                  >
-                    Load More {feedType === 'forYou' ? 'For You' : 'Collection'} Chirps
-                  </Button>
-                </div>
-              )}
-              
-              {/* End of feed indicator */}
-              {!hasMore && currentChirps.length > 0 && (
-                <div className="p-4 text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">You've reached the end! 🎉</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        {feedType === 'forYou' ? (
+          // For You Feed
+          <div className="px-4">
+            {forYouChirps.length === 0 && !isLoading ? (
+              <div className="py-8 text-center">
+                <div className="text-4xl mb-4">💬</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No chirps yet</h3>
+                <p className="text-gray-500">Be the first to chirp!</p>
+              </div>
+            ) : (
+              <>
+                {forYouChirps.map((chirp, index) => (
+                  <ChirpCard 
+                    key={`${chirp.id}-${index}`} 
+                    chirp={chirp} 
+                    onLikeUpdate={handleChirpLikeUpdate}
+                    onDeleteSuccess={handleChirpDelete}
+                    onReplyPosted={handleChirpReplyUpdate}
+                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                  />
+                ))}
+                
+                {/* Loading more indicator */}
+                {isLoadingMore && (
+                  <div className="flex items-center justify-center py-4">
+                    <RefreshCw className="h-4 w-4 animate-spin text-purple-600 mr-2" />
+                    <span className="text-sm text-gray-500">Loading more chirps...</span>
+                  </div>
+                )}
+                
+                {/* End of feed indicator */}
+                {!hasMoreChirps && forYouChirps.length > 0 && (
+                  <div className="py-4 text-center">
+                    <p className="text-sm text-gray-500">You've reached the end! 🎉</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          // Collection Feed
+          <div className="px-4">
+            {collectionChirps.length === 0 && !isLoading ? (
+              <div className="py-8 text-center">
+                <Bird className="h-12 w-12 mx-auto mb-4 text-purple-600" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Collection Chirps</h3>
+                <p className="text-gray-500">Chirps from your gacha collection profiles will appear here</p>
+              </div>
+            ) : (
+              <>
+                {collectionChirps.map((chirp, index) => (
+                  <ChirpCard 
+                    key={`${chirp.id}-${index}`} 
+                    chirp={chirp} 
+                    onLikeUpdate={handleChirpLikeUpdate}
+                    onReplyPosted={handleChirpReplyUpdate}
+                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                  />
+                ))}
+                
+                {/* Load More Button */}
+                {hasMoreCollectionChirps && (
+                  <div className="py-4">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={loadMoreChirps}
+                      disabled={isLoadingMore}
+                    >
+                      {isLoadingMore ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                          Loading...
+                        </>
+                      ) : (
+                        'Load More Collection Chirps'
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Floating Compose Button */}
@@ -380,15 +493,15 @@ export default function HomePage() {
       {/* Compose Modal */}
       {showComposeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-lg">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white w-full max-w-md rounded-t-lg">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <button
                 className="text-purple-600 font-semibold"
                 onClick={() => setShowComposeModal(false)}
               >
                 Cancel
               </button>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Compose Chirp</h2>
+              <h2 className="text-lg font-bold text-gray-900">Compose Chirp</h2>
               <div className="w-16"></div>
             </div>
             <ComposeChirp 
