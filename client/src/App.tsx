@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider } from "./components/AuthContext";
 import BottomNavigation from "./components/BottomNavigation";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
@@ -7,6 +7,7 @@ import { FloatingFeedback } from "./components/ui/floating-feedback";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { useAuth } from "./hooks/useAuth";
+import { useEffect } from "react";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminInfluencerCodes from "./pages/AdminInfluencerCodes";
 import Auth from "./pages/Auth";
@@ -40,6 +41,14 @@ const queryClient = new QueryClient({
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirect unauthenticated users to /auth
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setLocation('/auth');
+    }
+  }, [isAuthenticated, isLoading, setLocation]);
 
   if (isLoading) {
     return (
@@ -52,12 +61,7 @@ function Router() {
   return (
     <div className="max-w-md mx-auto bg-white dark:bg-gray-900 min-h-screen relative">
       <Switch>
-        {!isAuthenticated ? (
-          <>
-            <Route path="/" component={Landing} />
-            <Route path="/auth" component={Auth} />
-          </>
-        ) : (
+        {isAuthenticated ? (
           <>
             <Route path="/" component={Home} />
             <Route path="/search" component={Search} />
@@ -69,6 +73,11 @@ function Router() {
             <Route path="/admin/influencer-codes" component={AdminInfluencerCodes} />
             <Route path="/admin/feedback" component={AdminFeedback} />
             <Route path="/chirp/:id" component={ChirpDetail} />
+          </>
+        ) : (
+          <>
+            <Route path="/auth" component={Auth} />
+            <Route path="/" component={Auth} />
           </>
         )}
         <Route path="/terms" component={TermsOfService} />
