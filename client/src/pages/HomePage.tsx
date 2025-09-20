@@ -1,14 +1,12 @@
+import { Bird, Plus, RefreshCw, Search } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 import { Button } from '../components/ui/button';
-import { Skeleton } from '../components/ui/skeleton';
 import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
-import { isUnauthorizedError } from './authUtils';
-import { Plus, RefreshCw, Search, Bird } from 'lucide-react';
 
 export default function HomePage() {
   // Get user from AuthContext

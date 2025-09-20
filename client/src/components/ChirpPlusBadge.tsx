@@ -1,20 +1,17 @@
-import { Crown } from "lucide-react";
+import React from 'react';
+import { Crown } from 'lucide-react';
 
 interface ChirpPlusBadgeProps {
-  show?: boolean;
-  size?: "sm" | "md";
+  size?: number;
   className?: string;
 }
 
-export default function ChirpPlusBadge({ show = true, size = "sm", className = "" }: ChirpPlusBadgeProps) {
-  if (!show) return null;
-
-  const iconSize = size === "sm" ? "h-4 w-4" : "h-5 w-5";
-
+export default function ChirpPlusBadge({ size = 16, className = '' }: ChirpPlusBadgeProps) {
   return (
-    <Crown 
-      className={`text-purple-500 ${iconSize} ${className}`}
-      title="Chirp+ Member"
-    />
+    <div className={`inline-flex items-center justify-center ${className}`}>
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-full p-1">
+        <Crown className="text-white" size={size} />
+      </div>
+    </div>
   );
 }
