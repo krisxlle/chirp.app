@@ -1,99 +1,85 @@
-import { cn } from "./ui/utils.ts";
-import { useState } from "react";
+import React from 'react';
+import { Button } from './ui/button';
 
-interface UserAvatarProps {
-  user?: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    email: string;
-    profileImageUrl?: string;
-    avatarUrl?: string;
-  } | null;
-  size?: "sm" | "md" | "lg" | "xl";
-  className?: string;
+interface User {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  customHandle?: string;
+  handle?: string;
+  profileImageUrl?: string;
+  avatarUrl?: string;
 }
 
-export default function UserAvatar({ user, size = "md", className }: UserAvatarProps) {
-  const [imageError, setImageError] = useState(false);
-  const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-10 h-10", 
-    lg: "w-12 h-12",
-    xl: "w-20 h-20",
+interface UserAvatarProps {
+  user: User;
+  size?: 'sm' | 'md' | 'lg';
+  onPress?: () => void;
+}
+
+export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarProps) {
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'w-8 h-8 text-sm';
+      case 'lg':
+        return 'w-16 h-16 text-xl';
+      default:
+        return 'w-12 h-12 text-base';
+    }
   };
 
-  const textSizeClasses = {
-    sm: "text-xs",
-    md: "text-sm",
-    lg: "text-base", 
-    xl: "text-xl",
+  const getInitials = () => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user.firstName) {
+      return user.firstName[0].toUpperCase();
+    }
+    if (user.customHandle) {
+      return user.customHandle[0].toUpperCase();
+    }
+    if (user.handle) {
+      return user.handle[0].toUpperCase();
+    }
+    return user.email[0].toUpperCase();
   };
 
-  if (!user) {
-    return (
-      <div className={cn(
-        "rounded-full bg-gray-200 flex items-center justify-center",
-        sizeClasses[size],
-        className
-      )}>
-        <span className={cn("text-gray-500", textSizeClasses[size])}>?</span>
-      </div>
-    );
-  }
-
-  // Generate a consistent color based on user ID
-  const colors = [
-    "from-purple-400 to-pink-400",
-    "from-blue-400 to-purple-500",
-    "from-green-400 to-blue-500",
-    "from-pink-400 to-red-500",
-    "from-indigo-400 to-purple-600",
-    "from-yellow-400 to-orange-500",
-    "from-teal-400 to-blue-500",
-    "from-red-400 to-pink-500",
-  ];
-
-  const colorIndex = user.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-  const gradientClass = colors[colorIndex];
-
-  const avatarSrc = user.avatarUrl || user.profileImageUrl;
-  if (avatarSrc && !imageError) {
-    // Add cache-busting for OpenAI generated images to ensure fresh loads
-    const cacheBustedSrc = avatarSrc.includes('oaidalleapiprodscus') 
-      ? `${avatarSrc}&cache_bust=${Date.now()}` 
-      : avatarSrc;
-      
-    return (
-      <div className={cn("relative", sizeClasses[size], className)}>
+  const avatarContent = (
+    <div className={`${getSizeClasses()} rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold cursor-pointer transition-transform hover:scale-105`}>
+      {user.profileImageUrl || user.avatarUrl ? (
         <img
-          src={cacheBustedSrc}
-          alt={user.customHandle || user.handle || `User ${user.id}`}
-          className="rounded-full object-cover w-full h-full bg-gray-100 dark:bg-gray-800"
+          src={user.profileImageUrl || user.avatarUrl}
+          alt={`${user.firstName || user.customHandle || user.handle || user.email.split('@')[0]}'s avatar`}
+          className="w-full h-full rounded-full object-cover"
           onError={(e) => {
-            console.log('Avatar image failed to load:', avatarSrc);
-            setImageError(true);
-          }}
-          onLoad={() => {
-            console.log('Avatar image loaded successfully');
+            // Fallback to initials if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              parent.innerHTML = getInitials();
+            }
           }}
         />
-      </div>
+      ) : (
+        getInitials()
+      )}
+    </div>
+  );
+
+  if (onPress) {
+    return (
+      <Button
+        variant="ghost"
+        className="p-0 h-auto w-auto"
+        onClick={onPress}
+      >
+        {avatarContent}
+      </Button>
     );
   }
 
-  // Use initials as fallback - prioritize custom handle, then handle, then user ID
-  const displayName = user.customHandle || user.handle || `User${user.id}`;
-  const initials = displayName.slice(0, 2).toUpperCase();
-
-  return (
-    <div className={cn(
-      "rounded-full bg-gradient-to-br flex items-center justify-center text-white font-semibold",
-      sizeClasses[size],
-      `bg-gradient-to-br ${gradientClass}`,
-      className
-    )}>
-      <span className={textSizeClasses[size]}>{initials}</span>
-    </div>
-  );
+  return avatarContent;
 }
