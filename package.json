@@ -1,9 +1,9 @@
 {
   "name": "chirp-expo",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "version": "1.0.0",
   "scripts": {
-    "start": "npx tsx server/index.ts",
+    "start": "node index.js",
     "start-server": "npx tsx server/index.ts",
     "start:production": "NODE_ENV=production npx tsx server/index.ts",
     "start:prod": "NODE_ENV=production npx tsx server/index.ts",
