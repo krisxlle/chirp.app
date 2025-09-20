@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import ContactsIntegration from "./ContactsIntegration";
+import ContactsIntegration from "@/components/ContactsIntegration";
 
 interface SignupContactsPromptProps {
   onComplete?: () => void;

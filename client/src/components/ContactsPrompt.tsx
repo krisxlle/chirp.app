@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import ContactsIntegration from "./ContactsIntegration";
+import ContactsIntegration from "@/components/ContactsIntegration";
 
 export default function ContactsPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);

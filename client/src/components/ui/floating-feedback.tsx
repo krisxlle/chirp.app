@@ -1,6 +1,6 @@
 import { MessageSquare } from "lucide-react";
-import { FeedbackDialog } from "./feedback-dialog";
-import { Button } from "./button";
+import { FeedbackDialog } from "@/components/ui/feedback-dialog";
+import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 
 export function FloatingFeedback() {
