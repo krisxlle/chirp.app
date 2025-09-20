@@ -1,9 +1,9 @@
 import React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { Route, Switch } from 'wouter';
 
 // Create a simple query client
-const queryClient = new (require('@tanstack/react-query').QueryClient)({
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: false,
