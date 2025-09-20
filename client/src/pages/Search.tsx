@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ChirpCard from "@/components/ChirpCard";
-import UserAvatar from "@/components/UserAvatar";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import ChirpCard from "../components/ChirpCard";
+import UserAvatar from "../components/UserAvatar";
 import { ArrowLeft, Search as SearchIcon } from "lucide-react";
 import { useLocation } from "wouter";
 

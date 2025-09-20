@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from "wouter";
 import { ArrowLeft, Crown, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { useToast } from "../hooks/use-toast";
 
 const SubscribeForm = () => {
   const { toast } = useToast();

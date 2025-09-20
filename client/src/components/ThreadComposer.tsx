@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+import { Card, CardContent } from "./ui/card";
 import { X, Plus, Send, Sparkles } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "./queryClient";
+import { useToast } from "./hooks/use-toast";
+import { useAuth } from "./hooks/useAuth";
 
 interface ThreadComposerProps {
   onClose?: () => void;

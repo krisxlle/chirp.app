@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import { apiRequest } from "./queryClient";
+import { useToast } from "./hooks/use-toast";
+import { Button } from "./ui/button";
 import { Bell, BellOff } from "lucide-react";
 
 interface NotificationToggleProps {

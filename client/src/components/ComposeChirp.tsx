@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "./queryClient";
+import { useAuth } from "./hooks/useAuth";
+import { useToast } from "./hooks/use-toast";
 import { isUnauthorizedError } from "./authUtils.ts";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import UserAvatar from "@/components/UserAvatar";
-import ThreadComposer from "@/components/ThreadComposer";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+import UserAvatar from "./UserAvatar";
+import ThreadComposer from "./ThreadComposer";
 import { Sparkles, MessageSquare } from "lucide-react";
 
 export default function ComposeChirp() {

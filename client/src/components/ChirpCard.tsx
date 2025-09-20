@@ -1,19 +1,19 @@
-import BrandIcon from "@/components/BrandIcon";
-import ChirpPlusBadge from "@/components/ChirpPlusBadge";
-import MentionText from "@/components/MentionText";
-import MoodReactions from "@/components/MoodReactions";
-import { Button } from "@/components/ui/button";
+import BrandIcon from "./BrandIcon";
+import ChirpPlusBadge from "./ChirpPlusBadge";
+import MentionText from "./MentionText";
+import MoodReactions from "./MoodReactions";
+import { Button } from "./ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Textarea } from "@/components/ui/textarea";
-import UserAvatar from "@/components/UserAvatar";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
+} from "./ui/dropdown-menu";
+import { Textarea } from "./ui/textarea";
+import UserAvatar from "./UserAvatar";
+import { useToast } from "./hooks/use-toast";
+import { useAuth } from "./hooks/useAuth";
+import { apiRequest } from "./queryClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import html2canvas from 'html2canvas';

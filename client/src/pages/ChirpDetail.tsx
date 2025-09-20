@@ -1,9 +1,9 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import ChirpCard from "@/components/ChirpCard";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
+import ChirpCard from "../components/ChirpCard";
 
 export default function ChirpDetail() {
   const { id } = useParams();

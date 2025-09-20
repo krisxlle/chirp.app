@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Skeleton } from "./ui/skeleton";
+import { Card, CardContent } from "./ui/card";
+import { Input } from "./ui/input";
 import { Users, UserPlus, Mail, Search, X, MessageSquare } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import UserAvatar from "@/components/UserAvatar";
+import { useToast } from "./hooks/use-toast";
+import { apiRequest } from "./queryClient";
+import UserAvatar from "./UserAvatar";
 import { isUnauthorizedError } from "./authUtils.ts";
 
 interface Contact {

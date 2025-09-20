@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import { Shield, ShieldOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "./hooks/use-toast";
+import { apiRequest } from "./queryClient";
 import { isUnauthorizedError } from "./authUtils.ts";
 import {
   AlertDialog,
@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "./ui/alert-dialog";
 
 interface BlockUserProps {
   userId: string;

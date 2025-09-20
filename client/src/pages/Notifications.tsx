@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "./api.ts";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/use-toast";
 import { isUnauthorizedError } from "./authUtils.ts";
-import UserAvatar from "@/components/UserAvatar";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import UserAvatar from "../components/UserAvatar";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
 import { ArrowLeft, Heart, UserPlus, MessageCircle, Smile, AtSign } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";

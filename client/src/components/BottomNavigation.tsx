@@ -1,5 +1,5 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/useAuth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { useAuth } from "./hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Home, Search, Sparkles, User } from "lucide-react";
 import { useLocation } from "wouter";

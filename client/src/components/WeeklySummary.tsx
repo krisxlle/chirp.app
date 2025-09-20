@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
 import { Sparkles, TrendingUp, Heart, MessageSquare, BarChart3, Clock, Share } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "./queryClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "./hooks/use-toast";
 
 interface WeeklySummary {
   id: number;
