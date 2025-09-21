@@ -299,6 +299,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     const currentRef = isThreadMode ? threadTextareaRef : textareaRef;
     if (currentRef.current) {
       currentRef.current.focus();
+      // Also ensure the cursor is positioned at the end
+      const length = currentRef.current.value.length;
+      currentRef.current.setSelectionRange(length, length);
     }
   };
 
@@ -355,6 +358,15 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onClick={handleTextareaClick}
+              onFocus={() => {
+                // Ensure cursor is at the end when focused
+                setTimeout(() => {
+                  if (threadTextareaRef.current) {
+                    const length = threadTextareaRef.current.value.length;
+                    threadTextareaRef.current.setSelectionRange(length, length);
+                  }
+                }, 0);
+              }}
               maxLength={maxLength}
             />
             
@@ -552,6 +564,15 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onClick={handleTextareaClick}
+            onFocus={() => {
+              // Ensure cursor is at the end when focused
+              setTimeout(() => {
+                if (textareaRef.current) {
+                  const length = textareaRef.current.value.length;
+                  textareaRef.current.setSelectionRange(length, length);
+                }
+              }, 0);
+            }}
             maxLength={maxLength}
           />
           

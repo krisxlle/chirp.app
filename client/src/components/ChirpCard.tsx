@@ -146,7 +146,8 @@ export default function ChirpCard({
         
         const response = await apiRequest(`/api/chirps/${chirpIdStr}/unlike`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userIdStr })
         });
 
         // Update local state
@@ -165,7 +166,8 @@ export default function ChirpCard({
         
         const response = await apiRequest(`/api/chirps/${chirpIdStr}/like`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: userIdStr })
         });
 
         // Update local state

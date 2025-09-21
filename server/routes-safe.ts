@@ -340,6 +340,84 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       }
     });
     
+    // Chirp like/unlike endpoints
+    app.post('/api/chirps/:id/like', async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { userId } = req.body;
+        
+        if (!userId) {
+          return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+        
+        // Check if user already liked this chirp
+        const { data: existingReaction, error: checkError } = await supabase
+          .from('reactions')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('chirp_id', id)
+          .single();
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.log('❌ Error checking existing reaction:', checkError);
+          return res.status(500).json({ success: false, error: 'Failed to check reaction status' });
+        }
+        
+        if (existingReaction) {
+          return res.status(400).json({ success: false, error: 'User has already liked this chirp' });
+        }
+        
+        // Add the reaction
+        const { data: reaction, error } = await supabase
+          .from('reactions')
+          .insert({
+            user_id: userId,
+            chirp_id: parseInt(id),
+            reaction_type: 'like'
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.log('❌ Error adding reaction:', error);
+          return res.status(500).json({ success: false, error: 'Failed to like chirp' });
+        }
+        
+        res.json({ success: true, reaction });
+      } catch (error) {
+        console.error('❌ Error in like endpoint:', error);
+        res.status(500).json({ success: false, error: 'Failed to like chirp' });
+      }
+    });
+    
+    app.post('/api/chirps/:id/unlike', async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { userId } = req.body;
+        
+        if (!userId) {
+          return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+        
+        // Remove the reaction
+        const { error } = await supabase
+          .from('reactions')
+          .delete()
+          .eq('user_id', userId)
+          .eq('chirp_id', id);
+        
+        if (error) {
+          console.log('❌ Error removing reaction:', error);
+          return res.status(500).json({ success: false, error: 'Failed to unlike chirp' });
+        }
+        
+        res.json({ success: true, message: 'Reaction removed successfully' });
+      } catch (error) {
+        console.error('❌ Error in unlike endpoint:', error);
+        res.status(500).json({ success: false, error: 'Failed to unlike chirp' });
+      }
+    });
+    
     // Root route removed - let static file serving handle it
   });
 
