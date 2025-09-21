@@ -55,8 +55,8 @@ export default function HomePage() {
         createdAt: chirp.created_at,
         author: {
           id: chirp.users.id,
-          firstName: chirp.users.first_name,
-          lastName: chirp.users.last_name,
+          firstName: chirp.users.first_name || '',
+          lastName: chirp.users.last_name || '',
           email: chirp.users.email,
           handle: chirp.users.handle,
           profileImageUrl: null,
@@ -121,8 +121,8 @@ export default function HomePage() {
         createdAt: chirp.created_at,
         author: {
           id: chirp.users.id,
-          firstName: chirp.users.first_name,
-          lastName: chirp.users.last_name,
+          firstName: chirp.users.first_name || '',
+          lastName: chirp.users.last_name || '',
           email: chirp.users.email,
           handle: chirp.users.handle,
           profileImageUrl: null,

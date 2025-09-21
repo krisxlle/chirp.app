@@ -3,6 +3,26 @@ import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import { apiRequest } from '../components/api';
 
+// Analytics Icon Component
+const AnalyticsIcon = ({ size = 20, color = "#ffffff" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M3 3v18h18" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M18.7 8l-5.1 6.3-3.8-4.3L7 17" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 interface ProfileCard {
   id: string;
   name: string;
@@ -138,6 +158,22 @@ export default function CollectionPage() {
             disabled={isRefreshing}
           >
             <span style={{ fontSize: '18px', color: '#ffffff' }}>🔄</span>
+          </button>
+          <button
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '22px',
+              backgroundColor: '#7c3aed',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onClick={() => setLocation('/analytics')}
+          >
+            <AnalyticsIcon size={20} color="#ffffff" />
           </button>
         </div>
       </div>

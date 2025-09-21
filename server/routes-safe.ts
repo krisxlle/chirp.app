@@ -73,40 +73,42 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       }
     });
     
-    // Add a public chirps test endpoint
-    app.get('/api/test/chirps', async (req, res) => {
+    // Add a public notifications test endpoint
+    app.get('/api/test/notifications', async (req, res) => {
       try {
         const { data, error } = await supabase
-          .from('chirps')
+          .from('notifications')
           .select(`
             id,
-            content,
+            type,
+            read,
             created_at,
-            author_id,
-            users!inner(id, first_name, last_name, email, handle)
+            from_user_id,
+            chirp_id,
+            users!notifications_from_user_id_fkey(id, first_name, last_name, email, handle)
           `)
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(20);
         
         if (error) {
           res.json({ 
             success: false, 
             error: error.message,
-            message: 'Chirps query failed'
+            message: 'Notifications query failed'
           });
         } else {
           res.json({ 
             success: true, 
-            message: 'Chirps retrieved successfully',
-            chirpCount: data?.length || 0,
-            chirps: data
+            message: 'Notifications retrieved successfully',
+            notificationCount: data?.length || 0,
+            notifications: data
           });
         }
       } catch (error) {
         res.json({ 
           success: false, 
           error: error instanceof Error ? error.message : 'Unknown error',
-          message: 'Chirps test failed'
+          message: 'Notifications test failed'
         });
       }
     });

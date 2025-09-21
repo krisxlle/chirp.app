@@ -325,7 +325,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               style={{
                 fontSize: 18,
                 lineHeight: 24,
-                minHeight: 80,
+                minHeight: 60,
+                maxHeight: 120,
                 padding: 0,
                 color: '#1a1a1a',
                 width: '100%',
@@ -514,7 +515,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             style={{
               fontSize: 18,
               lineHeight: 24,
-              minHeight: 80,
+              minHeight: 60,
+              maxHeight: 120,
               padding: 0,
               color: '#1a1a1a',
               width: '100%',

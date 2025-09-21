@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { Download, Eye, EyeOff } from 'lucide-react';
 
 interface ChirpImageProps {
   imageUrl: string;
@@ -51,20 +49,45 @@ export default function ChirpImage({
   };
 
   return (
-    <div className="relative mt-3 rounded-lg overflow-hidden bg-gray-100">
+    <div style={{
+      position: 'relative',
+      marginTop: '12px',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      backgroundColor: '#f3f4f6'
+    }}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f3f4f6'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            border: '2px solid #7c3aed',
+            borderTop: '2px solid transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
         </div>
       )}
       
       <img
         src={imageUrl}
         alt={imageAltText || 'Chirp image'}
-        className={`w-full h-auto cursor-pointer transition-opacity duration-200 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}
         style={{
+          width: '100%',
+          height: 'auto',
+          cursor: 'pointer',
+          transition: 'opacity 0.2s',
+          opacity: isLoading ? 0 : 1,
           maxWidth: imageWidth ? `${imageWidth}px` : '100%',
           maxHeight: imageHeight ? `${imageHeight}px` : '400px',
           objectFit: 'cover'
@@ -75,25 +98,63 @@ export default function ChirpImage({
       />
       
       {/* Image overlay with actions */}
-      <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity duration-200">
-        <div className="flex space-x-1">
-          <Button
-            size="sm"
-            variant="secondary"
-            className="h-8 w-8 p-0 bg-black/50 hover:bg-black/70 text-white"
+      <div style={{
+        position: 'absolute',
+        top: '8px',
+        right: '8px',
+        opacity: 0,
+        transition: 'opacity 0.2s'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.opacity = '1';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.opacity = '0';
+      }}
+      >
+        <div style={{
+          display: 'flex',
+          gap: '4px'
+        }}>
+          <button
+            style={{
+              height: '32px',
+              width: '32px',
+              padding: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              border: 'none',
+              borderRadius: '4px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
             onClick={(e) => {
               e.stopPropagation();
               handleDownload();
             }}
           >
-            <Download className="h-4 w-4" />
-          </Button>
+            <span style={{ fontSize: '16px' }}>⬇️</span>
+          </button>
         </div>
       </div>
       
       {/* Alt text indicator */}
       {imageAltText && (
-        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+        <div style={{
+          position: 'absolute',
+          bottom: '8px',
+          left: '8px',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          color: '#ffffff',
+          fontSize: '12px',
+          paddingLeft: '8px',
+          paddingRight: '8px',
+          paddingTop: '4px',
+          paddingBottom: '4px',
+          borderRadius: '4px'
+        }}>
           {imageAltText}
         </div>
       )}

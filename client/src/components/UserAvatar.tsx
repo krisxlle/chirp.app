@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from './ui/button';
 
 interface User {
   id: string;
@@ -19,14 +18,14 @@ interface UserAvatarProps {
 }
 
 export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarProps) {
-  const getSizeClasses = () => {
+  const getSizeStyles = () => {
     switch (size) {
       case 'sm':
-        return 'w-8 h-8 text-sm';
+        return { width: '32px', height: '32px', fontSize: '14px' };
       case 'lg':
-        return 'w-16 h-16 text-xl';
+        return { width: '64px', height: '64px', fontSize: '20px' };
       default:
-        return 'w-12 h-12 text-base';
+        return { width: '48px', height: '48px', fontSize: '16px' };
     }
   };
 
@@ -46,13 +45,39 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
     return user.email[0].toUpperCase();
   };
 
+  const sizeStyles = getSizeStyles();
+
   const avatarContent = (
-    <div className={`${getSizeClasses()} rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold cursor-pointer transition-transform hover:scale-105`}>
+    <div style={{
+      ...sizeStyles,
+      borderRadius: '50%',
+      background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#ffffff',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'transform 0.2s',
+      overflow: 'hidden'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = 'scale(1.05)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = 'scale(1)';
+    }}
+    >
       {user.profileImageUrl || user.avatarUrl ? (
         <img
           src={user.profileImageUrl || user.avatarUrl}
           alt={`${user.firstName || user.customHandle || user.handle || user.email.split('@')[0]}'s avatar`}
-          className="w-full h-full rounded-full object-cover"
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            objectFit: 'cover'
+          }}
           onError={(e) => {
             // Fallback to initials if image fails to load
             const target = e.target as HTMLImageElement;
@@ -71,13 +96,17 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
 
   if (onPress) {
     return (
-      <Button
-        variant="ghost"
-        className="p-0 h-auto w-auto"
+      <button
+        style={{
+          padding: 0,
+          border: 'none',
+          background: 'transparent',
+          cursor: 'pointer'
+        }}
         onClick={onPress}
       >
         {avatarContent}
-      </Button>
+      </button>
     );
   }
 

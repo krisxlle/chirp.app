@@ -347,17 +347,6 @@ export default function Profile() {
                   <span>{user.linkInBio}</span>
                 </a>
               )}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                marginTop: '8px',
-                fontSize: '14px',
-                color: '#6b7280'
-              }}>
-                <span style={{ fontSize: '16px' }}>📅</span>
-                <span>Joined {formatJoinDate(user.joinedAt || '')}</span>
-              </div>
             </div>
           </div>
 
@@ -365,41 +354,39 @@ export default function Profile() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '24px',
             marginTop: '16px'
           }}>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              flex: 1, 
+              textAlign: 'center',
+              cursor: 'pointer'
+            }}>
               <div style={{
                 fontSize: '18px',
-                fontWeight: '600',
-                color: '#111827'
+                fontWeight: 'bold',
+                color: '#14171a'
               }}>{stats.following}</div>
               <div style={{
-                fontSize: '14px',
-                color: '#6b7280'
+                fontSize: '13px',
+                color: '#657786',
+                marginTop: '2px'
               }}>Following</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              flex: 1, 
+              textAlign: 'center',
+              cursor: 'pointer'
+            }}>
               <div style={{
                 fontSize: '18px',
-                fontWeight: '600',
-                color: '#111827'
+                fontWeight: 'bold',
+                color: '#14171a'
               }}>{stats.followers}</div>
               <div style={{
-                fontSize: '14px',
-                color: '#6b7280'
+                fontSize: '13px',
+                color: '#657786',
+                marginTop: '2px'
               }}>Followers</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#111827'
-              }}>{stats.profilePower}</div>
-              <div style={{
-                fontSize: '14px',
-                color: '#6b7280'
-              }}>Profile Power</div>
             </div>
           </div>
 

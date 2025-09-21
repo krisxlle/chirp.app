@@ -3,6 +3,26 @@ import { useAuth } from '../hooks/useAuth';
 import UserAvatar from '../components/UserAvatar';
 import { apiRequest } from '../components/api';
 
+// Bell Icon Component
+const BellIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M13.73 21a2 2 0 0 1-3.46 0" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 interface Notification {
   id: string;
   type: 'like' | 'reply' | 'repost' | 'follow' | 'mention' | 'system';
@@ -35,15 +55,33 @@ export default function Notifications() {
     setIsLoading(true);
     try {
       // Try to load from API first
-      if (user?.id) {
-        try {
-          const response = await apiRequest(`/api/users/${user.id}/notifications`);
-          setNotifications(response || []);
-        } catch (error) {
-          console.log('API failed, using mock data:', error);
-          loadMockData();
-        }
-      } else {
+      try {
+        const response = await apiRequest(`/api/test/notifications`);
+        const dbNotifications = response.notifications || [];
+        
+        // Transform database format to component format
+        const transformedNotifications = dbNotifications.map((notification: any) => ({
+          id: notification.id.toString(),
+          type: notification.type,
+          message: getNotificationMessage(notification.type),
+          user: notification.users ? {
+            id: notification.users.id,
+            firstName: notification.users.first_name || '',
+            lastName: notification.users.last_name || '',
+            handle: notification.users.handle,
+            profileImageUrl: null
+          } : undefined,
+          chirp: notification.chirp_id ? {
+            id: notification.chirp_id.toString(),
+            content: 'Chirp content...' // We'd need to fetch this separately
+          } : undefined,
+          timestamp: notification.created_at,
+          isRead: notification.read
+        }));
+        
+        setNotifications(transformedNotifications);
+      } catch (error) {
+        console.log('API failed, using mock data:', error);
         loadMockData();
       }
     } catch (error) {
@@ -51,6 +89,25 @@ export default function Notifications() {
       loadMockData();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getNotificationMessage = (type: string) => {
+    switch (type) {
+      case 'like':
+        return 'liked your chirp';
+      case 'follow':
+        return 'started following you';
+      case 'reply':
+        return 'replied to your chirp';
+      case 'mention':
+        return 'mentioned you';
+      case 'repost':
+        return 'reposted your chirp';
+      case 'system':
+        return 'system notification';
+      default:
+        return 'interacted with your content';
     }
   };
 
@@ -215,11 +272,11 @@ export default function Notifications() {
             alignItems: 'center',
             gap: '8px'
           }}>
-            <span style={{ fontSize: '20px', color: '#7c3aed' }}>🔔</span>
+            <BellIcon size={24} color="#7c3aed" />
             <h1 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#111827',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#14171A',
               margin: 0
             }}>Notifications</h1>
             {unreadCount > 0 && (
@@ -271,24 +328,28 @@ export default function Notifications() {
               <div
                 key={notification.id}
                 style={{
-                  backgroundColor: !notification.isRead ? '#f0f9ff' : '#ffffff',
-                  border: !notification.isRead ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  padding: '16px',
+                  backgroundColor: !notification.isRead ? '#F0F4FF' : '#ffffff',
+                  borderBottom: '1px solid #F7F9FA',
+                  paddingLeft: '20px',
+                  paddingRight: '20px',
+                  paddingTop: '16px',
+                  paddingBottom: '16px',
                   cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                  ':hover': {
-                    backgroundColor: '#f9fafb'
-                  }
+                  transition: 'background-color 0.2s'
                 }}
                 onClick={() => markAsRead(notification.id)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = !notification.isRead ? '#F0F4FF' : '#ffffff';
+                }}
               >
                 <div style={{
                   display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px'
+                  alignItems: 'flex-start'
                 }}>
-                  <div style={{ flexShrink: 0 }}>
+                  <div style={{ marginRight: '12px' }}>
                     {notification.user ? (
                       <UserAvatar user={notification.user} size="sm" />
                     ) : (
@@ -306,78 +367,77 @@ export default function Notifications() {
                     )}
                   </div>
                   
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between'
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        {notification.user ? (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            flexWrap: 'wrap'
-                          }}>
-                            <span style={{
-                              fontWeight: '600',
-                              color: '#111827'
-                            }}>
-                              {notification.user.firstName} {notification.user.lastName}
-                            </span>
-                            <span style={{
-                              color: '#6b7280'
-                            }}>@{notification.user.handle}</span>
-                            <span style={{
-                              color: '#374151'
-                            }}>{notification.message}</span>
-                          </div>
-                        ) : (
-                          <p style={{
-                            color: '#111827',
-                            margin: 0
-                          }}>{notification.message}</p>
-                        )}
-                        
-                        {notification.chirp && (
-                          <div style={{
-                            marginTop: '8px',
-                            padding: '12px',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '8px'
-                          }}>
-                            <p style={{
-                              color: '#374151',
-                              fontSize: '14px',
-                              margin: 0
-                            }}>{notification.chirp.content}</p>
-                          </div>
-                        )}
-                      </div>
-                      
+                  <div style={{ flex: 1, marginRight: '12px' }}>
+                    {notification.user ? (
                       <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginLeft: '16px'
+                        fontSize: '16px',
+                        color: '#14171A',
+                        lineHeight: '22px',
+                        marginBottom: '4px'
                       }}>
-                        {!notification.isRead && (
-                          <div style={{
-                            width: '8px',
-                            height: '8px',
-                            backgroundColor: '#3b82f6',
-                            borderRadius: '50%'
-                          }}></div>
-                        )}
                         <span style={{
-                          fontSize: '14px',
-                          color: '#6b7280'
+                          fontWeight: '600',
+                          color: '#14171A'
                         }}>
-                          {formatTimestamp(notification.timestamp)}
+                          {notification.user.firstName} {notification.user.lastName}
                         </span>
+                        <span style={{
+                          color: '#657786'
+                        }}> @{notification.user.handle}</span>
+                        <span style={{
+                          color: '#14171A'
+                        }}> {notification.message}</span>
                       </div>
+                    ) : (
+                      <p style={{
+                        fontSize: '16px',
+                        color: '#14171A',
+                        lineHeight: '22px',
+                        marginBottom: '4px',
+                        margin: 0
+                      }}>{notification.message}</p>
+                    )}
+                    
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#657786'
+                    }}>
+                      {formatTimestamp(notification.timestamp)}
                     </div>
+                    
+                    {notification.chirp && (
+                      <div style={{
+                        marginTop: '12px',
+                        marginLeft: '52px',
+                        padding: '12px',
+                        backgroundColor: '#F7F9FA',
+                        borderRadius: '8px',
+                        borderLeft: '3px solid #7c3aed'
+                      }}>
+                        <p style={{
+                          fontSize: '14px',
+                          color: '#657786',
+                          lineHeight: '20px',
+                          margin: 0
+                        }}>{notification.chirp.content}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    position: 'relative'
+                  }}>
+                    {!notification.isRead && (
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '4px',
+                        backgroundColor: '#7c3aed',
+                        marginTop: '4px'
+                      }}></div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -389,20 +449,17 @@ export default function Notifications() {
             paddingTop: '48px',
             paddingBottom: '48px'
           }}>
-            <div style={{
-              fontSize: '64px',
-              color: '#9ca3af',
-              marginBottom: '16px'
-            }}>🔔</div>
+            <BellIcon size={64} color="#9ca3af" />
             <h3 style={{
               fontSize: '18px',
               fontWeight: '600',
-              color: '#111827',
+              color: '#14171A',
               marginBottom: '8px',
-              margin: 0
+              margin: 0,
+              marginTop: '16px'
             }}>No notifications yet</h3>
             <p style={{
-              color: '#6b7280',
+              color: '#657786',
               margin: 0
             }}>
               When people interact with your chirps or follow you, you'll see it here.
