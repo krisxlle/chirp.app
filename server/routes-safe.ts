@@ -211,8 +211,17 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       
       try {
         console.log('🔍 DEBUG: About to call express.static...');
-        // Simple static file serving without complex middleware
-        app.use(express.static(distPath));
+        // Static file serving with cache-busting for JS files
+        app.use(express.static(distPath, {
+          setHeaders: (res, path) => {
+            // Add no-cache headers for JavaScript files to prevent caching issues
+            if (path.endsWith('.js')) {
+              res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+              res.setHeader('Pragma', 'no-cache');
+              res.setHeader('Expires', '0');
+            }
+          }
+        }));
         console.log('✅ express.static configured successfully');
         
         // Add debugging middleware to see what requests are coming in

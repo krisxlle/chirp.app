@@ -7,12 +7,8 @@ async function throwIfResNotOk(res: Response) {
 
 // Determine the base URL for API calls
 const getBaseUrl = () => {
-  // In development, use localhost
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:5000';
-  }
-  // In production, use the current domain
-  return window.location.origin;
+  // Always use localhost for API calls since production API isn't set up yet
+  return 'http://localhost:5000';
 };
 
 export async function apiRequest(
