@@ -1,17 +1,13 @@
-import { Bird, Plus, RefreshCw, Search } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
-import { Button } from '../components/ui/button';
-import { useToast } from '../hooks/use-toast';
-import { apiRequest } from './api';
+import { apiRequest } from '../components/api';
 
 export default function HomePage() {
   // Get user from AuthContext
   const { user } = useAuth();
-  const { toast } = useToast();
   const [, setLocation] = useLocation();
   
   // State for feed type
@@ -30,15 +26,15 @@ export default function HomePage() {
   const [showComposeModal, setShowComposeModal] = useState(false);
   
   // Pagination constants
-  const INITIAL_LIMIT = 10; // Load fewer chirps initially for faster startup
+  const INITIAL_LIMIT = 10;
   const LOAD_MORE_LIMIT = 10;
-
+  
   // Load initial chirps function - OPTIMIZED FOR STARTUP
   const loadInitialChirps = useCallback(async (forceRefresh = false) => {
     try {
       // Don't reload if we have recent data and not forcing refresh
       const now = Date.now();
-      if (!forceRefresh && forYouChirps.length > 0 && (now - lastRefresh) < 60000) { // Increased cache time
+      if (!forceRefresh && forYouChirps.length > 0 && (now - lastRefresh) < 60000) {
         console.log('🔄 HomePage: Using cached chirps (last refresh:', now - lastRefresh, 'ms ago)');
         return;
       }
@@ -306,20 +302,10 @@ export default function HomePage() {
       
       // Add to the beginning of the feed
       setForYouChirps(prevChirps => [newChirp, ...prevChirps]);
-      
-      toast({
-        title: "Chirp Posted!",
-        description: "Your chirp has been added to the feed.",
-      });
     } catch (error) {
       console.error('Error adding new chirp:', error);
-      toast({
-        title: "Error",
-        description: "Failed to post chirp. Please try again.",
-        variant: "destructive",
-      });
     }
-  }, [user, toast]);
+  }, [user]);
   
   // Function to handle chirp deletion
   const handleChirpDelete = useCallback((deletedChirpId?: string) => {
@@ -347,36 +333,112 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100vh', 
+      backgroundColor: '#fafafa' 
+    }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 flex justify-between items-center py-3 px-4">
-        <h1 className="text-2xl font-bold text-gray-900">Home</h1>
-        <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="icon" onClick={handleSearchPress}>
-            <Search className="h-5 w-5 text-gray-600" />
-          </Button>
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e5e7eb',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: '12px',
+        paddingBottom: '12px',
+        paddingLeft: '16px',
+        paddingRight: '16px'
+      }}>
+        <h1 style={{ 
+          fontSize: '24px', 
+          fontWeight: 'bold', 
+          color: '#333' 
+        }}>
+          Home
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            onClick={handleSearchPress}
+            style={{
+              padding: '8px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="#657786" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
-      </header>
+      </div>
 
       {/* Feed Type Toggle */}
-      <div className="bg-white border-b border-gray-200 py-3 px-4">
-        <div className="flex bg-gray-100 rounded-lg p-1">
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e1e8ed',
+        paddingTop: '12px',
+        paddingBottom: '12px',
+        paddingLeft: '16px',
+        paddingRight: '16px'
+      }}>
+        <div style={{
+          display: 'flex',
+          backgroundColor: '#f7f9fa',
+          borderRadius: '12px',
+          padding: '3px'
+        }}>
           <button
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              feedType === 'forYou'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            style={{
+              flex: 1,
+              paddingLeft: '12px',
+              paddingRight: '12px',
+              paddingTop: '8px',
+              paddingBottom: '8px',
+              borderRadius: '8px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '2px',
+              border: 'none',
+              cursor: 'pointer',
+              background: feedType === 'forYou' 
+                ? 'linear-gradient(135deg, #7c3aed, #ec4899)' 
+                : 'transparent',
+              color: feedType === 'forYou' ? '#ffffff' : '#657786',
+              fontSize: '12px',
+              fontWeight: '600',
+              boxShadow: feedType === 'forYou' ? '0 2px 6px rgba(124, 58, 237, 0.3)' : 'none'
+            }}
             onClick={() => setFeedType('forYou')}
           >
             For You
           </button>
           <button
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              feedType === 'collection'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            style={{
+              flex: 1,
+              paddingLeft: '12px',
+              paddingRight: '12px',
+              paddingTop: '8px',
+              paddingBottom: '8px',
+              borderRadius: '8px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: 'none',
+              cursor: 'pointer',
+              background: feedType === 'collection' 
+                ? 'linear-gradient(135deg, #7c3aed, #ec4899)' 
+                : 'transparent',
+              color: feedType === 'collection' ? '#ffffff' : '#657786',
+              fontSize: '12px',
+              fontWeight: '600',
+              boxShadow: feedType === 'collection' ? '0 2px 6px rgba(124, 58, 237, 0.3)' : 'none'
+            }}
             onClick={() => setFeedType('collection')}
           >
             Collection
@@ -386,22 +448,44 @@ export default function HomePage() {
 
       {/* Chirps Feed with Infinite Scroll */}
       <div 
-        className="flex-1 overflow-y-auto"
+        style={{ 
+          flex: 1, 
+          overflowY: 'auto',
+          paddingBottom: '200px' // Extra padding to clear navigation bar and show compose button
+        }}
         onScroll={handleScroll}
       >
         {/* Compose Chirp - Now scrolls with feed */}
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div style={{
+          paddingTop: '8px',
+          paddingBottom: '8px',
+          backgroundColor: '#fafafa'
+        }}>
           <ComposeChirp onPost={handleNewChirp} />
         </div>
 
         {feedType === 'forYou' ? (
           // For You Feed
-          <div className="px-4">
+          <div style={{ paddingLeft: '16px', paddingRight: '16px' }}>
             {forYouChirps.length === 0 && !isLoading ? (
-              <div className="py-8 text-center">
-                <div className="text-4xl mb-4">💬</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No chirps yet</h3>
-                <p className="text-gray-500">Be the first to chirp!</p>
+              <div style={{ 
+                alignItems: 'center', 
+                paddingTop: '50px',
+                paddingBottom: '50px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '50px', marginBottom: '10px' }}>💬</div>
+                <h3 style={{ 
+                  fontSize: '20px', 
+                  fontWeight: 'bold', 
+                  color: '#333',
+                  marginBottom: '5px'
+                }}>
+                  No chirps yet
+                </h3>
+                <p style={{ fontSize: '16px', color: '#657786' }}>
+                  Be the first to chirp!
+                </p>
               </div>
             ) : (
               <>
@@ -418,16 +502,42 @@ export default function HomePage() {
                 
                 {/* Loading more indicator */}
                 {isLoadingMore && (
-                  <div className="flex items-center justify-center py-4">
-                    <RefreshCw className="h-4 w-4 animate-spin text-purple-600 mr-2" />
-                    <span className="text-sm text-gray-500">Loading more chirps...</span>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: '20px',
+        paddingBottom: '20px',
+                    gap: '8px'
+                  }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #7c3aed',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    <span style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
+                      Loading more chirps...
+                    </span>
                   </div>
                 )}
                 
                 {/* End of feed indicator */}
                 {!hasMoreChirps && forYouChirps.length > 0 && (
-                  <div className="py-4 text-center">
-                    <p className="text-sm text-gray-500">You've reached the end! 🎉</p>
+                  <div style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: '20px',
+        paddingBottom: '20px',
+                    paddingLeft: '20px',
+                    paddingRight: '20px',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
+                      You've reached the end! 🎉
+                    </p>
                   </div>
                 )}
               </>
@@ -435,12 +545,28 @@ export default function HomePage() {
           </div>
         ) : (
           // Collection Feed
-          <div className="px-4">
+          <div style={{ paddingLeft: '16px', paddingRight: '16px' }}>
             {collectionChirps.length === 0 && !isLoading ? (
-              <div className="py-8 text-center">
-                <Bird className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Collection Chirps</h3>
-                <p className="text-gray-500">Chirps from your gacha collection profiles will appear here</p>
+              <div style={{ 
+                alignItems: 'center', 
+                paddingTop: '50px',
+                paddingBottom: '50px',
+                textAlign: 'center'
+              }}>
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" style={{ margin: '0 auto 10px' }}>
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <h3 style={{ 
+                  fontSize: '20px', 
+                  fontWeight: 'bold', 
+                  color: '#333',
+                  marginBottom: '5px'
+                }}>
+                  No Collection Chirps
+                </h3>
+                <p style={{ fontSize: '16px', color: '#657786' }}>
+                  Chirps from your gacha collection profiles will appear here
+                </p>
               </div>
             ) : (
               <>
@@ -456,22 +582,44 @@ export default function HomePage() {
                 
                 {/* Load More Button */}
                 {hasMoreCollectionChirps && (
-                  <div className="py-4">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
+                  <div style={{ paddingTop: '16px', paddingBottom: '16px' }}>
+                    <button 
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        paddingTop: '12px',
+                        paddingBottom: '12px',
+                        paddingLeft: '16px',
+                        paddingRight: '16px',
+                        alignItems: 'center',
+                        marginTop: '16px',
+                        marginBottom: '16px',
+                        border: '1px solid #e1e8ed',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
                       onClick={loadMoreChirps}
                       disabled={isLoadingMore}
                     >
                       {isLoadingMore ? (
                         <>
-                          <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid #7c3aed',
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}></div>
                           Loading...
                         </>
                       ) : (
                         'Load More Collection Chirps'
                       )}
-                    </Button>
+                    </button>
                   </div>
                 )}
               </>
@@ -482,25 +630,76 @@ export default function HomePage() {
 
       {/* Floating Compose Button */}
       <button
-        className="fixed bottom-20 right-4 w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-50"
+        style={{
+          position: 'fixed',
+          bottom: '80px', // More space from bottom on web to clear nav bar
+          right: '20px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '28px',
+          background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 8px rgba(124, 58, 237, 0.3)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '24px',
+          fontWeight: 'bold'
+        }}
         onClick={() => setShowComposeModal(true)}
       >
-        <Plus className="h-6 w-6" />
+        +
       </button>
 
       {/* Compose Modal */}
       {showComposeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-t-lg">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'end',
+          justifyContent: 'center',
+          zIndex: 50
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            width: '100%',
+            maxWidth: '400px',
+            borderTopLeftRadius: '12px',
+            borderTopRightRadius: '12px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
               <button
-                className="text-purple-600 font-semibold"
+                style={{
+                  color: '#7c3aed',
+                  fontWeight: '600',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px 12px'
+                }}
                 onClick={() => setShowComposeModal(false)}
               >
                 Cancel
               </button>
-              <h2 className="text-lg font-bold text-gray-900">Compose Chirp</h2>
-              <div className="w-16"></div>
+              <h2 style={{ 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                color: '#333' 
+              }}>
+                Compose Chirp
+              </h2>
+              <div style={{ width: '60px' }}></div>
             </div>
             <ComposeChirp 
               onPost={async (content, imageData) => {
@@ -511,6 +710,14 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Add CSS for spinner animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

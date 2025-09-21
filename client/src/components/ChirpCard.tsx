@@ -1,42 +1,16 @@
+import { formatDistanceToNow } from 'date-fns';
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../components/AuthContext';
-import { apiRequest } from './api';
-import { formatDistanceToNow } from 'date-fns';
-import ChirpImage from './ChirpImage';
-import ChirpLikesModal from './ChirpLikesModal';
-import ImageViewerModal from './ImageViewerModal';
-import UserAvatar from './UserAvatar';
-import MentionText from './MentionText';
-import MoodReactions from './MoodReactions';
-import ChirpPlusBadge from './ChirpPlusBadge';
-import { Button } from './ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { Textarea } from './ui/textarea';
-import { HeartIcon, ShareIcon, SpeechBubbleIcon } from './icons';
-import { 
-  Heart, 
-  MessageCircle, 
-  Repeat2, 
-  Share, 
-  MoreHorizontal, 
-  Trash2, 
-  UserMinus, 
-  UserPlus, 
-  UserX,
-  Bot,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Bell,
-  BellOff,
-  Sparkles
-} from 'lucide-react';
+import ChirpImage from '../components/ChirpImage';
+import ChirpLikesModal from '../components/ChirpLikesModal';
+import ChirpPlusBadge from '../components/ChirpPlusBadge';
+import ImageViewerModal from '../components/ImageViewerModal';
+import MentionText from '../components/MentionText';
+import MoodReactions from '../components/MoodReactions';
+import UserAvatar from '../components/UserAvatar';
+import { apiRequest } from '../components/api';
+import { useToast } from '../hooks/use-toast';
 
 interface User {
   id: string;
@@ -264,13 +238,25 @@ export default function ChirpCard({
 
   return (
     <>
-      <div className={`border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-        isHighlighted ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
-      }`}>
+      <div style={{
+        borderBottom: '1px solid #e5e7eb',
+        padding: '16px',
+        backgroundColor: isHighlighted ? '#fef3c7' : 'transparent',
+        transition: 'background-color 0.2s'
+      }}>
         {/* Repost indicator */}
         {chirp.repostOf && (
-          <div className="flex items-center space-x-2 mb-2 text-sm text-gray-500 dark:text-gray-400">
-            <Repeat2 className="h-4 w-4" />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '8px',
+            fontSize: '14px',
+            color: '#6b7280'
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
             <span>
               {chirp.author.firstName || chirp.author.customHandle || chirp.author.handle} reposted
             </span>
@@ -278,9 +264,9 @@ export default function ChirpCard({
         )}
 
         {/* Main chirp content */}
-        <div className="flex space-x-3">
+        <div style={{ display: 'flex', gap: '12px' }}>
           {/* Avatar */}
-          <div className="flex-shrink-0">
+          <div style={{ flexShrink: 0 }}>
             <UserAvatar 
               user={chirp.author} 
               size="md" 
@@ -289,12 +275,27 @@ export default function ChirpCard({
           </div>
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div style={{ flex: 1, minWidth: 0 }}>
             {/* Header */}
-            <div className="flex items-center space-x-2 mb-1">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '4px',
+              flexWrap: 'wrap'
+            }}>
               <button
                 onClick={handleProfilePress}
-                className="font-semibold text-gray-900 dark:text-white hover:underline"
+                style={{
+                  fontWeight: '600',
+                  color: '#111827',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'none'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
               >
                 {chirp.author.firstName && chirp.author.lastName 
                   ? `${chirp.author.firstName} ${chirp.author.lastName}`
@@ -306,42 +307,64 @@ export default function ChirpCard({
                 <ChirpPlusBadge size={16} />
               )}
               
-              <span className="text-gray-500 dark:text-gray-400">
+              <span style={{ color: '#6b7280' }}>
                 @{chirp.author.customHandle || chirp.author.handle || chirp.author.email.split('@')[0]}
               </span>
               
-              <span className="text-gray-500 dark:text-gray-400">·</span>
-              <span className="text-gray-500 dark:text-gray-400">
+              <span style={{ color: '#6b7280' }}>·</span>
+              <span style={{ color: '#6b7280' }}>
                 {formatDistanceToNow(new Date(chirp.createdAt), { addSuffix: true })}
               </span>
 
               {/* AI Generated indicator */}
               {chirp.isAiGenerated && (
-                <div className="flex items-center space-x-1">
-                  <Bot className="h-4 w-4 text-purple-600" />
-                  <span className="text-xs text-purple-600 font-medium">AI</span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v1a7 7 0 0 1-7 7H10a7 7 0 0 1-7-7v-1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 12h.01M16 12h.01" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 16s1 1 3 1 3-1 3-1" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span style={{ fontSize: '12px', color: '#7c3aed', fontWeight: '500' }}>AI</span>
                 </div>
               )}
 
               {/* Weekly Summary indicator */}
               {chirp.isWeeklySummary && (
-                <div className="flex items-center space-x-1">
-                  <Sparkles className="h-4 w-4 text-blue-600" />
-                  <span className="text-xs text-blue-600 font-medium">Weekly Summary</span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" fill="#3b82f6"/>
+                    <path d="M20 3v4M22 5h-4M6 16v2M7 17H5" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '500' }}>Weekly Summary</span>
                 </div>
               )}
 
               {/* Thread indicator */}
               {chirp.threadId && (
-                <div className="flex items-center space-x-1">
-                  <LinkIcon className="h-4 w-4 text-gray-500" />
-                  <span className="text-xs text-gray-500">Thread</span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>Thread</span>
                 </div>
               )}
             </div>
 
             {/* Content */}
-            <div className="mb-3">
+            <div style={{ marginBottom: '12px' }}>
               <MentionText 
                 text={chirp.content} 
                 onMentionPress={handleMentionPress}
@@ -367,95 +390,177 @@ export default function ChirpCard({
             />
 
             {/* Actions */}
-            <div className="flex items-center justify-between mt-3 max-w-md">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '12px',
+              maxWidth: '400px'
+            }}>
               {/* Reply */}
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => setShowReplyModal(true)}
-                className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderRadius: '8px',
+                  color: '#6b7280',
+                  fontSize: '14px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#dbeafe';
+                  e.currentTarget.style.color = '#3b82f6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
+                }}
               >
-                <MessageCircle className="h-4 w-4 mr-1" />
-                <span className="text-sm">{chirp.replies}</span>
-              </Button>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{chirp.replies}</span>
+              </button>
 
               {/* Repost */}
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleRepost}
                 disabled={isReposting}
-                className={`text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 ${
-                  chirp.isReposted ? 'text-green-500' : ''
-                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: isReposting ? 'not-allowed' : 'pointer',
+                  borderRadius: '8px',
+                  color: chirp.isReposted ? '#10b981' : '#6b7280',
+                  fontSize: '14px',
+                  opacity: isReposting ? 0.5 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!isReposting) {
+                    e.currentTarget.style.backgroundColor = '#d1fae5';
+                    e.currentTarget.style.color = '#10b981';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isReposting) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = chirp.isReposted ? '#10b981' : '#6b7280';
+                  }
+                }}
               >
-                <Repeat2 className="h-4 w-4 mr-1" />
-                <span className="text-sm">{chirp.reposts}</span>
-              </Button>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{chirp.reposts}</span>
+              </button>
 
               {/* Like */}
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleLike}
                 disabled={isLiking}
-                className={`text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 ${
-                  chirp.isLiked ? 'text-red-500' : ''
-                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: isLiking ? 'not-allowed' : 'pointer',
+                  borderRadius: '8px',
+                  color: chirp.isLiked ? '#ef4444' : '#6b7280',
+                  fontSize: '14px',
+                  opacity: isLiking ? 0.5 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLiking) {
+                    e.currentTarget.style.backgroundColor = '#fee2e2';
+                    e.currentTarget.style.color = '#ef4444';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLiking) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = chirp.isLiked ? '#ef4444' : '#6b7280';
+                  }
+                }}
               >
-                <Heart className={`h-4 w-4 mr-1 ${chirp.isLiked ? 'fill-current' : ''}`} />
-                <span className="text-sm">{chirp.likes}</span>
-              </Button>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={chirp.isLiked ? 'currentColor' : 'none'}>
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>{chirp.likes}</span>
+              </button>
 
               {/* Share */}
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleShare}
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '8px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderRadius: '8px',
+                  color: '#6b7280',
+                  fontSize: '14px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                  e.currentTarget.style.color = '#374151';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
+                }}
               >
-                <Share className="h-4 w-4" />
-              </Button>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <polyline points="16,6 12,2 8,6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="12" y1="2" x2="12" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
 
               {/* More options */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {isOwnChirp ? (
-                    <DropdownMenuItem
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  ) : (
-                    <>
-                      <DropdownMenuItem>
-                        <UserMinus className="h-4 w-4 mr-2" />
-                        Unfollow
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <BellOff className="h-4 w-4 mr-2" />
-                        Mute
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-600">
-                        <UserX className="h-4 w-4 mr-2" />
-                        Block
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div style={{ position: 'relative' }}>
+                <button
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '8px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    color: '#6b7280',
+                    fontSize: '14px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    e.currentTarget.style.color = '#374151';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#6b7280';
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                    <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -463,35 +568,90 @@ export default function ChirpCard({
 
       {/* Reply Modal */}
       {showReplyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-lg">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <Button
-                variant="ghost"
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'end',
+          justifyContent: 'center',
+          zIndex: 50
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            width: '100%',
+            maxWidth: '400px',
+            borderTopLeftRadius: '12px',
+            borderTopRightRadius: '12px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              <button
+                style={{
+                  color: '#7c3aed',
+                  fontWeight: '600',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px 12px'
+                }}
                 onClick={() => setShowReplyModal(false)}
-                className="text-purple-600"
               >
                 Cancel
-              </Button>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Reply</h2>
-              <Button
+              </button>
+              <h2 style={{ 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                color: '#111827' 
+              }}>
+                Reply
+              </h2>
+              <button
                 onClick={handleReply}
                 disabled={!replyContent.trim() || isPostingReply}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                style={{
+                  backgroundColor: (!replyContent.trim() || isPostingReply) ? '#9ca3af' : '#7c3aed',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  cursor: (!replyContent.trim() || isPostingReply) ? 'not-allowed' : 'pointer',
+                  fontWeight: '600'
+                }}
               >
                 {isPostingReply ? 'Posting...' : 'Reply'}
-              </Button>
+              </button>
             </div>
-            <div className="p-4">
-              <Textarea
+            <div style={{ padding: '16px' }}>
+              <textarea
                 placeholder="Write your reply..."
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                className="min-h-[100px] resize-none"
+                style={{
+                  width: '100%',
+                  minHeight: '100px',
+                  resize: 'none',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontSize: '16px',
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
                 maxLength={280}
               />
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-sm text-gray-500">
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '8px'
+              }}>
+                <span style={{ fontSize: '14px', color: '#6b7280' }}>
                   {280 - replyContent.length} characters remaining
                 </span>
               </div>
