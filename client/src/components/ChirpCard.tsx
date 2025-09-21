@@ -239,9 +239,18 @@ export default function ChirpCard({
   return (
     <>
       <div style={{
-        borderBottom: '1px solid #e5e7eb',
-        padding: '16px',
-        backgroundColor: isHighlighted ? '#fef3c7' : 'transparent',
+        backgroundColor: isHighlighted ? '#fef3c7' : '#ffffff',
+        marginTop: '3px',
+        marginBottom: '3px',
+        borderRadius: '16px',
+        paddingLeft: '16px',
+        paddingRight: '16px',
+        paddingTop: '10px',
+        paddingBottom: '10px',
+        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+        maxWidth: '600px',
+        alignSelf: 'center',
+        width: '100%',
         transition: 'background-color 0.2s'
       }}>
         {/* Repost indicator */}

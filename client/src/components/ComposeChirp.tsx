@@ -5,10 +5,6 @@ import { apiRequest } from './api';
 import ChirpImage from './ChirpImage';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
-import ThreadComposer from './ThreadComposer';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
-import { MessageSquare, ImageIcon, Sparkles, X } from 'lucide-react';
 
 interface ComposeChirpProps {
   onPost?: (content: string, imageData?: {
@@ -49,9 +45,32 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   if (!authUser || !authUser.id) {
     console.log('ComposeChirp: User not available, showing loading state');
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-4">
-        <div className="flex items-center justify-center py-8">
-          <p className="text-gray-500 dark:text-gray-400">Loading compose...</p>
+      <div style={{
+        backgroundColor: '#ffffff',
+        marginTop: 0,
+        marginBottom: 3,
+        borderRadius: 16,
+        paddingTop: 16,
+        paddingBottom: 16,
+        paddingLeft: 16,
+        paddingRight: 16,
+        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+        maxWidth: 600,
+        alignSelf: 'center',
+        width: '100%'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: 32,
+          paddingBottom: 32
+        }}>
+          <p style={{
+            fontSize: 18,
+            color: '#6b7280',
+            fontWeight: '600'
+          }}>Loading compose...</p>
         </div>
       </div>
     );
@@ -268,76 +287,191 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   };
 
   const getCharCountColor = () => {
-    if (remainingChars < 0) return 'text-red-500';
-    if (remainingChars < 20) return 'text-yellow-500';
-    return 'text-gray-500';
+    if (remainingChars < 0) return '#ef4444'; // red
+    if (remainingChars < 20) return '#f59e0b'; // yellow
+    return '#6b7280'; // gray
   };
 
   if (isThreadMode) {
     // Thread mode - extend the compose field
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-4">
-        <div className="flex space-x-3">
+      <div style={{
+        backgroundColor: '#ffffff',
+        marginTop: 0,
+        marginBottom: 3,
+        borderRadius: 16,
+        paddingTop: 16,
+        paddingBottom: 16,
+        paddingLeft: 16,
+        paddingRight: 16,
+        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+        maxWidth: 600,
+        alignSelf: 'center',
+        width: '100%'
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start'
+        }}>
           <UserAvatar user={user} size="md" />
           
-          <div className="flex-1">
-            <Textarea
-              className="w-full resize-none border-none focus-visible:ring-0 text-base p-0 dark:bg-gray-900 dark:text-white min-h-[100px]"
+          <div style={{
+            flex: 1,
+            marginLeft: 12,
+            overflow: 'hidden'
+          }}>
+            <textarea
+              style={{
+                fontSize: 18,
+                lineHeight: 24,
+                minHeight: 80,
+                padding: 0,
+                color: '#1a1a1a',
+                width: '100%',
+                resize: 'none',
+                border: 'none',
+                outline: 'none',
+                backgroundColor: 'transparent'
+              }}
               placeholder="Start a thread..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               maxLength={maxLength}
             />
             
-            <div className="flex justify-between items-center mt-2">
-              <div className="flex items-center space-x-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: 12
+            }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center'
+              }}>
+                <button
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingLeft: 12,
+                    paddingRight: 12,
+                    paddingTop: 6,
+                    paddingBottom: 6,
+                    borderRadius: 20,
+                    border: '1px solid #d1d5db',
+                    backgroundColor: '#ffffff',
+                    marginRight: 12,
+                    gap: 6,
+                    cursor: 'pointer',
+                    opacity: (!content.trim() || content.length > maxLength) ? 0.5 : 1
+                  }}
                   onClick={addToThread}
                   disabled={!content.trim() || content.length > maxLength}
-                  className="text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-gray-800"
                 >
                   <ThreadIcon size={16} color="#7c3aed" />
-                  <span className="ml-1">Add</span>
-                </Button>
+                  <span style={{
+                    fontSize: 14,
+                    color: '#7c3aed',
+                    fontWeight: '600'
+                  }}>Add</span>
+                </button>
                 
-                <span className={`text-sm ${getCharCountColor()}`}>
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: '500',
+                  color: getCharCountColor()
+                }}>
                   {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
                 </span>
               </div>
               
-              <Button
+              <button
+                style={{
+                  background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+                  paddingLeft: 20,
+                  paddingRight: 20,
+                  paddingTop: 12,
+                  paddingBottom: 12,
+                  borderRadius: 20,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 3px 8px rgba(124, 58, 237, 0.3)',
+                  cursor: 'pointer',
+                  opacity: ((threadChirps.length === 0 && !content.trim()) || isPosting) ? 0.5 : 1,
+                  border: 'none'
+                }}
                 onClick={handleSubmit}
                 disabled={(threadChirps.length === 0 && !content.trim()) || isPosting}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
               >
-                {isPosting ? "Posting..." : "Post all"}
-              </Button>
+                <span style={{
+                  color: '#ffffff',
+                  fontSize: 14,
+                  fontWeight: '700'
+                }}>
+                  {isPosting ? "Posting..." : "Post all"}
+                </span>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Thread List */}
         {threadChirps.length > 0 && (
-          <div className="mt-4 space-y-2">
+          <div style={{
+            marginTop: 12,
+            paddingTop: 12,
+            borderTop: '1px solid #e5e7eb'
+          }}>
             {threadChirps.map((chirp, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white text-sm font-semibold">
-                  {index + 1}
-                </div>
-                <div className="flex-1">
-                  <p className="text-gray-900 dark:text-white text-sm">{chirp}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Chirp {index + 1}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+              <div key={index} style={{
+                backgroundColor: '#f8fafc',
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 8
+              }}>
+                <div style={{
+                  flex: 1
+                }}>
+                  <p style={{
+                    fontSize: 16,
+                    lineHeight: 22,
+                    color: '#1a1a1a',
+                    marginBottom: 8
+                  }}>{chirp}</p>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{
+                      fontSize: 14,
+                      color: '#6b7280',
+                      fontWeight: '500'
+                    }}>Chirp {index + 1}</span>
+                    <button
+                      style={{
+                        paddingLeft: 8,
+                        paddingRight: 8,
+                        paddingTop: 4,
+                        paddingBottom: 4,
+                        borderRadius: 12,
+                        backgroundColor: '#fee2e2',
+                        border: '1px solid #fecaca',
+                        cursor: 'pointer'
+                      }}
                       onClick={() => removeFromThread(index)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
-                      Remove
-                    </Button>
+                      <span style={{
+                        fontSize: 12,
+                        color: '#dc2626',
+                        fontWeight: '500'
+                      }}>Remove</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -350,13 +484,45 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 
   // Normal compose mode
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg p-4">
-      <div className="flex space-x-3">
+    <div style={{
+      backgroundColor: '#ffffff',
+      marginTop: 0,
+      marginBottom: 3,
+      borderRadius: 16,
+      paddingTop: 16,
+      paddingBottom: 16,
+      paddingLeft: 16,
+      paddingRight: 16,
+      boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+      maxWidth: 600,
+      alignSelf: 'center',
+      width: '100%'
+    }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'flex-start'
+      }}>
         <UserAvatar user={user} size="md" />
         
-        <div className="flex-1">
-          <Textarea
-            className="w-full resize-none border-none focus-visible:ring-0 text-base p-0 dark:bg-gray-900 dark:text-white min-h-[100px]"
+        <div style={{
+          flex: 1,
+          marginLeft: 12,
+          overflow: 'hidden'
+        }}>
+          <textarea
+            style={{
+              fontSize: 18,
+              lineHeight: 24,
+              minHeight: 80,
+              padding: 0,
+              color: '#1a1a1a',
+              width: '100%',
+              resize: 'none',
+              border: 'none',
+              outline: 'none',
+              backgroundColor: 'transparent'
+            }}
             placeholder="What's on your mind?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -365,36 +531,83 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           
           {/* Image Preview */}
           {selectedImage && (
-            <div className="mt-3">
-              <div className="relative">
+            <div style={{
+              marginTop: 12,
+              marginBottom: 8,
+              overflow: 'hidden',
+              borderRadius: 12
+            }}>
+              <div style={{ position: 'relative' }}>
                 <img
                   src={selectedImage}
                   alt="Selected image"
-                  className="max-w-full max-h-48 rounded-lg object-cover"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: 200,
+                    borderRadius: 12,
+                    objectFit: 'cover'
+                  }}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: 4,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                   onClick={handleRemoveImage}
-                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
                 >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <span style={{ fontSize: 16 }}>×</span>
+                </button>
               </div>
             </div>
           )}
           
-          <div className="flex justify-between items-center mt-2">
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 12
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center'
+            }}>
+              <button
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  paddingTop: 6,
+                  paddingBottom: 6,
+                  borderRadius: 20,
+                  border: '1px solid #d1d5db',
+                  backgroundColor: '#ffffff',
+                  marginRight: 12,
+                  gap: 6,
+                  cursor: 'pointer'
+                }}
                 onClick={() => setIsThreadMode(true)}
-                className="text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-gray-800"
               >
                 <ThreadIcon size={16} color="#7c3aed" />
-                <span className="ml-1">Thread</span>
-              </Button>
+                <span style={{
+                  fontSize: 14,
+                  color: '#7c3aed',
+                  fontWeight: '600'
+                }}>Thread</span>
+              </button>
               
               <ImagePickerButton
                 onImageSelected={handleImageSelected}
@@ -403,18 +616,42 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 color="#7c3aed"
               />
               
-              <span className={`text-sm ${getCharCountColor()}`}>
+              <span style={{
+                fontSize: 14,
+                fontWeight: '500',
+                color: getCharCountColor(),
+                marginLeft: 12
+              }}>
                 {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
               </span>
             </div>
             
-            <Button
+            <button
+              style={{
+                background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+                paddingLeft: 20,
+                paddingRight: 20,
+                paddingTop: 12,
+                paddingBottom: 12,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 3px 8px rgba(124, 58, 237, 0.3)',
+                cursor: 'pointer',
+                opacity: ((!content.trim() && !selectedImage) || content.length > maxLength || isPosting) ? 0.5 : 1,
+                border: 'none'
+              }}
               onClick={handleSubmit}
               disabled={(!content.trim() && !selectedImage) || content.length > maxLength || isPosting}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
-              {isPosting ? "Posting..." : "Chirp"}
-            </Button>
+              <span style={{
+                color: '#ffffff',
+                fontSize: 14,
+                fontWeight: '700'
+              }}>
+                {isPosting ? "Posting..." : "Chirp"}
+              </span>
+            </button>
           </div>
         </div>
       </div>
