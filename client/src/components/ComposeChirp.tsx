@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
@@ -31,6 +31,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [threadChirps, setThreadChirps] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  
+  // Refs for textarea focus handling
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const threadTextareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { user: authUser, isLoading } = useAuth();
   const { toast } = useToast();
@@ -291,6 +295,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     return '#6b7280'; // gray
   };
 
+  const handleTextareaClick = () => {
+    const currentRef = isThreadMode ? threadTextareaRef : textareaRef;
+    if (currentRef.current) {
+      currentRef.current.focus();
+    }
+  };
+
   if (isThreadMode) {
     // Thread mode - extend the compose field
     return (
@@ -318,9 +329,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           <div style={{
             flex: 1,
             marginLeft: 12,
-            overflow: 'hidden'
-          }}>
+            overflow: 'hidden',
+            cursor: 'text'
+          }}
+          onClick={handleTextareaClick}
+          >
             <textarea
+              ref={threadTextareaRef}
               style={{
                 fontSize: 18,
                 lineHeight: 24,
@@ -333,11 +348,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 border: 'none',
                 outline: 'none',
                 backgroundColor: 'transparent',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                cursor: 'text'
               }}
               placeholder="Start a thread..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onClick={handleTextareaClick}
               maxLength={maxLength}
             />
             
@@ -509,9 +526,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         <div style={{
           flex: 1,
           marginLeft: 12,
-          overflow: 'hidden'
-        }}>
+          overflow: 'hidden',
+          cursor: 'text'
+        }}
+        onClick={handleTextareaClick}
+        >
           <textarea
+            ref={textareaRef}
             style={{
               fontSize: 18,
               lineHeight: 24,
@@ -524,11 +545,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               border: 'none',
               outline: 'none',
               backgroundColor: 'transparent',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              cursor: 'text'
             }}
             placeholder="What's on your mind?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onClick={handleTextareaClick}
             maxLength={maxLength}
           />
           
