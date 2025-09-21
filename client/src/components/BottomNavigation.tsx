@@ -84,19 +84,55 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-1.5 py-1 pb-5 z-50">
-      <div className="flex justify-around items-center">
+    <div style={{
+      position: 'fixed',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: '#ffffff',
+      borderTop: '1px solid #e5e7eb',
+      paddingLeft: '6px',
+      paddingRight: '6px',
+      paddingTop: '4px',
+      paddingBottom: '20px', // Add bottom padding to avoid iPhone home indicator
+      zIndex: 50
+    }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center'
+      }}>
         {navItems.map((item) => (
           <button
             key={item.key}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl min-w-14 transition-all duration-200 ${
-              item.isActive 
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/25' 
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: '5px',
+              paddingBottom: '5px',
+              paddingLeft: '12px',
+              paddingRight: '12px',
+              borderRadius: '12px',
+              minWidth: '56px',
+              border: 'none',
+              cursor: 'pointer',
+              background: item.isActive 
+                ? 'linear-gradient(135deg, #7c3aed, #ec4899)' 
+                : 'transparent',
+              boxShadow: item.isActive 
+                ? '0 4px 8px rgba(124, 58, 237, 0.3)' 
+                : 'none',
+              transition: 'all 0.2s ease'
+            }}
             onClick={() => handleTabChange(item.key, item.path)}
           >
-            <div className="relative">
+            <div style={{
+              position: 'relative',
+              alignItems: 'center',
+              justifyContent: 'center',
+              display: 'flex'
+            }}>
               <item.component
                 size={22}
                 color={item.isActive ? '#ffffff' : '#6b7280'}
@@ -104,8 +140,30 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
               
               {/* Notification badge */}
               {item.badge && (
-                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center px-1">
-                  {item.badge > 99 ? "99+" : item.badge}
+                <div style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: '-6px',
+                  backgroundColor: '#ffffff',
+                  border: '1.5px solid #7c3aed',
+                  borderRadius: '8px',
+                  minWidth: '16px',
+                  height: '14px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingLeft: '4px',
+                  paddingRight: '4px',
+                  display: 'flex'
+                }}>
+                  <span style={{
+                    color: '#7c3aed',
+                    fontSize: '9px',
+                    fontWeight: '700',
+                    textAlign: 'center',
+                    lineHeight: '1'
+                  }}>
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
                 </div>
               )}
             </div>
