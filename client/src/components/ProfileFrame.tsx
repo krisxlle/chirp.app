@@ -8,12 +8,12 @@ interface ProfileFrameProps {
 }
 
 const rarityFrameImages = {
-  mythic: '/assets/Mystical Frame.png',
-  legendary: '/assets/Legendary Frame.png',
-  epic: '/assets/Epic Frame.png',
-  rare: '/assets/Rare Frame.png',
-  uncommon: '/assets/Uncommon Frame.png',
-  common: '/assets/Common Frame.png',
+  mythic: 'http://localhost:5000/assets/Mystical Frame.png',
+  legendary: 'http://localhost:5000/assets/Legendary Frame.png',
+  epic: 'http://localhost:5000/assets/Epic Frame.png',
+  rare: 'http://localhost:5000/assets/Rare Frame.png',
+  uncommon: 'http://localhost:5000/assets/Uncommon Frame.png',
+  common: 'http://localhost:5000/assets/Common Frame.png',
 };
 
 export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {
