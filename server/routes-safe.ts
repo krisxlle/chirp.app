@@ -266,31 +266,36 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
         }
         
         // Transform the data to match the expected format
-        const transformedChirps = chirps?.map(chirp => ({
-          id: chirp.id,
-          content: chirp.content,
-          createdAt: chirp.created_at,
-          replyToId: chirp.reply_to_id,
-          author: {
-            id: chirp.users.id,
-            firstName: chirp.users.first_name,
-            lastName: chirp.users.last_name,
-            email: chirp.users.email,
-            customHandle: chirp.users.custom_handle,
-            handle: chirp.users.handle,
-            profileImageUrl: chirp.users.profile_image_url,
-            avatarUrl: chirp.users.avatar_url,
-            bannerImageUrl: chirp.users.banner_image_url,
-            bio: chirp.users.bio,
-            linkInBio: chirp.users.link_in_bio
-          },
-          replyCount: 0, // TODO: Calculate actual reply count
-          reactionCount: 0, // TODO: Calculate actual reaction count
-          imageUrl: chirp.image_url,
-          imageAltText: chirp.image_alt_text,
-          imageWidth: chirp.image_width,
-          imageHeight: chirp.image_height
-        })) || [];
+        const transformedChirps = chirps?.map(chirp => {
+          // Handle the case where users might be an array or single object
+          const user = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+          
+          return {
+            id: chirp.id,
+            content: chirp.content,
+            createdAt: chirp.created_at,
+            replyToId: chirp.reply_to_id,
+            author: {
+              id: user?.id,
+              firstName: user?.first_name,
+              lastName: user?.last_name,
+              email: user?.email,
+              customHandle: user?.custom_handle,
+              handle: user?.handle,
+              profileImageUrl: user?.profile_image_url,
+              avatarUrl: user?.avatar_url,
+              bannerImageUrl: user?.banner_image_url,
+              bio: user?.bio,
+              linkInBio: user?.link_in_bio
+            },
+            replyCount: 0, // TODO: Calculate actual reply count
+            reactionCount: 0, // TODO: Calculate actual reaction count
+            imageUrl: chirp.image_url,
+            imageAltText: chirp.image_alt_text,
+            imageWidth: chirp.image_width,
+            imageHeight: chirp.image_height
+          };
+        }) || [];
         
         res.json(transformedChirps);
       } catch (error) {
@@ -373,7 +378,7 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
           .insert({
             user_id: userId,
             chirp_id: parseInt(id),
-            reaction_type: 'like'
+            type: 'like'
           })
           .select()
           .single();
@@ -514,31 +519,36 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
         }
         
         // Transform the data to match the expected format
-        const transformedChirps = chirps?.map(chirp => ({
-          id: chirp.id,
-          content: chirp.content,
-          createdAt: chirp.created_at,
-          replyToId: chirp.reply_to_id,
-          author: {
-            id: chirp.users.id,
-            firstName: chirp.users.first_name,
-            lastName: chirp.users.last_name,
-            email: chirp.users.email,
-            customHandle: chirp.users.custom_handle,
-            handle: chirp.users.handle,
-            profileImageUrl: chirp.users.profile_image_url,
-            avatarUrl: chirp.users.avatar_url,
-            bannerImageUrl: chirp.users.banner_image_url,
-            bio: chirp.users.bio,
-            linkInBio: chirp.users.link_in_bio
-          },
-          replyCount: 0, // TODO: Calculate actual reply count
-          reactionCount: 0, // TODO: Calculate actual reaction count
-          imageUrl: chirp.image_url,
-          imageAltText: chirp.image_alt_text,
-          imageWidth: chirp.image_width,
-          imageHeight: chirp.image_height
-        })) || [];
+        const transformedChirps = chirps?.map(chirp => {
+          // Handle the case where users might be an array or single object
+          const user = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+          
+          return {
+            id: chirp.id,
+            content: chirp.content,
+            createdAt: chirp.created_at,
+            replyToId: chirp.reply_to_id,
+            author: {
+              id: user?.id,
+              firstName: user?.first_name,
+              lastName: user?.last_name,
+              email: user?.email,
+              customHandle: user?.custom_handle,
+              handle: user?.handle,
+              profileImageUrl: user?.profile_image_url,
+              avatarUrl: user?.avatar_url,
+              bannerImageUrl: user?.banner_image_url,
+              bio: user?.bio,
+              linkInBio: user?.link_in_bio
+            },
+            replyCount: 0, // TODO: Calculate actual reply count
+            reactionCount: 0, // TODO: Calculate actual reaction count
+            imageUrl: chirp.image_url,
+            imageAltText: chirp.image_alt_text,
+            imageWidth: chirp.image_width,
+            imageHeight: chirp.image_height
+          };
+        }) || [];
         
         res.json(transformedChirps);
       } catch (error) {
