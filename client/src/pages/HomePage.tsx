@@ -45,7 +45,39 @@ export default function HomePage() {
       
       const params = new URLSearchParams();
       params.append('personalized', 'true');
-      const realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+      const response = await apiRequest(`/api/test/chirps`);
+      const dbChirps = response.chirps || [];
+      
+      // Transform database format to component format
+      const realChirps = dbChirps.map((chirp: any) => ({
+        id: chirp.id.toString(),
+        content: chirp.content,
+        createdAt: chirp.created_at,
+        author: {
+          id: chirp.users.id,
+          firstName: chirp.users.first_name,
+          lastName: chirp.users.last_name,
+          email: chirp.users.email,
+          handle: chirp.users.handle,
+          profileImageUrl: null,
+          avatarUrl: null,
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        },
+        likes: 0,
+        replies: 0,
+        reposts: 0,
+        isLiked: false,
+        isReposted: false,
+        reactionCounts: {},
+        userReaction: null,
+        repostOf: null,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      }));
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial chirps from database in ${loadTime}ms`);
@@ -79,7 +111,39 @@ export default function HomePage() {
       
       const params = new URLSearchParams();
       params.append('trending', 'true');
-      const realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+      const response = await apiRequest(`/api/test/chirps`);
+      const dbChirps = response.chirps || [];
+      
+      // Transform database format to component format
+      const realChirps = dbChirps.map((chirp: any) => ({
+        id: chirp.id.toString(),
+        content: chirp.content,
+        createdAt: chirp.created_at,
+        author: {
+          id: chirp.users.id,
+          firstName: chirp.users.first_name,
+          lastName: chirp.users.last_name,
+          email: chirp.users.email,
+          handle: chirp.users.handle,
+          profileImageUrl: null,
+          avatarUrl: null,
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        },
+        likes: 0,
+        replies: 0,
+        reposts: 0,
+        isLiked: false,
+        isReposted: false,
+        reactionCounts: {},
+        userReaction: null,
+        repostOf: null,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      }));
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial collection chirps from database in ${loadTime}ms`);

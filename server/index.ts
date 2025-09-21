@@ -7,6 +7,7 @@ import { registerRoutesSafe } from "./routes-safe";
 import { devServerProtection, securityLogging, securityMiddleware } from "./security";
 import { log, serveStatic, setupVite } from "./vite";
 import { truncateSensitiveData } from "./loggingUtils";
+import { testDatabaseConnection } from "./db";
 
 // Global error handler for uncaught exceptions
 process.on('uncaughtException', (error) => {
@@ -140,8 +141,15 @@ app.use((req, res, next) => {
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
     const port = parseInt(process.env.PORT || '5000', 10);
-    server.listen(port, "0.0.0.0", () => {
+    server.listen(port, "0.0.0.0", async () => {
       log(`serving on port ${port}`);
+      
+      // Test database connection
+      try {
+        await testDatabaseConnection();
+      } catch (error) {
+        console.error('❌ Database connection test failed:', error);
+      }
       
       // Try to initialize schedulers if they exist
       try {

@@ -30,8 +30,7 @@ import {
     weeklySummaries,
     type WeeklySummary
 } from "../shared/schema";
-import { db } from "./db";
-import { supabase } from "./supabase-db";
+import { db, supabase } from "./db";
 
 export interface IStorage {
   // User operations (required for authentication)

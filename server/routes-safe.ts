@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { createServer, type Server } from "http";
 import { log, serveStatic, setupVite } from "./vite";
+import { supabase } from "./db";
 
 export async function registerRoutesSafe(app: Express): Promise<Server> {
   console.log('🛠️  Starting safe route registration...');
@@ -39,6 +40,75 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
         path: req.path,
         method: req.method
       });
+    });
+    
+    // Add a database test endpoint
+    app.get('/api/test/db', async (req, res) => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, email, first_name, last_name')
+          .limit(5);
+        
+        if (error) {
+          res.json({ 
+            success: false, 
+            error: error.message,
+            message: 'Database connection failed'
+          });
+        } else {
+          res.json({ 
+            success: true, 
+            message: 'Database connection successful',
+            userCount: data?.length || 0,
+            users: data
+          });
+        }
+      } catch (error) {
+        res.json({ 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          message: 'Database test failed'
+        });
+      }
+    });
+    
+    // Add a public chirps test endpoint
+    app.get('/api/test/chirps', async (req, res) => {
+      try {
+        const { data, error } = await supabase
+          .from('chirps')
+          .select(`
+            id,
+            content,
+            created_at,
+            author_id,
+            users!inner(id, first_name, last_name, email, handle)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (error) {
+          res.json({ 
+            success: false, 
+            error: error.message,
+            message: 'Chirps query failed'
+          });
+        } else {
+          res.json({ 
+            success: true, 
+            message: 'Chirps retrieved successfully',
+            chirpCount: data?.length || 0,
+            chirps: data
+          });
+        }
+      } catch (error) {
+        res.json({ 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          message: 'Chirps test failed'
+        });
+      }
     });
     
     // Root route removed - let static file serving handle it
