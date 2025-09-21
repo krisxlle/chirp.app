@@ -41,15 +41,7 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       });
     });
     
-    // Add a root route test
-    app.get('/', (req, res) => {
-      console.log('🔍 DEBUG: Root route hit!');
-      res.json({ 
-        message: 'Chirp server root route working!', 
-        timestamp: new Date().toISOString(),
-        note: 'This should not be seen if static files are working'
-      });
-    });
+    // Root route removed - let static file serving handle it
   });
 
   // 2. Serve generated images
