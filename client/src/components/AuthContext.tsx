@@ -106,26 +106,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔐 Attempting sign in for:', username);
       setIsLoading(true);
       
-      // For web build, create a mock user for now
-      // In production, this would connect to your Supabase backend
-      const mockUser: User = {
-        id: '1',
-        email: username,
-        name: username,
-        firstName: username,
-        lastName: '',
-        customHandle: username.toLowerCase(),
+      // Use a real user from the database for web testing
+      const realUser: User = {
+        id: 'd5c69122-39d9-400c-a6d8-b166d7994907', // Solarius user ID
+        email: 'solarius.bot@chirp.app',
+        name: 'Solarius Sunbeam',
+        firstName: 'Solarius',
+        lastName: 'Sunbeam',
+        customHandle: 'solarius',
+        handle: 'solarius',
         profileImageUrl: undefined,
         crystalBalance: 100,
         isChirpPlus: false,
         showChirpPlusBadge: false
       };
       
-      await storage.setItem('user', JSON.stringify(mockUser));
+      await storage.setItem('user', JSON.stringify(realUser));
       await storage.removeItem('userSignedOut');
-      setUser(mockUser);
+      setUser(realUser);
       setIsLoading(false);
-      console.log('✅ Signed in as user:', mockUser.customHandle || mockUser.handle || mockUser.id);
+      console.log('✅ Signed in as real user:', realUser.customHandle || realUser.handle || realUser.id);
       return { success: true };
     } catch (error) {
       console.error('Sign in error:', error);

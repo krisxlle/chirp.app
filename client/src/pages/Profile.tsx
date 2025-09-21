@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../hooks/useAuth';
-import UserAvatar from '../components/UserAvatar';
 import ChirpCard from '../components/ChirpCard';
+import UserAvatar from '../components/UserAvatar';
 import { apiRequest } from '../components/api';
+import { useAuth } from '../hooks/useAuth';
+import Settings from './Settings';
 
 interface User {
   id: string;
@@ -40,6 +41,7 @@ export default function Profile() {
     profilePower: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Extract userId from URL or use current user
   const userId = location.includes('/profile/') 
@@ -190,6 +192,11 @@ export default function Profile() {
 
   const isOwnProfile = authUser?.id === user.id;
 
+  // Show settings page if settings is open
+  if (showSettings) {
+    return <Settings onClose={() => setShowSettings(false)} />;
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -235,31 +242,31 @@ export default function Profile() {
               }}>@{user.handle}</p>
             </div>
           </div>
-          {isOwnProfile && (
-            <button
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                paddingLeft: '12px',
-                paddingRight: '12px',
-                paddingTop: '6px',
-                paddingBottom: '6px',
-                borderRadius: '6px',
-                border: '1px solid #d1d5db',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer',
-                gap: '8px'
-              }}
-              onClick={() => setLocation('/settings')}
-            >
-              <span style={{ fontSize: '16px' }}>⚙️</span>
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151'
-              }}>Settings</span>
-            </button>
-          )}
+              {isOwnProfile && (
+                <button
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    paddingLeft: '12px',
+                    paddingRight: '12px',
+                    paddingTop: '6px',
+                    paddingBottom: '6px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer',
+                    gap: '8px'
+                  }}
+                  onClick={() => setShowSettings(true)}
+                >
+                  <span style={{ fontSize: '16px' }}>⚙️</span>
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#374151'
+                  }}>Settings</span>
+                </button>
+              )}
         </div>
       </div>
 

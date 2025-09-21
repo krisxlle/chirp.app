@@ -523,46 +523,56 @@ export default function HomePage() {
         <div style={{
           paddingTop: '8px',
           paddingBottom: '8px',
-          backgroundColor: '#fafafa'
+          backgroundColor: '#fafafa',
+          display: 'flex',
+          justifyContent: 'center'
         }}>
-          <ComposeChirp onPost={handleNewChirp} />
+          <div style={{ maxWidth: '600px', width: '100%' }}>
+            <ComposeChirp onPost={handleNewChirp} />
+          </div>
         </div>
 
         {feedType === 'forYou' ? (
           // For You Feed
-          <div style={{ paddingLeft: '16px', paddingRight: '16px' }}>
-            {forYouChirps.length === 0 && !isLoading ? (
-              <div style={{ 
-                alignItems: 'center', 
-                paddingTop: '50px',
-                paddingBottom: '50px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '50px', marginBottom: '10px' }}>💬</div>
-                <h3 style={{ 
-                  fontSize: '20px', 
-                  fontWeight: 'bold', 
-                  color: '#333',
-                  marginBottom: '5px'
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center',
+            paddingLeft: '16px', 
+            paddingRight: '16px' 
+          }}>
+            <div style={{ maxWidth: '600px', width: '100%' }}>
+              {forYouChirps.length === 0 && !isLoading ? (
+                <div style={{ 
+                  alignItems: 'center', 
+                  paddingTop: '50px',
+                  paddingBottom: '50px',
+                  textAlign: 'center'
                 }}>
-                  No chirps yet
-                </h3>
-                <p style={{ fontSize: '16px', color: '#657786' }}>
-                  Be the first to chirp!
-                </p>
-              </div>
-            ) : (
-              <>
-                {forYouChirps.map((chirp, index) => (
-                  <ChirpCard 
-                    key={`${chirp.id}-${index}`} 
-                    chirp={chirp} 
-                    onLikeUpdate={handleChirpLikeUpdate}
-                    onDeleteSuccess={handleChirpDelete}
-                    onReplyPosted={handleChirpReplyUpdate}
-                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
-                  />
-                ))}
+                  <div style={{ fontSize: '50px', marginBottom: '10px' }}>💬</div>
+                  <h3 style={{ 
+                    fontSize: '20px', 
+                    fontWeight: 'bold', 
+                    color: '#333',
+                    marginBottom: '5px'
+                  }}>
+                    No chirps yet
+                  </h3>
+                  <p style={{ fontSize: '16px', color: '#657786' }}>
+                    Be the first to chirp!
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {forYouChirps.map((chirp, index) => (
+                    <ChirpCard 
+                      key={`${chirp.id}-${index}`} 
+                      chirp={chirp} 
+                      onLikeUpdate={handleChirpLikeUpdate}
+                      onDeleteSuccess={handleChirpDelete}
+                      onReplyPosted={handleChirpReplyUpdate}
+                      onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                    />
+                  ))}
                 
                 {/* Loading more indicator */}
                 {isLoadingMore && (
@@ -606,11 +616,18 @@ export default function HomePage() {
                 )}
               </>
             )}
+            </div>
           </div>
         ) : (
           // Collection Feed
-          <div style={{ paddingLeft: '16px', paddingRight: '16px' }}>
-            {collectionChirps.length === 0 && !isLoading ? (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center',
+            paddingLeft: '16px', 
+            paddingRight: '16px' 
+          }}>
+            <div style={{ maxWidth: '600px', width: '100%' }}>
+              {collectionChirps.length === 0 && !isLoading ? (
               <div style={{ 
                 alignItems: 'center', 
                 paddingTop: '50px',
@@ -688,6 +705,7 @@ export default function HomePage() {
                 )}
               </>
             )}
+            </div>
           </div>
         )}
       </div>

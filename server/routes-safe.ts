@@ -1,13 +1,39 @@
 import type { Express } from "express";
 import express from "express";
 import fs from 'fs';
-import path from 'path';
 import { createServer, type Server } from "http";
-import { log, serveStatic, setupVite } from "./vite";
+import path from 'path';
 import { supabase } from "./db";
 
 export async function registerRoutesSafe(app: Express): Promise<Server> {
   console.log('🛠️  Starting safe route registration...');
+  
+  // Add CORS middleware for all routes
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5000',
+      'https://www.joinchirp.org',
+      'https://joinchirp.org'
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+    
+    next();
+  });
   
   // Helper function to safely register a route
   function safeRoute(name: string, registerFunction: () => void) {
@@ -73,42 +99,40 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       }
     });
     
-    // Add a public notifications test endpoint
-    app.get('/api/test/notifications', async (req, res) => {
+    // Add a public chirps test endpoint
+    app.get('/api/test/chirps', async (req, res) => {
       try {
         const { data, error } = await supabase
-          .from('notifications')
+          .from('chirps')
           .select(`
             id,
-            type,
-            read,
+            content,
             created_at,
-            from_user_id,
-            chirp_id,
-            users!notifications_from_user_id_fkey(id, first_name, last_name, email, handle)
+            author_id,
+            users!inner(id, first_name, last_name, email, handle)
           `)
           .order('created_at', { ascending: false })
-          .limit(20);
+          .limit(10);
         
         if (error) {
           res.json({ 
             success: false, 
             error: error.message,
-            message: 'Notifications query failed'
+            message: 'Chirps query failed'
           });
         } else {
           res.json({ 
             success: true, 
-            message: 'Notifications retrieved successfully',
-            notificationCount: data?.length || 0,
-            notifications: data
+            message: 'Chirps retrieved successfully',
+            chirpCount: data?.length || 0,
+            chirps: data
           });
         }
       } catch (error) {
         res.json({ 
           success: false, 
           error: error instanceof Error ? error.message : 'Unknown error',
-          message: 'Notifications test failed'
+          message: 'Chirps test failed'
         });
       }
     });

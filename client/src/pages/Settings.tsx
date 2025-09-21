@@ -1,16 +1,20 @@
+import { ArrowLeft, BarChart3, LogOut, Save, Settings, Shield, User } from 'lucide-react';
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { ArrowLeft, Settings, User, BarChart3, Shield, LogOut, Save } from 'lucide-react';
+import { Textarea } from '../components/ui/textarea';
 import UserAvatar from '../components/UserAvatar';
+import { useAuth } from '../hooks/useAuth';
 
-export default function Settings() {
+interface SettingsProps {
+  onClose?: () => void;
+}
+
+export default function Settings({ onClose }: SettingsProps) {
   const { user, signOut, updateUser } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('profile');
@@ -72,7 +76,7 @@ export default function Settings() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setLocation('/')}
+            onClick={() => onClose ? onClose() : setLocation('/')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>

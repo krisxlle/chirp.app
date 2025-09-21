@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../components/AuthContext';
+import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
-import ChirpImage from './ChirpImage';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
 
@@ -333,7 +332,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 resize: 'none',
                 border: 'none',
                 outline: 'none',
-                backgroundColor: 'transparent'
+                backgroundColor: 'transparent',
+                overflow: 'hidden'
               }}
               placeholder="Start a thread..."
               value={content}
@@ -523,7 +523,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               resize: 'none',
               border: 'none',
               outline: 'none',
-              backgroundColor: 'transparent'
+              backgroundColor: 'transparent',
+              overflow: 'hidden'
             }}
             placeholder="What's on your mind?"
             value={content}

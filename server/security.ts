@@ -49,6 +49,8 @@ function isAllowedOrigin(origin: string): boolean {
     process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:5000` : null,
     process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:3000` : null,
     // Production domains
+    'https://www.joinchirp.org',
+    'https://joinchirp.org',
     process.env.PRODUCTION_DOMAIN ? `https://${process.env.PRODUCTION_DOMAIN}` : null,
     process.env.PRODUCTION_DOMAIN ? `http://${process.env.PRODUCTION_DOMAIN}` : null,
     // Allow any subdomain of the production domain
