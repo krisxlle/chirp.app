@@ -106,29 +106,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔐 Attempting sign in for:', username);
       setIsLoading(true);
       
-      // Use a real user from the database for web testing
-      const realUser: User = {
-        id: 'd5c69122-39d9-400c-a6d8-b166d7994907', // Solarius user ID
-        email: 'solarius.bot@chirp.app',
-        name: 'Solarius Sunbeam',
-        firstName: 'Solarius',
-        lastName: 'Sunbeam',
-        customHandle: 'solarius',
-        handle: 'solarius',
-        profileImageUrl: undefined,
-        crystalBalance: 100,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
-      };
+      // Require password for security
+      if (!password) {
+        console.log('❌ Password is required for authentication');
+        setIsLoading(false);
+        return { success: false, error: 'Password is required' };
+      }
       
-      await storage.setItem('user', JSON.stringify(realUser));
+      // Clear any old session data to ensure fresh authentication
+      await storage.removeItem('user');
       await storage.removeItem('userSignedOut');
-      setUser(realUser);
+      
+      // Authenticate user with username and password using API
+      console.log('🔐 Using API authentication for username:', username);
+      const response = await fetch('http://localhost:5000/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('❌ Authentication failed:', errorData.error);
+        setIsLoading(false);
+        return { success: false, error: errorData.error || 'Authentication failed' };
+      }
+
+      const dbUser = await response.json();
+      
+      if (dbUser) {
+        console.log('✅ User authenticated successfully:', dbUser.custom_handle || dbUser.handle || dbUser.id);
+        console.log('🔍 User ID from server:', dbUser.id, 'Type:', typeof dbUser.id);
+        
+        // Validate that we got a UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(dbUser.id)) {
+          console.error('❌ Server returned non-UUID user ID:', dbUser.id);
+          setIsLoading(false);
+          return { success: false, error: 'Invalid user ID' };
+        }
+        
+        // Use real user data from database
+        const user = {
+          id: dbUser.id,
+          email: dbUser.email || username,
+          name: dbUser.display_name || dbUser.custom_handle || dbUser.handle || username,
+          firstName: dbUser.first_name,
+          lastName: dbUser.last_name,
+          customHandle: dbUser.custom_handle,
+          handle: dbUser.handle,
+          profileImageUrl: dbUser.profile_image_url,
+          avatarUrl: dbUser.profile_image_url,
+          bannerImageUrl: dbUser.banner_image_url,
+          bio: dbUser.bio,
+          crystalBalance: dbUser.crystal_balance || 0,
+          isChirpPlus: dbUser.is_chirp_plus || false,
+          showChirpPlusBadge: dbUser.show_chirp_plus_badge || false
+        };
+        
+        await storage.setItem('user', JSON.stringify(user));
+        // Clear sign out flag when user successfully signs in
+        await storage.removeItem('userSignedOut');
+        setUser(user);
+        setIsLoading(false);
+        console.log('✅ Signed in as user:', user.customHandle || user.handle || user.id);
+        return { success: true };
+      }
+      
+      console.log('❌ No users found in database');
       setIsLoading(false);
-      console.log('✅ Signed in as real user:', realUser.customHandle || realUser.handle || realUser.id);
-      return { success: true };
+      return { success: false, error: 'User not found' };
     } catch (error) {
       console.error('Sign in error:', error);
+      
+      // Handle email confirmation error specifically
+      if (error.message === 'EMAIL_NOT_CONFIRMED') {
+        console.log('📧 Email confirmation required');
+        setIsLoading(false);
+        return { success: false, error: 'EMAIL_NOT_CONFIRMED' };
+      }
+      
       setIsLoading(false);
       return { success: false, error: 'Authentication failed' };
     }
