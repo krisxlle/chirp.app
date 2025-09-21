@@ -59,8 +59,9 @@ export default function HomePage() {
           lastName: chirp.users.last_name || '',
           email: chirp.users.email,
           handle: chirp.users.handle,
-          profileImageUrl: null,
-          avatarUrl: null,
+          customHandle: chirp.users.custom_handle,
+          profileImageUrl: chirp.users.profile_image_url,
+          avatarUrl: chirp.users.avatar_url,
           isChirpPlus: false,
           showChirpPlusBadge: false
         },
@@ -125,8 +126,9 @@ export default function HomePage() {
           lastName: chirp.users.last_name || '',
           email: chirp.users.email,
           handle: chirp.users.handle,
-          profileImageUrl: null,
-          avatarUrl: null,
+          customHandle: chirp.users.custom_handle,
+          profileImageUrl: chirp.users.profile_image_url,
+          avatarUrl: chirp.users.avatar_url,
           isChirpPlus: false,
           showChirpPlusBadge: false
         },

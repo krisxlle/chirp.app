@@ -68,13 +68,13 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       });
     });
     
-    // Add a database test endpoint
-    app.get('/api/test/db', async (req, res) => {
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, email, first_name, last_name')
-          .limit(5);
+        // Add a database test endpoint
+        app.get('/api/test/db', async (req, res) => {
+          try {
+            const { data, error } = await supabase
+              .from('users')
+              .select('id, email, first_name, last_name, profile_image_url, avatar_url, banner_image_url, bio, link_in_bio, custom_handle')
+              .limit(5);
         
         if (error) {
           res.json({ 
@@ -99,20 +99,20 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       }
     });
     
-    // Add a public chirps test endpoint
-    app.get('/api/test/chirps', async (req, res) => {
-      try {
-        const { data, error } = await supabase
-          .from('chirps')
-          .select(`
-            id,
-            content,
-            created_at,
-            author_id,
-            users!inner(id, first_name, last_name, email, handle)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(10);
+        // Add a public chirps test endpoint
+        app.get('/api/test/chirps', async (req, res) => {
+          try {
+            const { data, error } = await supabase
+              .from('chirps')
+              .select(`
+                id,
+                content,
+                created_at,
+                author_id,
+                users!inner(id, first_name, last_name, email, handle, profile_image_url, avatar_url, banner_image_url, bio, link_in_bio, custom_handle)
+              `)
+              .order('created_at', { ascending: false })
+              .limit(10);
         
         if (error) {
           res.json({ 

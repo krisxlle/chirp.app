@@ -225,7 +225,7 @@ export default function Profile() {
             alignItems: 'center',
             gap: '12px'
           }}>
-            <UserAvatar user={user} size="sm" />
+            <UserAvatar user={user} size="sm" showFrame={true} />
             <div>
               <h1 style={{
                 fontSize: '18px',
@@ -278,7 +278,7 @@ export default function Profile() {
             height: '192px',
             background: user.bannerImageUrl 
               ? `url(${user.bannerImageUrl})` 
-              : 'linear-gradient(135deg, #7c3aed, #ec4899)',
+              : 'url(https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
@@ -304,7 +304,7 @@ export default function Profile() {
               border: '4px solid #ffffff',
               overflow: 'hidden'
             }}>
-              <UserAvatar user={user} size="lg" />
+              <UserAvatar user={user} size="lg" showFrame={true} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{

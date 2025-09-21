@@ -1,16 +1,14 @@
-import { formatDistanceToNow } from 'date-fns';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpImage from '../components/ChirpImage';
 import ChirpLikesModal from '../components/ChirpLikesModal';
-import ChirpPlusBadge from '../components/ChirpPlusBadge';
 import ImageViewerModal from '../components/ImageViewerModal';
-import MentionText from '../components/MentionText';
-import MoodReactions from '../components/MoodReactions';
 import UserAvatar from '../components/UserAvatar';
+import HeartIcon from '../components/icons/HeartIcon';
+import ShareIcon from '../components/icons/ShareIcon';
+import SpeechBubbleIcon from '../components/icons/SpeechBubbleIcon';
 import { apiRequest } from '../components/api';
-import { useToast } from '../hooks/use-toast';
 
 interface User {
   id: string;
@@ -29,29 +27,22 @@ interface Chirp {
   id: string;
   content: string;
   createdAt: string;
+  replyToId?: string | null;
   author: User;
-  likes: number;
-  replies: number;
-  reposts: number;
-  isLiked: boolean;
-  isReposted: boolean;
-  reactionCounts: Record<string, number>;
-  userReaction?: string | null;
-  repostOf?: {
-    id: string;
-    content: string;
-    author: User;
-    createdAt: string;
-  } | null;
-  isAiGenerated?: boolean;
+  replyCount: number;
+  reactionCount: number;
   isWeeklySummary?: boolean;
-  threadId?: string | null;
-  threadOrder?: number | null;
-  isThreadStarter?: boolean;
+  userHasLiked?: boolean;
+  // Image-related fields
   imageUrl?: string | null;
   imageAltText?: string | null;
   imageWidth?: number | null;
   imageHeight?: number | null;
+  // Reply identification fields
+  isDirectReply?: boolean;
+  isNestedReply?: boolean;
+  // Thread identification field
+  isThreadedChirp?: boolean;
 }
 
 interface ChirpCardProps {
@@ -71,175 +62,19 @@ export default function ChirpCard({
   onReplyPosted,
   isHighlighted = false 
 }: ChirpCardProps) {
-  const { user: currentUser } = useAuth();
-  const { toast } = useToast();
+  // Safety check for author data
+  if (!chirp || !chirp.author) {
+    return null;
+  }
+
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   
-  const [showLikesModal, setShowLikesModal] = useState(false);
-  const [showImageViewer, setShowImageViewer] = useState(false);
-  const [showReplyModal, setShowReplyModal] = useState(false);
-  const [replyContent, setReplyContent] = useState('');
-  const [isPostingReply, setIsPostingReply] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [isReposting, setIsReposting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  console.log('🔍 WEB ChirpCard render - ID:', chirp.id, 'author:', chirp.author.customHandle || chirp.author.handle);
-
-  const handleLike = async () => {
-    if (isLiking) return;
-    
-    setIsLiking(true);
-    try {
-      const response = await apiRequest(`/api/chirps/${chirp.id}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      onLikeUpdate?.(chirp.id, response.likeCount);
-      
-      toast({
-        title: chirp.isLiked ? "Unliked" : "Liked",
-        description: chirp.isLiked ? "Removed like from chirp" : "Added like to chirp",
-      });
-    } catch (error) {
-      console.error('Error liking chirp:', error);
-      toast({
-        title: "Error",
-        description: "Failed to like chirp",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLiking(false);
-    }
-  };
-
-  const handleRepost = async () => {
-    if (isReposting) return;
-    
-    setIsReposting(true);
-    try {
-      await apiRequest(`/api/chirps/${chirp.id}/repost`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      toast({
-        title: "Reposted",
-        description: "Chirp has been reposted",
-      });
-    } catch (error) {
-      console.error('Error reposting chirp:', error);
-      toast({
-        title: "Error",
-        description: "Failed to repost chirp",
-        variant: "destructive",
-      });
-    } finally {
-      setIsReposting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (isDeleting) return;
-    
-    setIsDeleting(true);
-    try {
-      await apiRequest(`/api/chirps/${chirp.id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      onDeleteSuccess?.(chirp.id);
-      
-      toast({
-        title: "Deleted",
-        description: "Chirp has been deleted",
-      });
-    } catch (error) {
-      console.error('Error deleting chirp:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete chirp",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleReply = async () => {
-    if (!replyContent.trim() || isPostingReply) return;
-    
-    setIsPostingReply(true);
-    try {
-      await apiRequest('/api/chirps', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: replyContent.trim(),
-          replyToId: chirp.id
-        })
-      });
-      
-      setReplyContent('');
-      setShowReplyModal(false);
-      onReplyPosted?.(chirp.id);
-      
-      toast({
-        title: "Replied",
-        description: "Your reply has been posted",
-      });
-    } catch (error) {
-      console.error('Error posting reply:', error);
-      toast({
-        title: "Error",
-        description: "Failed to post reply",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPostingReply(false);
-    }
-  };
-
-  const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: 'Chirp',
-          text: chirp.content,
-          url: window.location.origin + `/chirp/${chirp.id}`
-        });
-      } else {
-        await navigator.clipboard.writeText(window.location.origin + `/chirp/${chirp.id}`);
-        toast({
-          title: "Copied",
-          description: "Link copied to clipboard",
-        });
-      }
-    } catch (error) {
-      console.error('Error sharing chirp:', error);
-    }
-  };
-
-  const handleProfilePress = () => {
-    if (onProfilePress) {
-      onProfilePress(chirp.author.id);
-    } else {
-      setLocation(`/profile/${chirp.author.id}`);
-    }
-  };
-
-  const handleMentionPress = (handle: string) => {
-    setLocation(`/profile/${handle}`);
-  };
-
-  const isOwnChirp = currentUser?.id === chirp.author.id;
-
-  return (
-    <>
+  // Safety check for user - if user is not available, show a loading state
+  if (!user) {
+    console.log('ChirpCard: User not available, showing loading state');
+    return (
       <div style={{
-        backgroundColor: isHighlighted ? '#fef3c7' : '#ffffff',
         marginTop: '3px',
         marginBottom: '3px',
         borderRadius: '16px',
@@ -251,439 +86,395 @@ export default function ChirpCard({
         maxWidth: '600px',
         alignSelf: 'center',
         width: '100%',
-        transition: 'background-color 0.2s'
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f0f0f0',
+        padding: '20px'
       }}>
-        {/* Repost indicator */}
-        {chirp.repostOf && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '8px',
-            fontSize: '14px',
-            color: '#6b7280'
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>
-              {chirp.author.firstName || chirp.author.customHandle || chirp.author.handle} reposted
+        <span style={{ fontSize: '14px', color: '#657786' }}>Loading...</span>
+      </div>
+    );
+  }
+  
+  // User available, rendering chirp
+  const [likes, setLikes] = useState(chirp.reactionCount || 0);
+  const [replies, setReplies] = useState(chirp.replyCount || 0);
+  const [userHasLiked, setUserHasLiked] = useState(chirp.userHasLiked || false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  
+  // Update local state when chirp data changes
+  useEffect(() => {
+    setLikes(chirp.reactionCount || 0);
+    setReplies(chirp.replyCount || 0);
+    setUserHasLiked(chirp.userHasLiked || false);
+  }, [chirp.reactionCount, chirp.replyCount, chirp.userHasLiked]);
+
+  // Calculate display name for the chirp author
+  const displayName = chirp.author.firstName 
+    ? chirp.author.firstName
+    : (chirp.author.customHandle || chirp.author.handle || 'User');
+
+  const handleLike = async () => {
+    try {
+      if (!user?.id) {
+        alert('Sign in required', 'Please sign in to like chirps.');
+        return;
+      }
+
+      // Check if chirp has a temporary ID (starts with 'temp_')
+      if (String(chirp.id).startsWith('temp_')) {
+        console.log('⚠️ Cannot like chirp with temporary ID:', chirp.id);
+        alert('Please wait', 'This chirp is still being processed. Please wait a moment and try again.');
+        return;
+      }
+
+      console.log('🔴 Like button pressed!');
+      console.log('Chirp ID:', chirp.id, 'Type:', typeof chirp.id);
+      console.log('User ID:', user.id, 'Type:', typeof user.id);
+      console.log('Current likes:', likes);
+      console.log('User has liked:', userHasLiked);
+
+      // Ensure proper string conversion for database constraints
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user.id);
+      
+      if (userHasLiked) {
+        // Unlike: Remove the reaction
+        console.log('🔴 Unliking chirp...');
+        
+        const response = await apiRequest(`/api/chirps/${chirpIdStr}/unlike`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        // Update local state
+        setLikes(prev => Math.max(0, prev - 1));
+        setUserHasLiked(false);
+        
+        // Notify parent component of the change
+        if (onLikeUpdate) {
+          onLikeUpdate(chirp.id, likes - 1);
+        }
+        
+        console.log('✅ Like removed successfully');
+      } else {
+        // Like: Add the reaction
+        console.log('🔴 Liking chirp...');
+        
+        const response = await apiRequest(`/api/chirps/${chirpIdStr}/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        // Update local state
+        setLikes(prev => prev + 1);
+        setUserHasLiked(true);
+        
+        // Notify parent component of the change
+        if (onLikeUpdate) {
+          onLikeUpdate(chirp.id, likes + 1);
+        }
+        
+        console.log('✅ Like added successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error handling like:', error);
+      alert('Error', 'Failed to like chirp. Please try again.');
+    }
+  };
+
+  const handleLikesPress = () => {
+    if (likes > 0) {
+      setShowLikesModal(true);
+    }
+  };
+
+  const handleShare = async () => {
+    const chirpUrl = `https://chirp.app/chirp/${chirp.id}`;
+    
+    // Use native share API if available
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Chirp from ${displayName}`,
+          url: chirpUrl
+        });
+        return;
+      } catch (error) {
+        // Fall back to clipboard if share is cancelled or fails
+      }
+    }
+    
+    // Copy to clipboard
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(chirpUrl);
+        alert('Link Copied!', 'The chirp link has been copied to your clipboard.');
+      } else {
+        // Fallback for environments without clipboard API
+        alert('Share Link', chirpUrl, [
+          { text: 'OK', style: 'default' }
+        ]);
+      }
+    } catch (error) {
+      alert('Share Link', `Copy this link: ${chirpUrl}`, [
+        { text: 'OK', style: 'default' }
+      ]);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    if (!chirp.author?.id) {
+      console.error('Avatar press failed: No author ID found');
+      return;
+    }
+    
+    console.log('🔥 Avatar pressed - opening profile modal for:', chirp.author.id);
+    console.log('🔍 Debug - onProfilePress prop:', typeof onProfilePress, onProfilePress);
+    console.log('🔍 Debug - chirp ID:', chirp.id, 'author:', chirp.author.customHandle || chirp.author.handle);
+    
+    // Use the onProfilePress callback to open profile modal
+    if (onProfilePress) {
+      onProfilePress(chirp.author.id);
+    } else {
+      console.warn('No profile press handler available for chirp:', chirp.id, 'author:', chirp.author.customHandle || chirp.author.handle);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString);
+        return 'now';
+      }
+      
+      // Server sends UTC timestamps, so we need to compare with UTC time
+      const now = new Date();
+      const nowUTC = now.getTime();
+      const dateUTC = date.getTime();
+      
+      const diffTime = Math.abs(nowUTC - dateUTC);
+      
+      const diffMinutes = Math.floor(diffTime / (1000 * 60));
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffMinutes < 1) return 'now';
+      if (diffMinutes < 60) return `${diffMinutes}m`;
+      if (diffHours < 24) return `${diffHours}h`;
+      if (diffDays === 1) return '1d';
+      if (diffDays < 7) return `${diffDays}d`;
+      if (diffDays < 365) {
+        const month = date.toLocaleDateString('en-US', { month: 'short' });
+        const day = date.getDate();
+        return `${month} ${day}`;
+      }
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, 'dateString:', dateString);
+      return 'now';
+    }
+  };
+
+  const handleChirpPress = async () => {
+    console.log('🔍 ChirpCard: Chirp tapped, navigating to ChirpScreen for ID:', chirp.id);
+    // Navigate to thread view
+    setLocation(`/chirp/${chirp.id}`);
+  };
+
+  return (
+    <div 
+      style={{
+        backgroundColor: '#ffffff',
+        marginTop: '3px',
+        marginBottom: '3px',
+        borderRadius: '16px',
+        paddingLeft: '16px',
+        paddingRight: '16px',
+        paddingTop: '10px',
+        paddingBottom: '10px',
+        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+        maxWidth: '600px',
+        alignSelf: 'center',
+        width: '100%',
+        cursor: 'pointer',
+        transition: 'background-color 0.2s'
+      }}
+      onClick={handleChirpPress}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2px' }}>
+        <div onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }} style={{ marginLeft: '0' }}>
+          <UserAvatar user={chirp.author} size="md" showFrame={true} />
+        </div>
+        <div style={{ flex: 1, marginLeft: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }} style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: '15px', fontWeight: '600', color: '#14171a', lineHeight: '20px' }}>{displayName}</span>
+            </div>
+            <span style={{ fontSize: '14px', color: '#657786', marginLeft: '8px' }}>{formatDate(chirp.createdAt)}</span>
+          </div>
+          
+          {/* Show handle under the display name */}
+          <div onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }} style={{ marginTop: '2px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '400', color: '#a78bfa', lineHeight: '18px' }}>
+              @{chirp.author?.customHandle || chirp.author?.handle || 'user'}
             </span>
           </div>
-        )}
-
-        {/* Main chirp content */}
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {/* Avatar */}
-          <div style={{ flexShrink: 0 }}>
-            <UserAvatar 
-              user={chirp.author} 
-              size="md" 
-              onPress={handleProfilePress}
-            />
-          </div>
-
-          {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '4px',
-              flexWrap: 'wrap'
-            }}>
-              <button
-                onClick={handleProfilePress}
-                style={{
-                  fontWeight: '600',
-                  color: '#111827',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textDecoration: 'none'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-              >
-                {chirp.author.firstName && chirp.author.lastName 
-                  ? `${chirp.author.firstName} ${chirp.author.lastName}`
-                  : chirp.author.customHandle || chirp.author.handle || chirp.author.email.split('@')[0]
-                }
-              </button>
-              
-              {chirp.author.isChirpPlus && chirp.author.showChirpPlusBadge && (
-                <ChirpPlusBadge size={16} />
-              )}
-              
-              <span style={{ color: '#6b7280' }}>
-                @{chirp.author.customHandle || chirp.author.handle || chirp.author.email.split('@')[0]}
-              </span>
-              
-              <span style={{ color: '#6b7280' }}>·</span>
-              <span style={{ color: '#6b7280' }}>
-                {formatDistanceToNow(new Date(chirp.createdAt), { addSuffix: true })}
-              </span>
-
-              {/* AI Generated indicator */}
-              {chirp.isAiGenerated && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v1a7 7 0 0 1-7 7H10a7 7 0 0 1-7-7v-1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M8 12h.01M16 12h.01" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M9 16s1 1 3 1 3-1 3-1" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span style={{ fontSize: '12px', color: '#7c3aed', fontWeight: '500' }}>AI</span>
-                </div>
-              )}
-
-              {/* Weekly Summary indicator */}
-              {chirp.isWeeklySummary && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" fill="#3b82f6"/>
-                    <path d="M20 3v4M22 5h-4M6 16v2M7 17H5" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '500' }}>Weekly Summary</span>
-                </div>
-              )}
-
-              {/* Thread indicator */}
-              {chirp.threadId && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span style={{ fontSize: '12px', color: '#6b7280' }}>Thread</span>
-                </div>
-              )}
-            </div>
-
-            {/* Content */}
-            <div style={{ marginBottom: '12px' }}>
-              <MentionText 
-                text={chirp.content} 
-                onMentionPress={handleMentionPress}
-              />
-            </div>
-
-            {/* Image */}
-            {chirp.imageUrl && (
-              <ChirpImage
-                imageUrl={chirp.imageUrl}
-                imageAltText={chirp.imageAltText}
-                imageWidth={chirp.imageWidth}
-                imageHeight={chirp.imageHeight}
-                onImagePress={() => setShowImageViewer(true)}
-              />
-            )}
-
-            {/* Mood Reactions */}
-            <MoodReactions
-              chirpId={chirp.id}
-              reactionCounts={chirp.reactionCounts}
-              userReaction={chirp.userReaction}
-            />
-
-            {/* Actions */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: '12px',
-              maxWidth: '400px'
-            }}>
-              {/* Reply */}
-              <button
-                onClick={() => setShowReplyModal(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '8px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: '8px',
-                  color: '#6b7280',
-                  fontSize: '14px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#dbeafe';
-                  e.currentTarget.style.color = '#3b82f6';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>{chirp.replies}</span>
-              </button>
-
-              {/* Repost */}
-              <button
-                onClick={handleRepost}
-                disabled={isReposting}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '8px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: isReposting ? 'not-allowed' : 'pointer',
-                  borderRadius: '8px',
-                  color: chirp.isReposted ? '#10b981' : '#6b7280',
-                  fontSize: '14px',
-                  opacity: isReposting ? 0.5 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!isReposting) {
-                    e.currentTarget.style.backgroundColor = '#d1fae5';
-                    e.currentTarget.style.color = '#10b981';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isReposting) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = chirp.isReposted ? '#10b981' : '#6b7280';
-                  }
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>{chirp.reposts}</span>
-              </button>
-
-              {/* Like */}
-              <button
-                onClick={handleLike}
-                disabled={isLiking}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '8px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: isLiking ? 'not-allowed' : 'pointer',
-                  borderRadius: '8px',
-                  color: chirp.isLiked ? '#ef4444' : '#6b7280',
-                  fontSize: '14px',
-                  opacity: isLiking ? 0.5 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLiking) {
-                    e.currentTarget.style.backgroundColor = '#fee2e2';
-                    e.currentTarget.style.color = '#ef4444';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLiking) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = chirp.isLiked ? '#ef4444' : '#6b7280';
-                  }
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill={chirp.isLiked ? 'currentColor' : 'none'}>
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>{chirp.likes}</span>
-              </button>
-
-              {/* Share */}
-              <button
-                onClick={handleShare}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '8px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: '8px',
-                  color: '#6b7280',
-                  fontSize: '14px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f3f4f6';
-                  e.currentTarget.style.color = '#374151';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <polyline points="16,6 12,2 8,6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <line x1="12" y1="2" x2="12" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-
-              {/* More options */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: '8px',
-                    color: '#6b7280',
-                    fontSize: '14px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f3f4f6';
-                    e.currentTarget.style.color = '#374151';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = '#6b7280';
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="1" fill="currentColor"/>
-                    <circle cx="19" cy="12" r="1" fill="currentColor"/>
-                    <circle cx="5" cy="12" r="1" fill="currentColor"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
+        </div>
+        
+        <div 
+          style={{ padding: '8px' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('🚀 More button touched!');
+            // TODO: Implement more options modal
+          }}
+        >
+          <span style={{ fontSize: '16px', color: '#657786', transform: 'rotate(90deg)', display: 'inline-block' }}>⋯</span>
         </div>
       </div>
 
-      {/* Reply Modal */}
-      {showReplyModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'end',
-          justifyContent: 'center',
-          zIndex: 50
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            width: '100%',
-            maxWidth: '400px',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px',
-              borderBottom: '1px solid #e5e7eb'
-            }}>
-              <button
-                style={{
-                  color: '#7c3aed',
-                  fontWeight: '600',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px 12px'
-                }}
-                onClick={() => setShowReplyModal(false)}
-              >
-                Cancel
-              </button>
-              <h2 style={{ 
-                fontSize: '18px', 
-                fontWeight: 'bold', 
-                color: '#111827' 
-              }}>
-                Reply
-              </h2>
-              <button
-                onClick={handleReply}
-                disabled={!replyContent.trim() || isPostingReply}
-                style={{
-                  backgroundColor: (!replyContent.trim() || isPostingReply) ? '#9ca3af' : '#7c3aed',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  cursor: (!replyContent.trim() || isPostingReply) ? 'not-allowed' : 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                {isPostingReply ? 'Posting...' : 'Reply'}
-              </button>
-            </div>
-            <div style={{ padding: '16px' }}>
-              <textarea
-                placeholder="Write your reply..."
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                style={{
-                  width: '100%',
-                  minHeight: '100px',
-                  resize: 'none',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  fontFamily: 'inherit'
-                }}
-                maxLength={280}
-              />
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '8px'
-              }}>
-                <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                  {280 - replyContent.length} characters remaining
+      {chirp.content.trim() && (
+        <div style={{ fontSize: '15px', lineHeight: '22px', color: '#14171a', marginLeft: '20px', marginBottom: '8px' }}>
+          {chirp.content.split(/(@\w+|#\w+|\*\*[^*]+\*\*)/).filter(part => part.trim()).map((part, index) => {
+            if (part.startsWith('@')) {
+              return (
+                <span 
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    alert('Mention Navigation', `Navigate to ${part}'s profile`);
+                    // TODO: Implement notification to mentioned user
+                  }}
+                  style={{ color: '#7c3aed', fontSize: '15px', cursor: 'pointer' }}
+                >
+                  {part}
                 </span>
-              </div>
-            </div>
-          </div>
+              );
+            } else if (part.startsWith('#')) {
+              return (
+                <span 
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const cleanHashtag = part.replace('#', '');
+                    setLocation(`/hashtag/${cleanHashtag}`);
+                  }}
+                  style={{ color: '#7c3aed', cursor: 'pointer' }}
+                >
+                  {part}
+                </span>
+              );
+            } else if (part.startsWith('**') && part.endsWith('**')) {
+              // Bold text formatting
+              const boldText = part.slice(2, -2);
+              return <span key={index} style={{ fontWeight: '700', color: '#14171a' }}>{boldText}</span>;
+            }
+            return <span key={index}>{part}</span>;
+          })}
         </div>
       )}
 
-      {/* Likes Modal */}
+      {/* Display chirp image if available */}
+      {chirp.imageUrl && (
+        <div style={{
+          marginTop: '4px',
+          marginBottom: '12px',
+          marginLeft: '20px',
+          marginRight: '20px',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          backgroundColor: '#ffffff',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '90%'
+        }}>
+          <ChirpImage
+            imageUrl={chirp.imageUrl}
+            imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
+            imageWidth={chirp.imageWidth}
+            imageHeight={chirp.imageHeight}
+            maxWidth={400}
+            maxHeight={300}
+            onImagePress={() => {
+              console.log('Image pressed:', chirp.imageUrl?.substring(0, 50) + '...');
+              setShowImageViewer(true);
+            }}
+          />
+        </div>
+      )}
+      
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginLeft: '20px', marginRight: '8px', paddingTop: '0', overflow: 'visible' }}>
+        <div 
+          style={{ display: 'flex', alignItems: 'center', marginRight: '8px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '3px', paddingRight: '3px', borderRadius: '4px', minWidth: '0', flexShrink: 1 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            // TODO: Implement reply functionality
+          }}
+        >
+          <SpeechBubbleIcon size={18} color="#657786" />
+          <span style={{ fontSize: '14px', color: '#657786', fontWeight: '500', marginLeft: '8px' }}>{replies}</span>
+        </div>
+
+        <div 
+          style={{ display: 'flex', alignItems: 'center', marginRight: '8px', paddingLeft: '8px', paddingRight: '8px', paddingTop: '4px', paddingBottom: '4px', borderRadius: '12px' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleLike();
+          }}
+        >
+          <HeartIcon 
+            size={18} 
+            color={userHasLiked ? "#7c3aed" : "#657786"}
+            filled={userHasLiked}
+          />
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikesPress();
+            }}
+            style={{ marginLeft: '8px', paddingLeft: '4px', paddingRight: '4px', paddingTop: '2px', paddingBottom: '2px', minWidth: '24px' }}
+          >
+            <span style={{ fontSize: '14px', color: userHasLiked ? "#7c3aed" : '#657786', fontWeight: '500' }}>
+              {likes}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ flexShrink: 0 }}>
+          <div 
+            style={{ display: 'flex', alignItems: 'center', marginLeft: '0' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleShare();
+            }}
+          >
+            <ShareIcon size={18} color="#657786" />
+          </div>
+        </div>
+      </div>
+      
       <ChirpLikesModal
         visible={showLikesModal}
         chirpId={chirp.id}
-        likes={[]} // TODO: Fetch actual likes
         onClose={() => setShowLikesModal(false)}
       />
 
-      {/* Image Viewer Modal */}
       <ImageViewerModal
         visible={showImageViewer}
         imageUrl={chirp.imageUrl || ''}
-        imageAltText={chirp.imageAltText}
+        imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
         onClose={() => setShowImageViewer(false)}
       />
-    </>
+    </div>
   );
 }
