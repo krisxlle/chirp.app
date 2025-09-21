@@ -31,6 +31,7 @@ import {
     type WeeklySummary
 } from "../shared/schema";
 import { db } from "./db";
+import { supabase } from "./supabase-db";
 
 export interface IStorage {
   // User operations (required for authentication)
@@ -172,57 +173,148 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      // Try Supabase first
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.log('Supabase getUser failed, falling back to Drizzle:', error.message);
+        // Fallback to Drizzle
+        const [user] = await db.select().from(users).where(eq(users.id, id));
+        return user;
+      }
+      
+      return data as User;
+    } catch (error) {
+      console.log('Supabase getUser error, falling back to Drizzle:', error);
+      // Fallback to Drizzle
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    }
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    // Check if user exists first
-    const existingUser = await this.getUser(userData.id);
-    
-    if (existingUser) {
-      // Update existing user - but preserve custom names and AI-generated images
-      const updateData: any = {
-        email: userData.email,
-        updatedAt: new Date(),
-      };
+    try {
+      // Check if user exists first
+      const existingUser = await this.getUser(userData.id);
       
-      // Only update profile image from OAuth if user doesn't have an AI-generated avatar
-      if (!existingUser.avatarUrl && userData.profileImageUrl) {
-        updateData.profileImageUrl = userData.profileImageUrl;
+      if (existingUser) {
+        // Update existing user - but preserve custom names and AI-generated images
+        const updateData: any = {
+          email: userData.email,
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Only update profile image from OAuth if user doesn't have an AI-generated avatar
+        if (!existingUser.avatarUrl && userData.profileImageUrl) {
+          updateData.profile_image_url = userData.profileImageUrl;
+        }
+        
+        // Only update names if user hasn't customized them
+        if (!existingUser.firstName || existingUser.firstName === userData.firstName) {
+          updateData.first_name = userData.firstName;
+        }
+        if (!existingUser.lastName || existingUser.lastName === userData.lastName) {
+          updateData.last_name = userData.lastName;
+        }
+        
+        const { data, error } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', userData.id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.log('Supabase upsertUser update failed, falling back to Drizzle:', error.message);
+          // Fallback to Drizzle
+          const [user] = await db
+            .update(users)
+            .set({
+              email: userData.email,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, userData.id))
+            .returning();
+          return user;
+        }
+        
+        return data as User;
+      } else {
+        // Create new user with random handle and legal agreements
+        const randomHandle = await this.generateRandomHandle();
+        const { data, error } = await supabase
+          .from('users')
+          .insert({
+            id: userData.id,
+            email: userData.email,
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+            profile_image_url: userData.profileImageUrl,
+            handle: randomHandle,
+            agreed_to_terms: true,
+            agreed_to_privacy: true,
+            terms_agreed_at: new Date().toISOString(),
+            privacy_agreed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.log('Supabase upsertUser insert failed, falling back to Drizzle:', error.message);
+          // Fallback to Drizzle
+          const [user] = await db
+            .insert(users)
+            .values({
+              ...userData,
+              handle: randomHandle,
+              agreedToTerms: true,
+              agreedToPrivacy: true,
+              termsAgreedAt: new Date(),
+              privacyAgreedAt: new Date(),
+            })
+            .returning();
+          return user;
+        }
+        
+        return data as User;
       }
+    } catch (error) {
+      console.log('Supabase upsertUser error, falling back to Drizzle:', error);
+      // Fallback to Drizzle
+      const existingUser = await this.getUser(userData.id);
       
-      // Only update names if user hasn't customized them
-      // (i.e., if they're still using the default OAuth values or are empty)
-      if (!existingUser.firstName || existingUser.firstName === userData.firstName) {
-        updateData.firstName = userData.firstName;
+      if (existingUser) {
+        const [user] = await db
+          .update(users)
+          .set({
+            email: userData.email,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userData.id))
+          .returning();
+        return user;
+      } else {
+        const randomHandle = await this.generateRandomHandle();
+        const [user] = await db
+          .insert(users)
+          .values({
+            ...userData,
+            handle: randomHandle,
+            agreedToTerms: true,
+            agreedToPrivacy: true,
+            termsAgreedAt: new Date(),
+            privacyAgreedAt: new Date(),
+          })
+          .returning();
+        return user;
       }
-      if (!existingUser.lastName || existingUser.lastName === userData.lastName) {
-        updateData.lastName = userData.lastName;
-      }
-      
-      const [user] = await db
-        .update(users)
-        .set(updateData)
-        .where(eq(users.id, userData.id))
-        .returning();
-      return user;
-    } else {
-      // Create new user with random handle and legal agreements
-      const randomHandle = await this.generateRandomHandle();
-      const [user] = await db
-        .insert(users)
-        .values({
-          ...userData,
-          handle: randomHandle,
-          // Auto-accept legal agreements on signup since user must agree to access
-          agreedToTerms: true,
-          agreedToPrivacy: true,
-          termsAgreedAt: new Date(),
-          privacyAgreedAt: new Date(),
-        })
-        .returning();
-      return user;
     }
   }
 

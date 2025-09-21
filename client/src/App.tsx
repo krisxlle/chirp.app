@@ -12,6 +12,7 @@ import AdminFeedback from "./pages/AdminFeedback";
 import AdminInfluencerCodes from "./pages/AdminInfluencerCodes";
 import Auth from "./pages/Auth";
 import ChirpDetail from "./pages/ChirpDetail";
+import CollectionPage from "./pages/CollectionPage";
 import Gacha from "./pages/Gacha";
 import HomePage from "./pages/HomePage";
 import NotFound from "./pages/not-found";
@@ -66,6 +67,7 @@ function Router() {
             <Route path="/search" component={Search} />
             <Route path="/notifications" component={Notifications} />
             <Route path="/profile/:userId?" component={Profile} />
+            <Route path="/collection" component={CollectionPage} />
             <Route path="/settings" component={Settings} />
             <Route path="/subscribe" component={Subscribe} />
             <Route path="/gacha" component={Gacha} />
