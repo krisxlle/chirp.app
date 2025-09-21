@@ -232,6 +232,114 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       }
     });
     
+    // Search endpoints
+    app.get('/api/search/chirps', async (req, res) => {
+      try {
+        const { q } = req.query;
+        
+        if (!q || typeof q !== 'string') {
+          return res.status(400).json({ success: false, error: 'Query parameter is required' });
+        }
+        
+        const { data: chirps, error } = await supabase
+          .from('chirps')
+          .select(`
+            id,
+            content,
+            created_at,
+            author_id,
+            reply_to_id,
+            image_url,
+            image_alt_text,
+            image_width,
+            image_height,
+            users!chirps_author_id_fkey(id, first_name, last_name, email, handle, profile_image_url, avatar_url, banner_image_url, bio, link_in_bio, custom_handle)
+          `)
+          .ilike('content', `%${q}%`)
+          .is('reply_to_id', null)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        if (error) {
+          console.log('❌ Error searching chirps:', error);
+          return res.status(500).json({ success: false, error: 'Failed to search chirps' });
+        }
+        
+        // Transform the data to match the expected format
+        const transformedChirps = chirps?.map(chirp => ({
+          id: chirp.id,
+          content: chirp.content,
+          createdAt: chirp.created_at,
+          replyToId: chirp.reply_to_id,
+          author: {
+            id: chirp.users.id,
+            firstName: chirp.users.first_name,
+            lastName: chirp.users.last_name,
+            email: chirp.users.email,
+            customHandle: chirp.users.custom_handle,
+            handle: chirp.users.handle,
+            profileImageUrl: chirp.users.profile_image_url,
+            avatarUrl: chirp.users.avatar_url,
+            bannerImageUrl: chirp.users.banner_image_url,
+            bio: chirp.users.bio,
+            linkInBio: chirp.users.link_in_bio
+          },
+          replyCount: 0, // TODO: Calculate actual reply count
+          reactionCount: 0, // TODO: Calculate actual reaction count
+          imageUrl: chirp.image_url,
+          imageAltText: chirp.image_alt_text,
+          imageWidth: chirp.image_width,
+          imageHeight: chirp.image_height
+        })) || [];
+        
+        res.json(transformedChirps);
+      } catch (error) {
+        console.error('❌ Error in chirps search endpoint:', error);
+        res.status(500).json({ success: false, error: 'Failed to search chirps' });
+      }
+    });
+    
+    app.get('/api/search/users', async (req, res) => {
+      try {
+        const { q } = req.query;
+        
+        if (!q || typeof q !== 'string') {
+          return res.status(400).json({ success: false, error: 'Query parameter is required' });
+        }
+        
+        const { data: users, error } = await supabase
+          .from('users')
+          .select('*')
+          .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,custom_handle.ilike.%${q}%,handle.ilike.%${q}%`)
+          .limit(20);
+        
+        if (error) {
+          console.log('❌ Error searching users:', error);
+          return res.status(500).json({ success: false, error: 'Failed to search users' });
+        }
+        
+        // Transform the data to match the expected format
+        const transformedUsers = users?.map(user => ({
+          id: user.id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          customHandle: user.custom_handle,
+          handle: user.handle,
+          profileImageUrl: user.profile_image_url,
+          avatarUrl: user.profile_image_url,
+          bannerImageUrl: user.banner_image_url,
+          bio: user.bio,
+          linkInBio: user.link_in_bio
+        })) || [];
+        
+        res.json(transformedUsers);
+      } catch (error) {
+        console.error('❌ Error in users search endpoint:', error);
+        res.status(500).json({ success: false, error: 'Failed to search users' });
+      }
+    });
+    
     // Root route removed - let static file serving handle it
   });
 
