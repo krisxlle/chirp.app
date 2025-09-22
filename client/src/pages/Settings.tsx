@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import UserAvatar from '../components/UserAvatar';
 import { useAuth } from '../hooks/useAuth';
-import { getProfilePowerBreakdown, getUserStats } from '../lib/supabase-api';
+import { getProfilePowerBreakdown, getUserStats } from '@/lib/supabase-api';
 
 interface SettingsProps {
   onClose?: () => void;

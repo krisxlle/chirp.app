@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import ChirpCard from '../components/ChirpCard';
 import UserAvatar from '../components/UserAvatar';
 import { useAuth } from '../hooks/useAuth';
-import { getProfilePowerBreakdown, getUserChirps, getUserStats } from '../lib/supabase-api';
+import { getProfilePowerBreakdown, getUserChirps, getUserStats } from '@/lib/supabase-api';
 
 interface User {
   id: string;
