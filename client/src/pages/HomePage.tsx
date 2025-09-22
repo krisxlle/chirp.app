@@ -174,71 +174,17 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
       return [];
     }
   } catch (error) {
-    console.error('❌ Error fetching real chirps, falling back to mock data:', error);
+    console.error('❌ Error fetching real chirps from Supabase:', error);
+    console.error('❌ Supabase connection details:', {
+      url: 'https://qrzbtituxxilnbgocdge.supabase.co',
+      hasKey: true,
+      errorMessage: error.message,
+      errorCode: error.code
+    });
     
-    // Fallback to mock data
-    return [
-      {
-        id: '1',
-        content: 'Welcome to Chirp! This is a sample chirp to get you started. 🐦',
-        createdAt: new Date().toISOString(),
-        author: {
-          id: '1',
-          firstName: 'Chirp',
-          lastName: 'Team',
-          email: 'team@chirp.com',
-          handle: 'chirpteam',
-          customHandle: 'chirpteam',
-          profileImageUrl: null,
-          avatarUrl: null,
-          isChirpPlus: false,
-          showChirpPlusBadge: false
-        },
-        likes: 5,
-        replies: 2,
-        reposts: 1,
-        isLiked: false,
-        isReposted: false,
-        reactionCounts: {},
-        userReaction: null,
-        repostOf: null,
-        isAiGenerated: false,
-        isWeeklySummary: false,
-        threadId: null,
-        threadOrder: null,
-        isThreadStarter: true
-      },
-      {
-        id: '2',
-        content: 'The connection errors have been fixed! The app now works without needing a backend server. 🎉',
-        createdAt: new Date(Date.now() - 60000).toISOString(),
-        author: {
-          id: '2',
-          firstName: 'Dev',
-          lastName: 'Helper',
-          email: 'dev@chirp.com',
-          handle: 'devhelper',
-          customHandle: 'devhelper',
-          profileImageUrl: null,
-          avatarUrl: null,
-          isChirpPlus: false,
-          showChirpPlusBadge: false
-        },
-        likes: 3,
-        replies: 0,
-        reposts: 0,
-        isLiked: false,
-        isReposted: false,
-        reactionCounts: {},
-        userReaction: null,
-        repostOf: null,
-        isAiGenerated: false,
-        isWeeklySummary: false,
-        threadId: null,
-        threadOrder: null,
-        isThreadStarter: true
-      }
-    ];
+    // Instead of falling back to mock data, throw the error
+    // This will be handled by the calling component
+    throw new Error(`Failed to fetch chirps from database: ${error.message}`);
   }
 };
 
@@ -347,41 +293,17 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
       return [];
     }
   } catch (error) {
-    console.error('❌ Error fetching real collection chirps, falling back to mock data:', error);
+    console.error('❌ Error fetching real collection chirps from Supabase:', error);
+    console.error('❌ Supabase connection details:', {
+      url: 'https://qrzbtituxxilnbgocdge.supabase.co',
+      hasKey: true,
+      errorMessage: error.message,
+      errorCode: error.code
+    });
     
-    // Fallback to mock data
-    return [
-      {
-        id: '3',
-        content: 'This is a collection feed chirp! 📚',
-        createdAt: new Date(Date.now() - 120000).toISOString(),
-        author: {
-          id: '3',
-          firstName: 'Collection',
-          lastName: 'Curator',
-          email: 'curator@chirp.com',
-          handle: 'curator',
-          customHandle: 'curator',
-          profileImageUrl: null,
-          avatarUrl: null,
-          isChirpPlus: false,
-          showChirpPlusBadge: false
-        },
-        likes: 7,
-        replies: 1,
-        reposts: 2,
-        isLiked: false,
-        isReposted: false,
-        reactionCounts: {},
-        userReaction: null,
-        repostOf: null,
-        isAiGenerated: false,
-        isWeeklySummary: false,
-        threadId: null,
-        threadOrder: null,
-        isThreadStarter: true
-      }
-    ];
+    // Instead of falling back to mock data, throw the error
+    // This will be handled by the calling component
+    throw new Error(`Failed to fetch collection chirps from database: ${error.message}`);
   }
 };
 
@@ -404,6 +326,10 @@ export default function HomePage() {
   
   // State for compose modal
   const [showComposeModal, setShowComposeModal] = useState(false);
+  
+  // State for error handling
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
   // Pagination constants
   const INITIAL_LIMIT = 10;
@@ -432,9 +358,16 @@ export default function HomePage() {
       setForYouChirps(realChirps);
       setLastRefresh(now);
       setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
+      setHasError(false); // Clear error state on successful load
+      setErrorMessage('');
     } catch (error) {
       console.error('❌ HomePage: Error loading initial chirps from database:', error);
-      console.log('🔄 HomePage: Keeping existing chirps array');
+      console.error('❌ HomePage: Clearing chirps array due to error');
+      // Clear the chirps array to force a retry
+      setForYouChirps([]);
+      setLastRefresh(0); // Reset cache to allow immediate retry
+      setHasError(true);
+      setErrorMessage(`Failed to load chirps: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -465,13 +398,32 @@ export default function HomePage() {
       setCollectionChirps(realChirps);
       setLastRefresh(now);
       setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
+      setHasError(false); // Clear error state on successful load
+      setErrorMessage('');
     } catch (error) {
       console.error('❌ HomePage: Error loading initial collection chirps from database:', error);
-      console.log('🔄 HomePage: Keeping existing collection chirps array');
+      console.error('❌ HomePage: Clearing collection chirps array due to error');
+      // Clear the chirps array to force a retry
+      setCollectionChirps([]);
+      setLastRefresh(0); // Reset cache to allow immediate retry
+      setHasError(true);
+      setErrorMessage(`Failed to load collection chirps: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   }, [user?.id, collectionChirps.length, lastRefresh]);
+  
+  // Retry function to force refresh data
+  const retryLoadChirps = useCallback(() => {
+    console.log('🔄 HomePage: Retrying to load chirps...');
+    setHasError(false);
+    setErrorMessage('');
+    if (feedType === 'forYou') {
+      loadInitialChirps(true);
+    } else {
+      loadInitialCollectionChirps(true);
+    }
+  }, [feedType, loadInitialChirps, loadInitialCollectionChirps]);
   
   // Load more chirps function for pagination
   const loadMoreChirps = useCallback(async () => {
@@ -886,6 +838,63 @@ export default function HomePage() {
             }}>
               Loading chirps...
             </span>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {hasError && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: '40px',
+            paddingBottom: '40px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+            backgroundColor: '#fef2f2',
+            margin: '16px',
+            borderRadius: '12px',
+            border: '1px solid #fecaca'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '16px'
+            }}>⚠️</div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#dc2626',
+              marginBottom: '8px',
+              margin: 0
+            }}>
+              Failed to Load Chirps
+            </h3>
+            <p style={{
+              fontSize: '14px',
+              color: '#7f1d1d',
+              textAlign: 'center',
+              marginBottom: '16px',
+              margin: 0
+            }}>
+              {errorMessage}
+            </p>
+            <button
+              onClick={retryLoadChirps}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(220, 38, 38, 0.3)'
+              }}
+            >
+              Try Again
+            </button>
           </div>
         )}
 
