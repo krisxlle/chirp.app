@@ -35,6 +35,17 @@ export default function handler(req, res) {
     return;
   }
 
+  // Redirect auth requests to the auth handler
+  if (req.url.startsWith('/api/auth/')) {
+    res.status(404).json({
+      error: 'Authentication endpoint not found',
+      url: req.url,
+      method: req.method,
+      note: 'Please use /api/auth/signin for authentication'
+    });
+    return;
+  }
+
   // Default response for other API routes
   res.status(404).json({
     error: 'API endpoint not found',
