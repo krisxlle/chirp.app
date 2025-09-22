@@ -243,6 +243,30 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         },
       });
       
+      // Handle non-UUID user IDs by finding the correct user in the database
+      let authorId = user.id;
+      
+      // Check if user ID is not a UUID (like "1")
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(user.id)) {
+        console.log('⚠️ User ID is not a UUID, looking up correct user in database...');
+        
+        // Try to find the user by email or handle
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .or(`email.eq.${user.email},handle.eq.${user.handle},custom_handle.eq.${user.customHandle}`)
+          .single();
+        
+        if (userError || !userData) {
+          console.error('❌ Could not find user in database:', userError);
+          throw new Error('User not found in database');
+        }
+        
+        authorId = userData.id;
+        console.log('✅ Found correct user ID:', authorId);
+      }
+      
       if (isThreadMode) {
         // Create the complete thread content array
         const allThreadContent = [...threadChirps];
@@ -261,7 +285,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             .from('chirps')
             .insert({
               content: allThreadContent[i],
-              author_id: user.id,
+              author_id: authorId,
               thread_id: threadId,
               thread_order: i,
               is_thread_starter: i === 0
@@ -287,7 +311,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           .from('chirps')
           .insert({
             content: content.trim(),
-            author_id: user.id
+            author_id: authorId
           })
           .select()
           .single();
