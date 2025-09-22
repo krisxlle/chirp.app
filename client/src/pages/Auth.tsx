@@ -326,7 +326,7 @@ export default function Auth() {
             fontWeight: '500',
             textShadow: '0 1px 2px rgba(0,0,0,0.3)'
           }}>
-            Pull for your friends from the gacha
+            Pull for collectible profile frames from the gacha
           </span>
         </div>
         
