@@ -305,9 +305,9 @@ function getMockChirps(): MobileChirp[] {
     replyToId: null,
     isWeeklySummary: false,
     author: mockUsers[index % mockUsers.length],
-    replyCount: Math.floor(Math.random() * 5),
-    reactionCount: Math.floor(Math.random() * 20) + 5,
-    repostCount: Math.floor(Math.random() * 3),
+    replyCount: secureRandomInt(0, 4),
+    reactionCount: secureRandomInt(5, 24),
+    repostCount: secureRandomInt(0, 2),
     reactions: [],
     isDirectReply: false,
     isNestedReply: false,
@@ -330,10 +330,10 @@ export async function getUserStats(userId: string) {
       console.log('🔄 Database not connected, using mock stats');
       // Return mock stats with some realistic values
       return {
-        chirps: Math.floor(Math.random() * 20) + 5, // 5-25 chirps
-        followers: Math.floor(Math.random() * 100) + 10, // 10-110 followers
-        following: Math.floor(Math.random() * 50) + 5, // 5-55 following
-        likes: Math.floor(Math.random() * 50) + 10 // 10-60 likes
+        chirps: secureRandomInt(5, 25), // 5-25 chirps
+        followers: secureRandomInt(10, 110), // 10-110 followers
+        following: secureRandomInt(5, 55), // 5-55 following
+        likes: secureRandomInt(10, 60) // 10-60 likes
       };
     }
     

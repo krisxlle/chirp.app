@@ -228,8 +228,8 @@ export default function GachaPage() {
           // Start horizontal drift
           Animated.loop(
             Animated.timing(anim.translateX, {
-              toValue: Math.random() * 40 - 20, // Random drift between -20 and 20
-              duration: 2000 + Math.random() * 1000, // Random duration between 2-3 seconds
+              toValue: secureRandomFloat(-20, 20), // Random drift between -20 and 20
+              duration: 2000 + secureRandomFloat(0, 1000), // Random duration between 2-3 seconds
               useNativeDriver: true,
             })
           ),
@@ -237,7 +237,7 @@ export default function GachaPage() {
           Animated.loop(
             Animated.timing(anim.rotate, {
               toValue: 1,
-              duration: 3000 + Math.random() * 2000, // Random rotation speed
+              duration: 3000 + secureRandomFloat(0, 2000), // Random rotation speed
               useNativeDriver: true,
             })
           ),
@@ -422,7 +422,7 @@ export default function GachaPage() {
       if (randomUsers.length === 0) {
         console.log('⚠️ No users found in database, falling back to mock data');
         // Fallback to mock data if no real users
-        const randomMockCard = mockProfileCards[Math.floor(Math.random() * mockProfileCards.length)];
+        const randomMockCard = mockProfileCards[secureRandomInt(0, mockProfileCards.length - 1)];
         return randomMockCard;
       }
       
@@ -437,7 +437,7 @@ export default function GachaPage() {
       };
       
       const totalWeight = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
-      const random = Math.random() * totalWeight;
+      const random = secureRandomFloat(0, totalWeight);
       
       let currentWeight = 0;
       for (const [rarity, weight] of Object.entries(weights)) {
@@ -446,18 +446,18 @@ export default function GachaPage() {
           // Find a card of this rarity
           const cardsOfRarity = randomUsers.filter(card => card.rarity === rarity);
           if (cardsOfRarity.length > 0) {
-            const randomCard = cardsOfRarity[Math.floor(Math.random() * cardsOfRarity.length)];
+            const randomCard = cardsOfRarity[secureRandomInt(0, cardsOfRarity.length - 1)];
             return randomCard;
           }
         }
       }
       
       // Fallback to random user
-      return randomUsers[Math.floor(Math.random() * randomUsers.length)];
+      return randomUsers[secureRandomInt(0, randomUsers.length - 1)];
     } catch (error) {
       console.error('❌ Error in openCapsule:', error);
       // Fallback to mock data
-      const randomMockCard = mockProfileCards[Math.floor(Math.random() * mockProfileCards.length)];
+      const randomMockCard = mockProfileCards[secureRandomInt(0, mockProfileCards.length - 1)];
       return randomMockCard;
     }
   };
@@ -693,8 +693,8 @@ export default function GachaPage() {
                 style={[
                   styles.sparkle,
                   {
-                    left: `${Math.random() * 80 + 10}%`, // Random horizontal position
-                    top: `${Math.random() * 60 + 20}%`, // Random vertical position
+                    left: `${secureRandomFloat(10, 90)}%`, // Random horizontal position
+                    top: `${secureRandomFloat(20, 80)}%`, // Random vertical position
                     opacity: anim.opacity,
                     transform: [
                       { translateY: anim.translateY },

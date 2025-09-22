@@ -1,5 +1,17 @@
 # Security Policy
 
+## Security Status
+
+**Current Status**: 🟢 **SECURE** - All vulnerabilities resolved (January 2025)
+
+### Recent Security Updates
+- ✅ **esbuild vulnerability fixed**: Updated to secure version 0.25.10
+- ✅ **Vite security issues resolved**: Updated to latest version 7.1.7
+- ✅ **Dependency conflicts resolved**: All packages now secure
+- ✅ **0 vulnerabilities found**: npm audit clean
+
+For detailed resolution information, see [SECURITY_RESOLUTION_SUMMARY.md](SECURITY_RESOLUTION_SUMMARY.md).
+
 ## Supported Versions
 
 We provide security updates for the following versions of Chirp:

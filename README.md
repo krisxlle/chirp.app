@@ -4,6 +4,19 @@
 
 Chirp is a modern social media application built with React Native and Expo, featuring real-time messaging, user profiles, and interactive content sharing.
 
+## 🔒 Security
+
+Chirp implements comprehensive security measures:
+
+- **Dependency Security**: All packages regularly updated, 0 vulnerabilities
+- **Authentication**: Secure Supabase Auth with CSRF protection
+- **Input Validation**: All user inputs sanitized and validated
+- **CORS Protection**: Secure cross-origin request handling
+- **Rate Limiting**: Protection against abuse and DDoS attacks
+- **Security Headers**: Comprehensive security headers on all responses
+
+For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
+
 ## 🚀 Features
 
 - **Real-time Chirps**: Post and share content with followers

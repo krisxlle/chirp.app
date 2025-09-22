@@ -59,7 +59,8 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
             target.style.display = 'none';
             const parent = target.parentElement;
             if (parent) {
-              parent.innerHTML = getInitials();
+              // Use textContent instead of innerHTML to prevent XSS
+              parent.textContent = getInitials();
             }
           }}
         />

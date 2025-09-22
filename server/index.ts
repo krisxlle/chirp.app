@@ -1,13 +1,13 @@
 import express, { NextFunction, type Request, Response } from "express";
 import fs from 'fs';
 import path from 'path';
+import { testDatabaseConnection } from "./db";
+import { truncateSensitiveData } from "./loggingUtils";
 import { generalApiLimiter } from "./rateLimiting";
 import { registerRoutes } from "./routes";
 import { registerRoutesSafe } from "./routes-safe";
 import { devServerProtection, securityLogging, securityMiddleware } from "./security";
 import { log, serveStatic, setupVite } from "./vite";
-import { truncateSensitiveData } from "./loggingUtils";
-import { testDatabaseConnection } from "./db";
 
 // Global error handler for uncaught exceptions
 process.on('uncaughtException', (error) => {
@@ -199,19 +199,35 @@ app.use((req, res, next) => {
       if (fs.existsSync(distPath)) {
         console.log('📁 Static files found, setting up serving...');
         
-        // Simple static middleware
+        // Add rate limiting for static file serving
+        const staticLimiter = rateLimit({
+          windowMs: 15 * 60 * 1000, // 15 minutes
+          max: 200, // limit each IP to 200 requests per windowMs
+          message: 'Too many static file requests from this IP, please try again later.',
+          standardHeaders: true,
+          legacyHeaders: false,
+        });
+        
+        minimalApp.use(staticLimiter);
+        
+        // Simple static middleware with path validation
         minimalApp.use((req, res, next) => {
           if (req.path.startsWith('/api/')) {
             return next();
           }
           
-          const filePath = path.join(distPath, req.path === '/' ? 'index.html' : req.path);
+          // Sanitize and validate the request path
+          const sanitizedPath = req.path.replace(/\.\./g, '').replace(/\/+/g, '/');
+          if (sanitizedPath !== req.path) {
+            return res.status(400).json({ error: 'Invalid path' });
+          }
           
-          // Check if file exists
-          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-            res.sendFile(filePath);
-          } else if (req.path === '/' || !req.path.includes('.')) {
-            // SPA fallback - serve index.html for any non-API route
+          // Only allow specific file extensions for security
+          const allowedExtensions = ['.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf'];
+          const hasValidExtension = allowedExtensions.some(ext => sanitizedPath.endsWith(ext));
+          
+          if (sanitizedPath !== '/' && !hasValidExtension && !sanitizedPath.includes('.')) {
+            // SPA fallback - serve index.html for any non-API route without file extension
             const indexPath = path.join(distPath, 'index.html');
             if (fs.existsSync(indexPath)) {
               res.sendFile(indexPath);
@@ -221,6 +237,21 @@ app.use((req, res, next) => {
                 note: 'Static files not found'
               });
             }
+            return;
+          }
+          
+          const filePath = path.join(distPath, sanitizedPath === '/' ? 'index.html' : sanitizedPath);
+          
+          // Ensure the resolved path is within the dist directory
+          const resolvedPath = path.resolve(filePath);
+          const resolvedDistPath = path.resolve(distPath);
+          if (!resolvedPath.startsWith(resolvedDistPath)) {
+            return res.status(400).json({ error: 'Invalid path' });
+          }
+          
+          // Check if file exists
+          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+            res.sendFile(filePath);
           } else {
             res.status(404).json({ error: 'File not found' });
           }

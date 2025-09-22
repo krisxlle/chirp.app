@@ -24,7 +24,10 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       res.header('Access-Control-Allow-Origin', origin || '*');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-      res.header('Access-Control-Allow-Credentials', 'true');
+      // Only allow credentials for specific origins, not wildcard
+      if (origin && allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Credentials', 'true');
+      }
     }
     
     if (req.method === 'OPTIONS') {
@@ -638,6 +641,17 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
           }
         }));
         console.log('✅ express.static configured successfully');
+        
+        // Add rate limiting for debugging middleware
+        const debugLimiter = rateLimit({
+          windowMs: 15 * 60 * 1000, // 15 minutes
+          max: 100, // limit each IP to 100 requests per windowMs
+          message: 'Too many debug requests from this IP, please try again later.',
+          standardHeaders: true,
+          legacyHeaders: false,
+        });
+        
+        app.use(debugLimiter);
         
         // Add debugging middleware to see what requests are coming in
         app.use((req, res, next) => {

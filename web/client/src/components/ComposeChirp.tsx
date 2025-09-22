@@ -1,14 +1,12 @@
+import { X } from 'lucide-react';
 import React, { useState } from 'react';
-import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../components/AuthContext';
+import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
-import ChirpImage from './ChirpImage';
 import ImagePickerButton from './ImagePickerButton';
-import UserAvatar from './UserAvatar';
-import ThreadComposer from './ThreadComposer';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
-import { MessageSquare, ImageIcon, Sparkles, X } from 'lucide-react';
+import UserAvatar from './UserAvatar';
 
 interface ComposeChirpProps {
   onPost?: (content: string, imageData?: {
@@ -371,6 +369,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                   src={selectedImage}
                   alt="Selected image"
                   className="max-w-full max-h-48 rounded-lg object-cover"
+                  onError={(e) => {
+                    // Prevent XSS by ensuring src is safe
+                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIEVycm9yPC90ZXh0Pjwvc3ZnPg==';
+                  }}
                 />
                 <Button
                   variant="ghost"

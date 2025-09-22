@@ -33,6 +33,19 @@ if (fs.existsSync(distPath)) {
   console.log('⚠️  No dist directory found, web app not built yet');
 }
 
+// Add rate limiting for test server
+const rateLimit = require('express-rate-limit');
+
+const testLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(testLimiter);
+
 // API endpoints
 app.get('/api/health', (req, res) => {
   res.json({ 

@@ -1,6 +1,7 @@
 // Direct database connection for mobile app to access authentic user data
 import { neon } from '@neondatabase/serverless';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { secureRandomInt, secureRandomString } from '../utils/secureRandom';
 import type { MobileChirp, MobileUser } from './mobile-types';
 // Note: bcrypt doesn't work in browser environment, using simple comparison for now
 
@@ -107,9 +108,9 @@ function getMockChirps(): MobileChirp[] {
       ...mockUsers[index % mockUsers.length],
       email: mockUsers[index % mockUsers.length].email
     },
-    replyCount: Math.floor(Math.random() * 5),
-    reactionCount: Math.floor(Math.random() * 20) + 5,
-    repostCount: Math.floor(Math.random() * 3),
+    replyCount: secureRandomInt(0, 4),
+    reactionCount: secureRandomInt(5, 24),
+    repostCount: secureRandomInt(0, 2),
     reactions: [],
     isDirectReply: false,
     isNestedReply: false,
@@ -478,7 +479,7 @@ export async function getTrendingChirps(): Promise<MobileChirp[]> {
 function createMockChirp(content: string, authorId?: string, replyToId?: string | null): MobileChirp {
   console.log('🎭 Creating mock chirp');
   
-  const mockId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const mockId = `mock_${Date.now()}_${secureRandomString(9)}`;
   const mockAuthorId = authorId || 'mock_user_123';
   
   return {
@@ -1020,10 +1021,10 @@ export async function getUserStats(userId: string) {
       console.log('🔄 Database not connected, using mock stats');
       // Return mock stats with some realistic values
       return {
-        chirps: Math.floor(Math.random() * 20) + 5, // 5-25 chirps
-        followers: Math.floor(Math.random() * 100) + 10, // 10-110 followers
-        following: Math.floor(Math.random() * 50) + 5, // 5-55 following
-        likes: Math.floor(Math.random() * 50) + 10 // 10-60 likes
+        chirps: secureRandomInt(5, 25), // 5-25 chirps
+        followers: secureRandomInt(10, 110), // 10-110 followers
+        following: secureRandomInt(5, 55), // 5-55 following
+        likes: secureRandomInt(10, 60) // 10-60 likes
       };
     }
     
