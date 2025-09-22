@@ -164,40 +164,75 @@ export default function Profile() {
               getProfilePowerBreakdown(userId)
             ]);
           
-          // For user data, use the authenticated user data with proper mapping
-          const userData = authUser ? {
-            id: authUser.id,
-            firstName: authUser.firstName,
-            lastName: authUser.lastName,
-            email: authUser.email,
-            name: authUser.name,
-            customHandle: authUser.customHandle,
-            handle: authUser.handle,
-            profileImageUrl: authUser.profileImageUrl,
-            avatarUrl: authUser.avatarUrl,
-            bannerImageUrl: authUser.bannerImageUrl,
-            bio: authUser.bio,
-            linkInBio: authUser.linkInBio || 'https://github.com/user', // Default if not set
-            joinedAt: authUser.joinedAt || '2024-01-15T00:00:00Z', // Default if not set
-            isChirpPlus: authUser.isChirpPlus || false,
-            showChirpPlusBadge: authUser.showChirpPlusBadge || false
-          } : {
-            id: userId,
-            firstName: 'User',
-            lastName: 'Profile',
-            email: 'user@chirp.com',
-            name: 'User Profile',
-            handle: 'userprofile',
-            customHandle: 'userprofile',
-            profileImageUrl: null,
-            avatarUrl: null,
-            bannerImageUrl: null,
-            bio: 'Building amazing things with Chirp! 🚀',
-            linkInBio: 'https://github.com/user',
-            joinedAt: '2024-01-15T00:00:00Z',
-            isChirpPlus: false,
-            showChirpPlusBadge: false
-          };
+          // Fetch actual user data from Supabase
+          const { createClient } = await import('@supabase/supabase-js');
+          const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+          
+          const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          
+          // Try to find user by ID first, then by handle/email
+          let userData;
+          const { data: userFromDb, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (userFromDb && !userError) {
+            userData = {
+              id: userFromDb.id,
+              firstName: userFromDb.first_name,
+              lastName: userFromDb.last_name,
+              email: userFromDb.email,
+              name: userFromDb.display_name || `${userFromDb.first_name} ${userFromDb.last_name}`,
+              customHandle: userFromDb.custom_handle,
+              handle: userFromDb.handle,
+              profileImageUrl: userFromDb.profile_image_url,
+              avatarUrl: userFromDb.avatar_url,
+              bannerImageUrl: userFromDb.banner_image_url,
+              bio: userFromDb.bio,
+              linkInBio: userFromDb.link_in_bio || 'https://github.com/user',
+              joinedAt: userFromDb.created_at || '2024-01-15T00:00:00Z',
+              isChirpPlus: userFromDb.is_chirp_plus || false,
+              showChirpPlusBadge: userFromDb.show_chirp_plus_badge || false
+            };
+          } else {
+            // Fallback to authUser data if not found in database
+            userData = authUser ? {
+              id: authUser.id,
+              firstName: authUser.firstName,
+              lastName: authUser.lastName,
+              email: authUser.email,
+              name: authUser.name,
+              customHandle: authUser.customHandle,
+              handle: authUser.handle,
+              profileImageUrl: authUser.profileImageUrl,
+              avatarUrl: authUser.avatarUrl,
+              bannerImageUrl: authUser.bannerImageUrl,
+              bio: authUser.bio,
+              linkInBio: authUser.linkInBio || 'https://github.com/user',
+              joinedAt: authUser.joinedAt || '2024-01-15T00:00:00Z',
+              isChirpPlus: authUser.isChirpPlus || false,
+              showChirpPlusBadge: authUser.showChirpPlusBadge || false
+            } : {
+              id: userId,
+              firstName: 'User',
+              lastName: 'Profile',
+              email: 'user@chirp.com',
+              name: 'User Profile',
+              handle: 'userprofile',
+              customHandle: 'userprofile',
+              profileImageUrl: null,
+              avatarUrl: null,
+              bannerImageUrl: null,
+              bio: 'Building amazing things with Chirp! 🚀',
+              linkInBio: 'https://github.com/user',
+              joinedAt: '2024-01-15T00:00:00Z',
+              isChirpPlus: false,
+              showChirpPlusBadge: false
+            };
+          }
           
           console.log('✅ Profile: Loaded user data:', userData);
           console.log('✅ Profile: Loaded chirps:', chirpsData.length);
