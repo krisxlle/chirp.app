@@ -199,13 +199,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
   const imageUrl = user.profileImageUrl || user.avatarUrl;
   let processedImageUrl = imageUrl;
   
-  console.log('🖼️ UserAvatar debug:', {
-    userId: user.id,
-    profileImageUrl: user.profileImageUrl,
-    avatarUrl: user.avatarUrl,
-    imageUrl,
-    processedImageUrl
-  });
+  // Debug logging removed to reduce console noise
   
   if (imageUrl) {
     // Add cache-busting for OpenAI generated images to ensure fresh loads
@@ -216,7 +210,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       const filename = imageUrl.split('/').pop();
       if (filename) {
         processedImageUrl = `/generated-images/${filename}`;
-        console.log('Loading image directly from static assets');
+        // Loading image directly from static assets
       } else {
         processedImageUrl = undefined;
       }
@@ -224,7 +218,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
   } else {
     // Generate a profile image if none exists
     processedImageUrl = generateProfileImageUrl(user);
-    console.log('🖼️ Generated profile image for user without image');
+    // Generated profile image for user without image
   }
 
   const displayName = user.firstName && user.lastName 
@@ -247,7 +241,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
             objectFit: 'cover'
           }}
           onError={(error) => {
-            console.log('Avatar image failed to load:', error);
+            // Avatar image failed to load, using fallback
             setImageError(true);
           }}
         />

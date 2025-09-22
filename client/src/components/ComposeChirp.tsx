@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import { apiRequest } from './api';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
 
@@ -588,7 +587,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   return (
     <div style={{
       backgroundColor: '#ffffff',
-      marginTop: 0,
+      marginTop: 3,
       marginBottom: 3,
       borderRadius: 16,
       paddingTop: 8,
@@ -622,8 +621,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             style={{
               fontSize: 18,
               lineHeight: 24,
-              minHeight: 30,
-              maxHeight: 80,
+              minHeight: 10,
+              maxHeight: 30,
               padding: 0,
               color: '#1a1a1a',
               width: '100%',
@@ -678,7 +677,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 <button
                   style={{
                     position: 'absolute',
-                    top: 8,
+                    top: 4,
                     right: 8,
                     backgroundColor: 'rgba(0,0,0,0.5)',
                     color: '#ffffff',

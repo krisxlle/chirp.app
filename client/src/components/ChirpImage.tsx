@@ -18,22 +18,38 @@ export default function ChirpImage({
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Debug logging to help troubleshoot image loading issues
+  console.log('🖼️ ChirpImage render:', {
+    imageUrl: imageUrl?.substring(0, 50) + '...',
+    imageAltText,
+    imageWidth,
+    imageHeight,
+    hasImageUrl: !!imageUrl
+  });
+
   if (!imageUrl || imageError) {
+    console.log('🖼️ ChirpImage: No image URL or error state, returning null');
     return null;
   }
 
   const handleImageLoad = () => {
+    console.log('🖼️ ChirpImage: Image loaded successfully');
     setIsLoading(false);
   };
 
-  const handleImageError = () => {
+  const handleImageError = (error: any) => {
+    console.log('🖼️ ChirpImage: Image failed to load:', error);
     setImageError(true);
     setIsLoading(false);
   };
 
   const handleDownload = async () => {
     try {
+      console.log('🖼️ Attempting to download image:', imageUrl);
       const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -43,8 +59,9 @@ export default function ChirpImage({
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      console.log('🖼️ Image download successful');
     } catch (error) {
-      console.error('Error downloading image:', error);
+      console.error('🖼️ Error downloading image:', error);
     }
   };
 
@@ -158,6 +175,14 @@ export default function ChirpImage({
           {imageAltText}
         </div>
       )}
+      
+      {/* CSS for spinner animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

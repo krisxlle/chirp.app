@@ -1569,7 +1569,7 @@ export class DatabaseStorage implements IStorage {
       shareCode,
     }).returning();
     
-    const shareUrl = `${process.env.NODE_ENV === 'production' ? 'https://chirp.app' : 'http://localhost:5000'}/invite/${shareCode}`;
+    const shareUrl = `${process.env.NODE_ENV === 'production' ? 'https://joinchirp.org' : 'http://localhost:5000'}/invite/${shareCode}`;
     
     return { shareCode, shareUrl };
   }

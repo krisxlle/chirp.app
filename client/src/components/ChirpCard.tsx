@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpImage from '../components/ChirpImage';
 import ChirpLikesModal from '../components/ChirpLikesModal';
 import ImageViewerModal from '../components/ImageViewerModal';
 import UserAvatar from '../components/UserAvatar';
+import { apiRequest } from '../components/api';
 import HeartIcon from '../components/icons/HeartIcon';
 import ShareIcon from '../components/icons/ShareIcon';
 import SpeechBubbleIcon from '../components/icons/SpeechBubbleIcon';
-import { apiRequest } from '../components/api';
 
 interface User {
   id: string;
@@ -105,6 +105,11 @@ export default function ChirpCard({
   const [userHasLiked, setUserHasLiked] = useState(chirp.userHasLiked || false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   
   // Update local state when chirp data changes
   useEffect(() => {
@@ -195,8 +200,58 @@ export default function ChirpCard({
     }
   };
 
+  const handleReply = () => {
+    setShowReplyInput(true);
+  };
+
+  const submitReply = async () => {
+    if (!replyText.trim()) return;
+    
+    if (!user?.id) {
+      alert('Sign in required', 'Please sign in to reply to chirps.');
+      return;
+    }
+
+    try {
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user.id);
+      
+      console.log('Creating reply to chirp:', chirpIdStr, 'by user:', userIdStr);
+      
+      // Create reply via API
+      const response = await apiRequest('/api/chirps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: replyText.trim(),
+          author_id: userIdStr,
+          reply_to_id: chirpIdStr
+        })
+      });
+
+      if (response.success) {
+        // Update local state
+        setReplies(prev => prev + 1);
+        setReplyText('');
+        setShowReplyInput(false);
+        
+        // Notify parent component to refresh replies
+        if (onReplyPosted) {
+          onReplyPosted(chirpIdStr);
+        }
+        
+        console.log('Reply posted successfully');
+      } else {
+        throw new Error(response.error || 'Failed to post reply');
+      }
+    } catch (error) {
+      console.error('Error posting reply:', error);
+      alert('Error', 'Failed to post reply. Please try again.');
+    }
+  };
+
   const handleShare = async () => {
-    const chirpUrl = `https://chirp.app/chirp/${chirp.id}`;
+    const chirpUrl = `https://joinchirp.org/chirp/${chirp.id}`;
     
     // Use native share API if available
     if (typeof navigator !== 'undefined' && navigator.share) {
@@ -226,6 +281,118 @@ export default function ChirpCard({
       alert('Share Link', `Copy this link: ${chirpUrl}`, [
         { text: 'OK', style: 'default' }
       ]);
+    }
+  };
+
+  const handleMoreOptions = async () => {
+    console.log('🔥 Triple dot menu pressed!');
+    console.log('User ID:', user?.id, 'Type:', typeof user?.id);
+    console.log('Chirp author ID:', chirp.author.id, 'Type:', typeof chirp.author.id);
+    
+    // Ensure both are strings for comparison
+    const userId = String(user?.id || '');
+    const authorId = String(chirp.author.id || '');
+    const isOwnChirp = userId && authorId && userId === authorId;
+    console.log('Is own chirp:', isOwnChirp, `(${userId} === ${authorId})`);
+    
+    // Show custom modal instead of Alert
+    console.log('Opening options modal...');
+    setShowOptionsModal(true);
+  };
+
+  const handleDeleteChirp = async () => {
+    if (!user?.id) {
+      alert('Error', 'You must be signed in to delete chirps.');
+      return;
+    }
+
+    try {
+      const chirpIdStr = String(chirp.id);
+      const userIdStr = String(user.id);
+      
+      console.log('🗑️ Deleting chirp:', chirpIdStr, 'by user:', userIdStr);
+      
+      const response = await apiRequest(`/api/chirps/${chirpIdStr}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userIdStr })
+      });
+
+      if (response.success) {
+        console.log('✅ Chirp deleted successfully');
+        
+        // Notify parent component
+        if (onDeleteSuccess) {
+          onDeleteSuccess(chirpIdStr);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to delete chirp');
+      }
+    } catch (error) {
+      console.error('Error deleting chirp:', error);
+      alert('Error', 'Failed to delete chirp. Please try again.');
+    }
+  };
+
+  const handleFollowToggle = async () => {
+    if (!user?.id) {
+      alert('Error', 'You must be signed in to follow users.');
+      return;
+    }
+
+    try {
+      const userIdStr = String(user.id);
+      const targetUserId = String(chirp.author.id);
+      
+      console.log('👥 Toggling follow for user:', targetUserId, 'by user:', userIdStr);
+      
+      const endpoint = isFollowing ? 'unfollow' : 'follow';
+      const response = await apiRequest(`/api/users/${targetUserId}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userIdStr })
+      });
+
+      if (response.success) {
+        setIsFollowing(!isFollowing);
+        console.log(`✅ ${isFollowing ? 'Unfollowed' : 'Followed'} user successfully`);
+      } else {
+        throw new Error(response.error || `Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      alert('Error', `Failed to ${isFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
+    }
+  };
+
+  const handleBlockToggle = async () => {
+    if (!user?.id) {
+      alert('Error', 'You must be signed in to block users.');
+      return;
+    }
+
+    try {
+      const userIdStr = String(user.id);
+      const targetUserId = String(chirp.author.id);
+      
+      console.log('🚫 Toggling block for user:', targetUserId, 'by user:', userIdStr);
+      
+      const endpoint = isBlocked ? 'unblock' : 'block';
+      const response = await apiRequest(`/api/users/${targetUserId}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userIdStr })
+      });
+
+      if (response.success) {
+        setIsBlocked(!isBlocked);
+        console.log(`✅ ${isBlocked ? 'Unblocked' : 'Blocked'} user successfully`);
+      } else {
+        throw new Error(response.error || `Failed to ${isBlocked ? 'unblock' : 'block'} user`);
+      }
+    } catch (error) {
+      console.error('Error toggling block:', error);
+      alert('Error', `Failed to ${isBlocked ? 'unblock' : 'block'} user. Please try again.`);
     }
   };
 
@@ -336,11 +503,11 @@ export default function ChirpCard({
         </div>
         
         <div 
-          style={{ padding: '8px' }}
+          style={{ padding: '8px', cursor: 'pointer' }}
           onClick={(e) => {
             e.stopPropagation();
             console.log('🚀 More button touched!');
-            // TODO: Implement more options modal
+            handleMoreOptions();
           }}
         >
           <span style={{ fontSize: '16px', color: '#657786', transform: 'rotate(90deg)', display: 'inline-block' }}>⋯</span>
@@ -388,6 +555,16 @@ export default function ChirpCard({
         </div>
       )}
 
+      {/* Debug logging for chirp image data */}
+      {console.log('🖼️ ChirpCard image data:', {
+        chirpId: chirp.id,
+        hasImageUrl: !!chirp.imageUrl,
+        imageUrl: chirp.imageUrl?.substring(0, 50) + '...',
+        imageAltText: chirp.imageAltText,
+        imageWidth: chirp.imageWidth,
+        imageHeight: chirp.imageHeight
+      })}
+
       {/* Display chirp image if available */}
       {chirp.imageUrl && (
         <div style={{
@@ -416,13 +593,88 @@ export default function ChirpCard({
           />
         </div>
       )}
+
+      {/* Reply Input */}
+      {showReplyInput && (
+        <div style={{
+          marginTop: '12px',
+          marginLeft: '20px',
+          marginRight: '8px',
+          padding: '12px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <UserAvatar 
+              userId={user.id}
+              profileImageUrl={user.profileImageUrl}
+              avatarUrl={user.avatarUrl}
+              size={32}
+            />
+            <div style={{ flex: 1 }}>
+              <textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Write a reply..."
+                style={{
+                  width: '100%',
+                  minHeight: '60px',
+                  padding: '8px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  outline: 'none'
+                }}
+                autoFocus
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                <button
+                  onClick={() => {
+                    setShowReplyInput(false);
+                    setReplyText('');
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    color: '#657786',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitReply}
+                  disabled={!replyText.trim()}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: replyText.trim() ? '#7c3aed' : '#d1d5db',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    color: replyText.trim() ? '#ffffff' : '#9ca3af',
+                    cursor: replyText.trim() ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  Reply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginLeft: '20px', marginRight: '8px', paddingTop: '0', overflow: 'visible' }}>
         <div 
-          style={{ display: 'flex', alignItems: 'center', marginRight: '8px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '3px', paddingRight: '3px', borderRadius: '4px', minWidth: '0', flexShrink: 1 }}
+          style={{ display: 'flex', alignItems: 'center', marginRight: '8px', paddingTop: '3px', paddingBottom: '3px', paddingLeft: '3px', paddingRight: '3px', borderRadius: '4px', minWidth: '0', flexShrink: 1, cursor: 'pointer' }}
           onClick={(e) => {
             e.stopPropagation();
-            // TODO: Implement reply functionality
+            handleReply();
           }}
         >
           <SpeechBubbleIcon size={18} color="#657786" />
@@ -504,6 +756,131 @@ export default function ChirpCard({
         imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
         onClose={() => setShowImageViewer(false)}
       />
+
+      {/* Options Modal */}
+      {showOptionsModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={() => setShowOptionsModal(false)}
+        >
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '20px',
+            minWidth: '280px',
+            maxWidth: '320px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#14171a',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              {String(user?.id || '') === String(chirp.author.id || '') ? 'Chirp Options' : 'User Options'}
+            </h3>
+            
+            {String(user?.id || '') === String(chirp.author.id || '') ? (
+              // Own chirp options - only Delete and Cancel
+              <>
+                <button
+                  onClick={() => {
+                    console.log('🗑️ Delete button pressed in modal');
+                    setShowOptionsModal(false);
+                    handleDeleteChirp();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#dc2626',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    marginBottom: '12px'
+                  }}
+                >
+                  Delete Chirp
+                </button>
+              </>
+            ) : (
+              // Other user options
+              <>
+                <button
+                  onClick={() => {
+                    setShowOptionsModal(false);
+                    handleFollowToggle();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#7c3aed',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    marginBottom: '12px'
+                  }}
+                >
+                  {isFollowing ? `Unfollow ${displayName}` : `Follow ${displayName}`}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowOptionsModal(false);
+                    handleBlockToggle();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    backgroundColor: '#dc2626',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    marginBottom: '12px'
+                  }}
+                >
+                  {isBlocked ? `Unblock ${displayName}` : `Block ${displayName}`}
+                </button>
+              </>
+            )}
+            
+            <button
+              onClick={() => setShowOptionsModal(false)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: 'transparent',
+                color: '#657786',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

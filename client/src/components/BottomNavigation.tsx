@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
-import { apiRequest } from './api';
 import { CollectionIcon, GachaIcon, HomeIcon, NotificationIcon, ProfileIcon } from './icons';
 
 interface BottomNavigationProps {
@@ -15,16 +14,53 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
 
-  // Get unread count from API if not provided
+  // Get unread count from Supabase if not provided
   const { data: notificationData } = useQuery({
-    queryKey: ["/api/notifications/unread-count"],
+    queryKey: ["notifications-unread-count", user?.id],
     queryFn: async () => {
+      if (!user?.id) return { count: 0 };
+      
       try {
-        const response = await apiRequest("/api/notifications/unread-count");
-        console.log('📱 Fetched unread count:', response.count);
-        return response;
+        // Create Supabase client directly for web
+        const { createClient } = await import('@supabase/supabase-js');
+        
+        const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            storage: {
+              getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+              setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+              removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+            },
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: false,
+          },
+          global: {
+            headers: {
+              'X-Client-Info': 'chirp-web'
+            }
+          }
+        });
+
+        // Try to fetch unread notifications count
+        const { count, error } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+
+        if (error) {
+          console.log('📱 Notifications table not available, using fallback count:', error.message);
+          return { count: 0 };
+        }
+
+        console.log('📱 Fetched unread count from Supabase:', count);
+        return { count: count || 0 };
       } catch (error) {
-        console.error('Error fetching unread count:', error);
+        console.log('📱 Error fetching unread count from Supabase, using fallback:', error);
         return { count: 0 };
       }
     },

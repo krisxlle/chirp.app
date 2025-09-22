@@ -1,6 +1,6 @@
-import { Button } from "../components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { Button } from "../components/ui/button";
 
 export default function TermsOfService() {
   const [, setLocation] = useLocation();
@@ -184,7 +184,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">14. Contact Information</h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                If you have any questions about these Terms of Service, please contact us at legal@chirp.app.
+                If you have any questions about these Terms of Service, please contact us at legal@joinchirp.org.
               </p>
             </section>
           </div>

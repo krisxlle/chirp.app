@@ -1,6 +1,6 @@
-import { Button } from "../components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { Button } from "../components/ui/button";
 
 export default function PrivacyPolicy() {
   const [, setLocation] = useLocation();
@@ -177,7 +177,7 @@ export default function PrivacyPolicy() {
                 <li>Withdraw consent: Withdraw consent where processing is based on consent</li>
               </ul>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mt-3">
-                To exercise these rights, please contact us at privacy@chirp.app.
+                To exercise these rights, please contact us at privacy@joinchirp.org.
               </p>
             </section>
 
@@ -223,8 +223,8 @@ export default function PrivacyPolicy() {
                 If you have any questions about this Privacy Policy or our privacy practices, please contact us at:
               </p>
               <div className="mt-3 text-gray-700 dark:text-gray-300">
-                <p>Email: privacy@chirp.app</p>
-                <p>Legal Department: legal@chirp.app</p>
+                <p>Email: privacy@joinchirp.org</p>
+                <p>Legal Department: legal@joinchirp.org</p>
               </div>
             </section>
           </div>

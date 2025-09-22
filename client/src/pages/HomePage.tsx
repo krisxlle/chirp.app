@@ -38,7 +38,12 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
         content,
         created_at,
         reply_to_id,
-        author:users!chirps_author_id_fkey (
+        author_id,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
+        users!inner (
           id,
           first_name,
           last_name,
@@ -78,20 +83,27 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
       const transformedChirps = mainChirps.map(chirp => {
         const chirpReplies = repliesByParent[chirp.id] || [];
         
+        // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
+        const author = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+        
         return {
           id: chirp.id,
           content: chirp.content,
           createdAt: chirp.created_at,
           replyToId: chirp.reply_to_id,
+          imageUrl: chirp.image_url,
+          imageAltText: chirp.image_alt_text,
+          imageWidth: chirp.image_width,
+          imageHeight: chirp.image_height,
           author: {
-            id: chirp.author.id,
-            firstName: chirp.author.first_name,
-            lastName: chirp.author.last_name,
-            email: chirp.author.email,
-            handle: chirp.author.handle,
-            customHandle: chirp.author.custom_handle,
-            profileImageUrl: chirp.author.profile_image_url,
-            avatarUrl: chirp.author.avatar_url,
+            id: author.id,
+            firstName: author.first_name,
+            lastName: author.last_name,
+            email: author.email,
+            handle: author.handle,
+            customHandle: author.custom_handle,
+            profileImageUrl: author.profile_image_url,
+            avatarUrl: author.avatar_url,
             isChirpPlus: false, // Default to false since column doesn't exist
             showChirpPlusBadge: false // Default to false since column doesn't exist
           },
@@ -109,23 +121,31 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
           threadOrder: null, // Default to null since column doesn't exist
           isThreadStarter: true, // Default to true since column doesn't exist
           // Include replies for Metro-style display
-          repliesList: chirpReplies.map(reply => ({
-            id: reply.id,
-            content: reply.content,
-            createdAt: reply.created_at,
-            replyToId: reply.reply_to_id,
-            author: {
-              id: reply.author.id,
-              firstName: reply.author.first_name,
-              lastName: reply.author.last_name,
-              email: reply.author.email,
-              handle: reply.author.handle,
-              customHandle: reply.author.custom_handle,
-              profileImageUrl: reply.author.profile_image_url,
-              avatarUrl: reply.author.avatar_url,
-              isChirpPlus: false,
-              showChirpPlusBadge: false
-            },
+          repliesList: chirpReplies.map(reply => {
+            // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
+            const replyAuthor = Array.isArray(reply.users) ? reply.users[0] : reply.users;
+            
+            return {
+              id: reply.id,
+              content: reply.content,
+              createdAt: reply.created_at,
+              replyToId: reply.reply_to_id,
+              imageUrl: reply.image_url,
+              imageAltText: reply.image_alt_text,
+              imageWidth: reply.image_width,
+              imageHeight: reply.image_height,
+              author: {
+                id: replyAuthor.id,
+                firstName: replyAuthor.first_name,
+                lastName: replyAuthor.last_name,
+                email: replyAuthor.email,
+                handle: replyAuthor.handle,
+                customHandle: replyAuthor.custom_handle,
+                profileImageUrl: replyAuthor.profile_image_url,
+                avatarUrl: replyAuthor.avatar_url,
+                isChirpPlus: false,
+                showChirpPlusBadge: false
+              },
             likes: 0,
             replies: 0,
             reposts: 0,
@@ -142,7 +162,8 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
             isDirectReply: true,
             isNestedReply: false,
             isThreadedChirp: false
-          }))
+            };
+          })
         };
       });
       
@@ -254,7 +275,12 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
         id,
         content,
         created_at,
-        author:users!chirps_author_id_fkey (
+        author_id,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
+        users!inner (
           id,
           first_name,
           last_name,
@@ -277,22 +303,30 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
       console.log('✅ Fetched', chirps.length, 'real collection chirps from database');
       
       // Transform the data to match expected format
-      return chirps.map(chirp => ({
-        id: chirp.id,
-        content: chirp.content,
-        createdAt: chirp.created_at,
-        author: {
-          id: chirp.author.id,
-          firstName: chirp.author.first_name,
-          lastName: chirp.author.last_name,
-          email: chirp.author.email,
-          handle: chirp.author.handle,
-          customHandle: chirp.author.custom_handle,
-          profileImageUrl: chirp.author.profile_image_url,
-          avatarUrl: chirp.author.avatar_url,
-          isChirpPlus: false, // Default to false since column doesn't exist
-          showChirpPlusBadge: false // Default to false since column doesn't exist
-        },
+      return chirps.map(chirp => {
+        // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
+        const author = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+        
+        return {
+          id: chirp.id,
+          content: chirp.content,
+          createdAt: chirp.created_at,
+          imageUrl: chirp.image_url,
+          imageAltText: chirp.image_alt_text,
+          imageWidth: chirp.image_width,
+          imageHeight: chirp.image_height,
+          author: {
+            id: author.id,
+            firstName: author.first_name,
+            lastName: author.last_name,
+            email: author.email,
+            handle: author.handle,
+            customHandle: author.custom_handle,
+            profileImageUrl: author.profile_image_url,
+            avatarUrl: author.avatar_url,
+            isChirpPlus: false, // Default to false since column doesn't exist
+            showChirpPlusBadge: false // Default to false since column doesn't exist
+          },
         likes: 0, // Default to 0 since column doesn't exist
         replies: 0, // Default to 0 since column doesn't exist
         reposts: 0, // Default to 0 since column doesn't exist
@@ -306,7 +340,8 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
         threadId: null, // Default to null since column doesn't exist
         threadOrder: null, // Default to null since column doesn't exist
         isThreadStarter: true // Default to true since column doesn't exist
-      }));
+        };
+      });
     } else {
       console.log('📭 No collection chirps found in database');
       return [];
@@ -665,15 +700,27 @@ export default function HomePage() {
     setLocation('/search');
   };
 
-  // Handle scroll for infinite loading (For You feed only)
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  // Throttle scroll events to prevent excessive calls
+  const [lastScrollTime, setLastScrollTime] = useState(0);
+  
+  // Handle scroll for infinite loading (both feeds) with throttling
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const now = Date.now();
+    if (now - lastScrollTime < 400) return; // Throttle to 400ms like metro
+    
+    setLastScrollTime(now);
+    
     const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200;
     
-    if (isNearBottom && feedType === 'forYou' && hasMoreChirps && !isLoadingMore) {
+    // Check which feed we're in and load more accordingly
+    const isForYouFeed = feedType === 'forYou';
+    const hasMore = isForYouFeed ? hasMoreChirps : hasMoreCollectionChirps;
+    
+    if (isNearBottom && hasMore && !isLoadingMore) {
       loadMoreChirps();
     }
-  };
+  }, [feedType, hasMoreChirps, hasMoreCollectionChirps, isLoadingMore, loadMoreChirps, lastScrollTime]);
 
   return (
     <div style={{ 
@@ -940,46 +987,44 @@ export default function HomePage() {
                   />
                 ))}
                 
-                {/* Load More Button */}
-                {hasMoreCollectionChirps && (
-                  <div style={{ paddingTop: '16px', paddingBottom: '16px' }}>
-                    <button 
-                      style={{
-                        width: '100%',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px',
-                        paddingTop: '12px',
-                        paddingBottom: '12px',
-                        paddingLeft: '16px',
-                        paddingRight: '16px',
-                        alignItems: 'center',
-                        marginTop: '16px',
-                        marginBottom: '16px',
-                        border: '1px solid #e1e8ed',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                      onClick={loadMoreChirps}
-                      disabled={isLoadingMore}
-                    >
-                      {isLoadingMore ? (
-                        <>
-                          <div style={{
-                            width: '16px',
-                            height: '16px',
-                            border: '2px solid #7c3aed',
-                            borderTop: '2px solid transparent',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite'
-                          }}></div>
-                          Loading...
-                        </>
-                      ) : (
-                        'Load More Collection Chirps'
-                      )}
-                    </button>
+                {/* Loading more indicator */}
+                {isLoadingMore && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: '20px',
+                    paddingBottom: '20px',
+                    gap: '8px'
+                  }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #7c3aed',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    <span style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
+                      Loading more chirps...
+                    </span>
+                  </div>
+                )}
+                
+                {/* End of feed indicator */}
+                {!hasMoreCollectionChirps && collectionChirps.length > 0 && (
+                  <div style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: '20px',
+                    paddingBottom: '20px',
+                    paddingLeft: '20px',
+                    paddingRight: '20px',
+                    textAlign: 'center'
+                  }}>
+                    <p style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
+                      You've reached the end! 🎉
+                    </p>
                   </div>
                 )}
               </>
@@ -1022,16 +1067,21 @@ export default function HomePage() {
           inset: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           display: 'flex',
-          alignItems: 'end',
+          alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 50
+          zIndex: 50,
+          paddingTop: '20px',
+          paddingBottom: '20px'
         }}>
           <div style={{
             backgroundColor: 'white',
             width: '100%',
             maxWidth: '400px',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px'
+            maxHeight: '80vh',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
             <div style={{
               display: 'flex',
@@ -1062,12 +1112,14 @@ export default function HomePage() {
               </h2>
               <div style={{ width: '60px' }}></div>
             </div>
-            <ComposeChirp 
-              onPost={async (content, imageData) => {
-                await handleNewChirp(content, imageData);
-                setShowComposeModal(false);
-              }} 
-            />
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <ComposeChirp 
+                onPost={async (content, imageData) => {
+                  await handleNewChirp(content, imageData);
+                  setShowComposeModal(false);
+                }} 
+              />
+            </div>
           </div>
         </div>
       )}

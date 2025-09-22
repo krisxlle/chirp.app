@@ -20,7 +20,7 @@ import Notifications from "./pages/Notifications";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
-import Settings from "./pages/Settings";
+import SettingsPage from "./pages/Settings";
 import Subscribe from "./pages/Subscribe";
 import Support from "./pages/Support";
 import TermsOfService from "./pages/TermsOfService";
@@ -38,6 +38,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Wrapper component for Settings to handle routing props
+const Settings = () => <SettingsPage />;
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -95,6 +98,34 @@ function Router() {
 }
 
 function App() {
+  // Add global error handler to suppress Chrome extension errors
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      // Suppress Chrome extension listener errors
+      if (event.message && event.message.includes('listener indicated an asynchronous response')) {
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Suppress Chrome extension promise rejection errors
+      if (event.reason && typeof event.reason === 'string' && 
+          event.reason.includes('listener indicated an asynchronous response')) {
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>

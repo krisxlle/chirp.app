@@ -56,6 +56,7 @@ interface AuthContextType {
   refreshCrystalBalance: () => Promise<void>;
   isAuthenticated: boolean;
   clearSession: () => Promise<void>;
+  forceRefreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -81,6 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (storedUser) {
         const user = JSON.parse(storedUser);
+        
+        // Check if user ID is a valid UUID, if not, clear cache and require fresh login
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(user.id)) {
+          console.log('⚠️ Invalid user ID format detected, clearing cache and requiring fresh login');
+          await storage.removeItem('user');
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
         console.log('✅ Found stored user session:', user.customHandle || user.handle || user.id);
         setUser(user);
         setIsLoading(false);
@@ -261,6 +273,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const forceRefreshAuth = async () => {
+    try {
+      console.log('🔄 Forcing authentication refresh...');
+      await clearSession();
+      await checkAuthState();
+    } catch (error) {
+      console.error('Error refreshing auth:', error);
+    }
+  };
+
   const value = {
     user,
     isLoading,
@@ -269,7 +291,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUser,
     refreshCrystalBalance,
     isAuthenticated: !!user,
-    clearSession
+    clearSession,
+    forceRefreshAuth
   };
 
   console.log('AuthProvider render:', { 
