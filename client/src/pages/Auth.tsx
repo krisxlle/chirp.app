@@ -58,24 +58,21 @@ const ChirpLogo = ({ size = 60 }) => (
   <div style={{
     width: size,
     height: size,
-    backgroundColor: '#ffffff',
-    borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     margin: '0 auto 16px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
   }}>
-    <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="none">
-      <path 
-        d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
-        fill="#7c3aed"
-      />
-      <path 
-        d="M12 18L13.09 20.26L16 21L13.09 21.74L12 24L10.91 21.74L8 21L10.91 20.26L12 18Z" 
-        fill="#ec4899"
-      />
-    </svg>
+    <img 
+      src="/favicon.png" 
+      alt="Chirp Logo" 
+      style={{
+        width: size,
+        height: size,
+        objectFit: 'contain'
+      }}
+    />
   </div>
 );
 

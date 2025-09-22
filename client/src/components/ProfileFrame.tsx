@@ -19,17 +19,21 @@ const getAssetBaseUrl = () => {
   return 'http://localhost:5000';
 };
 
-const rarityFrameImages = {
-  mythic: `${getAssetBaseUrl()}/assets/Mystical Frame.png`,
-  legendary: `${getAssetBaseUrl()}/assets/Legendary Frame.png`,
-  epic: `${getAssetBaseUrl()}/assets/Epic Frame.png`,
-  rare: `${getAssetBaseUrl()}/assets/Rare Frame.png`,
-  uncommon: `${getAssetBaseUrl()}/assets/Uncommon Frame.png`,
-  common: `${getAssetBaseUrl()}/assets/Common Frame.png`,
+const getRarityFrameImage = (rarity: string) => {
+  const baseUrl = getAssetBaseUrl();
+  const frameNames = {
+    mythic: 'Mystical Frame.png',
+    legendary: 'Legendary Frame.png',
+    epic: 'Epic Frame.png',
+    rare: 'Rare Frame.png',
+    uncommon: 'Uncommon Frame.png',
+    common: 'Common Frame.png',
+  };
+  return `${baseUrl}/assets/${frameNames[rarity as keyof typeof frameNames]}`;
 };
 
 export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {
-  const frameImage = rarityFrameImages[rarity];
+  const frameImage = getRarityFrameImage(rarity);
   
   // Calculate proper sizing for frame and profile picture
   const frameSize = size * 1.8; // Frame is 80% larger than the base size
