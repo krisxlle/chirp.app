@@ -46,20 +46,7 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
           custom_handle,
           profile_image_url,
           avatar_url
-        ),
-        likes,
-        replies,
-        reposts,
-        is_liked,
-        is_reposted,
-        reaction_counts,
-        user_reaction,
-        repost_of,
-        is_ai_generated,
-        is_weekly_summary,
-        thread_id,
-        thread_order,
-        is_thread_starter
+        )
       `)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -89,19 +76,19 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
           isChirpPlus: false, // Default to false since column doesn't exist
           showChirpPlusBadge: false // Default to false since column doesn't exist
         },
-        likes: chirp.likes || 0,
-        replies: chirp.replies || 0,
-        reposts: chirp.reposts || 0,
-        isLiked: chirp.is_liked || false,
-        isReposted: chirp.is_reposted || false,
-        reactionCounts: chirp.reaction_counts || {},
-        userReaction: chirp.user_reaction,
-        repostOf: chirp.repost_of,
-        isAiGenerated: chirp.is_ai_generated || false,
-        isWeeklySummary: chirp.is_weekly_summary || false,
-        threadId: chirp.thread_id,
-        threadOrder: chirp.thread_order,
-        isThreadStarter: chirp.is_thread_starter || true
+        likes: 0, // Default to 0 since column doesn't exist
+        replies: 0, // Default to 0 since column doesn't exist
+        reposts: 0, // Default to 0 since column doesn't exist
+        isLiked: false, // Default to false since column doesn't exist
+        isReposted: false, // Default to false since column doesn't exist
+        reactionCounts: {}, // Default to empty object since column doesn't exist
+        userReaction: null, // Default to null since column doesn't exist
+        repostOf: null, // Default to null since column doesn't exist
+        isAiGenerated: false, // Default to false since column doesn't exist
+        isWeeklySummary: false, // Default to false since column doesn't exist
+        threadId: null, // Default to null since column doesn't exist
+        threadOrder: null, // Default to null since column doesn't exist
+        isThreadStarter: true // Default to true since column doesn't exist
       }));
     } else {
       console.log('📭 No chirps found in database');
@@ -218,20 +205,7 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
           custom_handle,
           profile_image_url,
           avatar_url
-        ),
-        likes,
-        replies,
-        reposts,
-        is_liked,
-        is_reposted,
-        reaction_counts,
-        user_reaction,
-        repost_of,
-        is_ai_generated,
-        is_weekly_summary,
-        thread_id,
-        thread_order,
-        is_thread_starter
+        )
       `)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -261,19 +235,19 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
           isChirpPlus: false, // Default to false since column doesn't exist
           showChirpPlusBadge: false // Default to false since column doesn't exist
         },
-        likes: chirp.likes || 0,
-        replies: chirp.replies || 0,
-        reposts: chirp.reposts || 0,
-        isLiked: chirp.is_liked || false,
-        isReposted: chirp.is_reposted || false,
-        reactionCounts: chirp.reaction_counts || {},
-        userReaction: chirp.user_reaction,
-        repostOf: chirp.repost_of,
-        isAiGenerated: chirp.is_ai_generated || false,
-        isWeeklySummary: chirp.is_weekly_summary || false,
-        threadId: chirp.thread_id,
-        threadOrder: chirp.thread_order,
-        isThreadStarter: chirp.is_thread_starter || true
+        likes: 0, // Default to 0 since column doesn't exist
+        replies: 0, // Default to 0 since column doesn't exist
+        reposts: 0, // Default to 0 since column doesn't exist
+        isLiked: false, // Default to false since column doesn't exist
+        isReposted: false, // Default to false since column doesn't exist
+        reactionCounts: {}, // Default to empty object since column doesn't exist
+        userReaction: null, // Default to null since column doesn't exist
+        repostOf: null, // Default to null since column doesn't exist
+        isAiGenerated: false, // Default to false since column doesn't exist
+        isWeeklySummary: false, // Default to false since column doesn't exist
+        threadId: null, // Default to null since column doesn't exist
+        threadOrder: null, // Default to null since column doesn't exist
+        isThreadStarter: true // Default to true since column doesn't exist
       }));
     } else {
       console.log('📭 No collection chirps found in database');
