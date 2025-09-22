@@ -43,6 +43,8 @@ interface Chirp {
   isNestedReply?: boolean;
   // Thread identification field
   isThreadedChirp?: boolean;
+  // Replies list for Metro-style display
+  repliesList?: Chirp[];
 }
 
 interface ChirpCardProps {
@@ -464,6 +466,31 @@ export default function ChirpCard({
           </div>
         </div>
       </div>
+
+      {/* Display replies in Metro-style nested format */}
+      {chirp.repliesList && chirp.repliesList.length > 0 && (
+        <div style={{
+          marginTop: '8px',
+          marginLeft: '20px',
+          borderLeft: '2px solid #e5e7eb',
+          paddingLeft: '12px'
+        }}>
+          {chirp.repliesList.map((reply, index) => (
+            <div key={reply.id} style={{
+              marginBottom: index < chirp.repliesList.length - 1 ? '8px' : '0',
+              paddingBottom: index < chirp.repliesList.length - 1 ? '8px' : '0',
+              borderBottom: index < chirp.repliesList.length - 1 ? '1px solid #f3f4f6' : 'none'
+            }}>
+              <ChirpCard 
+                chirp={reply} 
+                onProfilePress={onProfilePress}
+                onLikeUpdate={onLikeUpdate}
+                onReplyPosted={onReplyPosted}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       
       <ChirpLikesModal
         visible={showLikesModal}

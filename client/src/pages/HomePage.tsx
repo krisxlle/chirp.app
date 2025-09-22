@@ -30,13 +30,14 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
 
     console.log('✅ Using real Supabase client for getForYouChirps');
     
-    // Fetch chirps from database
+    // Fetch chirps from database (including replies)
     const { data: chirps, error } = await supabase
       .from('chirps')
       .select(`
         id,
         content,
         created_at,
+        reply_to_id,
         author:users!chirps_author_id_fkey (
           id,
           first_name,
@@ -59,37 +60,94 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
     if (chirps && chirps.length > 0) {
       console.log('✅ Fetched', chirps.length, 'real chirps from database');
       
-      // Transform the data to match expected format
-      return chirps.map(chirp => ({
-        id: chirp.id,
-        content: chirp.content,
-        createdAt: chirp.created_at,
-        author: {
-          id: chirp.author.id,
-          firstName: chirp.author.first_name,
-          lastName: chirp.author.last_name,
-          email: chirp.author.email,
-          handle: chirp.author.handle,
-          customHandle: chirp.author.custom_handle,
-          profileImageUrl: chirp.author.profile_image_url,
-          avatarUrl: chirp.author.avatar_url,
-          isChirpPlus: false, // Default to false since column doesn't exist
-          showChirpPlusBadge: false // Default to false since column doesn't exist
-        },
-        likes: 0, // Default to 0 since column doesn't exist
-        replies: 0, // Default to 0 since column doesn't exist
-        reposts: 0, // Default to 0 since column doesn't exist
-        isLiked: false, // Default to false since column doesn't exist
-        isReposted: false, // Default to false since column doesn't exist
-        reactionCounts: {}, // Default to empty object since column doesn't exist
-        userReaction: null, // Default to null since column doesn't exist
-        repostOf: null, // Default to null since column doesn't exist
-        isAiGenerated: false, // Default to false since column doesn't exist
-        isWeeklySummary: false, // Default to false since column doesn't exist
-        threadId: null, // Default to null since column doesn't exist
-        threadOrder: null, // Default to null since column doesn't exist
-        isThreadStarter: true // Default to true since column doesn't exist
-      }));
+      // Separate main chirps and replies
+      const mainChirps = chirps.filter(chirp => !chirp.reply_to_id);
+      const replies = chirps.filter(chirp => chirp.reply_to_id);
+      
+      // Group replies by their parent chirp
+      const repliesByParent = replies.reduce((acc, reply) => {
+        const parentId = reply.reply_to_id;
+        if (!acc[parentId]) {
+          acc[parentId] = [];
+        }
+        acc[parentId].push(reply);
+        return acc;
+      }, {});
+      
+      // Transform main chirps and include their replies
+      const transformedChirps = mainChirps.map(chirp => {
+        const chirpReplies = repliesByParent[chirp.id] || [];
+        
+        return {
+          id: chirp.id,
+          content: chirp.content,
+          createdAt: chirp.created_at,
+          replyToId: chirp.reply_to_id,
+          author: {
+            id: chirp.author.id,
+            firstName: chirp.author.first_name,
+            lastName: chirp.author.last_name,
+            email: chirp.author.email,
+            handle: chirp.author.handle,
+            customHandle: chirp.author.custom_handle,
+            profileImageUrl: chirp.author.profile_image_url,
+            avatarUrl: chirp.author.avatar_url,
+            isChirpPlus: false, // Default to false since column doesn't exist
+            showChirpPlusBadge: false // Default to false since column doesn't exist
+          },
+          likes: 0, // Default to 0 since column doesn't exist
+          replies: chirpReplies.length, // Count of replies
+          reposts: 0, // Default to 0 since column doesn't exist
+          isLiked: false, // Default to false since column doesn't exist
+          isReposted: false, // Default to false since column doesn't exist
+          reactionCounts: {}, // Default to empty object since column doesn't exist
+          userReaction: null, // Default to null since column doesn't exist
+          repostOf: null, // Default to null since column doesn't exist
+          isAiGenerated: false, // Default to false since column doesn't exist
+          isWeeklySummary: false, // Default to false since column doesn't exist
+          threadId: null, // Default to null since column doesn't exist
+          threadOrder: null, // Default to null since column doesn't exist
+          isThreadStarter: true, // Default to true since column doesn't exist
+          // Include replies for Metro-style display
+          repliesList: chirpReplies.map(reply => ({
+            id: reply.id,
+            content: reply.content,
+            createdAt: reply.created_at,
+            replyToId: reply.reply_to_id,
+            author: {
+              id: reply.author.id,
+              firstName: reply.author.first_name,
+              lastName: reply.author.last_name,
+              email: reply.author.email,
+              handle: reply.author.handle,
+              customHandle: reply.author.custom_handle,
+              profileImageUrl: reply.author.profile_image_url,
+              avatarUrl: reply.author.avatar_url,
+              isChirpPlus: false,
+              showChirpPlusBadge: false
+            },
+            likes: 0,
+            replies: 0,
+            reposts: 0,
+            isLiked: false,
+            isReposted: false,
+            reactionCounts: {},
+            userReaction: null,
+            repostOf: null,
+            isAiGenerated: false,
+            isWeeklySummary: false,
+            threadId: null,
+            threadOrder: null,
+            isThreadStarter: true,
+            isDirectReply: true,
+            isNestedReply: false,
+            isThreadedChirp: false
+          }))
+        };
+      });
+      
+      console.log('✅ Transformed', transformedChirps.length, 'main chirps with', replies.length, 'total replies');
+      return transformedChirps;
     } else {
       console.log('📭 No chirps found in database');
       return [];
