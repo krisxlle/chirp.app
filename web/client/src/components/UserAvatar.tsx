@@ -14,7 +14,7 @@ interface User {
 
 interface UserAvatarProps {
   user: User;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'fill';
   onPress?: () => void;
 }
 
@@ -27,6 +27,8 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
         return 'w-16 h-16 text-xl';
       case 'xl':
         return 'w-24 h-24 text-2xl'; // Added xl size for profile pages
+      case 'fill':
+        return 'w-full h-full text-2xl'; // Fill the container completely
       default:
         return 'w-12 h-12 text-base';
     }

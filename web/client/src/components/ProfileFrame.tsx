@@ -19,6 +19,7 @@ const rarityFrameColors = {
 export default function ProfileFrame({ rarity, size = 60, children, className = '' }: ProfileFrameProps) {
   const frameSize = size * 1.8; // Frame is 80% larger than the base size
   const profileSize = frameSize * 0.45; // Profile picture is 45% of frame size
+  const frameThickness = (frameSize - profileSize) / 2; // Calculate frame thickness
   
   return (
     <div 
@@ -33,12 +34,21 @@ export default function ProfileFrame({ rarity, size = 60, children, className = 
         {children}
       </div>
       
-      {/* Frame Overlay */}
+      {/* Frame Ring - Only the border, not covering the center */}
       <div 
-        className={`absolute inset-0 rounded-full bg-gradient-to-r ${rarityFrameColors[rarity]} p-1`}
+        className={`absolute inset-0 rounded-full bg-gradient-to-r ${rarityFrameColors[rarity]}`}
         style={{ width: frameSize, height: frameSize }}
       >
-        <div className="w-full h-full rounded-full bg-white"></div>
+        {/* Inner circle to create the frame effect */}
+        <div 
+          className="absolute rounded-full bg-white"
+          style={{ 
+            width: profileSize, 
+            height: profileSize,
+            top: frameThickness,
+            left: frameThickness
+          }}
+        ></div>
       </div>
     </div>
   );

@@ -227,7 +227,7 @@ export default function Profile() {
         <div className="px-4 pb-4 bg-white">
           <div className="flex items-end space-x-4 -mt-16">
             <ProfileFrame rarity="epic" size={60}>
-              <UserAvatar user={user} size="xl" />
+              <UserAvatar user={user} size="fill" />
             </ProfileFrame>
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-2">
