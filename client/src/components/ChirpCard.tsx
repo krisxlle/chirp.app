@@ -216,7 +216,12 @@ export default function ChirpCard({
       const chirpIdStr = String(chirp.id);
       const userIdStr = String(user.id);
       
-      console.log('Creating reply to chirp:', chirpIdStr, 'by user:', userIdStr);
+      console.log('🔄 Creating reply to chirp:', {
+        chirpId: chirpIdStr,
+        userId: userIdStr,
+        content: replyText.trim(),
+        replyToId: chirpIdStr
+      });
       
       // Create reply via API
       const response = await apiRequest('/api/chirps', {
@@ -229,6 +234,8 @@ export default function ChirpCard({
         })
       });
 
+      console.log('📨 Reply API response:', response);
+
       if (response.success) {
         // Update local state
         setReplies(prev => prev + 1);
@@ -240,13 +247,13 @@ export default function ChirpCard({
           onReplyPosted(chirpIdStr);
         }
         
-        console.log('Reply posted successfully');
+        console.log('✅ Reply posted successfully');
       } else {
         throw new Error(response.error || 'Failed to post reply');
       }
     } catch (error) {
-      console.error('Error posting reply:', error);
-      alert('Error', 'Failed to post reply. Please try again.');
+      console.error('❌ Error posting reply:', error);
+      alert('Error', `Failed to post reply: ${error.message}`);
     }
   };
 

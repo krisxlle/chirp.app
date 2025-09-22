@@ -156,23 +156,28 @@ export default function handler(req, res) {
     return;
   }
 
-  // Handle POST /api/chirps (create new chirp)
+  // Handle POST /api/chirps (create new chirp or reply)
   if (req.method === 'POST') {
-    const { content, userId, imageData } = req.body;
+    const { content, userId, author_id, reply_to_id, imageData } = req.body;
     
     if (!content) {
       res.status(400).json({
+        success: false,
         error: 'Content is required',
         message: 'Please provide content for your chirp'
       });
       return;
     }
 
+    // Use author_id if provided (for replies), otherwise use userId
+    const authorId = author_id || userId || '1';
+    const isReply = !!reply_to_id;
+
     const newChirp = {
       id: Date.now().toString(),
       content,
       author: {
-        id: userId || '1',
+        id: authorId,
         firstName: 'User',
         lastName: '',
         email: 'user@example.com',
@@ -199,16 +204,28 @@ export default function handler(req, res) {
       repostOf: null,
       isAiGenerated: false,
       isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true,
+      threadId: isReply ? reply_to_id : null,
+      threadOrder: isReply ? 1 : null,
+      isThreadStarter: !isReply,
       imageUrl: imageData?.imageUrl || null,
       imageAltText: imageData?.imageAltText || null,
       imageWidth: imageData?.imageWidth || null,
-      imageHeight: imageData?.imageHeight || null
+      imageHeight: imageData?.imageHeight || null,
+      replyToId: reply_to_id || null
     };
 
-    res.status(201).json(newChirp);
+    console.log('✅ Created chirp/reply:', {
+      id: newChirp.id,
+      content: newChirp.content,
+      authorId: newChirp.author.id,
+      isReply,
+      replyToId: reply_to_id
+    });
+
+    res.status(201).json({
+      success: true,
+      chirp: newChirp
+    });
     return;
   }
 
