@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import ChirpCard from '../components/ChirpCard';
 import UserAvatar from '../components/UserAvatar';
+import GearIcon from '../components/icons/GearIcon';
 import { useAuth } from '../hooks/useAuth';
 
 // Inline API functions to fetch real data from Supabase
@@ -151,25 +152,16 @@ const getUserStats = async (userId: string) => {
     console.log('✅ Using real Supabase client for getUserStats');
     
     // Calculate real stats from database
-    const [chirpsResult, likesResult] = await Promise.all([
-      // Count user's chirps
-      supabase
-        .from('chirps')
-        .select('id', { count: 'exact', head: true })
-        .eq('author_id', userId),
-      
-      // Count total likes received (from reactions table if it exists)
-      supabase
-        .from('reactions')
-        .select('id', { count: 'exact', head: true })
-        .eq('chirp_id', userId) // This might need adjustment based on actual schema
-    ]);
+    const chirpsResult = await supabase
+      .from('chirps')
+      .select('id', { count: 'exact', head: true })
+      .eq('author_id', userId);
 
     const totalChirps = chirpsResult.count || 0;
-    const totalLikes = likesResult.count || 0;
+    const totalLikes = 0; // Will be implemented when reactions system is added
     
-    // Calculate profile power based on activity
-    const profilePower = Math.floor((totalChirps * 10) + (totalLikes * 2));
+    // Calculate profile power based on activity (more realistic calculation)
+    const profilePower = Math.floor(totalChirps * 20); // Simplified calculation
     
     console.log('📊 Calculated stats:', { totalChirps, totalLikes, profilePower });
     
@@ -561,10 +553,10 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Positioned like Metro */}
+        {/* Profile Avatar - Positioned to intersect with banner bottom */}
         <div style={{
           position: 'absolute',
-          top: '-44px', // Half overlap with banner like Metro
+          top: '-60px', // More overlap to intersect with banner bottom
           left: '16px',
           width: '88px', // 80px avatar + 8px border
           height: '88px', // 80px avatar + 8px border
@@ -585,7 +577,7 @@ export default function Profile() {
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
-          marginTop: '44px' // Account for avatar overlap
+          marginTop: '60px' // Account for increased avatar overlap
         }}>
           <div style={{
             display: 'flex',
@@ -605,9 +597,7 @@ export default function Profile() {
                   color: '#14171a',
                   margin: 0
                 }}>
-                  {user.firstName && user.lastName 
-                    ? `${user.firstName} ${user.lastName}` 
-                    : user.name || user.customHandle || user.handle || 'User'}
+                  {user.name || user.customHandle || user.handle || 'User'}
                 </h2>
                 {user.isChirpPlus && (
                   <span style={{ fontSize: '20px' }}>👑</span>
@@ -664,35 +654,34 @@ export default function Profile() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  backgroundColor: '#ffffff',
+                  background: 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)',
                   paddingLeft: '16px',
                   paddingRight: '16px',
                   paddingTop: '10px',
                   paddingBottom: '10px',
                   borderRadius: '20px',
-                  border: '1px solid #e1e8ed',
+                  border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  boxShadow: '0 2px 8px rgba(198, 113, 255, 0.3)',
                   transition: 'all 0.2s',
-                  height: '40px'
+                  height: '40px',
+                  color: '#ffffff',
+                  fontWeight: '600'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8fafc';
-                  e.currentTarget.style.borderColor = '#7c3aed';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.borderColor = '#e1e8ed';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
                 }}
               >
-                <span style={{
-                  fontSize: '16px',
-                  color: '#7c3aed'
-                }}>⚙️</span>
+                <GearIcon size={16} color="#ffffff" />
                 <span style={{
                   fontSize: '14px',
                   fontWeight: '600',
-                  color: '#14171a'
+                  color: '#ffffff'
                 }}>Settings</span>
               </button>
             </div>
