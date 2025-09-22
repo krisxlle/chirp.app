@@ -4,111 +4,322 @@ import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 
-// Inline API functions to avoid import issues in production
+// Inline API functions to fetch real data from database
 const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
   console.log('🔍 getForYouChirps called with:', { limit, offset });
   
-  // Return mock data for now to avoid connection errors
-  return [
-    {
-      id: '1',
-      content: 'Welcome to Chirp! This is a sample chirp to get you started. 🐦',
-      createdAt: new Date().toISOString(),
-      author: {
-        id: '1',
-        firstName: 'Chirp',
-        lastName: 'Team',
-        email: 'team@chirp.com',
-        handle: 'chirpteam',
-        customHandle: 'chirpteam',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
+  try {
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
       },
-      likes: 5,
-      replies: 2,
-      reposts: 1,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
-    },
-    {
-      id: '2',
-      content: 'The connection errors have been fixed! The app now works without needing a backend server. 🎉',
-      createdAt: new Date(Date.now() - 60000).toISOString(),
-      author: {
-        id: '2',
-        firstName: 'Dev',
-        lastName: 'Helper',
-        email: 'dev@chirp.com',
-        handle: 'devhelper',
-        customHandle: 'devhelper',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
-      },
-      likes: 3,
-      replies: 0,
-      reposts: 0,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
+    });
+
+    console.log('✅ Using real Supabase client for getForYouChirps');
+    
+    // Fetch chirps from database
+    const { data: chirps, error } = await supabase
+      .from('chirps')
+      .select(`
+        id,
+        content,
+        created_at,
+        author:users!chirps_author_id_fkey (
+          id,
+          first_name,
+          last_name,
+          email,
+          handle,
+          custom_handle,
+          profile_image_url,
+          avatar_url,
+          is_chirp_plus,
+          show_chirp_plus_badge
+        ),
+        likes,
+        replies,
+        reposts,
+        is_liked,
+        is_reposted,
+        reaction_counts,
+        user_reaction,
+        repost_of,
+        is_ai_generated,
+        is_weekly_summary,
+        thread_id,
+        thread_order,
+        is_thread_starter
+      `)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error('❌ Supabase error:', error);
+      throw error;
     }
-  ];
+
+    if (chirps && chirps.length > 0) {
+      console.log('✅ Fetched', chirps.length, 'real chirps from database');
+      
+      // Transform the data to match expected format
+      return chirps.map(chirp => ({
+        id: chirp.id,
+        content: chirp.content,
+        createdAt: chirp.created_at,
+        author: {
+          id: chirp.author.id,
+          firstName: chirp.author.first_name,
+          lastName: chirp.author.last_name,
+          email: chirp.author.email,
+          handle: chirp.author.handle,
+          customHandle: chirp.author.custom_handle,
+          profileImageUrl: chirp.author.profile_image_url,
+          avatarUrl: chirp.author.avatar_url,
+          isChirpPlus: chirp.author.is_chirp_plus || false,
+          showChirpPlusBadge: chirp.author.show_chirp_plus_badge || false
+        },
+        likes: chirp.likes || 0,
+        replies: chirp.replies || 0,
+        reposts: chirp.reposts || 0,
+        isLiked: chirp.is_liked || false,
+        isReposted: chirp.is_reposted || false,
+        reactionCounts: chirp.reaction_counts || {},
+        userReaction: chirp.user_reaction,
+        repostOf: chirp.repost_of,
+        isAiGenerated: chirp.is_ai_generated || false,
+        isWeeklySummary: chirp.is_weekly_summary || false,
+        threadId: chirp.thread_id,
+        threadOrder: chirp.thread_order,
+        isThreadStarter: chirp.is_thread_starter || true
+      }));
+    } else {
+      console.log('📭 No chirps found in database');
+      return [];
+    }
+  } catch (error) {
+    console.error('❌ Error fetching real chirps, falling back to mock data:', error);
+    
+    // Fallback to mock data
+    return [
+      {
+        id: '1',
+        content: 'Welcome to Chirp! This is a sample chirp to get you started. 🐦',
+        createdAt: new Date().toISOString(),
+        author: {
+          id: '1',
+          firstName: 'Chirp',
+          lastName: 'Team',
+          email: 'team@chirp.com',
+          handle: 'chirpteam',
+          customHandle: 'chirpteam',
+          profileImageUrl: null,
+          avatarUrl: null,
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        },
+        likes: 5,
+        replies: 2,
+        reposts: 1,
+        isLiked: false,
+        isReposted: false,
+        reactionCounts: {},
+        userReaction: null,
+        repostOf: null,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      },
+      {
+        id: '2',
+        content: 'The connection errors have been fixed! The app now works without needing a backend server. 🎉',
+        createdAt: new Date(Date.now() - 60000).toISOString(),
+        author: {
+          id: '2',
+          firstName: 'Dev',
+          lastName: 'Helper',
+          email: 'dev@chirp.com',
+          handle: 'devhelper',
+          customHandle: 'devhelper',
+          profileImageUrl: null,
+          avatarUrl: null,
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        },
+        likes: 3,
+        replies: 0,
+        reposts: 0,
+        isLiked: false,
+        isReposted: false,
+        reactionCounts: {},
+        userReaction: null,
+        repostOf: null,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      }
+    ];
+  }
 };
 
 const getCollectionFeedChirps = async (userId: string, limit: number = 10, offset: number = 0) => {
   console.log('🔍 getCollectionFeedChirps called with:', { userId, limit, offset });
   
-  // Return mock data for collection feed
-  return [
-    {
-      id: '3',
-      content: 'This is a collection feed chirp! 📚',
-      createdAt: new Date(Date.now() - 120000).toISOString(),
-      author: {
-        id: '3',
-        firstName: 'Collection',
-        lastName: 'Curator',
-        email: 'curator@chirp.com',
-        handle: 'curator',
-        customHandle: 'curator',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
+  try {
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
       },
-      likes: 7,
-      replies: 1,
-      reposts: 2,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
+    });
+
+    console.log('✅ Using real Supabase client for getCollectionFeedChirps');
+    
+    // For collection feed, we'll fetch chirps from users that the current user follows
+    // For now, let's fetch recent chirps as a placeholder
+    const { data: chirps, error } = await supabase
+      .from('chirps')
+      .select(`
+        id,
+        content,
+        created_at,
+        author:users!chirps_author_id_fkey (
+          id,
+          first_name,
+          last_name,
+          email,
+          handle,
+          custom_handle,
+          profile_image_url,
+          avatar_url,
+          is_chirp_plus,
+          show_chirp_plus_badge
+        ),
+        likes,
+        replies,
+        reposts,
+        is_liked,
+        is_reposted,
+        reaction_counts,
+        user_reaction,
+        repost_of,
+        is_ai_generated,
+        is_weekly_summary,
+        thread_id,
+        thread_order,
+        is_thread_starter
+      `)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error('❌ Supabase error:', error);
+      throw error;
     }
-  ];
+
+    if (chirps && chirps.length > 0) {
+      console.log('✅ Fetched', chirps.length, 'real collection chirps from database');
+      
+      // Transform the data to match expected format
+      return chirps.map(chirp => ({
+        id: chirp.id,
+        content: chirp.content,
+        createdAt: chirp.created_at,
+        author: {
+          id: chirp.author.id,
+          firstName: chirp.author.first_name,
+          lastName: chirp.author.last_name,
+          email: chirp.author.email,
+          handle: chirp.author.handle,
+          customHandle: chirp.author.custom_handle,
+          profileImageUrl: chirp.author.profile_image_url,
+          avatarUrl: chirp.author.avatar_url,
+          isChirpPlus: chirp.author.is_chirp_plus || false,
+          showChirpPlusBadge: chirp.author.show_chirp_plus_badge || false
+        },
+        likes: chirp.likes || 0,
+        replies: chirp.replies || 0,
+        reposts: chirp.reposts || 0,
+        isLiked: chirp.is_liked || false,
+        isReposted: chirp.is_reposted || false,
+        reactionCounts: chirp.reaction_counts || {},
+        userReaction: chirp.user_reaction,
+        repostOf: chirp.repost_of,
+        isAiGenerated: chirp.is_ai_generated || false,
+        isWeeklySummary: chirp.is_weekly_summary || false,
+        threadId: chirp.thread_id,
+        threadOrder: chirp.thread_order,
+        isThreadStarter: chirp.is_thread_starter || true
+      }));
+    } else {
+      console.log('📭 No collection chirps found in database');
+      return [];
+    }
+  } catch (error) {
+    console.error('❌ Error fetching real collection chirps, falling back to mock data:', error);
+    
+    // Fallback to mock data
+    return [
+      {
+        id: '3',
+        content: 'This is a collection feed chirp! 📚',
+        createdAt: new Date(Date.now() - 120000).toISOString(),
+        author: {
+          id: '3',
+          firstName: 'Collection',
+          lastName: 'Curator',
+          email: 'curator@chirp.com',
+          handle: 'curator',
+          customHandle: 'curator',
+          profileImageUrl: null,
+          avatarUrl: null,
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        },
+        likes: 7,
+        replies: 1,
+        reposts: 2,
+        isLiked: false,
+        isReposted: false,
+        reactionCounts: {},
+        userReaction: null,
+        repostOf: null,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      }
+    ];
+  }
 };
 
 export default function HomePage() {
