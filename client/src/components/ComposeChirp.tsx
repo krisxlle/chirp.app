@@ -220,9 +220,28 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         }
       }
       
-      // Use API instead of direct database connection
-      console.log('Creating chirp via API...');
+      // Use Supabase directly instead of API
+      console.log('Creating chirp via Supabase...');
       console.log('User ID for chirp creation:', user.id);
+      
+      // Create Supabase client directly for web
+      const { createClient } = await import('@supabase/supabase-js');
+      
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          storage: {
+            getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+            setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+            removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+          },
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+        },
+      });
       
       if (isThreadMode) {
         // Create the complete thread content array
@@ -233,33 +252,54 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         
         console.log('🔄 Creating thread with', allThreadContent.length, 'parts');
         
-        // Create the thread using the API
-        const response = await apiRequest('/api/chirps/thread', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: allThreadContent,
-            userId: user.id
-          })
-        });
+        // Create each chirp in the thread
+        const threadId = Date.now().toString(); // Generate a simple thread ID
+        const createdChirps = [];
         
-        console.log('✅ Thread created with', response.length, 'chirps');
+        for (let i = 0; i < allThreadContent.length; i++) {
+          const { data: chirp, error } = await supabase
+            .from('chirps')
+            .insert({
+              content: allThreadContent[i],
+              author_id: user.id,
+              thread_id: threadId,
+              thread_order: i,
+              is_thread_starter: i === 0
+            })
+            .select()
+            .single();
+          
+          if (error) {
+            console.error('Error creating thread chirp:', error);
+            throw error;
+          }
+          
+          createdChirps.push(chirp);
+        }
+        
+        console.log('✅ Thread created with', createdChirps.length, 'chirps');
         
         setThreadChirps([]);
         setIsThreadMode(false);
       } else {
-        // Post single chirp with image data
-        const response = await apiRequest('/api/chirps', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        // Post single chirp
+        const { data: chirp, error } = await supabase
+          .from('chirps')
+          .insert({
             content: content.trim(),
-            userId: user.id,
-            imageData: imageData
+            author_id: user.id
           })
-        });
+          .select()
+          .single();
         
-        if (response) {
+        if (error) {
+          console.error('Error creating chirp:', error);
+          throw error;
+        }
+        
+        console.log('✅ Chirp created:', chirp);
+        
+        if (chirp) {
           // Call the onPost callback to update the UI
           await onPost?.(content.trim(), imageData);
         }
