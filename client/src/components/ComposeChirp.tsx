@@ -613,7 +613,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           cursor: 'text',
           position: 'relative',
           zIndex: 1,
-          minHeight: 'auto'
+          minHeight: 'auto',
+          paddingTop: '8px'
         }}
         onClick={handleTextareaClick}
         >
@@ -624,7 +625,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               lineHeight: 24,
               minHeight: 30,
               maxHeight: 120,
-              padding: 0,
+              padding: '8px 0',
               color: '#1a1a1a',
               width: '100%',
               resize: 'none',
@@ -635,7 +636,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               cursor: 'text',
               fontFamily: 'inherit',
               position: 'relative',
-              zIndex: 2
+              zIndex: 2,
+              caretColor: '#1a1a1a'
             }}
             placeholder="What's on your mind?"
             value={content}

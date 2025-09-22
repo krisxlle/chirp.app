@@ -858,6 +858,37 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Initial Loading Animation */}
+        {isLoading && forYouChirps.length === 0 && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: '40px',
+            paddingBottom: '40px',
+            paddingLeft: '16px',
+            paddingRight: '16px'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid #f3f3f3',
+              borderTop: '3px solid #7c3aed',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '16px'
+            }}></div>
+            <span style={{
+              fontSize: '16px',
+              color: '#657786',
+              fontWeight: '500'
+            }}>
+              Loading chirps...
+            </span>
+          </div>
+        )}
+
         {feedType === 'forYou' ? (
           // For You Feed
           <div style={{ 
