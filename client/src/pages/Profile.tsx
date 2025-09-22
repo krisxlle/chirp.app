@@ -31,8 +31,8 @@ const getUserChirps = async (userId: string) => {
 
     console.log('✅ Using real Supabase client for getUserChirps');
     
-    // Fetch user's chirps from database with optimized query (limited results)
-    const { data: chirps, error } = await supabase
+    // Simplified query to avoid timeout - fetch chirps without user join
+    const queryPromise = supabase
       .from('chirps')
       .select(`
         id,
@@ -43,21 +43,18 @@ const getUserChirps = async (userId: string) => {
         image_url,
         image_alt_text,
         image_width,
-        image_height,
-        users!inner (
-          id,
-          first_name,
-          last_name,
-          email,
-          handle,
-          custom_handle,
-          profile_image_url,
-          avatar_url
-        )
+        image_height
       `)
       .eq('author_id', userId)
       .order('created_at', { ascending: false })
-      .limit(20); // Limit to 20 most recent chirps to avoid timeout
+      .limit(10); // Reduced limit to 10 to avoid timeout
+
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Query timeout')), 8000) // 8 second timeout
+    );
+
+    const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+    const { data: chirps, error } = result;
 
     if (error) {
       console.error('❌ Supabase error fetching user chirps:', error);
@@ -69,9 +66,6 @@ const getUserChirps = async (userId: string) => {
       
       // Transform the data to match expected format
       return chirps.map(chirp => {
-        // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
-        const author = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
-        
         return {
           id: chirp.id,
           content: chirp.content,
@@ -82,14 +76,14 @@ const getUserChirps = async (userId: string) => {
           imageWidth: chirp.image_width,
           imageHeight: chirp.image_height,
           author: {
-            id: author.id,
-            firstName: author.first_name,
-            lastName: author.last_name,
-            email: author.email,
-            handle: author.handle,
-            customHandle: author.custom_handle,
-            profileImageUrl: author.profile_image_url,
-            avatarUrl: author.avatar_url,
+            id: chirp.author_id,
+            firstName: 'User', // Placeholder since we're not fetching user data
+            lastName: '',
+            email: '',
+            handle: 'user',
+            customHandle: 'user',
+            profileImageUrl: null,
+            avatarUrl: null,
             isChirpPlus: false,
             showChirpPlusBadge: false
           },
@@ -295,15 +289,33 @@ export default function Profile() {
             
             // Use Supabase API for user chirps, stats, and profile power
             console.log('🔄 Profile: Fetching user data...');
-            const [chirpsData, statsData, profilePowerData] = await Promise.all([
+            
+            // Use Promise.allSettled to handle individual failures gracefully
+            const [chirpsResult, statsResult, profilePowerResult] = await Promise.allSettled([
               getUserChirps(userId),
               getUserStats(userId),
               getProfilePowerBreakdown(userId)
             ]);
             
+            // Extract data from settled promises
+            const chirpsData = chirpsResult.status === 'fulfilled' ? chirpsResult.value : [];
+            const statsData = statsResult.status === 'fulfilled' ? statsResult.value : { following: 0, followers: 0, profilePower: 0, totalChirps: 0, totalLikes: 0 };
+            const profilePowerData = profilePowerResult.status === 'fulfilled' ? profilePowerResult.value : { totalPower: 0, likesContribution: 0, commentsContribution: 0, collectionContribution: 0, rarityFactor: 1.0, totalLikes: 0, totalComments: 0 };
+            
             console.log('📊 Profile: Stats data received:', statsData);
             console.log('📊 Profile: Chirps data received:', chirpsData?.length || 0);
             console.log('📊 Profile: Profile power data received:', profilePowerData);
+            
+            // Log any failures
+            if (chirpsResult.status === 'rejected') {
+              console.warn('⚠️ Profile: Failed to fetch chirps:', chirpsResult.reason);
+            }
+            if (statsResult.status === 'rejected') {
+              console.warn('⚠️ Profile: Failed to fetch stats:', statsResult.reason);
+            }
+            if (profilePowerResult.status === 'rejected') {
+              console.warn('⚠️ Profile: Failed to fetch profile power:', profilePowerResult.reason);
+            }
           
           // Fetch actual user data from Supabase
           const { createClient } = await import('@supabase/supabase-js');
@@ -389,15 +401,21 @@ export default function Profile() {
           });
         } catch (error) {
           console.error('❌ Profile: Error loading user profile data:', error);
-          console.error('❌ Profile: Clearing profile data due to error');
-          // Clear the profile data to force a retry
-          setUser(null);
-          setUserChirps([]);
-          setStats({
-            following: 0,
-            followers: 0,
-            profilePower: 0
-          });
+          // Only clear data if it's a critical error (not just chirps timeout)
+          if (error.message && error.message.includes('timeout')) {
+            console.warn('⚠️ Profile: Timeout error - keeping existing data');
+            // Keep existing data, just show warning
+          } else {
+            console.error('❌ Profile: Clearing profile data due to critical error');
+            // Clear the profile data to force a retry
+            setUser(null);
+            setUserChirps([]);
+            setStats({
+              following: 0,
+              followers: 0,
+              profilePower: 0
+            });
+          }
         }
       } else {
         console.error('❌ Profile: No userId provided');
