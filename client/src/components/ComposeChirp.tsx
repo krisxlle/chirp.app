@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
@@ -333,7 +333,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             flex: 1,
             marginLeft: 12,
             overflow: 'hidden',
-            cursor: 'text'
+            cursor: 'text',
+            position: 'relative',
+            zIndex: 1
           }}
           onClick={handleTextareaClick}
           >
@@ -342,7 +344,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               style={{
                 fontSize: 18,
                 lineHeight: 24,
-                minHeight: 60,
+                minHeight: 80,
                 maxHeight: 120,
                 padding: 0,
                 color: '#1a1a1a',
@@ -351,13 +353,19 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 border: 'none',
                 outline: 'none',
                 backgroundColor: 'transparent',
-                overflow: 'hidden',
-                cursor: 'text'
+                overflow: 'visible',
+                cursor: 'text',
+                fontFamily: 'inherit',
+                position: 'relative',
+                zIndex: 2
               }}
               placeholder="Start a thread..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              onClick={handleTextareaClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTextareaClick();
+              }}
               onFocus={() => {
                 // Ensure cursor is at the end when focused
                 setTimeout(() => {
@@ -539,7 +547,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           flex: 1,
           marginLeft: 12,
           overflow: 'hidden',
-          cursor: 'text'
+          cursor: 'text',
+          position: 'relative',
+          zIndex: 1
         }}
         onClick={handleTextareaClick}
         >
@@ -548,7 +558,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             style={{
               fontSize: 18,
               lineHeight: 24,
-              minHeight: 60,
+              minHeight: 80,
               maxHeight: 120,
               padding: 0,
               color: '#1a1a1a',
@@ -557,13 +567,19 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               border: 'none',
               outline: 'none',
               backgroundColor: 'transparent',
-              overflow: 'hidden',
-              cursor: 'text'
+              overflow: 'visible',
+              cursor: 'text',
+              fontFamily: 'inherit',
+              position: 'relative',
+              zIndex: 2
             }}
             placeholder="What's on your mind?"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            onClick={handleTextareaClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTextareaClick();
+            }}
             onFocus={() => {
               // Ensure cursor is at the end when focused
               setTimeout(() => {

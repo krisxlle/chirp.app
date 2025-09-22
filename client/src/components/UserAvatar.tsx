@@ -163,9 +163,49 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
   const startColor = selectedColors?.[0] || '#a855f7';
   const endColor = selectedColors?.[1] || '#ec4899';
 
+  // Generate a profile image URL for users without one
+  const generateProfileImageUrl = (user: User): string => {
+    const initials = user.firstName && user.lastName
+      ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+      : (user.email ? user.email.split('@')[0].substring(0, 2).toUpperCase() : 'U');
+    
+    // Create a data URL for a simple gradient avatar
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 200, 200);
+      gradient.addColorStop(0, startColor);
+      gradient.addColorStop(1, endColor);
+      
+      // Draw background
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 200, 200);
+      
+      // Draw initials
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 80px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(initials, 100, 100);
+    }
+    
+    return canvas.toDataURL();
+  };
   // Handle backend image URLs with cache busting for OpenAI images
   const imageUrl = user.profileImageUrl || user.avatarUrl;
   let processedImageUrl = imageUrl;
+  
+  console.log('🖼️ UserAvatar debug:', {
+    userId: user.id,
+    profileImageUrl: user.profileImageUrl,
+    avatarUrl: user.avatarUrl,
+    imageUrl,
+    processedImageUrl
+  });
   
   if (imageUrl) {
     // Add cache-busting for OpenAI generated images to ensure fresh loads
@@ -181,6 +221,10 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
         processedImageUrl = undefined;
       }
     }
+  } else {
+    // Generate a profile image if none exists
+    processedImageUrl = generateProfileImageUrl(user);
+    console.log('🖼️ Generated profile image for user without image');
   }
 
   const displayName = user.firstName && user.lastName 

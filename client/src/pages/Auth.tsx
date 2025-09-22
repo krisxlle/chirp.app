@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { useAuth } from '../hooks/useAuth';
 
 // Custom Icon Components (adapted for web)
-const SparklesIcon = ({ size = 24, color = "#7c3aed" }) => (
+const SparklesIcon = ({ size = 24, color = "#ffffff" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <path 
       d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z" 
@@ -18,7 +18,7 @@ const SparklesIcon = ({ size = 24, color = "#7c3aed" }) => (
   </svg>
 );
 
-const HeartIcon = ({ size = 24, color = "#ec4899" }) => (
+const HeartIcon = ({ size = 24, color = "#ffffff" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <path 
       d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
@@ -27,7 +27,7 @@ const HeartIcon = ({ size = 24, color = "#ec4899" }) => (
   </svg>
 );
 
-const BotIcon = ({ size = 24, color = "#7c3aed" }) => (
+const BotIcon = ({ size = 24, color = "#ffffff" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <path 
       d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v1a7 7 0 0 1-7 7H10a7 7 0 0 1-7-7v-1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" 
@@ -51,6 +51,32 @@ const BotIcon = ({ size = 24, color = "#7c3aed" }) => (
       strokeLinejoin="round"
     />
   </svg>
+);
+
+// Chirp Logo Component
+const ChirpLogo = ({ size = 60 }) => (
+  <div style={{
+    width: size,
+    height: size,
+    backgroundColor: '#ffffff',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 16px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  }}>
+    <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="none">
+      <path 
+        d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
+        fill="#7c3aed"
+      />
+      <path 
+        d="M12 18L13.09 20.26L16 21L13.09 21.74L12 24L10.91 21.74L8 21L10.91 20.26L12 18Z" 
+        fill="#ec4899"
+      />
+    </svg>
+  </div>
 );
 
 export default function Auth() {
@@ -111,7 +137,7 @@ export default function Auth() {
   if (showForgotPassword) {
     return (
       <div style={{ 
-        background: 'linear-gradient(135deg, #ec4899, #a855f7)',
+        background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
         minHeight: '100vh',
         width: '100vw',
         display: 'flex',
@@ -120,6 +146,28 @@ export default function Auth() {
         alignItems: 'center',
         padding: '20px'
       }}>
+        {/* Logo and Branding */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <ChirpLogo size={80} />
+          <h1 style={{ 
+            fontSize: '36px', 
+            fontWeight: 'bold', 
+            color: '#ffffff',
+            marginBottom: '8px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}>
+            Chirp
+          </h1>
+          <p style={{ 
+            color: '#ffffff', 
+            fontSize: '18px',
+            opacity: 0.9,
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+          }}>
+            The social media gacha app.
+          </p>
+        </div>
+
         <div style={{
           backgroundColor: 'white',
           padding: '40px',
@@ -130,26 +178,14 @@ export default function Auth() {
           textAlign: 'center'
         }}>
           <div style={{ marginBottom: '30px' }}>
-            <div style={{ 
-              width: '80px', 
-              height: '80px', 
-              backgroundColor: '#f3f4f6',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px'
-            }}>
-              <BotIcon size={40} color="#7c3aed" />
-            </div>
-            <h1 style={{ 
-              fontSize: '28px', 
+            <h2 style={{ 
+              fontSize: '24px', 
               fontWeight: 'bold', 
               color: '#1f2937',
               marginBottom: '8px'
             }}>
               Reset Password
-            </h1>
+            </h2>
             <p style={{ color: '#6b7280', fontSize: '16px' }}>
               Enter your email to receive reset instructions
             </p>
@@ -234,7 +270,7 @@ export default function Auth() {
 
   return (
     <div style={{ 
-      background: 'linear-gradient(135deg, #ec4899, #a855f7)',
+      background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
       minHeight: '100vh',
       width: '100vw',
       display: 'flex',
@@ -243,6 +279,99 @@ export default function Auth() {
       alignItems: 'center',
       padding: '20px'
     }}>
+      {/* Logo and Branding */}
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <ChirpLogo size={80} />
+        <h1 style={{ 
+          fontSize: '36px', 
+          fontWeight: 'bold', 
+          color: '#ffffff',
+          marginBottom: '8px',
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+        }}>
+          Chirp
+        </h1>
+        <p style={{ 
+          color: '#ffffff', 
+          fontSize: '18px',
+          opacity: 0.9,
+          textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+        }}>
+          The social media gacha app.
+        </p>
+      </div>
+
+      {/* Features */}
+      <div style={{ 
+        marginBottom: '40px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        maxWidth: '400px',
+        width: '100%'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          padding: '12px 16px',
+          borderRadius: '12px',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <SparklesIcon size={24} color="#ffffff" />
+          <span style={{ 
+            color: '#ffffff', 
+            fontSize: '16px',
+            fontWeight: '500',
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+          }}>
+            Pull for your friends from the gacha
+          </span>
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          padding: '12px 16px',
+          borderRadius: '12px',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <HeartIcon size={24} color="#ffffff" />
+          <span style={{ 
+            color: '#ffffff', 
+            fontSize: '16px',
+            fontWeight: '500',
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+          }}>
+            Engage with posts to earn crystals
+          </span>
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          padding: '12px 16px',
+          borderRadius: '12px',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <BotIcon size={24} color="#ffffff" />
+          <span style={{ 
+            color: '#ffffff', 
+            fontSize: '16px',
+            fontWeight: '500',
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+          }}>
+            Raise your profile power and get more views
+          </span>
+        </div>
+      </div>
+
+      {/* Sign In Form */}
       <div style={{
         backgroundColor: 'white',
         padding: '40px',
@@ -252,26 +381,14 @@ export default function Auth() {
         width: '100%'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={{ 
-            width: '80px', 
-            height: '80px', 
-            backgroundColor: '#f3f4f6',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px'
-          }}>
-            <BotIcon size={40} color="#7c3aed" />
-          </div>
-          <h1 style={{ 
-            fontSize: '28px', 
+          <h2 style={{ 
+            fontSize: '24px', 
             fontWeight: 'bold', 
             color: '#1f2937',
             marginBottom: '8px'
           }}>
             {isSignUp ? 'Join Chirp' : 'Welcome back'}
-          </h1>
+          </h2>
           <p style={{ color: '#6b7280', fontSize: '16px' }}>
             {isSignUp ? 'Create your account to get started' : 'Sign in to continue to Chirp'}
           </p>

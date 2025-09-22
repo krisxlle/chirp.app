@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import React, { useEffect, useState } from 'react';
 import UserAvatar from '../components/UserAvatar';
 import { apiRequest } from '../components/api';
+import { useAuth } from '../hooks/useAuth';
 
 // Bell Icon Component
 const BellIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: string }) => (
@@ -56,29 +56,32 @@ export default function Notifications() {
     try {
       // Try to load from API first
       try {
-        const response = await apiRequest(`/api/test/notifications`);
-        const dbNotifications = response.notifications || [];
+        const response = await apiRequest(`/api/notifications`);
+        const dbNotifications = response || [];
+        
+        console.log('🔔 Fetched notifications from API:', dbNotifications.length);
         
         // Transform database format to component format
         const transformedNotifications = dbNotifications.map((notification: any) => ({
           id: notification.id.toString(),
           type: notification.type,
           message: getNotificationMessage(notification.type),
-          user: notification.users ? {
-            id: notification.users.id,
-            firstName: notification.users.first_name || '',
-            lastName: notification.users.last_name || '',
-            handle: notification.users.handle,
-            profileImageUrl: null
+          user: notification.fromUser ? {
+            id: notification.fromUser.id,
+            firstName: notification.fromUser.firstName || notification.fromUser.first_name || '',
+            lastName: notification.fromUser.lastName || notification.fromUser.last_name || '',
+            handle: notification.fromUser.handle || notification.fromUser.customHandle,
+            profileImageUrl: notification.fromUser.profileImageUrl || notification.fromUser.avatarUrl
           } : undefined,
-          chirp: notification.chirp_id ? {
-            id: notification.chirp_id.toString(),
-            content: 'Chirp content...' // We'd need to fetch this separately
+          chirp: notification.chirp ? {
+            id: notification.chirp.id.toString(),
+            content: notification.chirp.content
           } : undefined,
-          timestamp: notification.created_at,
-          isRead: notification.read
+          timestamp: notification.createdAt || notification.created_at,
+          isRead: notification.read || notification.isRead
         }));
         
+        console.log('🔔 Transformed notifications:', transformedNotifications.length);
         setNotifications(transformedNotifications);
       } catch (error) {
         console.log('API failed, using mock data:', error);
@@ -205,14 +208,34 @@ export default function Notifications() {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
+  const markAsRead = async (notificationId: string) => {
+    try {
+      // Update local state immediately for better UX
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, isRead: true }
+            : notification
+        )
+      );
+      
+      // Call API to mark as read
+      await apiRequest(`/api/notifications/${notificationId}/read`, {
+        method: 'PATCH'
+      });
+      
+      console.log('✅ Marked notification as read:', notificationId);
+    } catch (error) {
+      console.error('❌ Failed to mark notification as read:', error);
+      // Revert local state change on error
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, isRead: false }
+            : notification
+        )
+      );
+    }
   };
 
   const markAllAsRead = () => {

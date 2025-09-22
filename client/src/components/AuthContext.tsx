@@ -40,6 +40,8 @@ interface User {
   avatarUrl?: string;
   bannerImageUrl?: string;
   bio?: string;
+  linkInBio?: string; // Added for Profile page compatibility
+  joinedAt?: string; // Added for Profile page compatibility
   crystalBalance?: number;
   isChirpPlus?: boolean;
   showChirpPlusBadge?: boolean;
@@ -119,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Authenticate user with username and password using API
       console.log('🔐 Using API authentication for username:', username);
-      const response = await fetch('http://localhost:5000/api/auth/signin', {
+      const response = await fetch('http://localhost:5002/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,10 +166,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatarUrl: dbUser.profile_image_url,
           bannerImageUrl: dbUser.banner_image_url,
           bio: dbUser.bio,
+          linkInBio: dbUser.link_in_bio, // Map from database
+          joinedAt: dbUser.created_at, // Map from database
           crystalBalance: dbUser.crystal_balance || 0,
           isChirpPlus: dbUser.is_chirp_plus || false,
           showChirpPlusBadge: dbUser.show_chirp_plus_badge || false
         };
+        
+        console.log('🔍 User profile image data:', {
+          profileImageUrl: user.profileImageUrl,
+          avatarUrl: user.avatarUrl,
+          hasProfileImage: !!(user.profileImageUrl || user.avatarUrl)
+        });
         
         await storage.setItem('user', JSON.stringify(user));
         // Clear sign out flag when user successfully signs in

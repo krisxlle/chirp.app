@@ -2,15 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import ChirpCard from '../components/ChirpCard';
 import UserAvatar from '../components/UserAvatar';
-import { apiRequest } from '../components/api';
 import { useAuth } from '../hooks/useAuth';
-import Settings from './Settings';
+import { getProfilePowerBreakdown, getUserChirps, getUserStats } from '../lib/supabase-api';
 
 interface User {
   id: string;
   firstName?: string;
   lastName?: string;
   email: string;
+  name?: string; // Added name field from AuthContext
   customHandle?: string;
   handle?: string;
   profileImageUrl?: string;
@@ -41,7 +41,6 @@ export default function Profile() {
     profilePower: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
 
   // Extract userId from URL or use current user
   const userId = location.includes('/profile/') 
@@ -57,18 +56,65 @@ export default function Profile() {
   const loadUserProfile = async () => {
     setIsLoading(true);
     try {
-      // Try to load from API first
       if (userId) {
-        try {
-          const [userData, chirpsData, statsData] = await Promise.all([
-            apiRequest(`/api/users/${userId}`),
-            apiRequest(`/api/users/${userId}/chirps`),
-            apiRequest(`/api/users/${userId}/stats`)
-          ]);
+          try {
+            console.log('🔄 Profile: Loading user profile for:', userId);
+            console.log('🔍 Profile: AuthUser data:', authUser);
+            
+            // Use Supabase API for user chirps, stats, and profile power
+            const [chirpsData, statsData, profilePowerData] = await Promise.all([
+              getUserChirps(userId),
+              getUserStats(userId),
+              getProfilePowerBreakdown(userId)
+            ]);
+          
+          // For user data, use the authenticated user data with proper mapping
+          const userData = authUser ? {
+            id: authUser.id,
+            firstName: authUser.firstName,
+            lastName: authUser.lastName,
+            email: authUser.email,
+            name: authUser.name,
+            customHandle: authUser.customHandle,
+            handle: authUser.handle,
+            profileImageUrl: authUser.profileImageUrl,
+            avatarUrl: authUser.avatarUrl,
+            bannerImageUrl: authUser.bannerImageUrl,
+            bio: authUser.bio,
+            linkInBio: authUser.linkInBio || 'https://github.com/user', // Default if not set
+            joinedAt: authUser.joinedAt || '2024-01-15T00:00:00Z', // Default if not set
+            isChirpPlus: authUser.isChirpPlus || false,
+            showChirpPlusBadge: authUser.showChirpPlusBadge || false
+          } : {
+            id: userId,
+            firstName: 'User',
+            lastName: 'Profile',
+            email: 'user@chirp.com',
+            name: 'User Profile',
+            handle: 'userprofile',
+            customHandle: 'userprofile',
+            profileImageUrl: null,
+            avatarUrl: null,
+            bannerImageUrl: null,
+            bio: 'Building amazing things with Chirp! 🚀',
+            linkInBio: 'https://github.com/user',
+            joinedAt: '2024-01-15T00:00:00Z',
+            isChirpPlus: false,
+            showChirpPlusBadge: false
+          };
+          
+          console.log('✅ Profile: Loaded user data:', userData);
+          console.log('✅ Profile: Loaded chirps:', chirpsData.length);
+          console.log('✅ Profile: Loaded stats:', statsData);
+          console.log('✅ Profile: Loaded profile power:', profilePowerData);
           
           setUser(userData);
           setUserChirps(chirpsData || []);
-          setStats(statsData || { following: 0, followers: 0, profilePower: 0 });
+          setStats({
+            following: statsData.following || 0,
+            followers: statsData.followers || 0,
+            profilePower: profilePowerData.totalPower || 0
+          });
         } catch (error) {
           console.log('API failed, using mock data:', error);
           // Fallback to mock data
@@ -192,11 +238,6 @@ export default function Profile() {
 
   const isOwnProfile = authUser?.id === user.id;
 
-  // Show settings page if settings is open
-  if (showSettings) {
-    return <Settings onClose={() => setShowSettings(false)} />;
-  }
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -209,64 +250,53 @@ export default function Profile() {
         top: 0,
         zIndex: 50,
         backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
+        borderBottom: '1px solid #e1e8ed',
         paddingLeft: '16px',
         paddingRight: '16px',
         paddingTop: '12px',
-        paddingBottom: '12px'
+        paddingBottom: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        flexDirection: 'row'
       }}>
+        <button 
+          onClick={() => setLocation('/')}
+          style={{
+            padding: '8px',
+            marginRight: '16px',
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            borderRadius: '8px',
+            transition: 'background-color 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f2f5'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <span style={{
+            fontSize: '20px',
+            color: '#14171a'
+          }}>←</span>
+        </button>
+        
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
+          flex: 1
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
+          <h1 style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: '#14171a',
+            margin: 0
           }}>
-            <UserAvatar user={user} size="sm" showFrame={true} />
-            <div>
-              <h1 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#111827',
-                margin: 0
-              }}>
-                {user.firstName} {user.lastName}
-              </h1>
-              <p style={{
-                fontSize: '14px',
-                color: '#6b7280',
-                margin: 0
-              }}>@{user.handle}</p>
-            </div>
-          </div>
-              {isOwnProfile && (
-                <button
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    paddingLeft: '12px',
-                    paddingRight: '12px',
-                    paddingTop: '6px',
-                    paddingBottom: '6px',
-                    borderRadius: '6px',
-                    border: '1px solid #d1d5db',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer',
-                    gap: '8px'
-                  }}
-                  onClick={() => setShowSettings(true)}
-                >
-                  <span style={{ fontSize: '16px' }}>⚙️</span>
-                  <span style={{
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#374151'
-                  }}>Settings</span>
-                </button>
-              )}
+            Profile
+          </h1>
+          <p style={{
+            fontSize: '13px',
+            color: '#657786',
+            margin: 0
+          }}>
+            {userChirps.length} chirps
+          </p>
         </div>
       </div>
 
@@ -319,7 +349,9 @@ export default function Profile() {
                   color: '#111827',
                   margin: 0
                 }}>
-                  {user.firstName} {user.lastName}
+                  {user.firstName && user.lastName 
+                    ? `${user.firstName} ${user.lastName}` 
+                    : user.name || user.customHandle || user.handle || 'User'}
                 </h2>
                 {user.isChirpPlus && (
                   <span style={{ fontSize: '20px' }}>👑</span>
@@ -354,6 +386,89 @@ export default function Profile() {
                   <span>{user.linkInBio}</span>
                 </a>
               )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          {isOwnProfile && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginTop: '16px',
+              marginBottom: '16px'
+            }}>
+              <button
+                onClick={() => setLocation('/settings')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: '#ffffff',
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                  paddingTop: '10px',
+                  paddingBottom: '10px',
+                  borderRadius: '20px',
+                  border: '1px solid #e1e8ed',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s',
+                  height: '40px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                  e.currentTarget.style.borderColor = '#7c3aed';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = '#e1e8ed';
+                }}
+              >
+                <span style={{
+                  fontSize: '16px',
+                  color: '#7c3aed'
+                }}>⚙️</span>
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#14171a'
+                }}>Settings</span>
+              </button>
+            </div>
+          )}
+
+          {/* Profile Power */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: '20px',
+            paddingBottom: '20px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+            backgroundColor: '#ffffff',
+            borderBottom: '1px solid #e1e8ed',
+            marginTop: '16px'
+          }}>
+            <div style={{
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: '16px',
+                color: '#657786',
+                fontWeight: '600',
+                marginBottom: '8px'
+              }}>
+                Profile Power
+              </div>
+              <div style={{
+                fontSize: '48px',
+                fontWeight: 'bold',
+                color: '#7c3aed',
+                textShadow: '0 2px 4px rgba(124, 58, 237, 0.3)'
+              }}>
+                {stats.profilePower.toLocaleString()}
+              </div>
             </div>
           </div>
 

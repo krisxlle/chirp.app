@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
-import { apiRequest } from '../components/api';
+import { getCollectionFeedChirps, getForYouChirps } from '../lib/supabase-api';
 
 export default function HomePage() {
   // Get user from AuthContext
@@ -43,47 +43,8 @@ export default function HomePage() {
       console.log('🔄 HomePage: Loading initial chirps from database...', forceRefresh ? '(force refresh)' : '');
       const startTime = Date.now();
       
-      const params = new URLSearchParams();
-      params.append('personalized', 'true');
-      const response = await apiRequest(`/api/test/chirps`);
-      const dbChirps = response.chirps || [];
-      
-      // Transform database format to component format
-      const realChirps = dbChirps.map((chirp: any) => {
-        // Handle the case where users might be an array or single object
-        const user = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
-        
-        return {
-        id: chirp.id.toString(),
-        content: chirp.content,
-        createdAt: chirp.created_at,
-        author: {
-          id: user?.id,
-          firstName: user?.first_name || '',
-          lastName: user?.last_name || '',
-          email: user?.email,
-          handle: user?.handle,
-          customHandle: user?.custom_handle,
-          profileImageUrl: user?.profile_image_url,
-          avatarUrl: user?.avatar_url,
-          isChirpPlus: false,
-          showChirpPlusBadge: false
-        },
-        likes: 0,
-        replies: 0,
-        reposts: 0,
-        isLiked: false,
-        isReposted: false,
-        reactionCounts: {},
-        userReaction: null,
-        repostOf: null,
-        isAiGenerated: false,
-        isWeeklySummary: false,
-        threadId: null,
-        threadOrder: null,
-        isThreadStarter: true
-        };
-      });
+      // Use Supabase mobile API instead of backend server
+      const realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial chirps from database in ${loadTime}ms`);
@@ -115,47 +76,8 @@ export default function HomePage() {
       console.log('🔄 HomePage: Loading initial collection chirps from database...', forceRefresh ? '(force refresh)' : '');
       const startTime = Date.now();
       
-      const params = new URLSearchParams();
-      params.append('trending', 'true');
-      const response = await apiRequest(`/api/test/chirps`);
-      const dbChirps = response.chirps || [];
-      
-      // Transform database format to component format
-      const realChirps = dbChirps.map((chirp: any) => {
-        // Handle the case where users might be an array or single object
-        const user = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
-        
-        return {
-        id: chirp.id.toString(),
-        content: chirp.content,
-        createdAt: chirp.created_at,
-        author: {
-          id: user?.id,
-          firstName: user?.first_name || '',
-          lastName: user?.last_name || '',
-          email: user?.email,
-          handle: user?.handle,
-          customHandle: user?.custom_handle,
-          profileImageUrl: user?.profile_image_url,
-          avatarUrl: user?.avatar_url,
-          isChirpPlus: false,
-          showChirpPlusBadge: false
-        },
-        likes: 0,
-        replies: 0,
-        reposts: 0,
-        isLiked: false,
-        isReposted: false,
-        reactionCounts: {},
-        userReaction: null,
-        repostOf: null,
-        isAiGenerated: false,
-        isWeeklySummary: false,
-        threadId: null,
-        threadOrder: null,
-        isThreadStarter: true
-        };
-      });
+      // Use Supabase mobile API for collection feed
+      const realChirps = await getCollectionFeedChirps(user.id, INITIAL_LIMIT, 0);
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial collection chirps from database in ${loadTime}ms`);
@@ -187,15 +109,17 @@ export default function HomePage() {
       console.log(`🔄 HomePage: Loading more ${feedType} chirps...`);
       const startTime = Date.now();
       
-      const params = new URLSearchParams();
-      if (isForYouFeed) {
-        params.append('personalized', 'true');
-      } else {
-        params.append('trending', 'true');
-      }
+      let moreChirps: any[] = [];
       
-      const response = await apiRequest(`/api/chirps?${params.toString()}`);
-      const moreChirps = response.slice(currentChirps.length, currentChirps.length + LOAD_MORE_LIMIT);
+      if (isForYouFeed) {
+        // Load more for you chirps using Supabase
+        moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, currentChirps.length);
+      } else {
+        // Load more collection chirps using Supabase
+        if (user?.id) {
+          moreChirps = await getCollectionFeedChirps(user.id, LOAD_MORE_LIMIT, currentChirps.length);
+        }
+      }
       
       const loadTime = Date.now() - startTime;
       console.log(`✅ HomePage: Loaded ${moreChirps.length} more ${feedType} chirps in ${loadTime}ms`);
@@ -269,16 +193,14 @@ export default function HomePage() {
       let realChirps;
       
       if (feedType === 'forYou') {
-        const params = new URLSearchParams();
-        params.append('personalized', 'true');
-        realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+        // Use Supabase mobile API for for you feed
+        realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
         setForYouChirps(realChirps);
         setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
       } else {
         if (!user?.id) return;
-        const params = new URLSearchParams();
-        params.append('trending', 'true');
-        realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
+        // Use Supabase mobile API for collection feed
+        realChirps = await getCollectionFeedChirps(user.id, INITIAL_LIMIT, 0);
         setCollectionChirps(realChirps);
         setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
       }

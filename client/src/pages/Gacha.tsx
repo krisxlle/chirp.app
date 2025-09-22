@@ -1,11 +1,6 @@
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useAuth } from '@/hooks/useAuth';
-import { HelpCircle, Sparkles } from 'lucide-react';
 import React, { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../components/AuthContext';
+import { useToast } from '../hooks/use-toast';
 
 interface ProfileCard {
   id: string;
@@ -106,6 +101,61 @@ const rarityNames = {
   uncommon: 'Uncommon',
   common: 'Common',
 };
+
+// Custom Icon Components
+const ChirpCrystalIcon = ({ size = 24, color = "#C671FF" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
+      fill={color}
+    />
+    <path 
+      d="M12 18L13.09 20.26L16 21L13.09 21.74L12 24L10.91 21.74L8 21L10.91 20.26L12 18Z" 
+      fill={color}
+    />
+  </svg>
+);
+
+const GachaIcon = ({ size = 24, color = "#FF61A6" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2"/>
+    <path d="M8 12h8M12 8v8" stroke={color} strokeWidth="2"/>
+  </svg>
+);
+
+const CollectionIcon = ({ size = 24, color = "#f5a5e0" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="3" width="18" height="18" rx="2" stroke={color} strokeWidth="2"/>
+    <path d="M9 9h6v6H9z" stroke={color} strokeWidth="2"/>
+  </svg>
+);
+
+const HeartIcon = ({ size = 24, color = "#C671FF" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
+      fill={color}
+    />
+  </svg>
+);
+
+const BirdIcon = ({ size = 24, color = "#FF61A6" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M23 4a1 1 0 0 0-1.447-.894L12.224 7.77a.5.5 0 0 1-.448 0L2.447 3.106A1 1 0 0 0 1 4v13.382a1.99 1.99 0 0 0 1.105 1.79l9.448 4.728c.14.065.293.1.447.1.154-.005.306-.04.447-.1l9.453-4.724a1.99 1.99 0 0 0 1.1-1.789V4z" 
+      fill={color}
+    />
+  </svg>
+);
+
+const ChirpLogo = ({ size = 24, color = "#f5a5e0" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
+      fill={color}
+    />
+  </svg>
+);
 
 export default function Gacha() {
   const { user } = useAuth();
@@ -223,209 +273,743 @@ export default function Gacha() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f8fafc',
+      paddingBottom: '80px' // Space for bottom navigation
+    }}>
       {/* Header */}
-      <div className="flex justify-between items-center p-6 pt-16">
-        <h1 className="text-3xl font-bold text-gray-900">Chirp Gacha - WEB VERSION</h1>
-        <Dialog open={showHelpModal} onOpenChange={setShowHelpModal}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon" className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:scale-105 transition-transform">
-              <HelpCircle className="h-5 w-5" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>How It Works</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">1</div>
-                <p className="text-gray-700">Like chirps to earn 1 crystal each</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">2</div>
-                <p className="text-gray-700">Comment on chirps to earn 2 crystals each</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">3</div>
-                <p className="text-gray-700">Use crystals to open capsules and collect rare profiles</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">4</div>
-                <p className="text-gray-700">Build your collection and discover amazing people</p>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingLeft: '20px',
+        paddingRight: '20px',
+        paddingTop: '60px',
+        paddingBottom: '20px'
+      }}>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: '#1f2937'
+        }}>
+          Chirp Gacha
+        </h1>
+        <button
+          onClick={() => setShowHelpModal(true)}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '20px',
+            backgroundColor: '#C671FF',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'transform 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <span style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: 'white'
+          }}>?</span>
+        </button>
       </div>
 
       {/* Crystal Balance */}
-      <div className="px-6 mb-6">
-        <Card className="max-w-[600px] mx-auto border-2 border-purple-500">
-          <CardContent className="p-6">
-            <Dialog open={showCrystalInfoModal} onOpenChange={setShowCrystalInfoModal}>
-              <DialogTrigger asChild>
-                <div className="flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-4">
-                    <Sparkles className="h-8 w-8 text-white" />
-                  </div>
-                  <span className="text-5xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                    {getCurrentCrystalBalance().toLocaleString()}
-                  </span>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>How to Collect Crystals</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">1</div>
-                    <p className="text-gray-700">Like chirps to earn 1 crystal each</p>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">2</div>
-                    <p className="text-gray-700">Comment on chirps to earn 2 crystals each</p>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
+      <div style={{
+        paddingLeft: '20px',
+        paddingRight: '20px',
+        marginBottom: '20px'
+      }}>
+        <div
+          onClick={() => setShowCrystalInfoModal(true)}
+          style={{
+            borderRadius: '16px',
+            padding: '16px',
+            border: '2px solid #C671FF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.2s',
+            backgroundColor: '#ffffff'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <ChirpCrystalIcon size={60} />
+            <span style={{
+              fontSize: '48px',
+              fontWeight: 'bold',
+              color: '#C671FF',
+              marginLeft: '12px',
+              lineHeight: '56px'
+            }}>
+              {getCurrentCrystalBalance().toLocaleString()}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Gacha Banner - Full Page */}
-      <div className="relative w-full h-screen">
+      {/* Gacha Banner */}
+      <div style={{
+        marginLeft: '-150px',
+        marginRight: '-150px',
+        width: 'calc(100vw + 300px)',
+        height: '500px',
+        alignSelf: 'center',
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
         <img
           src="/assets/Gacha banner.png"
           alt="Gacha Banner"
-          className="w-full h-full object-cover"
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '16px',
+            objectFit: 'contain'
+          }}
         />
         
         {/* Loading Animation Overlay */}
         {isRolling && (
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 opacity-90 flex items-center justify-center">
-            <div className="text-center text-white">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-              <h2 className="text-3xl font-bold mb-2">Drawing capsules...</h2>
-              <p className="text-xl">Please wait</p>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(135deg, #C671FF, #FF61A6, #f5a5e0)',
+            opacity: 0.9,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '16px'
+          }}>
+            <div style={{
+              textAlign: 'center',
+              color: 'white'
+            }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                border: '4px solid white',
+                borderTop: '4px solid transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 16px'
+              }}></div>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: 'bold',
+                marginBottom: '8px',
+                margin: 0
+              }}>Drawing capsules...</h2>
+              <p style={{
+                fontSize: '16px',
+                margin: 0
+              }}>Please wait</p>
             </div>
           </div>
         )}
         
         {/* Capsule Buttons Overlay */}
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-4">
-          <Button
+        <div style={{
+          position: 'absolute',
+          bottom: '50px',
+          left: '150px',
+          right: '150px',
+          display: 'flex',
+          justifyContent: 'center',
+          paddingLeft: '10px',
+          paddingRight: '10px',
+          gap: '20px'
+        }}>
+          <button
             onClick={() => rollForProfile()}
             disabled={isRolling || getCurrentCrystalBalance() < 100}
-            className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-8 py-3 rounded-full font-bold text-lg min-w-[140px]"
+            style={{
+              borderRadius: '25px',
+              paddingTop: '12px',
+              paddingBottom: '12px',
+              paddingLeft: '20px',
+              paddingRight: '20px',
+              alignItems: 'center',
+              minWidth: '120px',
+              background: 'linear-gradient(135deg, #6b7280, #4b5563)',
+              color: 'white',
+              border: 'none',
+              cursor: getCurrentCrystalBalance() >= 100 ? 'pointer' : 'not-allowed',
+              opacity: getCurrentCrystalBalance() >= 100 ? 1 : 0.6,
+              transition: 'all 0.2s',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}
+            onMouseEnter={(e) => {
+              if (getCurrentCrystalBalance() >= 100) {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
           >
-            <div className="flex flex-col items-center">
-              <span>Open 1</span>
-              <div className="flex items-center mt-1">
-                <Sparkles className="h-4 w-4 mr-1" />
-                <span className={getCurrentCrystalBalance() >= 100 ? 'text-white' : 'text-red-400'}>100</span>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: '100%'
+            }}>
+              <span style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                marginBottom: '4px'
+              }}>Open 1</span>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginTop: '4px'
+              }}>
+                <ChirpCrystalIcon size={16} color="white" />
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  marginLeft: '4px',
+                  color: getCurrentCrystalBalance() >= 100 ? 'white' : '#fca5a5'
+                }}>100</span>
               </div>
             </div>
-          </Button>
+          </button>
           
-          <Button
+          <button
             onClick={() => rollForProfile(10)}
             disabled={isRolling || getCurrentCrystalBalance() < 950}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 rounded-full font-bold text-lg min-w-[140px]"
+            style={{
+              borderRadius: '25px',
+              paddingTop: '12px',
+              paddingBottom: '12px',
+              paddingLeft: '20px',
+              paddingRight: '20px',
+              alignItems: 'center',
+              minWidth: '120px',
+              background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+              color: 'white',
+              border: 'none',
+              cursor: getCurrentCrystalBalance() >= 950 ? 'pointer' : 'not-allowed',
+              opacity: getCurrentCrystalBalance() >= 950 ? 1 : 0.6,
+              transition: 'all 0.2s',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}
+            onMouseEnter={(e) => {
+              if (getCurrentCrystalBalance() >= 950) {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
           >
-            <div className="flex flex-col items-center">
-              <span>Open 10</span>
-              <div className="flex items-center mt-1">
-                <Sparkles className="h-4 w-4 mr-1" />
-                <span className={getCurrentCrystalBalance() >= 950 ? 'text-white' : 'text-red-400'}>950</span>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: '100%'
+            }}>
+              <span style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                marginBottom: '4px'
+              }}>Open 10</span>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginTop: '4px'
+              }}>
+                <ChirpCrystalIcon size={16} color="white" />
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  marginLeft: '4px',
+                  color: getCurrentCrystalBalance() >= 950 ? 'white' : '#fca5a5'
+                }}>950</span>
               </div>
             </div>
-          </Button>
+          </button>
         </div>
       </div>
 
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                margin: 0
+              }}>How It Works</h2>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>1</div>
+                <p style={{ color: '#374151', margin: 0 }}>Like chirps to earn 1 crystal each</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>2</div>
+                <p style={{ color: '#374151', margin: 0 }}>Comment on chirps to earn 5 crystals each</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>3</div>
+                <p style={{ color: '#374151', margin: 0 }}>Use crystals to open capsules and collect rare profiles</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>4</div>
+                <p style={{ color: '#374151', margin: 0 }}>Build your collection and discover amazing people</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Crystal Info Modal */}
+      {showCrystalInfoModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                margin: 0
+              }}>How to Collect Crystals</h2>
+              <button
+                onClick={() => setShowCrystalInfoModal(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>1</div>
+                <p style={{ color: '#374151', margin: 0 }}>Like chirps to earn 1 crystal each</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '14px'
+                }}>2</div>
+                <p style={{ color: '#374151', margin: 0 }}>Comment on chirps to earn 5 crystals each</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pulled Card Modal */}
-      <Dialog open={showPulledCard} onOpenChange={setShowPulledCard}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>You Got a New Profile!</DialogTitle>
-          </DialogHeader>
-          {pulledCard && (
-            <div className="text-center space-y-4">
-              <div className="relative inline-block">
+      {showPulledCard && pulledCard && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                margin: 0
+              }}>You Got a New Profile!</h2>
+              <button
+                onClick={() => setShowPulledCard(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
                 <img
                   src={pulledCard.imageUrl}
                   alt={pulledCard.name}
-                  className="w-32 h-32 rounded-full object-cover mx-auto border-4"
-                  style={{ borderColor: rarityColors[pulledCard.rarity] }}
+                  style={{
+                    width: '128px',
+                    height: '128px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    margin: '0 auto',
+                    border: `4px solid ${rarityColors[pulledCard.rarity]}`
+                  }}
                 />
-                <Badge 
-                  className="absolute -top-2 -right-2 text-xs"
-                  style={{ backgroundColor: rarityColors[pulledCard.rarity] }}
-                >
+                <div style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  backgroundColor: rarityColors[pulledCard.rarity],
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}>
                   {rarityNames[pulledCard.rarity]}
-                </Badge>
+                </div>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">{pulledCard.name}</h3>
-                <p className="text-gray-600">{pulledCard.handle}</p>
-                <p className="text-sm text-gray-700 mt-2">{pulledCard.bio}</p>
+                <h3 style={{
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  color: '#1f2937',
+                  margin: 0
+                }}>{pulledCard.name}</h3>
+                <p style={{
+                  color: '#6b7280',
+                  margin: 0
+                }}>{pulledCard.handle}</p>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#374151',
+                  marginTop: '8px',
+                  margin: 0
+                }}>{pulledCard.bio}</p>
               </div>
-              <Button 
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              <button 
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s'
+                }}
                 onClick={() => setShowPulledCard(false)}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
                 View Profile
-              </Button>
+              </button>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
 
       {/* Multi-Card Results Modal */}
-      <Dialog open={showPulledCards} onOpenChange={setShowPulledCards}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>10-Roll Results!</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto">
-            <div className="space-y-4">
-              <p className="text-center text-gray-600">You pulled {pulledCards.length} profiles!</p>
-              <div className="grid grid-cols-2 gap-4">
-                {pulledCards.map((card, index) => (
-                  <Card key={`${card.id}-${index}`} className="text-center">
-                    <CardContent className="p-4">
-                      <div className="relative inline-block mb-2">
+      {showPulledCards && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                margin: 0
+              }}>10-Roll Results!</h2>
+              <button
+                onClick={() => setShowPulledCards(false)}
+                style={{
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <p style={{
+                  textAlign: 'center',
+                  color: '#6b7280',
+                  margin: 0
+                }}>You pulled {pulledCards.length} profiles!</p>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '16px'
+                }}>
+                  {pulledCards.map((card, index) => (
+                    <div key={`${card.id}-${index}`} style={{
+                      textAlign: 'center',
+                      backgroundColor: '#f8fafc',
+                      borderRadius: '12px',
+                      padding: '16px'
+                    }}>
+                      <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
                         <img
                           src={card.imageUrl}
                           alt={card.name}
-                          className="w-20 h-20 rounded-full object-cover mx-auto border-2"
-                          style={{ borderColor: rarityColors[card.rarity] }}
+                          style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            margin: '0 auto',
+                            border: `2px solid ${rarityColors[card.rarity]}`
+                          }}
                         />
-                        <Badge 
-                          className="absolute -top-1 -right-1 text-xs"
-                          style={{ backgroundColor: rarityColors[card.rarity] }}
-                        >
+                        <div style={{
+                          position: 'absolute',
+                          top: '-4px',
+                          right: '-4px',
+                          backgroundColor: rarityColors[card.rarity],
+                          color: 'white',
+                          padding: '2px 6px',
+                          borderRadius: '8px',
+                          fontSize: '10px',
+                          fontWeight: 'bold'
+                        }}>
                           {rarityNames[card.rarity]}
-                        </Badge>
+                        </div>
                       </div>
-                      <h4 className="font-bold text-sm">{card.name}</h4>
-                      <p className="text-xs text-gray-600">{card.handle}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <h4 style={{
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        color: '#1f2937',
+                        margin: 0
+                      }}>{card.name}</h4>
+                      <p style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        margin: 0
+                      }}>{card.handle}</p>
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s'
+                  }}
+                  onClick={() => setShowPulledCards(false)}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  Close
+                </button>
               </div>
-              <Button 
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                onClick={() => setShowPulledCards(false)}
-              >
-                Close
-              </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
+
+      {/* CSS for animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

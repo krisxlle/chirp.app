@@ -41,12 +41,18 @@ function isAllowedOrigin(origin: string): boolean {
     // Development origins
     'http://localhost:3000',
     'http://localhost:5000',
+    'http://localhost:5001',
+    'http://localhost:5002',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5000',
+    'http://127.0.0.1:5001',
+    'http://127.0.0.1:5002',
     'http://localhost:8080',
     'http://127.0.0.1:8080',
     // Add your computer's IP for mobile testing
     process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:5000` : null,
+    process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:5001` : null,
+    process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:5002` : null,
     process.env.COMPUTER_IP ? `http://${process.env.COMPUTER_IP}:3000` : null,
     // Production domains
     'https://www.joinchirp.org',

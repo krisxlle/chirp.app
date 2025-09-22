@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
-import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from './api';
-import { HomeIcon, NotificationIcon, ProfileIcon, CollectionIcon, GachaIcon } from './icons';
+import { CollectionIcon, GachaIcon, HomeIcon, NotificationIcon, ProfileIcon } from './icons';
 
 interface BottomNavigationProps {
   activeTab?: string;
@@ -21,13 +21,15 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     queryFn: async () => {
       try {
         const response = await apiRequest("/api/notifications/unread-count");
+        console.log('📱 Fetched unread count:', response.count);
         return response;
       } catch (error) {
         console.error('Error fetching unread count:', error);
         return { count: 0 };
       }
     },
-    refetchInterval: 30000, // Check every 30 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
+    enabled: !!user, // Only fetch if user is logged in
   });
 
   const actualUnreadCount = unreadCount ?? notificationData?.count ?? 0;
