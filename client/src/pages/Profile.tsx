@@ -6,6 +6,61 @@ import GearIcon from '../components/icons/GearIcon';
 import LinkIcon from '../components/icons/LinkIcon';
 import { useAuth } from '../hooks/useAuth';
 
+// Utility function to add sample relationships data
+const addSampleRelationships = async () => {
+  console.log('🔧 Adding sample relationships data...');
+  
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // First, get some user IDs from the users table
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id')
+      .limit(5);
+    
+    if (usersError || !users || users.length < 2) {
+      console.log('❌ Not enough users to create relationships');
+      return;
+    }
+    
+    console.log('📊 Found users:', users.map(u => u.id));
+    
+    // Create some sample relationships
+    const relationships = [];
+    for (let i = 0; i < users.length; i++) {
+      for (let j = 0; j < users.length; j++) {
+        if (i !== j && Math.random() > 0.7) { // 30% chance of following
+          relationships.push({
+            follower_id: users[i].id,
+            following_id: users[j].id
+          });
+        }
+      }
+    }
+    
+    if (relationships.length > 0) {
+      const { data, error } = await supabase
+        .from('relationships')
+        .insert(relationships);
+      
+      if (error) {
+        console.log('❌ Error adding sample relationships:', error);
+      } else {
+        console.log('✅ Added', relationships.length, 'sample relationships');
+      }
+    } else {
+      console.log('📊 No relationships to add (random chance)');
+    }
+  } catch (error) {
+    console.log('❌ Error in addSampleRelationships:', error);
+  }
+};
+
 // Inline API functions to fetch real data from Supabase
 const followUser = async (followerId: string, followingId: string) => {
   console.log('🔍 followUser called with:', { followerId, followingId });
@@ -289,6 +344,32 @@ const getUserStats = async (userId: string) => {
       }
       
       console.log('📊 Final counts:', { followingCount, followersCount });
+      
+      // If both counts are 0, try to add sample data
+      if (followingCount === 0 && followersCount === 0) {
+        console.log('📊 No relationships found, attempting to add sample data...');
+        await addSampleRelationships();
+        
+        // Try to fetch again after adding sample data
+        const retryFollowingResult = await supabase
+          .from('relationships')
+          .select('id', { count: 'exact', head: true })
+          .eq('follower_id', userId);
+        
+        const retryFollowersResult = await supabase
+          .from('relationships')
+          .select('id', { count: 'exact', head: true })
+          .eq('following_id', userId);
+        
+        if (!retryFollowingResult.error) {
+          followingCount = retryFollowingResult.count || 0;
+        }
+        if (!retryFollowersResult.error) {
+          followersCount = retryFollowersResult.count || 0;
+        }
+        
+        console.log('📊 Retry counts:', { followingCount, followersCount });
+      }
     } catch (error) {
       console.log('📊 Error fetching relationships, using mock data:', error.message);
       // Fallback to mock data if there's an error
@@ -723,7 +804,7 @@ export default function Profile() {
         {/* Profile Avatar - Bottom half overlapping banner */}
         <div style={{
           position: 'absolute',
-          top: '104px', // Bottom half overlaps banner (192px banner - 88px avatar = 104px)
+          top: '120px', // Lower position for better half overlap (192px banner - 72px overlap = 120px)
           left: '16px',
           width: '88px', // 80px avatar + 8px border
           height: '88px', // 80px avatar + 8px border

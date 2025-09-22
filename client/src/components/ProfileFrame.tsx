@@ -55,7 +55,7 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
   });
   
   // Calculate proper sizing for frame and profile picture
-  const frameSize = size * 1.6; // Frame is 60% larger than the base size (reduced from 1.8)
+  const frameSize = size * 1.4; // Frame is 40% larger than the base size (reduced further)
   const profileSize = frameSize * 0.45; // Profile picture size within frame (45% of frame)
   
   return (
@@ -77,7 +77,9 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        top: '30%', // Centered vertically in the frame
+        top: '50%', // Centered vertically in the frame
+        left: '50%', // Centered horizontally in the frame
+        transform: 'translate(-50%, -50%)', // Perfect centering
         zIndex: 0
       }}>
         {children}
