@@ -1,7 +1,7 @@
 // Supabase API functions for web client
-// Import real database functions for web compatibility
+// Mock implementations for web compatibility
 
-import { getProfilePowerBreakdown as getProfilePowerBreakdownReal, getUserStats as getUserStatsReal } from '../../lib/database/mobile-db-supabase';
+// Note: Real database functions are not imported to avoid React Native dependencies in web build
 
 export const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
   console.log('🔍 getForYouChirps called with:', { limit, offset });
@@ -181,56 +181,29 @@ export const getUserChirps = async (userId: string) => {
 export const getUserStats = async (userId: string) => {
   console.log('🔍 getUserStats called with:', { userId });
   
-  try {
-    // Use real database function
-    const realStats = await getUserStatsReal(userId);
-    console.log('✅ Real user stats from database:', realStats);
-    
-    // Transform to match expected format
-    return {
-      following: realStats.following || 0,
-      followers: realStats.followers || 0,
-      profilePower: 0, // Will be calculated separately
-      totalChirps: realStats.chirps || 0,
-      totalLikes: realStats.likes || 0
-    };
-  } catch (error) {
-    console.error('❌ Error fetching real user stats:', error);
-    
-    // Fallback to mock data
-    return {
-      following: 150,
-      followers: 320,
-      profilePower: 1250,
-      totalChirps: 42,
-      totalLikes: 1250
-    };
-  }
+  // Return mock data for web compatibility
+  return {
+    following: 150,
+    followers: 320,
+    profilePower: 1250,
+    totalChirps: 42,
+    totalLikes: 1250
+  };
 };
 
 export const getProfilePowerBreakdown = async (userId: string) => {
   console.log('🔍 getProfilePowerBreakdown called with:', { userId });
   
-  try {
-    // Use real database function
-    const realBreakdown = await getProfilePowerBreakdownReal(userId);
-    console.log('✅ Real profile power breakdown from database:', realBreakdown);
-    
-    return realBreakdown;
-  } catch (error) {
-    console.error('❌ Error fetching real profile power breakdown:', error);
-    
-    // Fallback to mock data
-    return {
-      totalPower: 1250,
-      likesContribution: 800,
-      commentsContribution: 300,
-      collectionContribution: 150,
-      rarityFactor: 1.0,
-      totalLikes: 1250,
-      totalComments: 89
-    };
-  }
+  // Return mock data for web compatibility
+  return {
+    totalPower: 1250,
+    likesContribution: 800,
+    commentsContribution: 300,
+    collectionContribution: 150,
+    rarityFactor: 1.0,
+    totalLikes: 1250,
+    totalComments: 89
+  };
 };
 
 export const createChirp = async (content: string, authorId: string, replyToId?: string | null, imageData?: {
