@@ -149,18 +149,46 @@ const getUserStats = async (userId: string) => {
 
     console.log('✅ Using real Supabase client for getUserStats');
     
-    // For now, return default stats since we don't have following/followers tables yet
-    // TODO: Implement real following/followers system
+    // Calculate real stats from database
+    const [chirpsResult, likesResult] = await Promise.all([
+      // Count user's chirps
+      supabase
+        .from('chirps')
+        .select('id', { count: 'exact', head: true })
+        .eq('author_id', userId),
+      
+      // Count total likes received (from reactions table if it exists)
+      supabase
+        .from('reactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('chirp_id', userId) // This might need adjustment based on actual schema
+    ]);
+
+    const totalChirps = chirpsResult.count || 0;
+    const totalLikes = likesResult.count || 0;
+    
+    // Calculate profile power based on activity
+    const profilePower = Math.floor((totalChirps * 10) + (totalLikes * 2));
+    
+    console.log('📊 Calculated stats:', { totalChirps, totalLikes, profilePower });
+    
     return {
       following: 0, // Will be implemented when following system is added
       followers: 0, // Will be implemented when following system is added
-      profilePower: 0, // Will be calculated based on user activity
-      totalChirps: 0, // Will be calculated from chirps count
-      totalLikes: 0 // Will be calculated from likes count
+      profilePower: profilePower,
+      totalChirps: totalChirps,
+      totalLikes: totalLikes
     };
   } catch (error) {
     console.error('❌ Error fetching user stats from Supabase:', error);
-    throw new Error(`Failed to fetch user stats from database: ${error.message}`);
+    // Return default stats on error
+    return {
+      following: 0,
+      followers: 0,
+      profilePower: 0,
+      totalChirps: 0,
+      totalLikes: 0
+    };
   }
 };
 
@@ -450,7 +478,10 @@ export default function Profile() {
     <div style={{
       minHeight: '100vh',
       backgroundColor: '#ffffff',
-      paddingBottom: '80px' // Space for bottom navigation
+      paddingBottom: '80px', // Space for bottom navigation
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center' // Center content like Metro
     }}>
       {/* Header */}
       <div style={{
@@ -465,7 +496,9 @@ export default function Profile() {
         paddingBottom: '12px',
         display: 'flex',
         alignItems: 'center',
-        flexDirection: 'row'
+        flexDirection: 'row',
+        width: '100%',
+        maxWidth: '600px' // Match Metro width
       }}>
         <button 
           onClick={() => setLocation('/')}
@@ -509,7 +542,11 @@ export default function Profile() {
       </div>
 
       {/* Profile Header */}
-      <div style={{ position: 'relative' }}>
+      <div style={{ 
+        position: 'relative',
+        width: '100%',
+        maxWidth: '600px' // Match Metro width
+      }}>
         {/* Banner */}
         <div 
           style={{
@@ -518,43 +555,53 @@ export default function Profile() {
               ? `url(${user.bannerImageUrl})` 
               : 'url(https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png)',
             backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            backgroundPosition: 'center',
+            width: '100%'
           }}
         />
+        
+        {/* Profile Avatar - Positioned like Metro */}
+        <div style={{
+          position: 'absolute',
+          top: '-44px', // Half overlap with banner like Metro
+          left: '16px',
+          width: '88px', // 80px avatar + 8px border
+          height: '88px', // 80px avatar + 8px border
+          borderRadius: '44px',
+          border: '4px solid #ffffff',
+          overflow: 'hidden',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <UserAvatar user={user} size="lg" showFrame={true} />
+        </div>
         
         {/* Profile Info */}
         <div style={{
           paddingLeft: '16px',
           paddingRight: '16px',
           paddingBottom: '16px',
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          marginTop: '44px' // Account for avatar overlap
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'flex-end',
-            gap: '16px',
-            marginTop: '-64px'
+            gap: '16px'
           }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '40px',
-              border: '4px solid #ffffff',
-              overflow: 'hidden'
-            }}>
-              <UserAvatar user={user} size="lg" showFrame={true} />
-            </div>
             <div style={{ flex: 1 }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                marginBottom: '8px'
+                marginBottom: '4px'
               }}>
                 <h2 style={{
                   fontSize: '20px',
                   fontWeight: 'bold',
-                  color: '#111827',
+                  color: '#14171a',
                   margin: 0
                 }}>
                   {user.firstName && user.lastName 
@@ -566,15 +613,18 @@ export default function Profile() {
                 )}
               </div>
               <p style={{
-                color: '#6b7280',
-                marginBottom: '8px',
-                margin: 0
+                color: '#657786',
+                marginBottom: '12px',
+                margin: 0,
+                fontSize: '15px'
               }}>@{user.handle}</p>
               {user.bio && (
                 <p style={{
-                  color: '#374151',
-                  marginBottom: '8px',
-                  margin: 0
+                  color: '#14171a',
+                  marginBottom: '12px',
+                  margin: 0,
+                  fontSize: '15px',
+                  lineHeight: '20px'
                 }}>{user.bio}</p>
               )}
               {user.linkInBio && (
@@ -587,10 +637,12 @@ export default function Profile() {
                     textDecoration: 'none',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '8px',
+                    marginBottom: '12px',
+                    fontSize: '14px'
                   }}
                 >
-                  <span style={{ fontSize: '16px' }}>🔗</span>
+                  <span style={{ fontSize: '14px' }}>🔗</span>
                   <span>{user.linkInBio}</span>
                 </a>
               )}
@@ -774,7 +826,12 @@ export default function Profile() {
       </div>
 
       {/* Tabs */}
-      <div style={{ paddingLeft: '16px', paddingRight: '16px' }}>
+      <div style={{ 
+        paddingLeft: '16px', 
+        paddingRight: '16px',
+        width: '100%',
+        maxWidth: '600px' // Match Metro width
+      }}>
         <div style={{
           display: 'flex',
           backgroundColor: '#f7f9fa',
