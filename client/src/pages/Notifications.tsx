@@ -54,42 +54,106 @@ export default function Notifications() {
   const loadNotifications = async () => {
     setIsLoading(true);
     try {
-      // Try to load from API first
+      // Use Supabase directly instead of non-existent API endpoint
       try {
-        const response = await apiRequest(`/api/notifications`);
-        const dbNotifications = response || [];
+        const { createClient } = await import('@supabase/supabase-js');
         
-        console.log('🔔 Fetched notifications from API:', dbNotifications.length);
+        const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
         
-        // Transform database format to component format
-        const transformedNotifications = dbNotifications.map((notification: any) => ({
-          id: notification.id.toString(),
-          type: notification.type,
-          message: getNotificationMessage(notification.type),
-          user: notification.fromUser ? {
-            id: notification.fromUser.id,
-            firstName: notification.fromUser.firstName || notification.fromUser.first_name || '',
-            lastName: notification.fromUser.lastName || notification.fromUser.last_name || '',
-            handle: notification.fromUser.handle || notification.fromUser.customHandle,
-            profileImageUrl: notification.fromUser.profileImageUrl || notification.fromUser.avatarUrl
-          } : undefined,
-          chirp: notification.chirp ? {
-            id: notification.chirp.id.toString(),
-            content: notification.chirp.content
-          } : undefined,
-          timestamp: notification.createdAt || notification.created_at,
-          isRead: notification.read || notification.isRead
-        }));
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            storage: {
+              getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+              setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+              removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+            },
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: false,
+          },
+        });
+
+        console.log('✅ Using real Supabase client for notifications');
         
-        console.log('🔔 Transformed notifications:', transformedNotifications.length);
-        setNotifications(transformedNotifications);
+        // Fetch notifications from database
+        const { data: notificationsData, error } = await supabase
+          .from('notifications')
+          .select(`
+            id,
+            user_id,
+            from_user_id,
+            type,
+            chirp_id,
+            read,
+            created_at,
+            users!notifications_from_user_id_fkey (
+              id,
+              first_name,
+              last_name,
+              handle,
+              custom_handle,
+              profile_image_url,
+              avatar_url
+            )
+          `)
+          .eq('user_id', user?.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('❌ Supabase error fetching notifications:', error);
+          throw error;
+        }
+
+        if (notificationsData && notificationsData.length > 0) {
+          console.log('✅ Fetched', notificationsData.length, 'real notifications from database');
+          
+          // Transform the data to match expected format
+          const transformedNotifications = notificationsData.map((notification: any) => {
+            const fromUser = notification.users;
+            
+            return {
+              id: notification.id.toString(),
+              type: notification.type,
+              message: getNotificationMessage(notification.type),
+              user: fromUser ? {
+                id: fromUser.id,
+                firstName: fromUser.first_name || 'User',
+                lastName: fromUser.last_name || '',
+                handle: fromUser.handle || fromUser.custom_handle,
+                profileImageUrl: fromUser.profile_image_url || fromUser.avatar_url
+              } : undefined,
+              chirp: notification.chirp_id ? {
+                id: notification.chirp_id.toString(),
+                content: 'Chirp content' // We could fetch this separately if needed
+              } : undefined,
+              timestamp: notification.created_at,
+              isRead: notification.read
+            };
+          });
+          
+          console.log('✅ Transformed notifications:', transformedNotifications.length);
+          setNotifications(transformedNotifications);
+        } else {
+          console.log('📭 No notifications found in database');
+          setNotifications([]);
+        }
       } catch (error) {
-        console.log('API failed, using mock data:', error);
-        loadMockData();
+        console.error('❌ Error fetching real notifications from Supabase:', error);
+        console.error('❌ Supabase connection details:', {
+          url: 'https://qrzbtituxxilnbgocdge.supabase.co',
+          hasKey: true,
+          errorMessage: error.message,
+          errorCode: error.code
+        });
+        
+        // Instead of falling back to mock data, show empty state
+        setNotifications([]);
       }
     } catch (error) {
-      console.error('Failed to load notifications:', error);
-      loadMockData();
+      console.error('❌ Failed to load notifications:', error);
+      // Instead of falling back to mock data, show empty state
+      setNotifications([]);
     } finally {
       setIsLoading(false);
     }
@@ -114,69 +178,6 @@ export default function Notifications() {
     }
   };
 
-  const loadMockData = () => {
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'like',
-        message: 'liked your chirp',
-        user: {
-          id: '1',
-          firstName: 'Chirp',
-          lastName: 'Team',
-          handle: 'chirpteam',
-          profileImageUrl: null
-        },
-        chirp: {
-          id: '1',
-          content: 'Welcome to Chirp! This is your first chirp. 🐦'
-        },
-        timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-        isRead: false
-      },
-      {
-        id: '2',
-        type: 'follow',
-        message: 'started following you',
-        user: {
-          id: '2',
-          firstName: 'Alex',
-          lastName: 'Johnson',
-          handle: 'alexj',
-          profileImageUrl: null
-        },
-        timestamp: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
-        isRead: false
-      },
-      {
-        id: '3',
-        type: 'reply',
-        message: 'replied to your chirp',
-        user: {
-          id: '3',
-          firstName: 'Sarah',
-          lastName: 'Wilson',
-          handle: 'sarahw',
-          profileImageUrl: null
-        },
-        chirp: {
-          id: '2',
-          content: 'Chirp is now live! Share your thoughts with the world. ✨'
-        },
-        timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-        isRead: true
-      },
-      {
-        id: '4',
-        type: 'system',
-        message: 'Welcome to Chirp! Complete your profile to get started.',
-        timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        isRead: true
-      }
-    ];
-
-    setNotifications(mockNotifications);
-  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -219,10 +220,34 @@ export default function Notifications() {
         )
       );
       
-      // Call API to mark as read
-      await apiRequest(`/api/notifications/${notificationId}/read`, {
-        method: 'PATCH'
+      // Use Supabase to mark as read
+      const { createClient } = await import('@supabase/supabase-js');
+      
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          storage: {
+            getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+            setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+            removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+          },
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+        },
       });
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('❌ Supabase error marking notification as read:', error);
+        throw error;
+      }
       
       console.log('✅ Marked notification as read:', notificationId);
     } catch (error) {
