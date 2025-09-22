@@ -256,11 +256,15 @@ const getUserStats = async (userId: string) => {
     let followersCount = 0;
     
     try {
+      console.log('📊 Attempting to fetch relationships for user:', userId);
+      
       // Get following count (users this person follows)
       const followingResult = await supabase
         .from('relationships')
         .select('id', { count: 'exact', head: true })
         .eq('follower_id', userId);
+      
+      console.log('📊 Following query result:', followingResult);
       
       // Get followers count (users who follow this person)
       const followersResult = await supabase
@@ -268,14 +272,23 @@ const getUserStats = async (userId: string) => {
         .select('id', { count: 'exact', head: true })
         .eq('following_id', userId);
       
+      console.log('📊 Followers query result:', followersResult);
+      
       if (!followingResult.error) {
         followingCount = followingResult.count || 0;
-      }
-      if (!followersResult.error) {
-        followersCount = followersResult.count || 0;
+        console.log('✅ Following count:', followingCount);
+      } else {
+        console.log('❌ Following query error:', followingResult.error);
       }
       
-      console.log('📊 Real following/followers data:', { followingCount, followersCount });
+      if (!followersResult.error) {
+        followersCount = followersResult.count || 0;
+        console.log('✅ Followers count:', followersCount);
+      } else {
+        console.log('❌ Followers query error:', followersResult.error);
+      }
+      
+      console.log('📊 Final counts:', { followingCount, followersCount });
     } catch (error) {
       console.log('📊 Error fetching relationships, using mock data:', error.message);
       // Fallback to mock data if there's an error
@@ -707,10 +720,10 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Top half overlapping banner */}
+        {/* Profile Avatar - Bottom half overlapping banner */}
         <div style={{
           position: 'absolute',
-          top: '-44px', // Top half overlaps banner (88px avatar / 2 = 44px)
+          top: '104px', // Bottom half overlaps banner (192px banner - 88px avatar = 104px)
           left: '16px',
           width: '88px', // 80px avatar + 8px border
           height: '88px', // 80px avatar + 8px border

@@ -55,7 +55,7 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
   });
   
   // Calculate proper sizing for frame and profile picture
-  const frameSize = size * 1.8; // Frame is 80% larger than the base size
+  const frameSize = size * 1.6; // Frame is 60% larger than the base size (reduced from 1.8)
   const profileSize = frameSize * 0.45; // Profile picture size within frame (45% of frame)
   
   return (
