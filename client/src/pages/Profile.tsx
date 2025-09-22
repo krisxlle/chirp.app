@@ -4,101 +4,206 @@ import ChirpCard from '../components/ChirpCard';
 import UserAvatar from '../components/UserAvatar';
 import { useAuth } from '../hooks/useAuth';
 
-// Inline API functions to avoid import issues in production
+// Inline API functions to fetch real data from Supabase
 const getUserChirps = async (userId: string) => {
   console.log('🔍 getUserChirps called with:', { userId });
   
-  // For now, return mock user chirps
-  return [
-    {
-      id: 'user-1',
-      content: 'This is a chirp from the user profile! 👤',
-      createdAt: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-      author: {
-        id: userId,
-        firstName: 'User',
-        lastName: 'Profile',
-        email: 'user@chirp.com',
-        handle: 'userprofile',
-        customHandle: 'userprofile',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
+  try {
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
       },
-      likes: 12,
-      replies: 3,
-      reposts: 1,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
-    },
-    {
-      id: 'user-2',
-      content: 'Another chirp from this user! 🎉',
-      createdAt: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
-      author: {
-        id: userId,
-        firstName: 'User',
-        lastName: 'Profile',
-        email: 'user@chirp.com',
-        handle: 'userprofile',
-        customHandle: 'userprofile',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
-      },
-      likes: 8,
-      replies: 2,
-      reposts: 0,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
+    });
+
+    console.log('✅ Using real Supabase client for getUserChirps');
+    
+    // Fetch user's chirps from database
+    const { data: chirps, error } = await supabase
+      .from('chirps')
+      .select(`
+        id,
+        content,
+        created_at,
+        reply_to_id,
+        author_id,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height,
+        users!inner (
+          id,
+          first_name,
+          last_name,
+          email,
+          handle,
+          custom_handle,
+          profile_image_url,
+          avatar_url
+        )
+      `)
+      .eq('author_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Supabase error fetching user chirps:', error);
+      throw error;
     }
-  ];
+
+    if (chirps && chirps.length > 0) {
+      console.log('✅ Fetched', chirps.length, 'real user chirps from database');
+      
+      // Transform the data to match expected format
+      return chirps.map(chirp => {
+        // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
+        const author = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+        
+        return {
+          id: chirp.id,
+          content: chirp.content,
+          createdAt: chirp.created_at,
+          replyToId: chirp.reply_to_id,
+          imageUrl: chirp.image_url,
+          imageAltText: chirp.image_alt_text,
+          imageWidth: chirp.image_width,
+          imageHeight: chirp.image_height,
+          author: {
+            id: author.id,
+            firstName: author.first_name,
+            lastName: author.last_name,
+            email: author.email,
+            handle: author.handle,
+            customHandle: author.custom_handle,
+            profileImageUrl: author.profile_image_url,
+            avatarUrl: author.avatar_url,
+            isChirpPlus: false,
+            showChirpPlusBadge: false
+          },
+          likes: 0, // Default to 0 since column doesn't exist
+          replies: 0, // Default to 0 since column doesn't exist
+          reposts: 0, // Default to 0 since column doesn't exist
+          isLiked: false, // Default to false since column doesn't exist
+          isReposted: false, // Default to false since column doesn't exist
+          reactionCounts: {}, // Default to empty object since column doesn't exist
+          userReaction: null, // Default to null since column doesn't exist
+          repostOf: null, // Default to null since column doesn't exist
+          isAiGenerated: false, // Default to false since column doesn't exist
+          isWeeklySummary: false, // Default to false since column doesn't exist
+          threadId: null, // Default to null since column doesn't exist
+          threadOrder: null, // Default to null since column doesn't exist
+          isThreadStarter: true // Default to true since column doesn't exist
+        };
+      });
+    } else {
+      console.log('📭 No user chirps found in database');
+      return [];
+    }
+  } catch (error) {
+    console.error('❌ Error fetching real user chirps from Supabase:', error);
+    console.error('❌ Supabase connection details:', {
+      url: 'https://qrzbtituxxilnbgocdge.supabase.co',
+      hasKey: true,
+      errorMessage: error.message,
+      errorCode: error.code
+    });
+    
+    // Instead of falling back to mock data, throw the error
+    throw new Error(`Failed to fetch user chirps from database: ${error.message}`);
+  }
 };
 
 const getUserStats = async (userId: string) => {
   console.log('🔍 getUserStats called with:', { userId });
   
-  // Return mock data for web compatibility
-  return {
-    following: 150,
-    followers: 320,
-    profilePower: 1250,
-    totalChirps: 42,
-    totalLikes: 1250
-  };
+  try {
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+
+    console.log('✅ Using real Supabase client for getUserStats');
+    
+    // For now, return default stats since we don't have following/followers tables yet
+    // TODO: Implement real following/followers system
+    return {
+      following: 0, // Will be implemented when following system is added
+      followers: 0, // Will be implemented when following system is added
+      profilePower: 0, // Will be calculated based on user activity
+      totalChirps: 0, // Will be calculated from chirps count
+      totalLikes: 0 // Will be calculated from likes count
+    };
+  } catch (error) {
+    console.error('❌ Error fetching user stats from Supabase:', error);
+    throw new Error(`Failed to fetch user stats from database: ${error.message}`);
+  }
 };
 
 const getProfilePowerBreakdown = async (userId: string) => {
   console.log('🔍 getProfilePowerBreakdown called with:', { userId });
   
-  // Return mock data for web compatibility
-  return {
-    totalPower: 1250,
-    likesContribution: 800,
-    commentsContribution: 300,
-    collectionContribution: 150,
-    rarityFactor: 1.0,
-    totalLikes: 1250,
-    totalComments: 89
-  };
+  try {
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+
+    console.log('✅ Using real Supabase client for getProfilePowerBreakdown');
+    
+    // For now, return default breakdown since we don't have likes/comments tables yet
+    // TODO: Implement real profile power calculation system
+    return {
+      totalPower: 0, // Will be calculated based on user activity
+      likesContribution: 0, // Will be calculated from likes received
+      commentsContribution: 0, // Will be calculated from comments made
+      collectionContribution: 0, // Will be calculated from collection activity
+      rarityFactor: 1.0, // Will be based on user rarity
+      totalLikes: 0, // Will be calculated from likes count
+      totalComments: 0 // Will be calculated from comments count
+    };
+  } catch (error) {
+    console.error('❌ Error fetching profile power breakdown from Supabase:', error);
+    throw new Error(`Failed to fetch profile power breakdown from database: ${error.message}`);
+  }
 };
 
 interface User {
@@ -247,69 +352,41 @@ export default function Profile() {
             profilePower: profilePowerData.totalPower || 0
           });
         } catch (error) {
-          console.log('API failed, using mock data:', error);
-          // Fallback to mock data
-          loadMockData();
+          console.error('❌ Profile: Error loading user profile data:', error);
+          console.error('❌ Profile: Clearing profile data due to error');
+          // Clear the profile data to force a retry
+          setUser(null);
+          setUserChirps([]);
+          setStats({
+            following: 0,
+            followers: 0,
+            profilePower: 0
+          });
         }
       } else {
-        loadMockData();
+        console.error('❌ Profile: No userId provided');
+        setUser(null);
+        setUserChirps([]);
+        setStats({
+          following: 0,
+          followers: 0,
+          profilePower: 0
+        });
       }
     } catch (error) {
-      console.error('Failed to load user profile:', error);
-      loadMockData();
+      console.error('❌ Profile: Failed to load user profile:', error);
+      console.error('❌ Profile: Clearing profile data due to error');
+      // Clear the profile data to force a retry
+      setUser(null);
+      setUserChirps([]);
+      setStats({
+        following: 0,
+        followers: 0,
+        profilePower: 0
+      });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const loadMockData = () => {
-    const mockUser: User = {
-      id: userId || '1',
-      firstName: 'Kriselle',
-      lastName: 'Tan',
-      email: 'kriselle.t@gmail.com',
-      handle: 'kriselle',
-      customHandle: 'kriselle',
-      profileImageUrl: null,
-      bannerImageUrl: null,
-      bio: 'Building amazing things with Chirp! 🚀',
-      linkInBio: 'https://github.com/kriselle',
-      joinedAt: '2024-01-15T00:00:00Z',
-      isChirpPlus: false,
-      showChirpPlusBadge: false
-    };
-
-    const mockStats: ProfileStats = {
-      following: 150,
-      followers: 320,
-      profilePower: 1250
-    };
-
-    const mockChirps = [
-      {
-        id: '1',
-        content: 'Just shipped a new feature to Chirp! ✨',
-        author: mockUser,
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        likes: 42,
-        replies: 8,
-        reposts: 12,
-        isLiked: true,
-        isReposted: false,
-        reactionCounts: { '👍': 20, '❤️': 15, '😂': 7 },
-        userReaction: '❤️',
-        repostOf: null,
-        isAiGenerated: false,
-        isWeeklySummary: false,
-        threadId: null,
-        threadOrder: null,
-        isThreadStarter: true
-      }
-    ];
-
-    setUser(mockUser);
-    setStats(mockStats);
-    setUserChirps(mockChirps);
   };
 
   const formatJoinDate = (dateString: string) => {
