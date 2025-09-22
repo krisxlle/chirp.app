@@ -133,7 +133,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Authenticate user with username and password using API
       console.log('🔐 Using API authentication for username:', username);
-      const response = await fetch('http://localhost:5002/api/auth/signin', {
+      
+      // Determine API base URL dynamically
+      const getApiBaseUrl = () => {
+        if (typeof window !== 'undefined') {
+          const hostname = window.location.hostname;
+          if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:5002';
+          }
+          // Use the same domain for production API
+          return `${window.location.protocol}//${window.location.host}`;
+        }
+        return 'http://localhost:5002';
+      };
+      
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

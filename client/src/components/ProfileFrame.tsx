@@ -7,13 +7,25 @@ interface ProfileFrameProps {
   style?: React.CSSProperties;
 }
 
+const getAssetBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+    // Use the same domain for production assets
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  return 'http://localhost:5000';
+};
+
 const rarityFrameImages = {
-  mythic: 'http://localhost:5000/assets/Mystical Frame.png',
-  legendary: 'http://localhost:5000/assets/Legendary Frame.png',
-  epic: 'http://localhost:5000/assets/Epic Frame.png',
-  rare: 'http://localhost:5000/assets/Rare Frame.png',
-  uncommon: 'http://localhost:5000/assets/Uncommon Frame.png',
-  common: 'http://localhost:5000/assets/Common Frame.png',
+  mythic: `${getAssetBaseUrl()}/assets/Mystical Frame.png`,
+  legendary: `${getAssetBaseUrl()}/assets/Legendary Frame.png`,
+  epic: `${getAssetBaseUrl()}/assets/Epic Frame.png`,
+  rare: `${getAssetBaseUrl()}/assets/Rare Frame.png`,
+  uncommon: `${getAssetBaseUrl()}/assets/Uncommon Frame.png`,
+  common: `${getAssetBaseUrl()}/assets/Common Frame.png`,
 };
 
 export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {

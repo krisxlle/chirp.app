@@ -590,8 +590,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       marginTop: 3,
       marginBottom: 3,
       borderRadius: 16,
-      paddingTop: 8,
-      paddingBottom: 8,
+      paddingTop: 4,
+      paddingBottom: 4,
       paddingLeft: 16,
       paddingRight: 16,
       boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
@@ -612,7 +612,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           overflow: 'hidden',
           cursor: 'text',
           position: 'relative',
-          zIndex: 1
+          zIndex: 1,
+          minHeight: 'auto'
         }}
         onClick={handleTextareaClick}
         >
@@ -621,8 +622,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             style={{
               fontSize: 18,
               lineHeight: 24,
-              minHeight: 10,
-              maxHeight: 30,
+              minHeight: 30,
+              maxHeight: 120,
               padding: 0,
               color: '#1a1a1a',
               width: '100%',
@@ -630,7 +631,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               border: 'none',
               outline: 'none',
               backgroundColor: 'transparent',
-              overflow: 'visible',
+              overflow: 'hidden',
               cursor: 'text',
               fontFamily: 'inherit',
               position: 'relative',
