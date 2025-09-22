@@ -38,9 +38,7 @@
     ".nyc_output/**/*"
   ],
   "queries": {
-    "exclude": [
-      "security-and-quality"
-    ]
+    "exclude": []
   },
   "packs": {
     "javascript": [
