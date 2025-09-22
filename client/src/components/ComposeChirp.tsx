@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import ImagePickerButton from './ImagePickerButton';
@@ -30,6 +30,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [threadChirps, setThreadChirps] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   // Refs for textarea focus handling
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -37,6 +38,18 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   
   const { user: authUser, isLoading } = useAuth();
   const { toast } = useToast();
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const maxLength = 280;
   const remainingChars = maxLength - content.length;
@@ -590,12 +603,12 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       marginTop: 3,
       marginBottom: 3,
       borderRadius: 16,
-      paddingTop: 4,
-      paddingBottom: 4,
+      paddingTop: isMobile ? 8 : 4,
+      paddingBottom: isMobile ? 8 : 4,
       paddingLeft: 16,
       paddingRight: 16,
       boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
-      maxWidth: 600,
+      maxWidth: '600px',
       alignSelf: 'center',
       width: '100%'
     }}>
@@ -604,7 +617,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         flexDirection: 'row',
         alignItems: 'flex-start'
       }}>
-        <UserAvatar user={user} size="md" />
+        <UserAvatar user={user} size="md" showFrame={true} />
         
         <div style={{
           flex: 1,
@@ -614,7 +627,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           position: 'relative',
           zIndex: 1,
           minHeight: 'auto',
-          paddingTop: '8px'
+          paddingTop: isMobile ? '12px' : '8px'
         }}
         onClick={handleTextareaClick}
         >
