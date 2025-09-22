@@ -53,8 +53,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         marginTop: 0,
         marginBottom: 3,
         borderRadius: 16,
-        paddingTop: 16,
-        paddingBottom: 16,
+        paddingTop: 8,
+        paddingBottom: 8,
         paddingLeft: 16,
         paddingRight: 16,
         boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
@@ -313,8 +313,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         marginTop: 0,
         marginBottom: 3,
         borderRadius: 16,
-        paddingTop: 16,
-        paddingBottom: 16,
+        paddingTop: 8,
+        paddingBottom: 8,
         paddingLeft: 16,
         paddingRight: 16,
         boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
@@ -527,8 +527,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       marginTop: 0,
       marginBottom: 3,
       borderRadius: 16,
-      paddingTop: 16,
-      paddingBottom: 16,
+      paddingTop: 8,
+      paddingBottom: 8,
       paddingLeft: 16,
       paddingRight: 16,
       boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
@@ -639,7 +639,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: 12
+            marginTop: 8
           }}>
             <div style={{
               display: 'flex',
