@@ -1,8 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Skeleton } from "../components/ui/skeleton";
 import ChirpCard from "../components/ChirpCard";
 import { useState, useEffect } from "react";
 
@@ -183,30 +180,94 @@ export default function ChirpDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 p-4">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="sm"
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#fafafa',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <header style={{
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e5e7eb',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          padding: '16px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <button
               onClick={() => setLocation("/")}
-              className="p-2"
+              style={{
+                padding: '8px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Chirp</h1>
+              <ArrowLeft size={20} />
+            </button>
+            <h1 style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#333',
+              margin: 0
+            }}>Chirp</h1>
           </div>
         </header>
 
-        <main className="pb-20">
-          <div className="p-4">
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex space-x-3">
-                <Skeleton className="w-10 h-10 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
+        <main style={{
+          paddingBottom: '80px',
+          flex: 1
+        }}>
+          <div style={{ padding: '16px' }}>
+            <div style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              padding: '16px',
+              backgroundColor: '#ffffff'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '12px'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: '#e5e7eb'
+                }}></div>
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div style={{
+                    height: '16px',
+                    width: '128px',
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: '4px'
+                  }}></div>
+                  <div style={{
+                    height: '16px',
+                    width: '100%',
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: '4px'
+                  }}></div>
+                  <div style={{
+                    height: '16px',
+                    width: '75%',
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: '4px'
+                  }}></div>
                 </div>
               </div>
             </div>
@@ -218,24 +279,65 @@ export default function ChirpDetail() {
 
   if (!chirp) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 p-4">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="sm"
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#fafafa',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <header style={{
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e5e7eb',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          padding: '16px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <button
               onClick={() => setLocation("/")}
-              className="p-2"
+              style={{
+                padding: '8px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Chirp</h1>
+              <ArrowLeft size={20} />
+            </button>
+            <h1 style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#333',
+              margin: 0
+            }}>Chirp</h1>
           </div>
         </header>
 
-        <main className="pb-20">
-          <div className="text-center py-8">
-            <p className="text-gray-500">Chirp not found</p>
+        <main style={{
+          paddingBottom: '80px',
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            padding: '32px'
+          }}>
+            <p style={{
+              color: '#6b7280',
+              fontSize: '16px',
+              margin: 0
+            }}>Chirp not found</p>
           </div>
         </main>
       </div>
@@ -243,59 +345,155 @@ export default function ChirpDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 p-4">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="sm"
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#fafafa',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <header style={{
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e5e7eb',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        padding: '16px'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <button
             onClick={() => setLocation("/")}
-            className="p-2"
+            style={{
+              padding: '8px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Thread</h1>
+            <ArrowLeft size={20} />
+          </button>
+          <h1 style={{
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#333',
+            margin: 0
+          }}>Thread</h1>
         </div>
       </header>
 
-      <main className="pb-20">
+      <main style={{
+        paddingBottom: '80px',
+        flex: 1
+      }}>
         {/* Main chirp */}
-        <div className="bg-white dark:bg-gray-900">
+        <div style={{
+          backgroundColor: '#ffffff'
+        }}>
           <ChirpCard chirp={chirp} />
         </div>
 
         {/* Replies */}
         {isLoading ? (
-          <div className="p-4 space-y-4">
+          <div style={{
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex space-x-3">
-                  <Skeleton className="w-10 h-10 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
+              <div key={i} style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '16px',
+                backgroundColor: '#ffffff'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: '#e5e7eb'
+                  }}></div>
+                  <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div style={{
+                      height: '16px',
+                      width: '128px',
+                      backgroundColor: '#e5e7eb',
+                      borderRadius: '4px'
+                    }}></div>
+                    <div style={{
+                      height: '16px',
+                      width: '100%',
+                      backgroundColor: '#e5e7eb',
+                      borderRadius: '4px'
+                    }}></div>
+                    <div style={{
+                      height: '16px',
+                      width: '75%',
+                      backgroundColor: '#e5e7eb',
+                      borderRadius: '4px'
+                    }}></div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : replies.length > 0 ? (
-          <div className="bg-gray-50 dark:bg-gray-800 p-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div style={{
+            backgroundColor: '#f8fafc',
+            padding: '16px'
+          }}>
+            <h2 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#333',
+              marginBottom: '16px',
+              margin: 0
+            }}>
               Replies ({replies.length})
             </h2>
-            <div className="space-y-0 border border-gray-200 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              backgroundColor: '#ffffff'
+            }}>
               {replies.map((reply: any, index: number) => (
-                <div key={reply.id} className={index > 0 ? "border-t border-gray-200 dark:border-gray-700" : ""}>
+                <div key={reply.id} style={{
+                  borderTop: index > 0 ? '1px solid #e5e7eb' : 'none'
+                }}>
                   <ChirpCard chirp={reply} />
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No replies yet</p>
+          <div style={{
+            textAlign: 'center',
+            padding: '32px'
+          }}>
+            <p style={{
+              color: '#6b7280',
+              fontSize: '16px',
+              margin: 0
+            }}>No replies yet</p>
           </div>
         )}
       </main>
