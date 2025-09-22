@@ -22,7 +22,7 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
   
   // Calculate proper sizing for frame and profile picture
   const frameSize = size * 1.8; // Frame is 80% larger than the base size
-  const profileSize = frameSize * 0.45; // Increased from 0.5 to 0.65 for better fit
+  const profileSize = frameSize * 0.45; // Profile picture is 45% of frame size
   
   return (
     <View style={[styles.container, { width: frameSize, height: frameSize }, style]}>

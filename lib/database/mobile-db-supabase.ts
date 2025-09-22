@@ -542,7 +542,7 @@ export async function getUserReplies(userId: string) {
       return [];
     }
     
-    // Single optimized query with joins
+    // Single optimized query with joins - fetch replies only
     const { data: replies, error } = await supabase
       .from('chirps')
       .select(`
@@ -565,9 +565,8 @@ export async function getUserReplies(userId: string) {
       `)
       .eq('author_id', userId)
       .not('reply_to_id', 'is', null)
-      .or('is_thread_starter.is.true,thread_id.is.null')
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(20);
 
     if (error) {
       console.error('❌ Error fetching user replies:', error);

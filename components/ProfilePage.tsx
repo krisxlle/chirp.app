@@ -95,6 +95,12 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
       setUserChirps(chirpsData || []);
       setUserReplies(repliesData || []);
       
+      console.log('ProfilePage: Data loaded:', {
+        chirps: chirpsData?.length || 0,
+        replies: repliesData?.length || 0,
+        repliesData: repliesData
+      });
+      
       // Calculate profile power using the new comprehensive algorithm
       const calculatedPower = await calculateProfilePower(authUser.id);
       

@@ -144,7 +144,7 @@ export default function UserAvatar({ user, size = "md", style, showFrame = false
         <Image
           source={{ uri: processedImageUrl }}
           style={[styles.avatar, sizeStyles]}
-          resizeMode="cover" // Use cover to fill the space without cropping
+          resizeMode="cover" // Maintain 1:1 aspect ratio with cover
           onError={(error) => {
             console.log('Avatar image failed to load:', error.message || 'unknown error');
             setImageError(true);
