@@ -45,9 +45,7 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
           handle,
           custom_handle,
           profile_image_url,
-          avatar_url,
-          is_chirp_plus,
-          show_chirp_plus_badge
+          avatar_url
         ),
         likes,
         replies,
@@ -88,8 +86,8 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
           customHandle: chirp.author.custom_handle,
           profileImageUrl: chirp.author.profile_image_url,
           avatarUrl: chirp.author.avatar_url,
-          isChirpPlus: chirp.author.is_chirp_plus || false,
-          showChirpPlusBadge: chirp.author.show_chirp_plus_badge || false
+          isChirpPlus: false, // Default to false since column doesn't exist
+          showChirpPlusBadge: false // Default to false since column doesn't exist
         },
         likes: chirp.likes || 0,
         replies: chirp.replies || 0,
@@ -219,9 +217,7 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
           handle,
           custom_handle,
           profile_image_url,
-          avatar_url,
-          is_chirp_plus,
-          show_chirp_plus_badge
+          avatar_url
         ),
         likes,
         replies,
@@ -262,8 +258,8 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
           customHandle: chirp.author.custom_handle,
           profileImageUrl: chirp.author.profile_image_url,
           avatarUrl: chirp.author.avatar_url,
-          isChirpPlus: chirp.author.is_chirp_plus || false,
-          showChirpPlusBadge: chirp.author.show_chirp_plus_badge || false
+          isChirpPlus: false, // Default to false since column doesn't exist
+          showChirpPlusBadge: false // Default to false since column doesn't exist
         },
         likes: chirp.likes || 0,
         replies: chirp.replies || 0,
