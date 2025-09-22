@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
 import UserAvatar from '../components/UserAvatar';
 import { apiRequest } from '../components/api';
 import { useAuth } from '../hooks/useAuth';
@@ -25,7 +26,7 @@ const BellIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: str
 
 interface Notification {
   id: string;
-  type: 'like' | 'reply' | 'repost' | 'follow' | 'mention' | 'system';
+  type: 'like' | 'reply' | 'repost' | 'follow' | 'mention' | 'system' | 'comment';
   message: string;
   user?: {
     id: string;
@@ -40,10 +41,13 @@ interface Notification {
   };
   timestamp: string;
   isRead: boolean;
+  chirp_id?: string;
+  from_user_id?: string;
 }
 
 export default function Notifications() {
   const { user } = useAuth();
+  const [location, setLocation] = useLocation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -76,7 +80,7 @@ export default function Notifications() {
 
         console.log('✅ Using real Supabase client for notifications');
         
-        // Fetch notifications from database
+        // Fetch notifications from database with chirp content
         const { data: notificationsData, error } = await supabase
           .from('notifications')
           .select(`
@@ -95,6 +99,10 @@ export default function Notifications() {
               custom_handle,
               profile_image_url,
               avatar_url
+            ),
+            chirps!notifications_chirp_id_fkey (
+              id,
+              content
             )
           `)
           .eq('user_id', user?.id)
@@ -111,6 +119,7 @@ export default function Notifications() {
           // Transform the data to match expected format
           const transformedNotifications = notificationsData.map((notification: any) => {
             const fromUser = notification.users;
+            const chirpData = notification.chirps;
             
             return {
               id: notification.id.toString(),
@@ -123,12 +132,14 @@ export default function Notifications() {
                 handle: fromUser.handle || fromUser.custom_handle,
                 profileImageUrl: fromUser.profile_image_url || fromUser.avatar_url
               } : undefined,
-              chirp: notification.chirp_id ? {
-                id: notification.chirp_id.toString(),
-                content: 'Chirp content' // We could fetch this separately if needed
+              chirp: chirpData ? {
+                id: chirpData.id.toString(),
+                content: chirpData.content
               } : undefined,
               timestamp: notification.created_at,
-              isRead: notification.read
+              isRead: notification.read,
+              chirp_id: notification.chirp_id?.toString(),
+              from_user_id: notification.from_user_id?.toString()
             };
           });
           
@@ -207,6 +218,65 @@ export default function Notifications() {
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
+  };
+
+  const handleNotificationPress = async (notification: Notification) => {
+    try {
+      console.log('🔔 Notification pressed:', notification.type);
+      console.log('🔔 Notification data:', {
+        id: notification.id,
+        type: notification.type,
+        chirp_id: notification.chirp_id,
+        from_user_id: notification.from_user_id,
+        isRead: notification.isRead
+      });
+      
+      // Mark as read (only if not already read)
+      if (!notification.isRead) {
+        await markAsRead(notification.id);
+      }
+
+      // Navigate based on notification type
+      switch (notification.type) {
+        case 'like':
+        case 'comment':
+        case 'reply':
+          if (notification.chirp_id) {
+            console.log('📍 Navigating to chirp:', notification.chirp_id);
+            setLocation(`/chirp/${notification.chirp_id}`);
+          } else {
+            console.log('⚠️ No chirp_id for like/comment notification');
+            // Fallback: navigate to actor's profile if no chirp_id
+            if (notification.from_user_id) {
+              console.log('📍 Fallback: Navigating to actor profile:', notification.from_user_id);
+              setLocation(`/profile/${notification.from_user_id}`);
+            } else {
+              console.log('❌ No fallback navigation available');
+            }
+          }
+          break;
+        case 'follow':
+          if (notification.from_user_id) {
+            console.log('📍 Navigating to profile:', notification.from_user_id);
+            setLocation(`/profile/${notification.from_user_id}`);
+          } else {
+            console.log('⚠️ No from_user_id for follow notification');
+          }
+          break;
+        case 'mention':
+          if (notification.chirp_id) {
+            console.log('📍 Navigating to mentioned chirp:', notification.chirp_id);
+            setLocation(`/chirp/${notification.chirp_id}`);
+          } else {
+            console.log('⚠️ No chirp_id for mention notification');
+          }
+          break;
+        default:
+          console.log('❓ Unknown notification type:', notification.type);
+      }
+    } catch (error) {
+      console.error('❌ Error handling notification press:', error);
+    }
   };
 
   const markAsRead = async (notificationId: string) => {
@@ -385,7 +455,7 @@ export default function Notifications() {
                   cursor: 'pointer',
                   transition: 'background-color 0.2s'
                 }}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => handleNotificationPress(notification)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#f9fafb';
                 }}
