@@ -49,19 +49,23 @@ export default function HomePage() {
       const dbChirps = response.chirps || [];
       
       // Transform database format to component format
-      const realChirps = dbChirps.map((chirp: any) => ({
+      const realChirps = dbChirps.map((chirp: any) => {
+        // Handle the case where users might be an array or single object
+        const user = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+        
+        return {
         id: chirp.id.toString(),
         content: chirp.content,
         createdAt: chirp.created_at,
         author: {
-          id: chirp.users.id,
-          firstName: chirp.users.first_name || '',
-          lastName: chirp.users.last_name || '',
-          email: chirp.users.email,
-          handle: chirp.users.handle,
-          customHandle: chirp.users.custom_handle,
-          profileImageUrl: chirp.users.profile_image_url,
-          avatarUrl: chirp.users.avatar_url,
+          id: user?.id,
+          firstName: user?.first_name || '',
+          lastName: user?.last_name || '',
+          email: user?.email,
+          handle: user?.handle,
+          customHandle: user?.custom_handle,
+          profileImageUrl: user?.profile_image_url,
+          avatarUrl: user?.avatar_url,
           isChirpPlus: false,
           showChirpPlusBadge: false
         },
@@ -78,7 +82,8 @@ export default function HomePage() {
         threadId: null,
         threadOrder: null,
         isThreadStarter: true
-      }));
+        };
+      });
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial chirps from database in ${loadTime}ms`);
@@ -116,19 +121,23 @@ export default function HomePage() {
       const dbChirps = response.chirps || [];
       
       // Transform database format to component format
-      const realChirps = dbChirps.map((chirp: any) => ({
+      const realChirps = dbChirps.map((chirp: any) => {
+        // Handle the case where users might be an array or single object
+        const user = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+        
+        return {
         id: chirp.id.toString(),
         content: chirp.content,
         createdAt: chirp.created_at,
         author: {
-          id: chirp.users.id,
-          firstName: chirp.users.first_name || '',
-          lastName: chirp.users.last_name || '',
-          email: chirp.users.email,
-          handle: chirp.users.handle,
-          customHandle: chirp.users.custom_handle,
-          profileImageUrl: chirp.users.profile_image_url,
-          avatarUrl: chirp.users.avatar_url,
+          id: user?.id,
+          firstName: user?.first_name || '',
+          lastName: user?.last_name || '',
+          email: user?.email,
+          handle: user?.handle,
+          customHandle: user?.custom_handle,
+          profileImageUrl: user?.profile_image_url,
+          avatarUrl: user?.avatar_url,
           isChirpPlus: false,
           showChirpPlusBadge: false
         },
@@ -145,7 +154,8 @@ export default function HomePage() {
         threadId: null,
         threadOrder: null,
         isThreadStarter: true
-      }));
+        };
+      });
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial collection chirps from database in ${loadTime}ms`);

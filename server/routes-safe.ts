@@ -109,7 +109,7 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
                 content,
                 created_at,
                 author_id,
-                users!inner(id, first_name, last_name, email, handle, profile_image_url, avatar_url, banner_image_url, bio, link_in_bio, custom_handle)
+                users!chirps_author_id_fkey(id, first_name, last_name, email, handle, profile_image_url, avatar_url, banner_image_url, bio, link_in_bio, custom_handle)
               `)
               .order('created_at', { ascending: false })
               .limit(10);
