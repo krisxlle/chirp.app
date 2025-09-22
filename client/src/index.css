@@ -93,3 +93,24 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ComposeChirp textarea placeholder styling */
+.compose-textarea::placeholder {
+  color: #657786 !important;
+  opacity: 1 !important;
+}
+
+.compose-textarea::-webkit-input-placeholder {
+  color: #657786 !important;
+  opacity: 1 !important;
+}
+
+.compose-textarea::-moz-placeholder {
+  color: #657786 !important;
+  opacity: 1 !important;
+}
+
+.compose-textarea:-ms-input-placeholder {
+  color: #657786 !important;
+  opacity: 1 !important;
+}

@@ -417,6 +417,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           >
             <textarea
               ref={threadTextareaRef}
+              className="compose-textarea"
               style={{
                 fontSize: 18,
                 lineHeight: 24,
@@ -633,6 +634,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         >
           <textarea
             ref={textareaRef}
+            className="compose-textarea"
             style={{
               fontSize: 18,
               lineHeight: 24,
