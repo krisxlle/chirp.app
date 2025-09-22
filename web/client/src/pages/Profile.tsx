@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Settings, Users, UserPlus, Calendar, Link, Crown } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 import ChirpCard from '../components/ChirpCard';
+import ProfileFrame from '../components/ProfileFrame';
 
 interface User {
   id: string;
@@ -37,6 +38,7 @@ export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
+  const [userReplies, setUserReplies] = useState<any[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
     following: 0,
     followers: 0,
@@ -103,9 +105,53 @@ export default function Profile() {
         }
       ];
 
+      const mockReplies = [
+        {
+          id: 'reply1',
+          content: 'Great work on this feature! Really excited to try it out.',
+          author: mockUser,
+          createdAt: new Date(Date.now() - 1800000).toISOString(),
+          likes: 5,
+          replies: 0,
+          reposts: 0,
+          isLiked: false,
+          isReposted: false,
+          reactionCounts: { '👍': 3, '❤️': 2 },
+          userReaction: null,
+          repostOf: null,
+          isAiGenerated: false,
+          isWeeklySummary: false,
+          threadId: null,
+          threadOrder: null,
+          isThreadStarter: false,
+          replyToId: 'parent-chirp-id'
+        },
+        {
+          id: 'reply2',
+          content: 'This looks amazing! When will it be available?',
+          author: mockUser,
+          createdAt: new Date(Date.now() - 2700000).toISOString(),
+          likes: 8,
+          replies: 1,
+          reposts: 0,
+          isLiked: true,
+          isReposted: false,
+          reactionCounts: { '👍': 5, '❤️': 3 },
+          userReaction: '❤️',
+          repostOf: null,
+          isAiGenerated: false,
+          isWeeklySummary: false,
+          threadId: null,
+          threadOrder: null,
+          isThreadStarter: false,
+          replyToId: 'parent-chirp-id-2'
+        }
+      ];
+
       setUser(mockUser);
       setStats(mockStats);
       setUserChirps(mockChirps);
+      setUserReplies(mockReplies);
     } catch (error) {
       console.error('Failed to load user profile:', error);
     } finally {
@@ -180,7 +226,9 @@ export default function Profile() {
         {/* Profile Info */}
         <div className="px-4 pb-4 bg-white">
           <div className="flex items-end space-x-4 -mt-16">
-            <UserAvatar user={user} size="xl" className="border-4 border-white" />
+            <ProfileFrame rarity="epic" size={60}>
+              <UserAvatar user={user} size="xl" />
+            </ProfileFrame>
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-2">
                 <h2 className="text-xl font-bold text-gray-900">
@@ -271,10 +319,18 @@ export default function Profile() {
           </TabsContent>
           
           <TabsContent value="comments" className="mt-4">
-            <div className="text-center py-8">
-              <div className="text-6xl mb-4">💬</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No comments yet</h3>
-              <p className="text-gray-500">This user hasn't made any comments yet.</p>
+            <div className="space-y-4">
+              {userReplies.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-6xl mb-4">💬</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No comments yet</h3>
+                  <p className="text-gray-500">This user hasn't made any comments yet.</p>
+                </div>
+              ) : (
+                userReplies.map((reply) => (
+                  <ChirpCard key={reply.id} chirp={reply} />
+                ))
+              )}
             </div>
           </TabsContent>
           
