@@ -80,7 +80,7 @@ export default function Notifications() {
 
         console.log('✅ Using real Supabase client for notifications');
         
-        // Fetch notifications from database with chirp content
+        // Fetch notifications from database with simplified query and limits
         const { data: notificationsData, error } = await supabase
           .from('notifications')
           .select(`
@@ -99,14 +99,11 @@ export default function Notifications() {
               custom_handle,
               profile_image_url,
               avatar_url
-            ),
-            chirps!notifications_chirp_id_fkey (
-              id,
-              content
             )
           `)
           .eq('user_id', user?.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(20); // Limit to 20 most recent notifications
 
         if (error) {
           console.error('❌ Supabase error fetching notifications:', error);
@@ -116,10 +113,9 @@ export default function Notifications() {
         if (notificationsData && notificationsData.length > 0) {
           console.log('✅ Fetched', notificationsData.length, 'real notifications from database');
           
-          // Transform the data to match expected format
+          // Transform the data to match expected format (simplified to avoid timeout)
           const transformedNotifications = notificationsData.map((notification: any) => {
             const fromUser = notification.users;
-            const chirpData = notification.chirps;
             
             return {
               id: notification.id.toString(),
@@ -132,9 +128,9 @@ export default function Notifications() {
                 handle: fromUser.handle || fromUser.custom_handle,
                 profileImageUrl: fromUser.profile_image_url || fromUser.avatar_url
               } : undefined,
-              chirp: chirpData ? {
-                id: chirpData.id.toString(),
-                content: chirpData.content
+              chirp: notification.chirp_id ? {
+                id: notification.chirp_id.toString(),
+                content: 'Chirp content' // Simplified to avoid chirp join timeout
               } : undefined,
               timestamp: notification.created_at,
               isRead: notification.read,

@@ -5,7 +5,7 @@ import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 
 // Inline API functions to fetch real data from database
-const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
+const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
   console.log('🔍 getForYouChirps called with:', { limit, offset });
   
   try {
@@ -30,8 +30,8 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
 
     console.log('✅ Using real Supabase client for getForYouChirps');
     
-    // Fetch chirps from database (including replies)
-    const { data: chirps, error } = await supabase
+    // Fetch chirps from database with optimized query (reduced limit, simplified join)
+    const queryPromise = supabase
       .from('chirps')
       .select(`
         id,
@@ -55,7 +55,16 @@ const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
         )
       `)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .limit(Math.min(limit, 10)) // Cap at 10 to avoid timeout
+      .range(offset, offset + Math.min(limit, 10) - 1);
+
+    // Add timeout to prevent hanging queries
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Query timeout')), 10000) // 10 second timeout
+    );
+
+    const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+    const { data: chirps, error } = result;
 
     if (error) {
       console.error('❌ Supabase error:', error);

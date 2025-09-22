@@ -30,7 +30,7 @@ const getUserChirps = async (userId: string) => {
 
     console.log('✅ Using real Supabase client for getUserChirps');
     
-    // Fetch user's chirps from database
+    // Fetch user's chirps from database with optimized query (limited results)
     const { data: chirps, error } = await supabase
       .from('chirps')
       .select(`
@@ -55,7 +55,8 @@ const getUserChirps = async (userId: string) => {
         )
       `)
       .eq('author_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(20); // Limit to 20 most recent chirps to avoid timeout
 
     if (error) {
       console.error('❌ Supabase error fetching user chirps:', error);
