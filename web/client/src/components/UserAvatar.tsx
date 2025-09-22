@@ -56,7 +56,8 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
         <img
           src={user.profileImageUrl || user.avatarUrl}
           alt={`${user.firstName || user.customHandle || user.handle || user.email.split('@')[0]}'s avatar`}
-          className="w-full h-full rounded-full object-cover aspect-square"
+          className="w-full h-full rounded-full object-cover"
+          style={{ aspectRatio: '1/1' }}
           onError={(e) => {
             // Fallback to initials if image fails to load
             const target = e.target as HTMLImageElement;
