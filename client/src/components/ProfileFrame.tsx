@@ -66,6 +66,7 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      // Don't override parent positioning
       ...style
     }}>
       {/* Profile Picture Container */}

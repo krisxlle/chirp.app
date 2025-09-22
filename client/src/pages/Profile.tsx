@@ -600,7 +600,7 @@ export default function Profile() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <UserAvatar user={user} size="lg" showFrame={true} />
+          <UserAvatar user={user} size={80} showFrame={true} />
         </div>
         
         {/* Profile Info */}
