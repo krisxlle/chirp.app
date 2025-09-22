@@ -7,6 +7,95 @@ import LinkIcon from '../components/icons/LinkIcon';
 import { useAuth } from '../hooks/useAuth';
 
 // Inline API functions to fetch real data from Supabase
+const followUser = async (followerId: string, followingId: string) => {
+  console.log('🔍 followUser called with:', { followerId, followingId });
+  
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const { data, error } = await supabase
+      .from('relationships')
+      .insert([
+        { follower_id: followerId, following_id: followingId }
+      ]);
+    
+    if (error) {
+      console.error('❌ Error following user:', error);
+      throw error;
+    }
+    
+    console.log('✅ Successfully followed user');
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error following user:', error);
+    throw new Error(`Failed to follow user: ${error.message}`);
+  }
+};
+
+const unfollowUser = async (followerId: string, followingId: string) => {
+  console.log('🔍 unfollowUser called with:', { followerId, followingId });
+  
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const { error } = await supabase
+      .from('relationships')
+      .delete()
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId);
+    
+    if (error) {
+      console.error('❌ Error unfollowing user:', error);
+      throw error;
+    }
+    
+    console.log('✅ Successfully unfollowed user');
+    return true;
+  } catch (error: any) {
+    console.error('❌ Error unfollowing user:', error);
+    throw new Error(`Failed to unfollow user: ${error.message}`);
+  }
+};
+
+const checkFollowStatus = async (followerId: string, followingId: string) => {
+  console.log('🔍 checkFollowStatus called with:', { followerId, followingId });
+  
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const { data, error } = await supabase
+      .from('relationships')
+      .select('id')
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" which is fine
+      console.error('❌ Error checking follow status:', error);
+      throw error;
+    }
+    
+    const isFollowing = !!data;
+    console.log('✅ Follow status:', isFollowing);
+    return isFollowing;
+  } catch (error: any) {
+    console.error('❌ Error checking follow status:', error);
+    return false;
+  }
+};
+
 const getUserChirps = async (userId: string, userData?: any) => {
   console.log('🔍 getUserChirps called with:', { userId, userData });
   
@@ -162,16 +251,37 @@ const getUserStats = async (userId: string) => {
     const totalChirps = chirpsResult.count || 0;
     const totalLikes = 0; // Will be implemented when reactions system is added
     
-    // Get following/followers count with proper error handling
+    // Get following/followers count from relationships table
     let followingCount = 0;
     let followersCount = 0;
     
-    // Use mock data for now since relationships table doesn't exist
-    // This avoids 404 errors and provides consistent demo data
-    followingCount = Math.floor(Math.random() * 50) + 10; // Random between 10-60
-    followersCount = Math.floor(Math.random() * 200) + 50; // Random between 50-250
-    
-    console.log('📊 Using mock following/followers data for demo');
+    try {
+      // Get following count (users this person follows)
+      const followingResult = await supabase
+        .from('relationships')
+        .select('id', { count: 'exact', head: true })
+        .eq('follower_id', userId);
+      
+      // Get followers count (users who follow this person)
+      const followersResult = await supabase
+        .from('relationships')
+        .select('id', { count: 'exact', head: true })
+        .eq('following_id', userId);
+      
+      if (!followingResult.error) {
+        followingCount = followingResult.count || 0;
+      }
+      if (!followersResult.error) {
+        followersCount = followersResult.count || 0;
+      }
+      
+      console.log('📊 Real following/followers data:', { followingCount, followersCount });
+    } catch (error) {
+      console.log('📊 Error fetching relationships, using mock data:', error.message);
+      // Fallback to mock data if there's an error
+      followingCount = Math.floor(Math.random() * 50) + 10; // Random between 10-60
+      followersCount = Math.floor(Math.random() * 200) + 50; // Random between 50-250
+    }
     
     // Calculate profile power based on activity (more realistic calculation)
     const profilePower = Math.floor(totalChirps * 20 + followersCount * 2); // Include followers in power calculation
