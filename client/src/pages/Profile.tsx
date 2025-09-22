@@ -157,6 +157,8 @@ const getUserStats = async (userId: string) => {
       .select('id', { count: 'exact', head: true })
       .eq('author_id', userId);
 
+    console.log('🔍 getUserStats chirpsResult:', chirpsResult);
+
     if (chirpsResult.error) {
       console.error('❌ Error fetching chirps count:', chirpsResult.error);
       throw chirpsResult.error;
@@ -170,13 +172,16 @@ const getUserStats = async (userId: string) => {
     
     console.log('📊 Calculated stats:', { totalChirps, totalLikes, profilePower });
     
-    return {
+    const result = {
       following: 0, // Will be implemented when following system is added
       followers: 0, // Will be implemented when following system is added
       profilePower: profilePower,
       totalChirps: totalChirps,
       totalLikes: totalLikes
     };
+    
+    console.log('📊 Returning stats:', result);
+    return result;
   } catch (error) {
     console.error('❌ Error fetching user stats from Supabase:', error);
     // Return default stats on error
@@ -289,11 +294,16 @@ export default function Profile() {
             console.log('🔍 Profile: AuthUser data:', authUser);
             
             // Use Supabase API for user chirps, stats, and profile power
+            console.log('🔄 Profile: Fetching user data...');
             const [chirpsData, statsData, profilePowerData] = await Promise.all([
               getUserChirps(userId),
               getUserStats(userId),
               getProfilePowerBreakdown(userId)
             ]);
+            
+            console.log('📊 Profile: Stats data received:', statsData);
+            console.log('📊 Profile: Chirps data received:', chirpsData?.length || 0);
+            console.log('📊 Profile: Profile power data received:', profilePowerData);
           
           // Fetch actual user data from Supabase
           const { createClient } = await import('@supabase/supabase-js');
@@ -557,10 +567,10 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Positioned like Metro */}
+        {/* Profile Avatar - Top half overlapping banner */}
         <div style={{
           position: 'absolute',
-          top: '-44px', // Half overlap with banner like Metro
+          top: '-44px', // Top half overlaps banner (88px avatar / 2 = 44px)
           left: '16px',
           width: '88px', // 80px avatar + 8px border
           height: '88px', // 80px avatar + 8px border
@@ -585,26 +595,72 @@ export default function Profile() {
         }}>
           <div style={{
             display: 'flex',
-            alignItems: 'flex-end',
+            alignItems: 'flex-start',
             gap: '16px'
           }}>
             <div style={{ flex: 1 }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'space-between',
                 marginBottom: '4px'
               }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  color: '#14171a',
-                  margin: 0
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  {user.firstName || user.name || user.customHandle || user.handle || 'User'}
-                </h2>
-                {user.isChirpPlus && (
-                  <span style={{ fontSize: '20px' }}>👑</span>
+                  <h2 style={{
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    color: '#14171a',
+                    margin: 0
+                  }}>
+                    {user.firstName || user.name || user.customHandle || user.handle || 'User'}
+                  </h2>
+                  {user.isChirpPlus && (
+                    <span style={{ fontSize: '20px' }}>👑</span>
+                  )}
+                </div>
+                
+                {/* Settings Button - Inline with name */}
+                {isOwnProfile && (
+                  <button
+                    onClick={() => setLocation('/settings')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)',
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      paddingTop: '10px',
+                      paddingBottom: '10px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(198, 113, 255, 0.3)',
+                      transition: 'all 0.2s',
+                      height: '40px',
+                      color: '#ffffff',
+                      fontWeight: '600'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
+                    }}
+                  >
+                    <GearIcon size={16} color="#ffffff" />
+                    <span style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#ffffff'
+                    }}>Settings</span>
+                  </button>
                 )}
               </div>
               <p style={{
@@ -628,8 +684,7 @@ export default function Profile() {
                           key={index}
                           style={{
                             color: '#7c3aed',
-                            cursor: 'pointer',
-                            textDecoration: 'underline'
+                            cursor: 'pointer'
                           }}
                           onClick={async () => {
                             try {
