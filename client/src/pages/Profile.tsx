@@ -3,11 +3,12 @@ import { useLocation } from 'wouter';
 import ChirpCard from '../components/ChirpCard';
 import UserAvatar from '../components/UserAvatar';
 import GearIcon from '../components/icons/GearIcon';
+import LinkIcon from '../components/icons/LinkIcon';
 import { useAuth } from '../hooks/useAuth';
 
 // Inline API functions to fetch real data from Supabase
-const getUserChirps = async (userId: string) => {
-  console.log('🔍 getUserChirps called with:', { userId });
+const getUserChirps = async (userId: string, userData?: any) => {
+  console.log('🔍 getUserChirps called with:', { userId, userData });
   
   try {
     // Create Supabase client directly for web
@@ -77,15 +78,15 @@ const getUserChirps = async (userId: string) => {
           imageHeight: chirp.image_height,
           author: {
             id: chirp.author_id,
-            firstName: 'User', // Placeholder since we're not fetching user data
-            lastName: '',
-            email: '',
-            handle: 'user',
-            customHandle: 'user',
-            profileImageUrl: null,
-            avatarUrl: null,
-            isChirpPlus: false,
-            showChirpPlusBadge: false
+            firstName: userData?.firstName || 'User',
+            lastName: userData?.lastName || '',
+            email: userData?.email || '',
+            handle: userData?.handle || 'user',
+            customHandle: userData?.customHandle || 'user',
+            profileImageUrl: userData?.profileImageUrl || null,
+            avatarUrl: userData?.avatarUrl || null,
+            isChirpPlus: userData?.isChirpPlus || false,
+            showChirpPlusBadge: userData?.showChirpPlusBadge || false
           },
           likes: 0, // Default to 0 since column doesn't exist
           replies: 0, // Default to 0 since column doesn't exist
@@ -290,9 +291,79 @@ export default function Profile() {
             // Use Supabase API for user chirps, stats, and profile power
             console.log('🔄 Profile: Fetching user data...');
             
-            // Use Promise.allSettled to handle individual failures gracefully
+            // First fetch user data, then use it for chirps
+            const { createClient } = await import('@supabase/supabase-js');
+            const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+            
+            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            // Fetch user data first
+            const { data: userFromDb, error: userError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .single();
+            
+            let userData;
+            if (userFromDb && !userError) {
+              userData = {
+                id: userFromDb.id,
+                firstName: userFromDb.first_name,
+                lastName: userFromDb.last_name,
+                email: userFromDb.email,
+                name: userFromDb.display_name || `${userFromDb.first_name} ${userFromDb.last_name}`,
+                customHandle: userFromDb.custom_handle,
+                handle: userFromDb.handle,
+                profileImageUrl: userFromDb.profile_image_url,
+                avatarUrl: userFromDb.avatar_url,
+                bannerImageUrl: userFromDb.banner_image_url,
+                bio: userFromDb.bio,
+                linkInBio: userFromDb.link_in_bio || 'https://github.com/user',
+                joinedAt: userFromDb.created_at || '2024-01-15T00:00:00Z',
+                isChirpPlus: userFromDb.is_chirp_plus || false,
+                showChirpPlusBadge: userFromDb.show_chirp_plus_badge || false
+              };
+            } else {
+              // Fallback to authUser data if not found in database
+              userData = authUser ? {
+                id: authUser.id,
+                firstName: authUser.firstName,
+                lastName: authUser.lastName,
+                email: authUser.email,
+                name: authUser.name,
+                customHandle: authUser.customHandle,
+                handle: authUser.handle,
+                profileImageUrl: authUser.profileImageUrl,
+                avatarUrl: authUser.avatarUrl,
+                bannerImageUrl: authUser.bannerImageUrl,
+                bio: authUser.bio,
+                linkInBio: authUser.linkInBio || 'https://github.com/user',
+                joinedAt: authUser.joinedAt || '2024-01-15T00:00:00Z',
+                isChirpPlus: authUser.isChirpPlus || false,
+                showChirpPlusBadge: authUser.showChirpPlusBadge || false
+              } : {
+                id: userId,
+                firstName: 'User',
+                lastName: '',
+                email: '',
+                name: 'User',
+                customHandle: 'user',
+                handle: 'user',
+                profileImageUrl: null,
+                avatarUrl: null,
+                bannerImageUrl: null,
+                bio: '',
+                linkInBio: 'https://github.com/user',
+                joinedAt: '2024-01-15T00:00:00Z',
+                isChirpPlus: false,
+                showChirpPlusBadge: false
+              };
+            }
+
+            // Now fetch other data with user data available
             const [chirpsResult, statsResult, profilePowerResult] = await Promise.allSettled([
-              getUserChirps(userId),
+              getUserChirps(userId, userData),
               getUserStats(userId),
               getProfilePowerBreakdown(userId)
             ]);
@@ -317,76 +388,6 @@ export default function Profile() {
               console.warn('⚠️ Profile: Failed to fetch profile power:', profilePowerResult.reason);
             }
           
-          // Fetch actual user data from Supabase
-          const { createClient } = await import('@supabase/supabase-js');
-          const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-          
-          const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          
-          // Try to find user by ID first, then by handle/email
-          let userData;
-          const { data: userFromDb, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', userId)
-            .single();
-          
-          if (userFromDb && !userError) {
-            userData = {
-              id: userFromDb.id,
-              firstName: userFromDb.first_name,
-              lastName: userFromDb.last_name,
-              email: userFromDb.email,
-              name: userFromDb.display_name || `${userFromDb.first_name} ${userFromDb.last_name}`,
-              customHandle: userFromDb.custom_handle,
-              handle: userFromDb.handle,
-              profileImageUrl: userFromDb.profile_image_url,
-              avatarUrl: userFromDb.avatar_url,
-              bannerImageUrl: userFromDb.banner_image_url,
-              bio: userFromDb.bio,
-              linkInBio: userFromDb.link_in_bio || 'https://github.com/user',
-              joinedAt: userFromDb.created_at || '2024-01-15T00:00:00Z',
-              isChirpPlus: userFromDb.is_chirp_plus || false,
-              showChirpPlusBadge: userFromDb.show_chirp_plus_badge || false
-            };
-          } else {
-            // Fallback to authUser data if not found in database
-            userData = authUser ? {
-              id: authUser.id,
-              firstName: authUser.firstName,
-              lastName: authUser.lastName,
-              email: authUser.email,
-              name: authUser.name,
-              customHandle: authUser.customHandle,
-              handle: authUser.handle,
-              profileImageUrl: authUser.profileImageUrl,
-              avatarUrl: authUser.avatarUrl,
-              bannerImageUrl: authUser.bannerImageUrl,
-              bio: authUser.bio,
-              linkInBio: authUser.linkInBio || 'https://github.com/user',
-              joinedAt: authUser.joinedAt || '2024-01-15T00:00:00Z',
-              isChirpPlus: authUser.isChirpPlus || false,
-              showChirpPlusBadge: authUser.showChirpPlusBadge || false
-            } : {
-              id: userId,
-              firstName: 'User',
-              lastName: 'Profile',
-              email: 'user@chirp.com',
-              name: 'User Profile',
-              handle: 'userprofile',
-              customHandle: 'userprofile',
-              profileImageUrl: null,
-              avatarUrl: null,
-              bannerImageUrl: null,
-              bio: 'Building amazing things with Chirp! 🚀',
-              linkInBio: 'https://github.com/user',
-              joinedAt: '2024-01-15T00:00:00Z',
-              isChirpPlus: false,
-              showChirpPlusBadge: false
-            };
-          }
-          
           console.log('✅ Profile: Loaded user data:', userData);
           console.log('✅ Profile: Loaded chirps:', chirpsData.length);
           console.log('✅ Profile: Loaded stats:', statsData);
@@ -397,7 +398,7 @@ export default function Profile() {
           setStats({
             following: statsData.following || 0,
             followers: statsData.followers || 0,
-            profilePower: profilePowerData.totalPower || 0
+            profilePower: statsData.profilePower || 0
           });
         } catch (error) {
           console.error('❌ Profile: Error loading user profile data:', error);
@@ -585,10 +586,10 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Top half overlapping banner */}
+        {/* Profile Avatar - Bottom half overlapping banner */}
         <div style={{
           position: 'absolute',
-          top: '-44px', // Top half overlaps banner (88px avatar / 2 = 44px)
+          top: '104px', // Bottom half overlaps banner (192px banner - 88px avatar = 104px)
           left: '16px',
           width: '88px', // 80px avatar + 8px border
           height: '88px', // 80px avatar + 8px border
@@ -737,7 +738,7 @@ export default function Profile() {
                     fontSize: '14px'
                   }}
                 >
-                  <span style={{ fontSize: '14px' }}>🔗</span>
+                  <LinkIcon size={14} color="#7c3aed" />
                   <span>{user.linkInBio}</span>
                 </a>
               )}
@@ -745,51 +746,6 @@ export default function Profile() {
           </div>
 
           {/* Action Buttons */}
-          {isOwnProfile && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              marginTop: '16px',
-              marginBottom: '16px'
-            }}>
-              <button
-                onClick={() => setLocation('/settings')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)',
-                  paddingLeft: '16px',
-                  paddingRight: '16px',
-                  paddingTop: '10px',
-                  paddingBottom: '10px',
-                  borderRadius: '20px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(198, 113, 255, 0.3)',
-                  transition: 'all 0.2s',
-                  height: '40px',
-                  color: '#ffffff',
-                  fontWeight: '600'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
-                }}
-              >
-                <GearIcon size={16} color="#ffffff" />
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#ffffff'
-                }}>Settings</span>
-              </button>
-            </div>
-          )}
 
           {/* Profile Power */}
           <div style={{
