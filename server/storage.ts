@@ -1,4 +1,5 @@
 import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, not, or, sql } from "drizzle-orm";
+import { secureRandomInt, secureRandomString } from "../utils/secureRandom";
 import {
     type Chirp,
     chirps,
@@ -1500,8 +1501,8 @@ export class DatabaseStorage implements IStorage {
     
     while (attempts < maxAttempts) {
       // Generate random handle: 2-3 letters + 4-6 numbers
-      const letters = Math.random().toString(36).substring(2, 5).toLowerCase();
-      const numbers = Math.floor(Math.random() * 900000) + 100000; // 6-digit number
+      const letters = secureRandomString(3).toLowerCase();
+      const numbers = secureRandomInt(100000, 999999); // 6-digit number
       const handle = letters + numbers;
       
       if (await this.isHandleAvailable(handle)) {
@@ -1562,7 +1563,7 @@ export class DatabaseStorage implements IStorage {
   // Link sharing operations
   async createShareLink(userId: string): Promise<{ shareCode: string; shareUrl: string }> {
     // Generate unique share code
-    const shareCode = Math.random().toString(36).substr(2, 8) + Date.now().toString(36);
+    const shareCode = secureRandomString(8) + Date.now().toString(36);
     
     const [newShare] = await db.insert(linkShares).values({
       userId,

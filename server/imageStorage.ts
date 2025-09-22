@@ -2,6 +2,7 @@ import axios from 'axios';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { storage } from './storage';
+import { secureRandomString } from "../utils/secureRandom";
 
 // Create images directory if it doesn't exist
 const IMAGES_DIR = path.join(process.cwd(), 'dist', 'generated-images');
@@ -33,7 +34,7 @@ export async function downloadAndSaveImage(imageUrl: string, userId: string, ima
     
     // Create a unique filename
     const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substr(2, 9);
+    const randomId = secureRandomString(9);
     const filename = `${imageType}_${userId}_${timestamp}_${randomId}.png`;
     const filePath = path.join(IMAGES_DIR, filename);
     const publicUrl = `/generated-images/${filename}`;

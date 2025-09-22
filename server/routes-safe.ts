@@ -24,10 +24,14 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       res.header('Access-Control-Allow-Origin', origin || '*');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-      // Only allow credentials for specific origins, not wildcard
+      // Only allow credentials for specific trusted origins, never with wildcard
       if (origin && allowedOrigins.includes(origin)) {
         res.header('Access-Control-Allow-Credentials', 'true');
       }
+    } else {
+      // Reject requests from untrusted origins
+      res.status(403).json({ error: 'Origin not allowed' });
+      return;
     }
     
     if (req.method === 'OPTIONS') {
@@ -660,6 +664,18 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
         });
         
         console.log('🔍 DEBUG: About to set up SPA fallback...');
+        
+        // Add rate limiting for SPA fallback
+        const spaLimiter = rateLimit({
+          windowMs: 15 * 60 * 1000, // 15 minutes
+          max: 100, // limit each IP to 100 requests per windowMs
+          message: 'Too many SPA requests from this IP, please try again later.',
+          standardHeaders: true,
+          legacyHeaders: false,
+        });
+        
+        app.use(spaLimiter);
+        
         // Use a safer SPA fallback pattern
         app.use((req, res, next) => {
           console.log('🔍 DEBUG: SPA fallback called for:', req.path);

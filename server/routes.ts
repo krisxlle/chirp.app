@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import { secureRandomString } from "../utils/secureRandom";
 import { insertChirpSchema, insertFeedbackSchema, insertFollowSchema, insertNotificationSchema, insertPushTokenSchema, insertReactionSchema } from "../shared/schema";
 import { isAuthenticated, setupAuth } from "./auth";
 import { processMentions } from "./mentionUtils";
@@ -1539,7 +1540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let i = 0; i < quantity; i++) {
         // Generate unique code
         const timestamp = Date.now().toString().slice(-6);
-        const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const randomSuffix = secureRandomString(4).toUpperCase();
         const code = `${codePrefix}${timestamp}${randomSuffix}`;
         
         const codeData = await storage.createVipCode({
