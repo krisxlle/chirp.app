@@ -23,14 +23,16 @@ export default function ProfileFrame({ rarity, size = 60, children, className = 
   const frameSize = size * 1.8; // Frame is 80% larger than the base size
   const profileSize = frameSize * 0.45; // Profile picture is 45% of frame size
   
+  console.log('ProfileFrame render:', { rarity, frameImage, frameSize, profileSize });
+  
   return (
     <div 
-      className={`relative flex items-center justify-center ${className}`}
+      className={`relative flex items-center justify-center border-4 border-red-500 ${className}`}
       style={{ width: frameSize, height: frameSize }}
     >
       {/* Profile Picture Container */}
       <div 
-        className="absolute flex items-center justify-center"
+        className="absolute flex items-center justify-center border-2 border-blue-500"
         style={{ 
           width: profileSize, 
           height: profileSize,
@@ -46,8 +48,10 @@ export default function ProfileFrame({ rarity, size = 60, children, className = 
       <img
         src={frameImage}
         alt={`${rarity} frame`}
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute inset-0 w-full h-full object-contain border-2 border-green-500"
         style={{ width: frameSize, height: frameSize }}
+        onLoad={() => console.log('Frame image loaded:', frameImage)}
+        onError={(e) => console.error('Frame image failed to load:', frameImage, e)}
       />
     </div>
   );
