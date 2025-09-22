@@ -157,6 +157,11 @@ const getUserStats = async (userId: string) => {
       .select('id', { count: 'exact', head: true })
       .eq('author_id', userId);
 
+    if (chirpsResult.error) {
+      console.error('❌ Error fetching chirps count:', chirpsResult.error);
+      throw chirpsResult.error;
+    }
+
     const totalChirps = chirpsResult.count || 0;
     const totalLikes = 0; // Will be implemented when reactions system is added
     
@@ -490,8 +495,7 @@ export default function Profile() {
         display: 'flex',
         alignItems: 'center',
         flexDirection: 'row',
-        width: '100%',
-        maxWidth: '600px' // Match Metro width
+        width: '100%'
       }}>
         <button 
           onClick={() => setLocation('/')}
@@ -553,10 +557,10 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Positioned to intersect with banner bottom */}
+        {/* Profile Avatar - Positioned like Metro */}
         <div style={{
           position: 'absolute',
-          top: '-60px', // More overlap to intersect with banner bottom
+          top: '-44px', // Half overlap with banner like Metro
           left: '16px',
           width: '88px', // 80px avatar + 8px border
           height: '88px', // 80px avatar + 8px border
@@ -577,7 +581,7 @@ export default function Profile() {
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
-          marginTop: '60px' // Account for increased avatar overlap
+          marginTop: '44px' // Account for avatar overlap
         }}>
           <div style={{
             display: 'flex',
@@ -597,7 +601,7 @@ export default function Profile() {
                   color: '#14171a',
                   margin: 0
                 }}>
-                  {user.name || user.customHandle || user.handle || 'User'}
+                  {user.firstName || user.name || user.customHandle || user.handle || 'User'}
                 </h2>
                 {user.isChirpPlus && (
                   <span style={{ fontSize: '20px' }}>👑</span>
@@ -610,13 +614,40 @@ export default function Profile() {
                 fontSize: '15px'
               }}>@{user.handle}</p>
               {user.bio && (
-                <p style={{
+                <div style={{
                   color: '#14171a',
                   marginBottom: '12px',
                   margin: 0,
                   fontSize: '15px',
                   lineHeight: '20px'
-                }}>{user.bio}</p>
+                }}>
+                  {user.bio.split(/(@\w+)/).filter(part => part.trim()).map((part, index) => {
+                    if (part.startsWith('@')) {
+                      return (
+                        <span
+                          key={index}
+                          style={{
+                            color: '#7c3aed',
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                          onClick={async () => {
+                            try {
+                              // Navigate to mentioned user profile
+                              const handle = part.substring(1); // Remove @
+                              setLocation(`/profile/${handle}`);
+                            } catch (error) {
+                              console.error('Error navigating to mentioned user:', error);
+                            }
+                          }}
+                        >
+                          {part}
+                        </span>
+                      );
+                    }
+                    return <span key={index}>{part}</span>;
+                  })}
+                </div>
               )}
               {user.linkInBio && (
                 <a 
