@@ -225,9 +225,16 @@ export default function ChirpDetail() {
 
         <main style={{
           paddingBottom: '80px',
-          flex: 1
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
         }}>
-          <div style={{ padding: '16px' }}>
+          <div style={{ 
+            padding: '16px',
+            width: '100%',
+            maxWidth: '600px'
+          }}>
             <div style={{
               border: '1px solid #e5e7eb',
               borderRadius: '12px',
@@ -331,7 +338,9 @@ export default function ChirpDetail() {
         }}>
           <div style={{
             textAlign: 'center',
-            padding: '32px'
+            padding: '32px',
+            width: '100%',
+            maxWidth: '600px'
           }}>
             <p style={{
               color: '#6b7280',
@@ -343,6 +352,12 @@ export default function ChirpDetail() {
       </div>
     );
   }
+
+  // Handle profile navigation
+  const handleProfilePress = (userId: string) => {
+    console.log('📍 Navigating to profile:', userId);
+    setLocation(`/profile/${userId}`);
+  };
 
   return (
     <div style={{
@@ -390,22 +405,34 @@ export default function ChirpDetail() {
 
       <main style={{
         paddingBottom: '80px',
-        flex: 1
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
       }}>
-        {/* Main chirp */}
+        {/* Main chirp - centered */}
         <div style={{
-          backgroundColor: '#ffffff'
+          backgroundColor: '#ffffff',
+          width: '100%',
+          maxWidth: '600px',
+          paddingLeft: '16px',
+          paddingRight: '16px'
         }}>
-          <ChirpCard chirp={chirp} />
+          <ChirpCard 
+            chirp={chirp} 
+            onProfilePress={handleProfilePress}
+          />
         </div>
 
-        {/* Replies */}
+        {/* Replies - centered, no header */}
         {isLoading ? (
           <div style={{
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px'
+            gap: '16px',
+            width: '100%',
+            maxWidth: '600px'
           }}>
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} style={{
@@ -455,39 +482,33 @@ export default function ChirpDetail() {
           </div>
         ) : replies.length > 0 ? (
           <div style={{
-            backgroundColor: '#f8fafc',
-            padding: '16px'
+            width: '100%',
+            maxWidth: '600px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
           }}>
-            <h2 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#333',
-              marginBottom: '16px',
-              margin: 0
-            }}>
-              Replies ({replies.length})
-            </h2>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              border: '1px solid #e5e7eb',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              backgroundColor: '#ffffff'
-            }}>
-              {replies.map((reply: any, index: number) => (
-                <div key={reply.id} style={{
-                  borderTop: index > 0 ? '1px solid #e5e7eb' : 'none'
-                }}>
-                  <ChirpCard chirp={reply} />
-                </div>
-              ))}
-            </div>
+            {replies.map((reply: any, index: number) => (
+              <div key={reply.id} style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                overflow: 'hidden'
+              }}>
+                <ChirpCard 
+                  chirp={reply} 
+                  onProfilePress={handleProfilePress}
+                />
+              </div>
+            ))}
           </div>
         ) : (
           <div style={{
             textAlign: 'center',
-            padding: '32px'
+            padding: '32px',
+            width: '100%',
+            maxWidth: '600px'
           }}>
             <p style={{
               color: '#6b7280',
