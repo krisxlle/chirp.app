@@ -250,6 +250,13 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
 
     if (showFrame) {
       const rarity = determineUserRarity(user);
+      console.log('🖼️ UserAvatar showFrame debug:', {
+        userId: user.id,
+        userHandle: user.handle,
+        userName: user.firstName || user.customHandle,
+        rarity,
+        showFrame
+      });
       return (
         <ProfileFrame rarity={rarity} size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}>
           {avatarContent}
@@ -282,6 +289,13 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
 
   if (showFrame) {
     const rarity = determineUserRarity(user);
+    console.log('🖼️ UserAvatar showFrame debug (second):', {
+      userId: user.id,
+      userHandle: user.handle,
+      userName: user.firstName || user.customHandle,
+      rarity,
+      showFrame
+    });
     return (
       <ProfileFrame rarity={rarity} size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}>
         {avatarContent}

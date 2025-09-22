@@ -35,6 +35,15 @@ const getRarityFrameImage = (rarity: string) => {
 export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {
   const frameImage = getRarityFrameImage(rarity);
   
+  // Debug logging for asset loading
+  console.log('🖼️ ProfileFrame debug:', {
+    rarity,
+    frameImage,
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+    protocol: typeof window !== 'undefined' ? window.location.protocol : 'server',
+    fullUrl: typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}${frameImage}` : 'server'
+  });
+  
   // Calculate proper sizing for frame and profile picture
   const frameSize = size * 1.8; // Frame is 80% larger than the base size
   const profileSize = frameSize * 0.45; // Profile picture size within frame
@@ -67,6 +76,16 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
       <img
         src={frameImage}
         alt={`${rarity} frame`}
+        onError={(e) => {
+          console.error('❌ ProfileFrame image failed to load:', {
+            src: frameImage,
+            rarity,
+            error: e
+          });
+        }}
+        onLoad={() => {
+          console.log('✅ ProfileFrame image loaded successfully:', frameImage);
+        }}
         style={{
           position: 'absolute',
           width: frameSize,
