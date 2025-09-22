@@ -17,7 +17,7 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/((?!api|assets).*)",
+      "source": "/((?!api|assets|favicon|public).*)",
       "destination": "/index.html"
     }
   ],

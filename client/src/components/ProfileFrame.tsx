@@ -20,16 +20,16 @@ const getAssetBaseUrl = () => {
 };
 
 const getRarityFrameImage = (rarity: string) => {
-  const baseUrl = getAssetBaseUrl();
-  const frameNames = {
-    mythic: 'Mystical Frame.png',
-    legendary: 'Legendary Frame.png',
-    epic: 'Epic Frame.png',
-    rare: 'Rare Frame.png',
-    uncommon: 'Uncommon Frame.png',
-    common: 'Common Frame.png',
+  // Use static imports for better reliability on Vercel
+  const frameImages = {
+    mythic: '/assets/Mystical Frame.png',
+    legendary: '/assets/Legendary Frame.png',
+    epic: '/assets/Epic Frame.png',
+    rare: '/assets/Rare Frame.png',
+    uncommon: '/assets/Uncommon Frame.png',
+    common: '/assets/Common Frame.png',
   };
-  return `${baseUrl}/assets/${frameNames[rarity as keyof typeof frameNames]}`;
+  return frameImages[rarity as keyof typeof frameImages];
 };
 
 export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {
