@@ -88,7 +88,7 @@ export default function Auth() {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
-  const { signIn, isAuthenticated } = useAuth();
+  const { signIn, signUp, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
   // Redirect to home if already authenticated
@@ -103,12 +103,33 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      // Use email as username for authentication
-      const result = await signIn(email || username, password);
-      if (result.success) {
-        setLocation('/');
+      if (isSignUp) {
+        // Handle sign up
+        if (!name || !email || !password) {
+          alert('Please fill in all required fields');
+          return;
+        }
+        
+        const result = await signUp({
+          name,
+          email,
+          customHandle: customHandle || undefined,
+          password
+        });
+        
+        if (result.success) {
+          setLocation('/');
+        } else {
+          alert(result.error || 'Sign up failed');
+        }
       } else {
-        alert(result.error || 'Authentication failed');
+        // Handle sign in
+        const result = await signIn(email || username, password);
+        if (result.success) {
+          setLocation('/');
+        } else {
+          alert(result.error || 'Authentication failed');
+        }
       }
     } catch (error) {
       alert('An error occurred. Please try again.');

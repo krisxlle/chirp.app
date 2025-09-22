@@ -51,6 +51,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   signIn: (username: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (userData: { name: string; email: string; customHandle?: string; password: string }) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
   refreshCrystalBalance: () => Promise<void>;
@@ -114,6 +115,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     });
   }, []);
+
+  const signUp = async (userData: { name: string; email: string; customHandle?: string; password: string }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      console.log('🔐 Attempting sign up for:', userData.email);
+      setIsLoading(true);
+      
+      // Get dynamic API base URL
+      const getApiBaseUrl = () => {
+        if (typeof window !== 'undefined') {
+          const hostname = window.location.hostname;
+          if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:5002';
+          }
+          return `${window.location.protocol}//${window.location.host}`;
+        }
+        return 'http://localhost:5002';
+      };
+      
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          customHandle: userData.customHandle,
+          password: userData.password
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Sign up failed:', errorData);
+        return { success: false, error: errorData.error || 'Sign up failed' };
+      }
+
+      const user = await response.json();
+      console.log('✅ Sign up successful:', user);
+      
+      // Store user data
+      await storage.setItem('user', user);
+      setUser(user);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Sign up error:', error);
+      return { success: false, error: 'Network error. Please try again.' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const signIn = async (username: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -301,6 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     signIn,
+    signUp,
     signOut,
     updateUser,
     refreshCrystalBalance,
