@@ -1,9 +1,9 @@
+import { getCollectionFeedChirps, getForYouChirps } from '@/lib/supabase-api.ts';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
-import { getCollectionFeedChirps, getForYouChirps } from '@/lib/supabase-api';
 
 export default function HomePage() {
   // Get user from AuthContext
