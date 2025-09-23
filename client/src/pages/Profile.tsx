@@ -540,6 +540,8 @@ export default function Profile() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [equippedFrame, setEquippedFrame] = useState<any>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLoadingFollow, setIsLoadingFollow] = useState(false);
 
   // Extract userId from URL or use current user
   const userId = location.includes('/profile/') 
@@ -557,8 +559,13 @@ export default function Profile() {
       loadEquippedFrame();
       fetchUserChirps();
       fetchUserReplies();
+      
+      // Check follow status if viewing another user's profile
+      if (!isOwnProfile && authUser?.id) {
+        checkFollowStatus(authUser.id, user.id).then(setIsFollowing);
+      }
     }
-  }, [user?.id]);
+  }, [user?.id, authUser?.id, isOwnProfile]);
 
   const loadEquippedFrame = async () => {
     try {
@@ -566,6 +573,31 @@ export default function Profile() {
       setEquippedFrame(frame);
     } catch (error) {
       console.error('Error loading equipped frame:', error);
+    }
+  };
+
+  const handleFollowToggle = async () => {
+    if (isLoadingFollow || !authUser?.id || !user?.id) {
+      return;
+    }
+
+    setIsLoadingFollow(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(authUser.id, user.id);
+        setIsFollowing(false);
+        // Update followers count
+        setStats(prev => ({ ...prev, followers: prev.followers - 1 }));
+      } else {
+        await followUser(authUser.id, user.id);
+        setIsFollowing(true);
+        // Update followers count
+        setStats(prev => ({ ...prev, followers: prev.followers + 1 }));
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+    } finally {
+      setIsLoadingFollow(false);
     }
   };
 
@@ -981,6 +1013,32 @@ export default function Profile() {
             {userChirps.length} chirps
           </p>
         </div>
+
+        {/* Gear Icon Button - Top Right */}
+        {!isOwnProfile && (
+          <button
+            onClick={() => {
+              // TODO: Show block/notifications menu
+              console.log('Gear button clicked - show block/notifications menu');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              borderRadius: '8px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f2f5'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <GearIcon size={16} color="#7c3aed" />
+          </button>
+        )}
       </div>
 
       {/* Profile Header */}
@@ -1002,14 +1060,14 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Bottom half overlapping banner */}
+        {/* Profile Avatar - Positioned at bottom of banner */}
         <div style={{
           position: 'absolute',
-          top: '-44px', // Position so only top half overlaps banner (half of avatar height)
+          bottom: '-44px', // Position at bottom of banner, half overlapping
           left: '16px',
-          width: '88px', // 80px avatar + 8px border
-          height: '88px', // 80px avatar + 8px border
-          borderRadius: '44px', // (80px avatar + 8px border) / 2 = 44px for perfect circle
+          width: '88px',
+          height: '88px',
+          borderRadius: '44px',
           border: '4px solid #ffffff',
           overflow: 'hidden',
           zIndex: 10,
@@ -1252,46 +1310,41 @@ export default function Profile() {
             marginTop: '16px'
           }}>
             {!isOwnProfile && (
-              <>
-                <button
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    paddingTop: '12px',
-                    paddingBottom: '12px',
-                    borderRadius: '20px',
-                    backgroundColor: '#7c3aed',
-                    color: '#ffffff',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600'
-                  }}
-                >
-                  <span style={{ fontSize: '16px' }}>➕</span>
-                  <span>Follow</span>
-                </button>
-                <button
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingTop: '12px',
-                    paddingBottom: '12px',
-                    paddingLeft: '16px',
-                    paddingRight: '16px',
-                    borderRadius: '20px',
-                    border: '1px solid #d1d5db',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <span style={{ fontSize: '16px' }}>👥</span>
-                </button>
-              </>
+              <button
+                onClick={handleFollowToggle}
+                disabled={isLoadingFollow}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                  borderRadius: '20px',
+                  backgroundColor: isFollowing ? '#ffffff' : '#7c3aed',
+                  color: isFollowing ? '#7c3aed' : '#ffffff',
+                  border: isFollowing ? '1px solid #7c3aed' : 'none',
+                  cursor: isLoadingFollow ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  opacity: isLoadingFollow ? 0.7 : 1,
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isLoadingFollow ? (
+                  <span>...</span>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '16px' }}>
+                      {isFollowing ? '✓' : '+'}
+                    </span>
+                    <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>
