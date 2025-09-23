@@ -25,6 +25,15 @@ import ProfileFrame from './ProfileFrame';
 import SettingsPage from './SettingsPage';
 import UserAvatar from './UserAvatar';
 
+// Profile Frame Functions - Inline to avoid import issues
+const getUserEquippedFrame = async (userId: string) => {
+  console.log('👤 getUserEquippedFrame called with:', { userId });
+  
+  // Return null to simulate no equipped frame for testing
+  // In production, this would check the database for equipped frames
+  return null;
+};
+
 interface User {
   id: string;
   firstName?: string;
@@ -64,6 +73,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
   });
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [equippedFrame, setEquippedFrame] = useState<any>(null);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -131,6 +141,21 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
       fetchUserChirps();
     }
   }, [authUser?.id]); // Only depend on authUser.id, not the entire authUser object or fetchUserChirps
+
+  useEffect(() => {
+    if (user?.id) {
+      loadEquippedFrame();
+    }
+  }, [user?.id]);
+
+  const loadEquippedFrame = async () => {
+    try {
+      const frame = await getUserEquippedFrame(user.id);
+      setEquippedFrame(frame);
+    } catch (error) {
+      console.error('Error loading equipped frame:', error);
+    }
+  };
 
   // Function to update chirp reply count
   const handleChirpReplyUpdate = useCallback((chirpId: string) => {
@@ -226,10 +251,24 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
       <View style={styles.profileSection}>
         {/* Profile Avatar */}
         <View style={styles.avatarContainer}>
-          <ProfileFrame 
-            rarity={determineUserRarity(user)}
-            size={Platform.OS === 'web' ? 108 : 120}
-          >
+          {equippedFrame ? (
+            <ProfileFrame 
+              rarity={equippedFrame.rarity}
+              size={Platform.OS === 'web' ? 108 : 120}
+              customFrameImage={equippedFrame.imageUrl}
+            >
+              <UserAvatar 
+                user={{
+                  id: user.id,
+                  firstName: user.firstName || '',
+                  lastName: user.lastName || '',
+                  email: user.email || '',
+                  profileImageUrl: user.profileImageUrl || undefined
+                }} 
+                size="xl" 
+              />
+            </ProfileFrame>
+          ) : (
             <UserAvatar 
               user={{
                 id: user.id,
@@ -240,7 +279,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
               }} 
               size="xl" 
             />
-          </ProfileFrame>
+          )}
         </View>
 
         {/* Action Buttons */}

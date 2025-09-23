@@ -7,6 +7,15 @@ import GearIcon from '../components/icons/GearIcon';
 import LinkIcon from '../components/icons/LinkIcon';
 import { useAuth } from '../hooks/useAuth';
 
+// Profile Frame Functions - Inline to avoid import issues
+const getUserEquippedFrame = async (userId: string) => {
+  console.log('👤 getUserEquippedFrame called with:', { userId });
+  
+  // Return null to simulate no equipped frame for testing
+  // In production, this would check the database for equipped frames
+  return null;
+};
+
 // Inline rarity determination function to avoid import issues
 const determineUserRarity = (user: {
   id: string;
@@ -529,6 +538,7 @@ export default function Profile() {
     profilePower: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [equippedFrame, setEquippedFrame] = useState<any>(null);
 
   // Extract userId from URL or use current user
   const userId = location.includes('/profile/') 
@@ -540,6 +550,21 @@ export default function Profile() {
       loadUserProfile();
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadEquippedFrame();
+    }
+  }, [user?.id]);
+
+  const loadEquippedFrame = async () => {
+    try {
+      const frame = await getUserEquippedFrame(user.id);
+      setEquippedFrame(frame);
+    } catch (error) {
+      console.error('Error loading equipped frame:', error);
+    }
+  };
 
   const loadUserProfile = async () => {
     setIsLoading(true);
@@ -880,9 +905,13 @@ export default function Profile() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <ProfileFrame rarity={determineUserRarity(user)} size={108}>
+          {equippedFrame ? (
+            <ProfileFrame rarity={equippedFrame.rarity} size={108} customFrameImage={equippedFrame.imageUrl}>
+              <UserAvatar user={user} size="xl" />
+            </ProfileFrame>
+          ) : (
             <UserAvatar user={user} size="xl" />
-          </ProfileFrame>
+          )}
         </div>
         
         {/* Profile Info */}
