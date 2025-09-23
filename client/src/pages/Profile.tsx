@@ -735,7 +735,7 @@ export default function Profile() {
                 avatarUrl: userFromDb.avatar_url,
                 bannerImageUrl: userFromDb.banner_image_url,
                 bio: userFromDb.bio,
-                linkInBio: userFromDb.link_in_bio || 'https://github.com/user',
+                linkInBio: userFromDb.link_in_bio,
                 joinedAt: userFromDb.created_at || '2024-01-15T00:00:00Z',
                 isChirpPlus: userFromDb.is_chirp_plus || false,
                 showChirpPlusBadge: userFromDb.show_chirp_plus_badge || false
@@ -754,7 +754,7 @@ export default function Profile() {
                 avatarUrl: authUser.avatarUrl,
                 bannerImageUrl: authUser.bannerImageUrl,
                 bio: authUser.bio,
-                linkInBio: authUser.linkInBio || 'https://github.com/user',
+                linkInBio: authUser.linkInBio,
                 joinedAt: authUser.joinedAt || '2024-01-15T00:00:00Z',
                 isChirpPlus: authUser.isChirpPlus || false,
                 showChirpPlusBadge: authUser.showChirpPlusBadge || false
@@ -770,7 +770,7 @@ export default function Profile() {
                 avatarUrl: null,
                 bannerImageUrl: null,
                 bio: '',
-                linkInBio: 'https://github.com/user',
+                linkInBio: null,
                 joinedAt: '2024-01-15T00:00:00Z',
                 isChirpPlus: false,
                 showChirpPlusBadge: false
@@ -1145,7 +1145,7 @@ export default function Profile() {
                   })}
                 </div>
               )}
-              {user.linkInBio && (
+              {user.linkInBio && user.linkInBio.trim() !== '' && (
                 <a 
                   href={user.linkInBio} 
                   target="_blank" 
