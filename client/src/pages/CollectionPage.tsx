@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
-import { getUserFrameCollection, equipProfileFrame } from '../lib/database/mobile-db-supabase';
+import { getUserFrameCollection, equipProfileFrame } from '../lib/supabase-api';
 
 // Analytics Icon Component
 const AnalyticsIcon = ({ size = 20, color = "#ffffff" }: { size?: number; color?: string }) => (

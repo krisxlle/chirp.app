@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getUserEquippedFrame } from '../lib/database/mobile-db-supabase';
+import { getUserEquippedFrame } from '../lib/supabase-api';
 import ProfileFrame from './ProfileFrame';
 
 // Inline rarity determination function to avoid import issues

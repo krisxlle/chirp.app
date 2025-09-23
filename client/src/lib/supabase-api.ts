@@ -229,3 +229,141 @@ export const createChirp = async (content: string, authorId: string, replyToId?:
     success: true
   };
 };
+
+// Profile Frame Gacha System Functions
+export const rollProfileFrame = async (userId: string) => {
+  console.log('🎲 rollProfileFrame called with:', { userId });
+  
+  // Return mock frame data for web compatibility
+  const mockFrames = [
+    {
+      id: 1,
+      name: 'Golden Aura',
+      rarity: 'legendary' as const,
+      imageUrl: '/assets/Legendary Frame.png',
+      isNew: true
+    },
+    {
+      id: 2,
+      name: 'Crystal Shard',
+      rarity: 'epic' as const,
+      imageUrl: '/assets/Epic Frame.png',
+      isNew: false
+    },
+    {
+      id: 3,
+      name: 'Silver Lining',
+      rarity: 'rare' as const,
+      imageUrl: '/assets/Rare Frame.png',
+      isNew: true
+    }
+  ];
+  
+  // Return a random frame
+  const randomFrame = mockFrames[Math.floor(Math.random() * mockFrames.length)];
+  return randomFrame;
+};
+
+export const getUserFrameCollection = async (userId: string) => {
+  console.log('🎮 getUserFrameCollection called with:', { userId });
+  
+  // Return mock collection data for web compatibility
+  return [
+    {
+      id: 1,
+      frameId: 1,
+      name: 'Golden Aura',
+      description: 'A legendary frame with golden energy',
+      rarity: 'legendary' as const,
+      imageUrl: '/assets/Legendary Frame.png',
+      quantity: 1,
+      obtainedAt: new Date().toISOString(),
+      seasonName: 'Season 1',
+      isEquipped: true
+    },
+    {
+      id: 2,
+      frameId: 2,
+      name: 'Crystal Shard',
+      description: 'An epic frame with crystal effects',
+      rarity: 'epic' as const,
+      imageUrl: '/assets/Epic Frame.png',
+      quantity: 2,
+      obtainedAt: new Date(Date.now() - 86400000).toISOString(),
+      seasonName: 'Season 1',
+      isEquipped: false
+    }
+  ];
+};
+
+export const equipProfileFrame = async (userId: string, frameId: number) => {
+  console.log('⚡ equipProfileFrame called with:', { userId, frameId });
+  
+  // Return mock success response
+  return true;
+};
+
+export const getUserEquippedFrame = async (userId: string) => {
+  console.log('👤 getUserEquippedFrame called with:', { userId });
+  
+  // Return mock equipped frame data
+  return {
+    id: 1,
+    name: 'Golden Aura',
+    rarity: 'legendary' as const,
+    imageUrl: '/assets/Legendary Frame.png'
+  };
+};
+
+export const getAvailableFrames = async () => {
+  console.log('🎯 getAvailableFrames called');
+  
+  // Return mock available frames for current season
+  return [
+    {
+      id: 1,
+      name: 'Golden Aura',
+      description: 'A legendary frame with golden energy',
+      rarity: 'legendary' as const,
+      imageUrl: '/assets/Legendary Frame.png',
+      previewUrl: '/assets/Legendary Frame Preview.png',
+      seasonId: 1,
+      seasonName: 'Season 1',
+      dropRate: 0.01,
+      isNew: false,
+      quantity: 0,
+      obtainedAt: null,
+      isEquipped: false
+    },
+    {
+      id: 2,
+      name: 'Crystal Shard',
+      description: 'An epic frame with crystal effects',
+      rarity: 'epic' as const,
+      imageUrl: '/assets/Epic Frame.png',
+      previewUrl: '/assets/Epic Frame Preview.png',
+      seasonId: 1,
+      seasonName: 'Season 1',
+      dropRate: 0.05,
+      isNew: false,
+      quantity: 0,
+      obtainedAt: null,
+      isEquipped: false
+    },
+    {
+      id: 3,
+      name: 'Silver Lining',
+      description: 'A rare frame with silver accents',
+      rarity: 'rare' as const,
+      imageUrl: '/assets/Rare Frame.png',
+      previewUrl: '/assets/Rare Frame Preview.png',
+      seasonId: 1,
+      seasonName: 'Season 1',
+      dropRate: 0.15,
+      isNew: false,
+      quantity: 0,
+      obtainedAt: null,
+      isEquipped: false
+    }
+  ];
+};
