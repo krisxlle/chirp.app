@@ -532,6 +532,7 @@ export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
+  const [userReplies, setUserReplies] = useState<any[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
     following: 0,
     followers: 0,
@@ -554,6 +555,8 @@ export default function Profile() {
   useEffect(() => {
     if (user?.id) {
       loadEquippedFrame();
+      fetchUserChirps();
+      fetchUserReplies();
     }
   }, [user?.id]);
 
@@ -563,6 +566,114 @@ export default function Profile() {
       setEquippedFrame(frame);
     } catch (error) {
       console.error('Error loading equipped frame:', error);
+    }
+  };
+
+  const fetchUserChirps = async () => {
+    try {
+      if (!user?.id) return;
+      
+      console.log('🔄 Profile: Fetching user chirps for:', user.id);
+      
+      const { createClient } = await import('@supabase/supabase-js');
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      
+      // Fetch user's chirps (original posts, not replies)
+      const { data: chirps, error: chirpsError } = await supabase
+        .from('chirps')
+        .select('*')
+        .eq('author_id', user.id)
+        .is('reply_to_id', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (chirpsError) {
+        console.error('❌ Error fetching user chirps:', chirpsError);
+        return;
+      }
+
+      // Transform chirps data
+      const transformedChirps = (chirps || []).map((chirp: any) => ({
+        id: chirp.id,
+        content: chirp.content,
+        createdAt: chirp.created_at,
+        author: user,
+        likes: 0,
+        replies: 0,
+        reposts: 0,
+        isLiked: false,
+        isReposted: false,
+        reactionCounts: {},
+        userReaction: null,
+        repostOf: null,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      }));
+
+      setUserChirps(transformedChirps);
+      console.log('✅ Profile: Loaded', transformedChirps.length, 'chirps');
+    } catch (error) {
+      console.error('❌ Error fetching user chirps:', error);
+    }
+  };
+
+  const fetchUserReplies = async () => {
+    try {
+      if (!user?.id) return;
+      
+      console.log('🔄 Profile: Fetching user replies for:', user.id);
+      
+      const { createClient } = await import('@supabase/supabase-js');
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      
+      // Fetch user's replies (comments)
+      const { data: replies, error: repliesError } = await supabase
+        .from('chirps')
+        .select('*')
+        .eq('author_id', user.id)
+        .not('reply_to_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (repliesError) {
+        console.error('❌ Error fetching user replies:', repliesError);
+        return;
+      }
+
+      // Transform replies data
+      const transformedReplies = (replies || []).map((reply: any) => ({
+        id: reply.id,
+        content: reply.content,
+        createdAt: reply.created_at,
+        author: user,
+        likes: 0,
+        replies: 0,
+        reposts: 0,
+        isLiked: false,
+        isReposted: false,
+        reactionCounts: {},
+        userReaction: null,
+        repostOf: null,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      }));
+
+      setUserReplies(transformedReplies);
+      console.log('✅ Profile: Loaded', transformedReplies.length, 'replies');
+    } catch (error) {
+      console.error('❌ Error fetching user replies:', error);
     }
   };
 
@@ -894,11 +1005,12 @@ export default function Profile() {
         {/* Profile Avatar - Bottom half overlapping banner */}
         <div style={{
           position: 'absolute',
-          top: '120px', // Lower position for better half overlap (192px banner - 72px overlap = 120px)
+          top: '-44px', // Position so only top half overlaps banner (half of avatar height)
           left: '16px',
           width: '88px', // 80px avatar + 8px border
           height: '88px', // 80px avatar + 8px border
-          borderRadius: '44px',
+          borderRadius: '44px', // (80px avatar + 8px border) / 2 = 44px for perfect circle
+          border: '4px solid #ffffff',
           overflow: 'hidden',
           zIndex: 10,
           display: 'flex',
@@ -1282,19 +1394,27 @@ export default function Profile() {
         
         {activeTab === 'comments' && (
           <div style={{ marginTop: '16px' }}>
-            <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#111827',
-                marginBottom: '8px',
-                margin: 0
-              }}>No comments yet</h3>
-              <p style={{
-                color: '#6b7280',
-                margin: 0
-              }}>This user hasn't made any comments yet.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {userReplies.length > 0 ? (
+                userReplies.map((reply) => (
+                  <ChirpCard key={reply.id} chirp={reply} />
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    marginBottom: '8px',
+                    margin: 0
+                  }}>No comments yet</h3>
+                  <p style={{
+                    color: '#6b7280',
+                    margin: 0
+                  }}>This user hasn't made any comments yet.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
