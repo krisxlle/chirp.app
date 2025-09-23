@@ -5,13 +5,9 @@ import ProfileFrame from './ProfileFrame';
 const getUserEquippedFrame = async (userId: string) => {
   console.log('👤 getUserEquippedFrame called with:', { userId });
   
-  // Return mock equipped frame data
-  return {
-    id: 1,
-    name: 'Golden Aura',
-    rarity: 'legendary' as const,
-    imageUrl: '/assets/Legendary Frame.png'
-  };
+  // Return null to simulate no equipped frame for testing
+  // In production, this would check the database for equipped frames
+  return null;
 };
 
 // Inline rarity determination function to avoid import issues
@@ -152,12 +148,12 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       </div>
     );
 
-    if (showFrame) {
+    if (showFrame && equippedFrame) {
       return (
         <ProfileFrame 
-          rarity={equippedFrame?.rarity || "common"} 
+          rarity={equippedFrame.rarity} 
           size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
-          customFrameImage={equippedFrame?.imageUrl}
+          customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
         </ProfileFrame>
@@ -281,20 +277,19 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       </div>
     );
 
-    if (showFrame) {
-      const rarity = determineUserRarity(user);
+    if (showFrame && equippedFrame) {
       console.log('🖼️ UserAvatar showFrame debug:', {
         userId: user.id,
         userHandle: user.handle,
         userName: user.firstName || user.customHandle,
-        rarity,
+        equippedFrame: equippedFrame,
         showFrame
       });
       return (
         <ProfileFrame 
-          rarity={equippedFrame?.rarity || rarity} 
+          rarity={equippedFrame.rarity} 
           size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
-          customFrameImage={equippedFrame?.imageUrl}
+          customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
         </ProfileFrame>
@@ -324,20 +319,19 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     </div>
   );
 
-  if (showFrame) {
-    const rarity = determineUserRarity(user);
-    console.log('🖼️ UserAvatar showFrame debug (second):', {
+  if (showFrame && equippedFrame) {
+    console.log('🖼️ UserAvatar showFrame debug (fallback):', {
       userId: user.id,
       userHandle: user.handle,
       userName: user.firstName || user.customHandle,
-      rarity,
+      equippedFrame: equippedFrame,
       showFrame
     });
     return (
       <ProfileFrame 
-        rarity={equippedFrame?.rarity || rarity} 
+        rarity={equippedFrame.rarity} 
         size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
-        customFrameImage={equippedFrame?.imageUrl}
+        customFrameImage={equippedFrame.imageUrl}
       >
         {avatarContent}
       </ProfileFrame>
