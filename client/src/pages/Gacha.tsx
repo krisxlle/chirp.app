@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
-import { getAvailableFrames, rollProfileFrame } from '../lib/supabase-api';
+import { getAvailableFrames, rollProfileFrame } from '../lib/supabase-api.js';
 
 interface ProfileFrame {
   id: number;
