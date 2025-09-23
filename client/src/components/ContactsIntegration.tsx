@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Skeleton } from "./ui/skeleton";
-import { Card, CardContent } from "./ui/card";
-import { Input } from "./ui/input";
-import { Users, UserPlus, Mail, Search, X, MessageSquare } from "lucide-react";
-import { useToast } from "./hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MessageSquare, Search, UserPlus, Users, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { apiRequest } from "./api";
-import UserAvatar from "./UserAvatar";
 import { isUnauthorizedError } from "./authUtils.ts";
+import { useToast } from "./hooks/use-toast";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Skeleton } from "./ui/skeleton";
+import UserAvatar from "./UserAvatar";
 
 interface Contact {
   name: string;
@@ -27,14 +27,36 @@ interface ContactsIntegrationProps {
 
 // Helper function to open SMS with fallback methods
 function openSMSFallback(phone: string, message: string, contactName: string, toastFn: any) {
+  // Validate phone number before constructing URLs
+  if (!phone || phone.trim() === '') {
+    console.error('Invalid phone number provided:', phone);
+    toastFn({
+      title: "Invalid Phone Number",
+      description: "Please provide a valid phone number to send SMS.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Clean and validate phone number
+  const cleanPhone = phone.replace(/[^\d+]/g, ''); // Remove all non-digit characters except +
+  if (cleanPhone.length < 7) {
+    console.error('Phone number too short:', cleanPhone);
+    toastFn({
+      title: "Invalid Phone Number",
+      description: "Phone number must be at least 7 digits long.",
+      variant: "destructive",
+    });
+    return;
+  }
+
   const encodedMessage = encodeURIComponent(message);
   
   // Try different SMS URL formats for different platforms
   const smsUrls = [
-    `sms:${phone}?body=${encodedMessage}`, // iOS/Android
-    `sms:${phone}&body=${encodedMessage}`, // Some Android versions
-    `sms://${phone}?body=${encodedMessage}`, // Alternative format
-    `messaging://compose?addresses=${phone}&body=${encodedMessage}`, // Windows Phone
+    `sms:${cleanPhone}?body=${encodedMessage}`, // iOS/Android
+    `sms:${cleanPhone}&body=${encodedMessage}`, // Some Android versions
+    `sms://${cleanPhone}?body=${encodedMessage}`, // Alternative format
   ];
   
   let urlOpened = false;
@@ -42,6 +64,9 @@ function openSMSFallback(phone: string, message: string, contactName: string, to
   // Try each SMS URL format with different methods
   for (const smsUrl of smsUrls) {
     try {
+      // Validate URL before using it
+      new URL(smsUrl); // This will throw if URL is invalid
+      
       // Method 1: Try with window.location first (most reliable on mobile)
       window.location.href = smsUrl;
       urlOpened = true;

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getUserEquippedFrame } from '../lib/database/mobile-db-supabase';
 import ProfileFrame from './ProfileFrame';
 
 // Inline rarity determination function to avoid import issues
@@ -67,8 +68,24 @@ interface UserAvatarProps {
 
 export default function UserAvatar({ user, size = 'md', onPress, showFrame = false, style }: UserAvatarProps) {
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [equippedFrame, setEquippedFrame] = useState<any>(null);
   
-  // Handle numeric size values
+  // Load equipped frame for the user
+  useEffect(() => {
+    if (user?.id && showFrame) {
+      loadEquippedFrame();
+    }
+  }, [user?.id, showFrame]);
+
+  const loadEquippedFrame = async () => {
+    try {
+      const frame = await getUserEquippedFrame(user.id);
+      setEquippedFrame(frame);
+    } catch (error) {
+      console.error('Error loading equipped frame:', error);
+    }
+  };
   const getSizeStyles = () => {
     if (typeof size === 'number') {
       return { width: `${size}px`, height: `${size}px` };
@@ -125,7 +142,11 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
 
     if (showFrame) {
       return (
-        <ProfileFrame rarity="common" size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}>
+        <ProfileFrame 
+          rarity={equippedFrame?.rarity || "common"} 
+          size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
+          customFrameImage={equippedFrame?.imageUrl}
+        >
           {avatarContent}
         </ProfileFrame>
       );
@@ -258,7 +279,11 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
         showFrame
       });
       return (
-        <ProfileFrame rarity={rarity} size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}>
+        <ProfileFrame 
+          rarity={equippedFrame?.rarity || rarity} 
+          size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
+          customFrameImage={equippedFrame?.imageUrl}
+        >
           {avatarContent}
         </ProfileFrame>
       );
@@ -297,7 +322,11 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       showFrame
     });
     return (
-      <ProfileFrame rarity={rarity} size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}>
+      <ProfileFrame 
+        rarity={equippedFrame?.rarity || rarity} 
+        size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
+        customFrameImage={equippedFrame?.imageUrl}
+      >
         {avatarContent}
       </ProfileFrame>
     );

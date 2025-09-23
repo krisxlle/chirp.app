@@ -30,8 +30,8 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
 
     console.log('✅ Using real Supabase client for getForYouChirps');
     
-    // Fetch chirps from database with optimized query (reduced limit, simplified join)
-    const queryPromise = supabase
+    // Simplified query to prevent timeouts - fetch chirps first, then users separately
+    const chirpsQueryPromise = supabase
       .from('chirps')
       .select(`
         id,
@@ -42,146 +42,75 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
         image_url,
         image_alt_text,
         image_width,
-        image_height,
-        users!inner (
-          id,
-          first_name,
-          last_name,
-          email,
-          handle,
-          custom_handle,
-          profile_image_url,
-          avatar_url
-        )
+        image_height
       `)
       .order('created_at', { ascending: false })
-      .limit(Math.min(limit, 10)) // Cap at 10 to avoid timeout
-      .range(offset, offset + Math.min(limit, 10) - 1);
+      .limit(Math.min(limit, 5)) // Further reduced limit to prevent timeout
+      .range(offset, offset + Math.min(limit, 5) - 1);
 
     // Add timeout to prevent hanging queries
     const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Query timeout')), 10000) // 10 second timeout
+      setTimeout(() => reject(new Error('Query timeout')), 8000) // Reduced timeout to 8 seconds
     );
 
-    const result = await Promise.race([queryPromise, timeoutPromise]) as any;
-    const { data: chirps, error } = result;
+    const chirpsResult = await Promise.race([chirpsQueryPromise, timeoutPromise]) as any;
+    const { data: chirps, error: chirpsError } = chirpsResult;
 
-    if (error) {
-      console.error('❌ Supabase error:', error);
-      throw error;
+    if (chirpsError) {
+      console.error('❌ Supabase chirps error:', chirpsError);
+      throw chirpsError;
     }
 
-    if (chirps && chirps.length > 0) {
-      console.log('✅ Fetched', chirps.length, 'real chirps from database');
-      
-      // Separate main chirps and replies
-      const mainChirps = chirps.filter(chirp => !chirp.reply_to_id);
-      const replies = chirps.filter(chirp => chirp.reply_to_id);
-      
-      // Group replies by their parent chirp
-      const repliesByParent = replies.reduce((acc, reply) => {
-        const parentId = reply.reply_to_id;
-        if (!acc[parentId]) {
-          acc[parentId] = [];
-        }
-        acc[parentId].push(reply);
-        return acc;
-      }, {});
-      
-      // Transform main chirps and include their replies
-      const transformedChirps = mainChirps.map(chirp => {
-        const chirpReplies = repliesByParent[chirp.id] || [];
-        
-        // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
-        const author = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
-        
-        return {
-          id: chirp.id,
-          content: chirp.content,
-          createdAt: chirp.created_at,
-          replyToId: chirp.reply_to_id,
-          imageUrl: chirp.image_url,
-          imageAltText: chirp.image_alt_text,
-          imageWidth: chirp.image_width,
-          imageHeight: chirp.image_height,
-          author: {
-            id: author.id,
-            firstName: author.first_name,
-            lastName: author.last_name,
-            email: author.email,
-            handle: author.handle,
-            customHandle: author.custom_handle,
-            profileImageUrl: author.profile_image_url,
-            avatarUrl: author.avatar_url,
-            isChirpPlus: false, // Default to false since column doesn't exist
-            showChirpPlusBadge: false // Default to false since column doesn't exist
-          },
-          likes: 0, // Default to 0 since column doesn't exist
-          replies: chirpReplies.length, // Count of replies
-          reposts: 0, // Default to 0 since column doesn't exist
-          isLiked: false, // Default to false since column doesn't exist
-          isReposted: false, // Default to false since column doesn't exist
-          reactionCounts: {}, // Default to empty object since column doesn't exist
-          userReaction: null, // Default to null since column doesn't exist
-          repostOf: null, // Default to null since column doesn't exist
-          isAiGenerated: false, // Default to false since column doesn't exist
-          isWeeklySummary: false, // Default to false since column doesn't exist
-          threadId: null, // Default to null since column doesn't exist
-          threadOrder: null, // Default to null since column doesn't exist
-          isThreadStarter: true, // Default to true since column doesn't exist
-          // Include replies for Metro-style display
-          repliesList: chirpReplies.map(reply => {
-            // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
-            const replyAuthor = Array.isArray(reply.users) ? reply.users[0] : reply.users;
-            
-            return {
-              id: reply.id,
-              content: reply.content,
-              createdAt: reply.created_at,
-              replyToId: reply.reply_to_id,
-              imageUrl: reply.image_url,
-              imageAltText: reply.image_alt_text,
-              imageWidth: reply.image_width,
-              imageHeight: reply.image_height,
-              author: {
-                id: replyAuthor.id,
-                firstName: replyAuthor.first_name,
-                lastName: replyAuthor.last_name,
-                email: replyAuthor.email,
-                handle: replyAuthor.handle,
-                customHandle: replyAuthor.custom_handle,
-                profileImageUrl: replyAuthor.profile_image_url,
-                avatarUrl: replyAuthor.avatar_url,
-                isChirpPlus: false,
-                showChirpPlusBadge: false
-              },
-            likes: 0,
-            replies: 0,
-            reposts: 0,
-            isLiked: false,
-            isReposted: false,
-            reactionCounts: {},
-            userReaction: null,
-            repostOf: null,
-            isAiGenerated: false,
-            isWeeklySummary: false,
-            threadId: null,
-            threadOrder: null,
-            isThreadStarter: true,
-            isDirectReply: true,
-            isNestedReply: false,
-            isThreadedChirp: false
-            };
-          })
-        };
-      });
-      
-      console.log('✅ Transformed', transformedChirps.length, 'main chirps with', replies.length, 'total replies');
-      return transformedChirps;
-    } else {
-      console.log('📭 No chirps found in database');
+    if (!chirps || chirps.length === 0) {
+      console.log('📊 No chirps found in database');
       return [];
     }
+
+    // Get user data separately to avoid complex joins
+    const authorIds = [...new Set(chirps.map((chirp: any) => chirp.author_id))];
+    const usersQueryPromise = supabase
+      .from('users')
+      .select('id, first_name, last_name, email, handle, custom_handle, profile_image_url, avatar_url')
+      .in('id', authorIds);
+
+    const usersResult = await Promise.race([usersQueryPromise, timeoutPromise]) as any;
+    const { data: users, error: usersError } = usersResult;
+
+    if (usersError) {
+      console.error('❌ Supabase users error:', usersError);
+      // Continue with empty users array rather than failing completely
+    }
+
+    // Create user map for efficient lookup
+    const userMap = new Map();
+    (users || []).forEach((user: any) => {
+      userMap.set(user.id, user);
+    });
+
+    // Transform chirps with user data
+    const transformedChirps = chirps.map((chirp: any) => {
+      const user = userMap.get(chirp.author_id);
+      return {
+        ...chirp,
+        author: user || {
+          id: chirp.author_id,
+          first_name: 'Unknown',
+          last_name: '',
+          email: '',
+          handle: 'unknown',
+          custom_handle: 'unknown',
+          profile_image_url: null,
+          avatar_url: null
+        },
+        replyCount: 0, // Simplified - no individual count queries
+        reactionCount: 0, // Simplified - no individual count queries
+        userHasLiked: false // Simplified - no individual like status queries
+      };
+    });
+
+    console.log('✅ Fetched', transformedChirps.length, 'real chirps from database');
+    
+    return transformedChirps;
   } catch (error) {
     console.error('❌ Error fetching real chirps from Supabase:', error);
     console.error('❌ Supabase connection details:', {

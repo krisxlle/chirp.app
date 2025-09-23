@@ -5,6 +5,7 @@ interface ProfileFrameProps {
   size?: number;
   children: React.ReactNode;
   style?: React.CSSProperties;
+  customFrameImage?: string; // Allow custom frame image for equipped frames
 }
 
 const getRarityColor = (rarity: string) => {
@@ -38,10 +39,12 @@ const getRarityFrameImage = (rarity: string) => {
   return imagePath;
 };
 
-export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {
+export default function ProfileFrame({ rarity, size = 60, children, style, customFrameImage }: ProfileFrameProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const frameImage = getRarityFrameImage(rarity);
+  
+  // Use custom frame image if provided, otherwise use rarity-based image
+  const frameImage = customFrameImage || getRarityFrameImage(rarity);
   
   // Debug logging for asset loading
   console.log('🖼️ ProfileFrame debug:', {
@@ -55,7 +58,7 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
   });
   
   // Calculate proper sizing for frame and profile picture
-  const frameSize = size * 1.4; // Frame is 40% larger than the base size (reduced further)
+  const frameSize = size * 1.8; // Frame is 80% larger than the base size (matching metro)
   const profileSize = frameSize * 0.45; // Profile picture size within frame (45% of frame)
   
   return (
@@ -77,9 +80,9 @@ export default function ProfileFrame({ rarity, size = 60, children, style }: Pro
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        top: '50%', // Centered vertically in the frame
+        top: '30%', // Centered vertically in the frame (matching metro)
         left: '50%', // Centered horizontally in the frame
-        transform: 'translate(-50%, -50%)', // Perfect centering
+        transform: 'translateX(-50%)', // Only translate X to center horizontally
         zIndex: 0
       }}>
         {children}

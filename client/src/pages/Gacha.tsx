@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { getAvailableFrames, rollProfileFrame } from '../lib/database/mobile-db-supabase';
 
-interface ProfileCard {
-  id: string;
+interface ProfileFrame {
+  id: number;
   name: string;
-  handle: string;
+  description?: string;
   rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
-  imageUrl?: string;
-  bio: string;
-  followers: number;
-  profilePower: number;
-  quantity: number;
+  imageUrl: string;
+  previewUrl?: string;
+  seasonId: number;
+  seasonName: string;
+  dropRate: number;
+  isNew?: boolean;
+  quantity?: number;
   obtainedAt?: string;
+  isEquipped?: boolean;
 }
 
 const mockProfileCards: ProfileCard[] = [
@@ -160,14 +164,32 @@ const ChirpLogo = ({ size = 24, color = "#f5a5e0" }) => (
 export default function Gacha() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [collection, setCollection] = useState<ProfileCard[]>([]);
+  const [availableFrames, setAvailableFrames] = useState<ProfileFrame[]>([]);
   const [isRolling, setIsRolling] = useState(false);
-  const [pulledCard, setPulledCard] = useState<ProfileCard | null>(null);
-  const [showPulledCard, setShowPulledCard] = useState(false);
-  const [pulledCards, setPulledCards] = useState<ProfileCard[]>([]);
-  const [showPulledCards, setShowPulledCards] = useState(false);
+  const [pulledFrame, setPulledFrame] = useState<ProfileFrame | null>(null);
+  const [showPulledFrame, setShowPulledFrame] = useState(false);
+  const [pulledFrames, setPulledFrames] = useState<ProfileFrame[]>([]);
+  const [showPulledFrames, setShowPulledFrames] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showCrystalInfoModal, setShowCrystalInfoModal] = useState(false);
+  const [currentSeason, setCurrentSeason] = useState<string>('');
+
+  // Load available frames on component mount
+  useEffect(() => {
+    loadAvailableFrames();
+  }, []);
+
+  const loadAvailableFrames = async () => {
+    try {
+      const frames = await getAvailableFrames();
+      setAvailableFrames(frames);
+      if (frames.length > 0) {
+        setCurrentSeason(frames[0].seasonName);
+      }
+    } catch (error) {
+      console.error('Error loading available frames:', error);
+    }
+  };
 
   // Helper function to get current crystal balance
   const getCurrentCrystalBalance = (): number => {
@@ -191,19 +213,22 @@ export default function Gacha() {
     return 0;
   };
 
-  const openCapsule = async (): Promise<ProfileCard | null> => {
+  const openCapsule = async (): Promise<ProfileFrame | null> => {
     try {
-      // For now, use mock data - can be replaced with real API calls later
-      const randomMockCard = mockProfileCards[Math.floor(Math.random() * mockProfileCards.length)];
-      return randomMockCard;
+      if (!user?.id) {
+        console.error('❌ No user ID available for rolling');
+        return null;
+      }
+      
+      const rolledFrame = await rollProfileFrame(user.id);
+      return rolledFrame;
     } catch (error) {
       console.error('❌ Error in openCapsule:', error);
-      const randomMockCard = mockProfileCards[Math.floor(Math.random() * mockProfileCards.length)];
-      return randomMockCard;
+      return null;
     }
   };
 
-  const rollForProfile = async (rollCount: number = 1) => {
+  const rollForFrame = async (rollCount: number = 1) => {
     if (isRolling) return;
     
     const cost = rollCount === 10 ? 950 : 100;
@@ -226,31 +251,31 @@ export default function Gacha() {
     setTimeout(async () => {
       try {
         console.log('🎲 Starting capsule opening animation...');
-        const results: ProfileCard[] = [];
+        const results: ProfileFrame[] = [];
         
         for (let i = 0; i < rollCount; i++) {
-          const newProfile = await openCapsule();
-          console.log('🎲 Capsule result:', newProfile?.name, newProfile?.rarity);
+          const newFrame = await openCapsule();
+          console.log('🎲 Capsule result:', newFrame?.name, newFrame?.rarity);
           
-          if (newProfile) {
-            const profileWithTimestamp = {
-              ...newProfile,
+          if (newFrame) {
+            const frameWithTimestamp = {
+              ...newFrame,
               obtainedAt: new Date().toISOString(),
             };
-            results.push(profileWithTimestamp);
+            results.push(frameWithTimestamp);
           }
         }
         
         if (results.length > 0) {
           // Show different modals based on roll count
           if (rollCount === 10) {
-            // Show multi-card results for 10-roll
-            setPulledCards(results);
-            setShowPulledCards(true);
+            // Show multi-frame results for 10-roll
+            setPulledFrames(results);
+            setShowPulledFrames(true);
           } else {
-            // Show single card result for 1-roll
-            setPulledCard(results[0]);
-            setShowPulledCard(true);
+            // Show single frame result for 1-roll
+            setPulledFrame(results[0]);
+            setShowPulledFrame(true);
           }
           
           toast({
@@ -439,7 +464,7 @@ export default function Gacha() {
           gap: '20px'
         }}>
           <button
-            onClick={() => rollForProfile()}
+            onClick={() => rollForFrame(1)}
             disabled={isRolling || getCurrentCrystalBalance() < 100}
             style={{
               borderRadius: '25px',
@@ -495,7 +520,7 @@ export default function Gacha() {
           </button>
           
           <button
-            onClick={() => rollForProfile(10)}
+            onClick={() => rollForFrame(10)}
             disabled={isRolling || getCurrentCrystalBalance() < 950}
             style={{
               borderRadius: '25px',
@@ -750,8 +775,8 @@ export default function Gacha() {
         </div>
       )}
 
-      {/* Pulled Card Modal */}
-      {showPulledCard && pulledCard && (
+      {/* Pulled Frame Modal */}
+      {showPulledFrame && pulledFrame && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -784,9 +809,9 @@ export default function Gacha() {
                 fontWeight: 'bold',
                 color: '#1f2937',
                 margin: 0
-              }}>You Got a New Profile!</h2>
+              }}>You Got a New Profile Frame!</h2>
               <button
-                onClick={() => setShowPulledCard(false)}
+                onClick={() => setShowPulledFrame(false)}
                 style={{
                   backgroundColor: 'transparent',
                   border: 'none',
@@ -801,29 +826,26 @@ export default function Gacha() {
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <img
-                  src={pulledCard.imageUrl}
-                  alt={pulledCard.name}
+                  src={pulledFrame.imageUrl}
+                  alt={pulledFrame.name}
                   style={{
                     width: '128px',
                     height: '128px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    margin: '0 auto',
-                    border: `4px solid ${rarityColors[pulledCard.rarity]}`
+                    objectFit: 'contain',
                   }}
                 />
                 <div style={{
                   position: 'absolute',
                   top: '-8px',
                   right: '-8px',
-                  backgroundColor: rarityColors[pulledCard.rarity],
+                  backgroundColor: rarityColors[pulledFrame.rarity],
                   color: 'white',
                   padding: '4px 8px',
                   borderRadius: '12px',
                   fontSize: '12px',
                   fontWeight: 'bold'
                 }}>
-                  {rarityNames[pulledCard.rarity]}
+                  {rarityNames[pulledFrame.rarity]}
                 </div>
               </div>
               <div>
@@ -832,17 +854,17 @@ export default function Gacha() {
                   fontWeight: 'bold',
                   color: '#1f2937',
                   margin: 0
-                }}>{pulledCard.name}</h3>
+                }}>{pulledFrame.name}</h3>
                 <p style={{
                   color: '#6b7280',
                   margin: 0
-                }}>{pulledCard.handle}</p>
+                }}>{pulledFrame.description}</p>
                 <p style={{
                   fontSize: '14px',
                   color: '#374151',
                   marginTop: '8px',
                   margin: 0
-                }}>{pulledCard.bio}</p>
+                }}>Season: {pulledFrame.seasonName}</p>
               </div>
               <button 
                 style={{
@@ -857,19 +879,19 @@ export default function Gacha() {
                   cursor: 'pointer',
                   transition: 'transform 0.2s'
                 }}
-                onClick={() => setShowPulledCard(false)}
+                onClick={() => setShowPulledFrame(false)}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
-                View Profile
+                Equip Frame
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Multi-Card Results Modal */}
-      {showPulledCards && (
+      {/* Multi-Frame Results Modal */}
+      {showPulledFrames && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -922,14 +944,14 @@ export default function Gacha() {
                   textAlign: 'center',
                   color: '#6b7280',
                   margin: 0
-                }}>You pulled {pulledCards.length} profiles!</p>
+                }}>You pulled {pulledFrames.length} profile frames!</p>
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: '16px'
                 }}>
-                  {pulledCards.map((card, index) => (
-                    <div key={`${card.id}-${index}`} style={{
+                  {pulledFrames.map((frame, index) => (
+                    <div key={`${frame.id}-${index}`} style={{
                       textAlign: 'center',
                       backgroundColor: '#f8fafc',
                       borderRadius: '12px',
@@ -937,29 +959,26 @@ export default function Gacha() {
                     }}>
                       <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
                         <img
-                          src={card.imageUrl}
-                          alt={card.name}
+                          src={frame.imageUrl}
+                          alt={frame.name}
                           style={{
                             width: '80px',
                             height: '80px',
-                            borderRadius: '50%',
-                            objectFit: 'cover',
-                            margin: '0 auto',
-                            border: `2px solid ${rarityColors[card.rarity]}`
+                            objectFit: 'contain',
                           }}
                         />
                         <div style={{
                           position: 'absolute',
                           top: '-4px',
                           right: '-4px',
-                          backgroundColor: rarityColors[card.rarity],
+                          backgroundColor: rarityColors[frame.rarity],
                           color: 'white',
                           padding: '2px 6px',
                           borderRadius: '8px',
                           fontSize: '10px',
                           fontWeight: 'bold'
                         }}>
-                          {rarityNames[card.rarity]}
+                          {rarityNames[frame.rarity]}
                         </div>
                       </div>
                       <h4 style={{
@@ -967,12 +986,12 @@ export default function Gacha() {
                         fontSize: '14px',
                         color: '#1f2937',
                         margin: 0
-                      }}>{card.name}</h4>
+                      }}>{frame.name}</h4>
                       <p style={{
                         fontSize: '12px',
                         color: '#6b7280',
                         margin: 0
-                      }}>{card.handle}</p>
+                      }}>{frame.seasonName}</p>
                     </div>
                   ))}
                 </div>
@@ -989,7 +1008,7 @@ export default function Gacha() {
                     cursor: 'pointer',
                     transition: 'transform 0.2s'
                   }}
-                  onClick={() => setShowPulledCards(false)}
+                  onClick={() => setShowPulledFrames(false)}
                   onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                   onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >

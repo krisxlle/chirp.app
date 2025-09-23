@@ -1,10 +1,56 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import ChirpCard from '../components/ChirpCard';
+import ProfileFrame from '../components/ProfileFrame';
 import UserAvatar from '../components/UserAvatar';
 import GearIcon from '../components/icons/GearIcon';
 import LinkIcon from '../components/icons/LinkIcon';
 import { useAuth } from '../hooks/useAuth';
+
+// Inline rarity determination function to avoid import issues
+const determineUserRarity = (user: {
+  id: string;
+  handle?: string;
+  firstName?: string;
+  customHandle?: string;
+}): 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common' => {
+  if (!user) return 'common';
+  
+  const userHandle = (user.handle || '').toLowerCase();
+  const userName = (user.firstName || user.customHandle || '').toLowerCase();
+  
+  // Bot detection with hardcoded rarities
+  if (userHandle.includes('crimsontalon') || userName.includes('crimsontalon')) {
+    return 'mythic';
+  } else if (userHandle.includes('solarius') || userName.includes('solarius')) {
+    return 'legendary';
+  } else if (userHandle.includes('prisma') || userName.includes('prisma')) {
+    return 'epic';
+  } else if (userHandle.includes('skye') || userName.includes('skye')) {
+    return 'rare';
+  } else if (userHandle.includes('thorne') || userName.includes('thorne')) {
+    return 'uncommon';
+  } else if (userHandle.includes('obsidian') || userName.includes('obsidian')) {
+    return 'common';
+  }
+  
+  // For regular users, we need a consistent way to determine rarity
+  // We'll use a hash of the user ID to ensure consistency
+  const userId = user.id;
+  const hash = userId.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  const rarityRoll = Math.abs(hash) % 100;
+  
+  if (rarityRoll < 1) return 'mythic';      // 1%
+  else if (rarityRoll < 5) return 'legendary';  // 4%
+  else if (rarityRoll < 15) return 'epic';      // 10%
+  else if (rarityRoll < 35) return 'rare';      // 20%
+  else if (rarityRoll < 65) return 'uncommon';  // 30%
+  else return 'common';                           // 35%
+};
 
 // Utility function to add sample relationships data
 const addSampleRelationships = async () => {
@@ -513,12 +559,31 @@ export default function Profile() {
             
             const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             
-            // Fetch user data first
-            const { data: userFromDb, error: userError } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', userId)
-              .single();
+            // Fetch user data first - handle both UUID and handle
+            let userFromDb, userError;
+            
+            // Check if userId is a UUID (36 characters with dashes)
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+            
+            if (isUUID) {
+              // Query by ID
+              const result = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+              userFromDb = result.data;
+              userError = result.error;
+            } else {
+              // Query by handle (custom_handle or handle)
+              const result = await supabase
+                .from('users')
+                .select('*')
+                .or(`custom_handle.eq.${userId},handle.eq.${userId}`)
+                .single();
+              userFromDb = result.data;
+              userError = result.error;
+            }
             
             let userData;
             if (userFromDb && !userError) {
@@ -815,7 +880,9 @@ export default function Profile() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <UserAvatar user={user} size={80} showFrame={true} />
+          <ProfileFrame rarity={determineUserRarity(user)} size={108}>
+            <UserAvatar user={user} size="xl" />
+          </ProfileFrame>
         </div>
         
         {/* Profile Info */}

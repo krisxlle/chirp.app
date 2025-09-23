@@ -810,10 +810,17 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
               return (
                 <TouchableOpacity 
                   key={index}
-                  onPress={(e) => {
+                  onPress={async (e) => {
                     e.stopPropagation();
-                    Alert.alert('Mention Navigation', `Navigate to ${part}'s profile`);
-                    // TODO: Implement notification to mentioned user
+                    try {
+                      // Navigate to mentioned user profile
+                      const handle = part.substring(1); // Remove @
+                      const { router } = await import('expo-router');
+                      router.push(`/profile/${handle}`);
+                    } catch (error) {
+                      console.error('Error navigating to mentioned user:', error);
+                      Alert.alert('Error', 'Failed to navigate to user profile.');
+                    }
                   }}
                 >
                   <Text style={styles.mentionText}>{part}</Text>

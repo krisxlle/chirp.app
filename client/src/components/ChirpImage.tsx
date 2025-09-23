@@ -5,6 +5,8 @@ interface ChirpImageProps {
   imageAltText?: string;
   imageWidth?: number;
   imageHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
   onImagePress?: () => void;
 }
 
@@ -13,6 +15,8 @@ export default function ChirpImage({
   imageAltText, 
   imageWidth, 
   imageHeight,
+  maxWidth,
+  maxHeight,
   onImagePress 
 }: ChirpImageProps) {
   const [imageError, setImageError] = useState(false);
@@ -24,6 +28,8 @@ export default function ChirpImage({
     imageAltText,
     imageWidth,
     imageHeight,
+    maxWidth,
+    maxHeight,
     hasImageUrl: !!imageUrl
   });
 
@@ -105,8 +111,8 @@ export default function ChirpImage({
           cursor: 'pointer',
           transition: 'opacity 0.2s',
           opacity: isLoading ? 0 : 1,
-          maxWidth: imageWidth ? `${imageWidth}px` : '100%',
-          maxHeight: imageHeight ? `${imageHeight}px` : '400px',
+          maxWidth: maxWidth ? `${maxWidth}px` : (imageWidth ? `${imageWidth}px` : '100%'),
+          maxHeight: maxHeight ? `${maxHeight}px` : (imageHeight ? `${imageHeight}px` : '400px'),
           objectFit: 'cover'
         }}
         onLoad={handleImageLoad}

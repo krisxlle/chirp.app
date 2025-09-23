@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
-import { apiRequest } from '../components/api';
+import { getUserFrameCollection, equipProfileFrame } from '../lib/database/mobile-db-supabase';
 
 // Analytics Icon Component
 const AnalyticsIcon = ({ size = 20, color = "#ffffff" }: { size?: number; color?: string }) => (
@@ -23,18 +23,18 @@ const AnalyticsIcon = ({ size = 20, color = "#ffffff" }: { size?: number; color?
   </svg>
 );
 
-interface ProfileCard {
-  id: string;
+interface ProfileFrame {
+  id: number;
+  frameId: number;
   name: string;
-  handle: string;
+  description?: string;
   rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
-  imageUrl?: string;
-  bio: string;
-  followers: number;
-  profilePower: number;
+  imageUrl: string;
+  previewUrl?: string;
   quantity: number;
-  obtainedAt?: string;
-  userId?: string;
+  obtainedAt: string;
+  seasonName: string;
+  isEquipped: boolean;
 }
 
 const rarityColors = {
@@ -58,11 +58,12 @@ const rarityNames = {
 export default function CollectionPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [collection, setCollection] = useState<ProfileCard[]>([]);
+  const [collection, setCollection] = useState<ProfileFrame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedSeason, setSelectedSeason] = useState<string>('All');
 
-  // Load user's collection from API
+  // Load user's frame collection from database
   useEffect(() => {
     loadUserCollection();
   }, []);
@@ -71,15 +72,15 @@ export default function CollectionPage() {
     try {
       setIsLoading(true);
       if (user?.id) {
-        console.log('🎮 Loading collection for user:', user.id);
-        const response = await apiRequest(`/api/users/${user.id}/collection`);
-        console.log('🎮 Collection data:', response);
-        setCollection(response || []);
+        console.log('🎮 Loading frame collection for user:', user.id);
+        const userCollection = await getUserFrameCollection(user.id);
+        console.log('🎮 Frame collection data:', userCollection);
+        setCollection(userCollection || []);
       } else {
         setCollection([]);
       }
     } catch (error) {
-      console.error('❌ Error loading user collection:', error);
+      console.error('❌ Error loading user frame collection:', error);
       setCollection([]);
     } finally {
       setIsLoading(false);
@@ -92,13 +93,34 @@ export default function CollectionPage() {
     setIsRefreshing(false);
   };
 
-  const handleProfileClick = (profile: ProfileCard) => {
-    if (profile.userId) {
-      setLocation(`/profile/${profile.userId}`);
-    } else {
-      setLocation(`/profile/${profile.id}`);
+  const handleEquipFrame = async (frameId: number) => {
+    if (!user?.id) return;
+    
+    try {
+      const success = await equipProfileFrame(user.id, frameId);
+      if (success) {
+        // Refresh collection to update equipped status
+        await loadUserCollection();
+      }
+    } catch (error) {
+      console.error('❌ Error equipping frame:', error);
     }
   };
+
+  // Group frames by season
+  const framesBySeason = collection.reduce((acc, frame) => {
+    const season = frame.seasonName;
+    if (!acc[season]) {
+      acc[season] = [];
+    }
+    acc[season].push(frame);
+    return acc;
+  }, {} as Record<string, ProfileFrame[]>);
+
+  const seasons = Object.keys(framesBySeason);
+  const filteredCollection = selectedSeason === 'All' 
+    ? collection 
+    : framesBySeason[selectedSeason] || [];
 
   return (
     <div style={{
@@ -128,12 +150,12 @@ export default function CollectionPage() {
             color: '#1f2937',
             marginBottom: '4px',
             margin: 0
-          }}>My Collection</h1>
+          }}>My Frame Collection</h1>
           <p style={{
             fontSize: '16px',
             color: '#6b7280',
             margin: 0
-          }}>Your collected profile cards</p>
+          }}>Your collected profile frames</p>
         </div>
         <div style={{
           display: 'flex',
@@ -193,7 +215,49 @@ export default function CollectionPage() {
           color: '#1f2937',
           marginBottom: '16px',
           margin: 0
-        }}>Your Collection ({collection.length})</h2>
+        }}>Your Frame Collection ({filteredCollection.length})</h2>
+
+        {/* Season Filter */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '24px',
+          flexWrap: 'wrap'
+        }}>
+          <button
+            onClick={() => setSelectedSeason('All')}
+            style={{
+              backgroundColor: selectedSeason === 'All' ? '#C671FF' : '#f3f4f6',
+              color: selectedSeason === 'All' ? 'white' : '#374151',
+              border: 'none',
+              borderRadius: '20px',
+              padding: '8px 16px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            All ({collection.length})
+          </button>
+          {seasons.map(season => (
+            <button
+              key={season}
+              onClick={() => setSelectedSeason(season)}
+              style={{
+                backgroundColor: selectedSeason === season ? '#C671FF' : '#f3f4f6',
+                color: selectedSeason === season ? 'white' : '#374151',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              {season} ({framesBySeason[season]?.length || 0})
+            </button>
+          ))}
+        </div>
 
         {isLoading ? (
           <div style={{
@@ -222,7 +286,7 @@ export default function CollectionPage() {
               color: '#6b7280',
               marginBottom: '8px',
               margin: 0
-            }}>No profile cards collected yet</p>
+            }}>No profile frames collected yet</p>
             <p style={{
               fontSize: '14px',
               color: '#9ca3af',
@@ -237,20 +301,18 @@ export default function CollectionPage() {
             justifyContent: 'space-between',
             gap: '16px'
           }}>
-            {collection.map((profile) => (
+            {filteredCollection.map((frame) => (
               <div
-                key={profile.id}
+                key={frame.id}
                 style={{
-                  width: '400px',
+                  width: '300px',
                   backgroundColor: '#f3e8ff',
                   borderRadius: '12px',
                   padding: '20px',
                   border: '1px solid #e5e7eb',
                   alignItems: 'center',
-                  cursor: 'pointer',
                   position: 'relative'
                 }}
-                onClick={() => handleProfileClick(profile)}
               >
                 {/* Rarity Badge */}
                 <div style={{
@@ -262,22 +324,80 @@ export default function CollectionPage() {
                   paddingTop: '4px',
                   paddingBottom: '4px',
                   borderRadius: '8px',
-                  backgroundColor: rarityColors[profile.rarity],
+                  backgroundColor: rarityColors[frame.rarity],
                   zIndex: 1
                 }}>
                   <span style={{
                     color: '#ffffff',
                     fontSize: '10px',
                     fontWeight: 'bold'
-                  }}>{rarityNames[profile.rarity]}</span>
+                  }}>{rarityNames[frame.rarity]}</span>
                 </div>
 
-                {/* Profile Image */}
+                {/* Frame Image */}
                 <div style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '30px',
-                  backgroundColor: rarityColors[profile.rarity],
+                  width: '120px',
+                  height: '120px',
+                  margin: '0 auto 16px auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <img
+                    src={frame.imageUrl}
+                    alt={frame.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+
+                {/* Frame Info */}
+                <div style={{ textAlign: 'center' }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: '#1f2937',
+                    marginBottom: '8px',
+                    margin: 0
+                  }}>{frame.name}</h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    margin: 0
+                  }}>{frame.description}</p>
+                  <p style={{
+                    fontSize: '12px',
+                    color: '#9ca3af',
+                    marginBottom: '16px',
+                    margin: 0
+                  }}>Season: {frame.seasonName}</p>
+                  
+                  {/* Equip Button */}
+                  <button
+                    onClick={() => handleEquipFrame(frame.frameId)}
+                    disabled={frame.isEquipped}
+                    style={{
+                      width: '100%',
+                      backgroundColor: frame.isEquipped ? '#10b981' : '#C671FF',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: frame.isEquipped ? 'default' : 'pointer',
+                      opacity: frame.isEquipped ? 0.8 : 1
+                    }}
+                  >
+                    {frame.isEquipped ? 'Equipped' : 'Equip Frame'}
+                  </button>
+                </div>
+              </div>
+            ))}
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

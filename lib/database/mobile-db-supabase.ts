@@ -3295,7 +3295,200 @@ export async function getCollectionFeedChirps(userId: string, limit: number = 10
   }
 }
 
-// Get user's gacha collection
+// Profile Frame Gacha System Functions
+
+// Roll for a profile frame
+export const rollProfileFrame = async (userId: string): Promise<any> => {
+  try {
+    console.log('🎲 Rolling for profile frame for user:', userId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, cannot roll for frame');
+      return null;
+    }
+    
+    // Use the database function to roll for a frame
+    const { data, error } = await supabase.rpc('roll_profile_frame', {
+      user_uuid: userId
+    });
+    
+    if (error) {
+      console.error('❌ Error rolling for profile frame:', error);
+      return null;
+    }
+    
+    if (data && data.length > 0) {
+      const result = data[0];
+      console.log('🎲 Rolled frame:', result);
+      return {
+        id: result.frame_id,
+        name: result.frame_name,
+        rarity: result.frame_rarity,
+        imageUrl: result.frame_image_url,
+        isNew: result.is_new
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error in rollProfileFrame:', error);
+    return null;
+  }
+};
+
+// Get user's frame collection
+export const getUserFrameCollection = async (userId: string): Promise<any[]> => {
+  try {
+    console.log('🎮 Fetching user frame collection:', userId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, returning empty collection');
+      return [];
+    }
+    
+    // Use the database function to get user's frame collection
+    const { data, error } = await supabase.rpc('get_user_frame_collection', {
+      user_uuid: userId
+    });
+    
+    if (error) {
+      console.error('❌ Error fetching user frame collection:', error);
+      return [];
+    }
+    
+    const transformedCollection = (data || []).map((item: any) => ({
+      id: item.collection_id,
+      frameId: item.frame_id,
+      name: item.frame_name,
+      description: item.frame_description,
+      rarity: item.frame_rarity,
+      imageUrl: item.frame_image_url,
+      previewUrl: item.frame_preview_url,
+      quantity: item.quantity,
+      obtainedAt: item.obtained_at,
+      seasonName: item.season_name,
+      isEquipped: item.is_equipped
+    }));
+    
+    console.log('🎮 User frame collection loaded:', transformedCollection.length, 'frames');
+    return transformedCollection;
+  } catch (error) {
+    console.error('❌ Error in getUserFrameCollection:', error);
+    return [];
+  }
+};
+
+// Equip a profile frame
+export const equipProfileFrame = async (userId: string, frameId: number): Promise<boolean> => {
+  try {
+    console.log('🎯 Equipping frame for user:', userId, 'frame:', frameId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, cannot equip frame');
+      return false;
+    }
+    
+    // Use the database function to equip the frame
+    const { data, error } = await supabase.rpc('equip_profile_frame', {
+      user_uuid: userId,
+      frame_id: frameId
+    });
+    
+    if (error) {
+      console.error('❌ Error equipping profile frame:', error);
+      return false;
+    }
+    
+    console.log('🎯 Frame equipped successfully:', data);
+    return data === true;
+  } catch (error) {
+    console.error('❌ Error in equipProfileFrame:', error);
+    return false;
+  }
+};
+
+// Get user's equipped frame
+export const getUserEquippedFrame = async (userId: string): Promise<any> => {
+  try {
+    console.log('🎯 Fetching equipped frame for user:', userId);
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, returning null');
+      return null;
+    }
+    
+    // Use the database function to get equipped frame
+    const { data, error } = await supabase.rpc('get_user_equipped_frame', {
+      user_uuid: userId
+    });
+    
+    if (error) {
+      console.error('❌ Error fetching equipped frame:', error);
+      return null;
+    }
+    
+    if (data && data.length > 0) {
+      const result = data[0];
+      return {
+        id: result.frame_id,
+        name: result.frame_name,
+        rarity: result.frame_rarity,
+        imageUrl: result.frame_image_url,
+        equippedAt: result.equipped_at
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error in getUserEquippedFrame:', error);
+    return null;
+  }
+};
+
+// Get available frames for current season
+export const getAvailableFrames = async (): Promise<any[]> => {
+  try {
+    console.log('🎲 Fetching available frames for current season');
+    await ensureDatabaseInitialized();
+    
+    if (!isDatabaseConnected) {
+      console.log('🔄 Database not connected, returning empty frames');
+      return [];
+    }
+    
+    // Use the database function to get available frames
+    const { data, error } = await supabase.rpc('get_available_frames');
+    
+    if (error) {
+      console.error('❌ Error fetching available frames:', error);
+      return [];
+    }
+    
+    const transformedFrames = (data || []).map((frame: any) => ({
+      id: frame.id,
+      name: frame.name,
+      description: frame.description,
+      rarity: frame.rarity,
+      seasonId: frame.season_id,
+      imageUrl: frame.image_url,
+      previewUrl: frame.preview_url,
+      dropRate: frame.drop_rate,
+      seasonName: frame.season_name
+    }));
+    
+    console.log('🎲 Available frames loaded:', transformedFrames.length, 'frames');
+    return transformedFrames;
+  } catch (error) {
+    console.error('❌ Error in getAvailableFrames:', error);
+    return [];
+  }
+};
+
+// Legacy function - Get user's gacha collection (for backward compatibility)
 export const getUserCollection = async (userId: string): Promise<any[]> => {
   try {
     console.log('🎮 Fetching user collection:', userId);

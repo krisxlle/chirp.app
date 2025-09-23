@@ -530,8 +530,9 @@ export default function ChirpCard({
                   key={index}
                   onClick={(e) => {
                     e.stopPropagation();
-                    alert('Mention Navigation', `Navigate to ${part}'s profile`);
-                    // TODO: Implement notification to mentioned user
+                    // Navigate to mentioned user profile
+                    const handle = part.substring(1); // Remove @
+                    setLocation(`/profile/${handle}`);
                   }}
                   style={{ color: '#7c3aed', fontSize: '15px', cursor: 'pointer' }}
                 >
