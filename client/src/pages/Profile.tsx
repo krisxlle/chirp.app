@@ -600,11 +600,11 @@ export default function Profile() {
               userFromDb = result.data;
               userError = result.error;
             } else {
-              // Query by handle (custom_handle or handle)
+              // Query by handle (custom_handle or handle) - case insensitive
               const result = await supabase
                 .from('users')
                 .select('*')
-                .or(`custom_handle.eq.${userId},handle.eq.${userId}`)
+                .or(`custom_handle.ilike.${userId},handle.ilike.${userId}`)
                 .single();
               userFromDb = result.data;
               userError = result.error;
