@@ -1,4 +1,4 @@
-import { Bird, Plus, RefreshCw, Search } from 'lucide-react';
+import { Plus, RefreshCw, Search } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
@@ -170,7 +170,7 @@ export default function HomePage() {
     setChirps(updateChirp);
   }, []);
   
-  // Function to add a new chirp to the For You feed
+  // Function to add a new chirp to the feed
   const handleNewChirp = useCallback(async (content: string, imageData?: {
     imageUrl?: string;
     imageAltText?: string;
@@ -237,7 +237,7 @@ export default function HomePage() {
   // Function to handle chirp deletion
   const handleChirpDelete = useCallback((deletedChirpId?: string) => {
     if (deletedChirpId) {
-      setForYouChirps(prevChirps => 
+      setChirps(prevChirps => 
         prevChirps.filter(chirp => chirp.id !== deletedChirpId)
       );
     }
