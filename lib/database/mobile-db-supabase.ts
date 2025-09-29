@@ -1504,7 +1504,8 @@ export const createChirp = async (
       content: content,
       author_id: authorId,
       reply_to_id: replyToId || null,
-      is_weekly_summary: false
+      is_weekly_summary: false,
+      created_at: new Date().toISOString()
     };
 
     // Add image data if provided
@@ -1535,6 +1536,7 @@ export const createChirp = async (
       delete chirpWithoutImage.image_alt_text;
       delete chirpWithoutImage.image_width;
       delete chirpWithoutImage.image_height;
+      // Keep created_at timestamp
       
       const { data: chirpData_result, error: chirpError } = await withTimeout(
         supabase
@@ -1615,6 +1617,11 @@ export const createChirp = async (
 
     console.log('✅ Chirp created successfully:', data.id);
     console.log('📊 Created chirp ID:', truncateId(data?.id)); // Added debugging
+    console.log('🕒 Chirp timestamp:', {
+      created_at: data.created_at,
+      created_at_type: typeof data.created_at,
+      is_valid: data.created_at ? !isNaN(new Date(data.created_at).getTime()) : false
+    });
     console.log('🖼️ Chirp image data:', {
       hasImage: !!data.image_url,
       imageUrl: data.image_url?.substring(0, 50) + '...',
