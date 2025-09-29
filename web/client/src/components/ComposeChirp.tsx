@@ -16,7 +16,6 @@ interface ComposeChirpProps {
   }) => Promise<void> | void;
 }
 
-
 export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [content, setContent] = useState("");
   const [isPosting, setIsPosting] = useState(false);
@@ -47,22 +46,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     }
   };
 
-  const handleThreadTextareaClick = () => {
-    if (threadTextareaRef.current) {
-      threadTextareaRef.current.focus();
-    }
-  };
-
   // Auto-resize on content change
   useEffect(() => {
     if (textareaRef.current) {
       autoResizeTextarea(textareaRef.current);
-    }
-  }, [content]);
-
-  useEffect(() => {
-    if (threadTextareaRef.current) {
-      autoResizeTextarea(threadTextareaRef.current);
     }
   }, [content]);
 
@@ -208,7 +195,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
 
   // Normal compose mode
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg p-4 max-w-md mx-auto">
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-4 max-w-md mx-auto shadow-lg">
       <div className="flex space-x-3">
         <UserAvatar user={user} size="md" />
         

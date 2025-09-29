@@ -19,6 +19,14 @@ interface UserAvatarProps {
 }
 
 export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarProps) {
+  // Debug logging
+  console.log('👤 UserAvatar render:', {
+    userId: user.id,
+    profileImageUrl: user.profileImageUrl,
+    avatarUrl: user.avatarUrl,
+    hasImage: !!(user.profileImageUrl || user.avatarUrl)
+  });
+  
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':

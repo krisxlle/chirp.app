@@ -669,6 +669,12 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 
     const formatDate = (dateString: string) => {
     try {
+      // Check if dateString is undefined or null
+      if (!dateString) {
+        console.warn('Invalid date string: undefined');
+        return 'now';
+      }
+      
       const date = new Date(dateString);
       
       // Check if the date is valid

@@ -1,42 +1,38 @@
+import { formatDistanceToNow } from 'date-fns';
+import {
+    BellOff,
+    Bot,
+    Heart,
+    Link as LinkIcon,
+    MessageCircle,
+    MoreHorizontal,
+    Repeat2,
+    Share2,
+    Sparkles,
+    Trash2,
+    UserMinus,
+    UserX
+} from 'lucide-react';
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../components/AuthContext';
+import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
-import { formatDistanceToNow } from 'date-fns';
 import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
+import ChirpPlusBadge from './ChirpPlusBadge';
 import ImageViewerModal from './ImageViewerModal';
-import UserAvatar from './UserAvatar';
 import MentionText from './MentionText';
 import MoodReactions from './MoodReactions';
-import ChirpPlusBadge from './ChirpPlusBadge';
 import { Button } from './ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Textarea } from './ui/textarea';
-import { HeartIcon, ShareIcon, SpeechBubbleIcon } from './icons';
-import { 
-  Heart, 
-  MessageCircle, 
-  Repeat2, 
-  Share, 
-  MoreHorizontal, 
-  Trash2, 
-  UserMinus, 
-  UserPlus, 
-  UserX,
-  Bot,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Bell,
-  BellOff,
-  Sparkles
-} from 'lucide-react';
+import UserAvatar from './UserAvatar';
 
 interface User {
   id: string;
@@ -291,7 +287,7 @@ export default function ChirpCard({
           {/* Content */}
           <div className="flex-1 min-w-0">
             {/* Header */}
-            <div className="flex items-center space-x-2 mb-1">
+            <div className="flex items-center space-x-1 mb-1">
               <button
                 onClick={handleProfilePress}
                 className="font-semibold text-gray-900 dark:text-white hover:underline"
@@ -312,7 +308,7 @@ export default function ChirpCard({
               
               <span className="text-gray-500 dark:text-gray-400">·</span>
               <span className="text-gray-500 dark:text-gray-400">
-                {formatDistanceToNow(new Date(chirp.createdAt), { addSuffix: true })}
+                {chirp.createdAt ? formatDistanceToNow(new Date(chirp.createdAt), { addSuffix: true }) : 'now'}
               </span>
 
               {/* AI Generated indicator */}
@@ -341,7 +337,7 @@ export default function ChirpCard({
             </div>
 
             {/* Content */}
-            <div className="mb-3">
+            <div className="mb-3 -ml-1">
               <MentionText 
                 text={chirp.content} 
                 onMentionPress={handleMentionPress}
@@ -414,7 +410,7 @@ export default function ChirpCard({
                 onClick={handleShare}
                 className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <Share className="h-4 w-4" />
+                <Share2 className="h-4 w-4" />
               </Button>
 
               {/* More options */}

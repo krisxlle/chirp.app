@@ -20,74 +20,6 @@ interface ProfileCard {
   obtainedAt?: string;
 }
 
-const mockProfileCards: ProfileCard[] = [
-  {
-    id: '1',
-    name: 'Alex Chen',
-    handle: '@alex_chen',
-    rarity: 'mythic',
-    imageUrl: '/attached_assets/IMG_0653_1753250221773.png',
-    bio: 'Building the future, one algorithm at a time. AI enthusiast, coffee addict, and occasional philosopher.',
-    followers: 125000,
-    profilePower: 892,
-    quantity: 1,
-  },
-  {
-    id: '2',
-    name: 'Maya Rodriguez',
-    handle: '@maya_rodriguez',
-    rarity: 'legendary',
-    imageUrl: '/attached_assets/IMG_0654_1753256178546.png',
-    bio: 'Protecting our oceans, one coral reef at a time. Diver, scientist, and advocate for marine conservation.',
-    followers: 89000,
-    profilePower: 634,
-    quantity: 1,
-  },
-  {
-    id: '3',
-    name: 'Jordan Kim',
-    handle: '@jordan_kim',
-    rarity: 'epic',
-    imageUrl: '/attached_assets/IMG_0655_1753256178546.png',
-    bio: 'Creating digital art that bridges reality and imagination. NFT artist, designer, and tech enthusiast.',
-    followers: 67000,
-    profilePower: 487,
-    quantity: 1,
-  },
-  {
-    id: '4',
-    name: 'Sam Taylor',
-    handle: '@sam_taylor',
-    rarity: 'rare',
-    imageUrl: '/attached_assets/IMG_0653_1753250221773.png',
-    bio: 'Musician, producer, and sound engineer. Always chasing the perfect beat.',
-    followers: 45000,
-    profilePower: 312,
-    quantity: 1,
-  },
-  {
-    id: '5',
-    name: 'Riley Park',
-    handle: '@riley_park',
-    rarity: 'uncommon',
-    imageUrl: '/attached_assets/IMG_0654_1753256178546.png',
-    bio: 'Food blogger and chef. Sharing recipes and culinary adventures from around the world.',
-    followers: 28000,
-    profilePower: 198,
-    quantity: 1,
-  },
-  {
-    id: '6',
-    name: 'Casey Lee',
-    handle: '@casey_lee',
-    rarity: 'common',
-    imageUrl: '/attached_assets/IMG_0655_1753256178546.png',
-    bio: 'Student, gamer, and aspiring developer. Learning to code one bug at a time.',
-    followers: 12000,
-    profilePower: 89,
-    quantity: 1,
-  },
-];
 
 const rarityColors = {
   mythic: '#ef4444',
@@ -187,8 +119,8 @@ export default function Gacha() {
           rarity: item.frameRarity,
           imageUrl: item.frameImageUrl,
           bio: `A ${item.frameRarity} profile frame in your collection!`,
-          followers: Math.floor(Math.random() * 100000) + 10000,
-          profilePower: Math.floor(Math.random() * 1000) + 100,
+          followers: 0, // Remove mock data
+          profilePower: 0, // Remove mock data
           quantity: item.quantity,
           obtainedAt: item.obtainedAt
         }));
@@ -236,8 +168,8 @@ export default function Gacha() {
           rarity: frameData.frameRarity,
           imageUrl: frameData.frameImageUrl,
           bio: `A ${frameData.frameRarity} profile frame obtained from the gacha!`,
-          followers: Math.floor(Math.random() * 100000) + 10000,
-          profilePower: Math.floor(Math.random() * 1000) + 100,
+          followers: 0, // Remove mock data
+          profilePower: 0, // Remove mock data
           quantity: 1,
           obtainedAt: frameData.obtainedAt
         };
@@ -249,9 +181,8 @@ export default function Gacha() {
     } catch (error) {
       console.error('❌ Error in openCapsule:', error);
       
-      // Fallback to mock data if API fails
-      const randomMockCard = mockProfileCards[Math.floor(Math.random() * mockProfileCards.length)];
-      return randomMockCard;
+      // Return null if API fails - no fallback to mock data
+      return null;
     }
   };
 

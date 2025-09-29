@@ -4,13 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsive } from '../hooks/useResponsive';
-import { getCollectionFeedChirps, getForYouChirps } from '../lib/api/mobile-api';
+import { getForYouChirps } from '../lib/api/mobile-api';
 import { clearChirpCache } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import ComposeChirp from './ComposeChirp';
 import ProfileModal from './ProfileModal';
-import BirdIcon from './icons/BirdIcon';
 import SearchIcon from './icons/SearchIcon';
 
 export default function HomePage() {
@@ -18,16 +17,11 @@ export default function HomePage() {
   const { user } = useAuth();
   const { padding, spacing } = useResponsive();
   
-  // State for feed type
-  const [feedType, setFeedType] = useState<'forYou' | 'collection'>('forYou');
-  
   // State for chirps with pagination support
   const [forYouChirps, setForYouChirps] = useState<any[]>([]);
-  const [collectionChirps, setCollectionChirps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreChirps, setHasMoreChirps] = useState(true);
-  const [hasMoreCollectionChirps, setHasMoreCollectionChirps] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(0);
   
   // State for compose modal
@@ -67,156 +61,83 @@ export default function HomePage() {
     }
   }, []);
 
-  // Load initial collection chirps function
-  const loadInitialCollectionChirps = useCallback(async (forceRefresh = false) => {
-    if (!user?.id) return;
-    
-    try {
-      // Don't reload if we have recent data and not forcing refresh
-      const now = Date.now();
-      if (!forceRefresh && collectionChirps.length > 0 && (now - lastRefresh) < 60000) {
-        console.log('🔄 HomePage: Using cached collection chirps (last refresh:', now - lastRefresh, 'ms ago)');
-        return;
-      }
-      
-      setIsLoading(true);
-      console.log('🔄 HomePage: Loading initial collection chirps from database...', forceRefresh ? '(force refresh)' : '');
-      const startTime = Date.now();
-      
-      const realChirps = await getCollectionFeedChirps(user.id, INITIAL_LIMIT, 0);
-      const loadTime = Date.now() - startTime;
-      
-      console.log(`✅ HomePage: Loaded ${realChirps.length} initial collection chirps from database in ${loadTime}ms`);
-      
-      setCollectionChirps(realChirps);
-      setLastRefresh(now);
-      setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
-    } catch (error) {
-      console.error('❌ HomePage: Error loading initial collection chirps from database:', error);
-      console.log('🔄 HomePage: Keeping existing collection chirps array');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
-  
   // Load more chirps function for pagination
   const loadMoreChirps = useCallback(async () => {
     if (isLoadingMore) return;
     
-    // Check which feed type we're loading more for
-    const isForYouFeed = feedType === 'forYou';
-    const hasMore = isForYouFeed ? hasMoreChirps : hasMoreCollectionChirps;
-    const currentChirps = isForYouFeed ? forYouChirps : collectionChirps;
-    
-    if (!hasMore) return;
+    if (!hasMoreChirps) return;
     
     try {
       setIsLoadingMore(true);
-      console.log(`🔄 HomePage: Loading more ${feedType} chirps...`);
+      console.log('🔄 HomePage: Loading more chirps...');
       const startTime = Date.now();
       
-      let moreChirps;
-      if (isForYouFeed) {
-        moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, currentChirps.length);
-      } else {
-        if (!user?.id) return;
-        moreChirps = await getCollectionFeedChirps(user.id, LOAD_MORE_LIMIT, currentChirps.length);
-      }
+      const moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, forYouChirps.length);
       
       const loadTime = Date.now() - startTime;
-      console.log(`✅ HomePage: Loaded ${moreChirps.length} more ${feedType} chirps in ${loadTime}ms`);
+      console.log(`✅ HomePage: Loaded ${moreChirps.length} more chirps in ${loadTime}ms`);
       
       if (moreChirps.length > 0) {
-        if (isForYouFeed) {
-          setForYouChirps(prevChirps => {
-            // Create a map to track existing chirp IDs
-            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
-            // Filter out any duplicate chirps
-            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
-            return [...prevChirps, ...uniqueNewChirps];
-          });
-          setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
-        } else {
-          setCollectionChirps(prevChirps => {
-            // Create a map to track existing chirp IDs
-            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
-            // Filter out any duplicate chirps
-            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
-            return [...prevChirps, ...uniqueNewChirps];
-          });
-          setHasMoreCollectionChirps(moreChirps.length === LOAD_MORE_LIMIT);
-        }
+        setForYouChirps(prevChirps => {
+          // Create a map to track existing chirp IDs
+          const existingIds = new Set(prevChirps.map(chirp => chirp.id));
+          // Filter out any duplicate chirps
+          const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
+          return [...prevChirps, ...uniqueNewChirps];
+        });
+        setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
       } else {
-        if (isForYouFeed) {
-          setHasMoreChirps(false);
-        } else {
-          setHasMoreCollectionChirps(false);
-        }
+        setHasMoreChirps(false);
       }
     } catch (error) {
-      console.error(`❌ HomePage: Error loading more ${feedType} chirps:`, error);
+      console.error('❌ HomePage: Error loading more chirps:', error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [feedType, user?.id]);
+  }, [forYouChirps.length, hasMoreChirps, isLoadingMore]);
   
   // Load initial chirps on mount
   useEffect(() => {
     // Only load chirps if user is available
-    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id, 'feedType:', feedType);
+    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id);
     if (user) {
-      if (feedType === 'forYou') {
-        loadInitialChirps();
-      } else {
-        loadInitialCollectionChirps();
-      }
+      loadInitialChirps();
     } else {
       console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
     }
-  }, [user?.id, feedType]);
+  }, [user?.id]);
 
   // Clear chirps when user changes to prevent showing old user's data
   useEffect(() => {
     console.log('🔄 HomePage: User changed, clearing cached chirps');
     setForYouChirps([]);
-    setCollectionChirps([]);
     setHasMoreChirps(true);
-    setHasMoreCollectionChirps(true);
     setLastRefresh(0);
     clearChirpCache(); // Clear database cache as well
   }, [user?.id]);
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {
-    console.log(`🔄 HomePage: Force refreshing ${feedType} chirps...`);
+    console.log('🔄 HomePage: Force refreshing chirps...');
     try {
       setIsLoading(true);
       clearChirpCache(); // Clear cache before refreshing
       
       const startTime = Date.now();
-      let realChirps;
-      
-      if (feedType === 'forYou') {
-        realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
-        setForYouChirps(realChirps);
-        setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
-      } else {
-        if (!user?.id) return;
-        realChirps = await getCollectionFeedChirps(user.id, INITIAL_LIMIT, 0);
-        setCollectionChirps(realChirps);
-        setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
-      }
+      const realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
       
       const loadTime = Date.now() - startTime;
-      console.log(`✅ HomePage: Refreshed ${realChirps.length} ${feedType} chirps from database in ${loadTime}ms`);
+      console.log(`✅ HomePage: Refreshed ${realChirps.length} chirps from database in ${loadTime}ms`);
       
+      setForYouChirps(realChirps);
+      setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
       setLastRefresh(Date.now());
     } catch (error) {
-      console.error(`❌ HomePage: Error refreshing ${feedType} chirps:`, error);
+      console.error('❌ HomePage: Error refreshing chirps:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [feedType, user?.id]);
+  }, []);
   
   // Function to update chirp like count
   const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
@@ -231,12 +152,8 @@ export default function HomePage() {
           : chirp
       );
     
-    if (feedType === 'forYou') {
-      setForYouChirps(updateChirp);
-    } else {
-      setCollectionChirps(updateChirp);
-    }
-  }, [feedType]);
+    setForYouChirps(updateChirp);
+  }, []);
 
   const handleChirpReplyUpdate = useCallback((chirpId: string) => {
     const updateChirp = (prevChirps: any[]) => 
@@ -246,12 +163,8 @@ export default function HomePage() {
           : chirp
       );
     
-    if (feedType === 'forYou') {
-      setForYouChirps(updateChirp);
-    } else {
-      setCollectionChirps(updateChirp);
-    }
-  }, [feedType]);
+    setForYouChirps(updateChirp);
+  }, []);
   
   // Function to add a new chirp to the For You feed
   const handleNewChirp = useCallback(async (content: string, imageData?: {
@@ -348,53 +261,6 @@ export default function HomePage() {
         </View>
       </View>
 
-      {/* Feed Type Toggle - Updated to match SettingsPage styling */}
-      <View style={[styles.tabsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
-        <View style={styles.tabsButtonContainer}>
-          <TouchableOpacity
-            style={styles.tabButton}
-            onPress={() => setFeedType('forYou')}
-          >
-            {feedType === 'forYou' ? (
-              <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.activeTabButton}
-              >
-                <Text style={[styles.tabButtonText, styles.activeTabButtonText]}>
-                  For You
-                </Text>
-              </LinearGradient>
-            ) : (
-              <Text style={styles.tabButtonText}>
-                For You
-              </Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.tabButton}
-            onPress={() => setFeedType('collection')}
-          >
-            {feedType === 'collection' ? (
-              <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.activeTabButton}
-              >
-                <Text style={[styles.tabButtonText, styles.activeTabButtonText]}>
-                  Collection
-                </Text>
-              </LinearGradient>
-            ) : (
-              <Text style={styles.tabButtonText}>
-                Collection
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
 
 
       {/* Chirps Feed with Infinite Scroll */}
@@ -427,83 +293,44 @@ export default function HomePage() {
           <ComposeChirp onPost={handleNewChirp} />
         </View>
 
-        {feedType === 'forYou' ? (
-          // For You Feed
-          <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
-            {forYouChirps.length === 0 && !isLoading ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyIcon}>💬</Text>
-                <Text style={styles.emptyTitle}>No chirps yet</Text>
-                <Text style={styles.emptySubtext}>Be the first to chirp!</Text>
-              </View>
-            ) : (
-              <>
-                {forYouChirps.map((chirp, index) => (
-                  <ChirpCard 
-                    key={`${chirp.id}-${index}`} 
-                    chirp={chirp} 
-                    onLikeUpdate={handleChirpLikeUpdate}
-                    onDeleteSuccess={handleChirpDelete}
-                    onReplyPosted={handleChirpReplyUpdate}
-                    onProfilePress={(userId) => router.push(`/profile/${userId}`)}
-                  />
-                ))}
-                
-                {/* Loading more indicator */}
-                {isLoadingMore && (
-                  <View style={styles.loadingMoreContainer}>
-                    <ActivityIndicator size="small" color="#7c3aed" />
-                    <Text style={styles.loadingMoreText}>Loading more chirps...</Text>
-                  </View>
-                )}
-                
-                {/* End of feed indicator */}
-                {!hasMoreChirps && forYouChirps.length > 0 && (
-                  <View style={styles.endOfFeedContainer}>
-                    <Text style={styles.endOfFeedText}>You've reached the end! 🎉</Text>
-                  </View>
-                )}
-              </>
-            )}
-          </View>
-                 ) : (
-           // Collection Feed
-           <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
-             {collectionChirps.length === 0 && !isLoading ? (
-               <View style={styles.emptyState}>
-                 <BirdIcon size={50} color="#7c3aed" />
-                 <Text style={styles.emptyTitle}>No Collection Chirps</Text>
-                 <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
-               </View>
-             ) : (
-               <>
-                 {collectionChirps.map((chirp, index) => (
-                   <ChirpCard 
-                     key={`${chirp.id}-${index}`} 
-                     chirp={chirp} 
-                     onLikeUpdate={handleChirpLikeUpdate}
-                     onReplyPosted={handleChirpReplyUpdate}
-                   />
-                 ))}
-                 
-                 {/* Load More Button */}
-                 {hasMoreCollectionChirps && (
-                   <TouchableOpacity 
-                     style={styles.loadMoreButton} 
-                     onPress={loadMoreChirps}
-                     disabled={isLoadingMore}
-                   >
-                     {isLoadingMore ? (
-                       <ActivityIndicator color="#7c3aed" size="small" />
-                     ) : (
-                       <Text style={styles.loadMoreText}>Load More Collection Chirps</Text>
-                     )}
-                   </TouchableOpacity>
-                 )}
-               </>
-             )}
-           </View>
-         )}
+        {/* For You Feed */}
+        <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
+          {forYouChirps.length === 0 && !isLoading ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>💬</Text>
+              <Text style={styles.emptyTitle}>No chirps yet</Text>
+              <Text style={styles.emptySubtext}>Be the first to chirp!</Text>
+            </View>
+          ) : (
+            <>
+              {forYouChirps.map((chirp, index) => (
+                <ChirpCard 
+                  key={`${chirp.id}-${index}`} 
+                  chirp={chirp} 
+                  onLikeUpdate={handleChirpLikeUpdate}
+                  onDeleteSuccess={handleChirpDelete}
+                  onReplyPosted={handleChirpReplyUpdate}
+                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+                />
+              ))}
+              
+              {/* Loading more indicator */}
+              {isLoadingMore && (
+                <View style={styles.loadingMoreContainer}>
+                  <ActivityIndicator size="small" color="#7c3aed" />
+                  <Text style={styles.loadingMoreText}>Loading more chirps...</Text>
+                </View>
+              )}
+              
+              {/* End of feed indicator */}
+              {!hasMoreChirps && forYouChirps.length > 0 && (
+                <View style={styles.endOfFeedContainer}>
+                  <Text style={styles.endOfFeedText}>You've reached the end! 🎉</Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
       </ScrollView>
 
       {/* Floating Compose Button */}
@@ -587,50 +414,6 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     padding: 8,
-  },
-  // Updated tabs styling to match SettingsPage
-  tabsContainer: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-    paddingVertical: 12,
-  },
-  tabsButtonContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#f7f9fa',
-    borderRadius: 12,
-    padding: 3,
-  },
-  tabButton: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 2,
-    flex: 1,
-  },
-  activeTabButton: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    boxShadow: '0 2px 6px rgba(124, 58, 237, 0.3)',
-    elevation: 4,
-  },
-  tabButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#657786',
-  },
-  activeTabButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffffff',
   },
   feed: {
     flex: 1,
@@ -733,7 +516,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24, // Ensure consistent line height
     includeFontPadding: false, // Remove extra padding on Android
-    transform: [{ translateY: -3 }], // Shift icon up to center it perfectly
+    transform: [{ translateY: -1 }], // Shift icon up to center it perfectly
   },
   // Compose Modal Styles
   composeModalContainer: {
