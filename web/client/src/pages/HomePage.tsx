@@ -14,16 +14,11 @@ export default function HomePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
-  // State for feed type
-  const [feedType, setFeedType] = useState<'forYou' | 'collection'>('forYou');
-  
   // State for chirps with pagination support
-  const [forYouChirps, setForYouChirps] = useState<any[]>([]);
-  const [collectionChirps, setCollectionChirps] = useState<any[]>([]);
+  const [chirps, setChirps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreChirps, setHasMoreChirps] = useState(true);
-  const [hasMoreCollectionChirps, setHasMoreCollectionChirps] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(0);
   
   // State for compose modal
@@ -38,7 +33,7 @@ export default function HomePage() {
     try {
       // Don't reload if we have recent data and not forcing refresh
       const now = Date.now();
-      if (!forceRefresh && forYouChirps.length > 0 && (now - lastRefresh) < 60000) { // Increased cache time
+      if (!forceRefresh && chirps.length > 0 && (now - lastRefresh) < 60000) { // Increased cache time
         console.log('🔄 HomePage: Using cached chirps (last refresh:', now - lastRefresh, 'ms ago)');
         return;
       }
@@ -54,7 +49,7 @@ export default function HomePage() {
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial chirps from database in ${loadTime}ms`);
       
-      setForYouChirps(realChirps);
+      setChirps(realChirps);
       setLastRefresh(now);
       setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
     } catch (error) {
@@ -63,164 +58,90 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [forYouChirps.length, lastRefresh]);
+  }, [chirps.length, lastRefresh]);
 
-  // Load initial collection chirps function
-  const loadInitialCollectionChirps = useCallback(async (forceRefresh = false) => {
-    if (!user?.id) return;
-    
-    try {
-      // Don't reload if we have recent data and not forcing refresh
-      const now = Date.now();
-      if (!forceRefresh && collectionChirps.length > 0 && (now - lastRefresh) < 60000) {
-        console.log('🔄 HomePage: Using cached collection chirps (last refresh:', now - lastRefresh, 'ms ago)');
-        return;
-      }
-      
-      setIsLoading(true);
-      console.log('🔄 HomePage: Loading initial collection chirps from database...', forceRefresh ? '(force refresh)' : '');
-      const startTime = Date.now();
-      
-      const params = new URLSearchParams();
-      params.append('trending', 'true');
-      const realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
-      const loadTime = Date.now() - startTime;
-      
-      console.log(`✅ HomePage: Loaded ${realChirps.length} initial collection chirps from database in ${loadTime}ms`);
-      
-      setCollectionChirps(realChirps);
-      setLastRefresh(now);
-      setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
-    } catch (error) {
-      console.error('❌ HomePage: Error loading initial collection chirps from database:', error);
-      console.log('🔄 HomePage: Keeping existing collection chirps array');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id, collectionChirps.length, lastRefresh]);
   
   // Load more chirps function for pagination
   const loadMoreChirps = useCallback(async () => {
     if (isLoadingMore) return;
     
-    // Check which feed type we're loading more for
-    const isForYouFeed = feedType === 'forYou';
-    const hasMore = isForYouFeed ? hasMoreChirps : hasMoreCollectionChirps;
-    const currentChirps = isForYouFeed ? forYouChirps : collectionChirps;
-    
-    if (!hasMore) return;
+    if (!hasMoreChirps) return;
     
     try {
       setIsLoadingMore(true);
-      console.log(`🔄 HomePage: Loading more ${feedType} chirps...`);
+      console.log(`🔄 HomePage: Loading more chirps...`);
       const startTime = Date.now();
       
       const params = new URLSearchParams();
-      if (isForYouFeed) {
-        params.append('personalized', 'true');
-      } else {
-        params.append('trending', 'true');
-      }
+      params.append('personalized', 'true');
       
       const response = await apiRequest(`/api/chirps?${params.toString()}`);
-      const moreChirps = response.slice(currentChirps.length, currentChirps.length + LOAD_MORE_LIMIT);
+      const moreChirps = response.slice(chirps.length, chirps.length + LOAD_MORE_LIMIT);
       
       const loadTime = Date.now() - startTime;
-      console.log(`✅ HomePage: Loaded ${moreChirps.length} more ${feedType} chirps in ${loadTime}ms`);
+      console.log(`✅ HomePage: Loaded ${moreChirps.length} more chirps in ${loadTime}ms`);
       
       if (moreChirps.length > 0) {
-        if (isForYouFeed) {
-          setForYouChirps(prevChirps => {
-            // Create a map to track existing chirp IDs
-            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
-            // Filter out any duplicate chirps
-            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
-            return [...prevChirps, ...uniqueNewChirps];
-          });
-          setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
-        } else {
-          setCollectionChirps(prevChirps => {
-            // Create a map to track existing chirp IDs
-            const existingIds = new Set(prevChirps.map(chirp => chirp.id));
-            // Filter out any duplicate chirps
-            const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
-            return [...prevChirps, ...uniqueNewChirps];
-          });
-          setHasMoreCollectionChirps(moreChirps.length === LOAD_MORE_LIMIT);
-        }
+        setChirps(prevChirps => {
+          // Create a map to track existing chirp IDs
+          const existingIds = new Set(prevChirps.map(chirp => chirp.id));
+          // Filter out any duplicate chirps
+          const uniqueNewChirps = moreChirps.filter(chirp => !existingIds.has(chirp.id));
+          return [...prevChirps, ...uniqueNewChirps];
+        });
+        setHasMoreChirps(moreChirps.length === LOAD_MORE_LIMIT);
       } else {
-        if (isForYouFeed) {
-          setHasMoreChirps(false);
-        } else {
-          setHasMoreCollectionChirps(false);
-        }
+        setHasMoreChirps(false);
       }
     } catch (error) {
-      console.error(`❌ HomePage: Error loading more ${feedType} chirps:`, error);
+      console.error(`❌ HomePage: Error loading more chirps:`, error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [feedType, user?.id, isLoadingMore, hasMoreChirps, hasMoreCollectionChirps, forYouChirps, collectionChirps]);
+  }, [user?.id, isLoadingMore, hasMoreChirps, chirps]);
   
   // Load initial chirps on mount
   useEffect(() => {
     // Only load chirps if user is available
-    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id, 'feedType:', feedType);
+    console.log('🔄 HomePage useEffect: user available:', !!user, 'user ID:', user?.id);
     if (user) {
-      if (feedType === 'forYou') {
-        loadInitialChirps();
-      } else {
-        loadInitialCollectionChirps();
-      }
+      loadInitialChirps();
     } else {
       console.log('🔄 HomePage useEffect: No user available, skipping chirp load');
     }
-  }, [user?.id, feedType, loadInitialChirps, loadInitialCollectionChirps]);
+  }, [user?.id, loadInitialChirps]);
 
   // Clear chirps when user changes to prevent showing old user's data
   useEffect(() => {
     console.log('🔄 HomePage: User changed, clearing cached chirps');
-    setForYouChirps([]);
-    setCollectionChirps([]);
+    setChirps([]);
     setHasMoreChirps(true);
-    setHasMoreCollectionChirps(true);
     setLastRefresh(0);
   }, [user?.id]);
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {
-    console.log(`🔄 HomePage: Force refreshing ${feedType} chirps...`);
+    console.log(`🔄 HomePage: Force refreshing chirps...`);
     try {
       setIsLoading(true);
       
       const startTime = Date.now();
-      let realChirps;
-      
-      if (feedType === 'forYou') {
-        const params = new URLSearchParams();
-        params.append('personalized', 'true');
-        realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
-        setForYouChirps(realChirps);
-        setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
-      } else {
-        if (!user?.id) return;
-        const params = new URLSearchParams();
-        params.append('trending', 'true');
-        realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
-        setCollectionChirps(realChirps);
-        setHasMoreCollectionChirps(realChirps.length === INITIAL_LIMIT);
-      }
+      const params = new URLSearchParams();
+      params.append('personalized', 'true');
+      const realChirps = await apiRequest(`/api/chirps?${params.toString()}`);
       
       const loadTime = Date.now() - startTime;
-      console.log(`✅ HomePage: Refreshed ${realChirps.length} ${feedType} chirps from database in ${loadTime}ms`);
+      console.log(`✅ HomePage: Refreshed ${realChirps.length} chirps from database in ${loadTime}ms`);
       
+      setChirps(realChirps);
+      setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
       setLastRefresh(Date.now());
     } catch (error) {
-      console.error(`❌ HomePage: Error refreshing ${feedType} chirps:`, error);
+      console.error(`❌ HomePage: Error refreshing chirps:`, error);
     } finally {
       setIsLoading(false);
     }
-  }, [feedType, user?.id]);
+  }, [user?.id]);
   
   // Function to update chirp like count
   const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
@@ -235,12 +156,8 @@ export default function HomePage() {
           : chirp
       );
     
-    if (feedType === 'forYou') {
-      setForYouChirps(updateChirp);
-    } else {
-      setCollectionChirps(updateChirp);
-    }
-  }, [feedType]);
+    setChirps(updateChirp);
+  }, []);
 
   const handleChirpReplyUpdate = useCallback((chirpId: string) => {
     const updateChirp = (prevChirps: any[]) => 
@@ -250,12 +167,8 @@ export default function HomePage() {
           : chirp
       );
     
-    if (feedType === 'forYou') {
-      setForYouChirps(updateChirp);
-    } else {
-      setCollectionChirps(updateChirp);
-    }
-  }, [feedType]);
+    setChirps(updateChirp);
+  }, []);
   
   // Function to add a new chirp to the For You feed
   const handleNewChirp = useCallback(async (content: string, imageData?: {
@@ -305,7 +218,7 @@ export default function HomePage() {
       };
       
       // Add to the beginning of the feed
-      setForYouChirps(prevChirps => [newChirp, ...prevChirps]);
+      setChirps(prevChirps => [newChirp, ...prevChirps]);
       
       toast({
         title: "Chirp Posted!",
@@ -336,12 +249,12 @@ export default function HomePage() {
     setLocation('/search');
   };
 
-  // Handle scroll for infinite loading (For You feed only)
+  // Handle scroll for infinite loading
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200;
     
-    if (isNearBottom && feedType === 'forYou' && hasMoreChirps && !isLoadingMore) {
+    if (isNearBottom && hasMoreChirps && !isLoadingMore) {
       loadMoreChirps();
     }
   };
@@ -358,31 +271,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Feed Type Toggle */}
-      <div className="bg-white border-b border-gray-200 py-3 px-4">
-        <div className="flex bg-gray-100 rounded-lg p-1">
-          <button
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              feedType === 'forYou'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-            onClick={() => setFeedType('forYou')}
-          >
-            For You
-          </button>
-          <button
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              feedType === 'collection'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-            onClick={() => setFeedType('collection')}
-          >
-            Collection
-          </button>
-        </div>
-      </div>
 
       {/* Chirps Feed with Infinite Scroll */}
       <div 
@@ -394,90 +282,43 @@ export default function HomePage() {
           <ComposeChirp onPost={handleNewChirp} />
         </div>
 
-        {feedType === 'forYou' ? (
-          // For You Feed
-          <div className="px-4">
-            {forYouChirps.length === 0 && !isLoading ? (
-              <div className="py-8 text-center">
-                <div className="text-4xl mb-4">💬</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No chirps yet</h3>
-                <p className="text-gray-500">Be the first to chirp!</p>
-              </div>
-            ) : (
-              <>
-                {forYouChirps.map((chirp, index) => (
-                  <ChirpCard 
-                    key={`${chirp.id}-${index}`} 
-                    chirp={chirp} 
-                    onLikeUpdate={handleChirpLikeUpdate}
-                    onDeleteSuccess={handleChirpDelete}
-                    onReplyPosted={handleChirpReplyUpdate}
-                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
-                  />
-                ))}
-                
-                {/* Loading more indicator */}
-                {isLoadingMore && (
-                  <div className="flex items-center justify-center py-4">
-                    <RefreshCw className="h-4 w-4 animate-spin text-purple-600 mr-2" />
-                    <span className="text-sm text-gray-500">Loading more chirps...</span>
-                  </div>
-                )}
-                
-                {/* End of feed indicator */}
-                {!hasMoreChirps && forYouChirps.length > 0 && (
-                  <div className="py-4 text-center">
-                    <p className="text-sm text-gray-500">You've reached the end! 🎉</p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        ) : (
-          // Collection Feed
-          <div className="px-4">
-            {collectionChirps.length === 0 && !isLoading ? (
-              <div className="py-8 text-center">
-                <Bird className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Collection Chirps</h3>
-                <p className="text-gray-500">Chirps from your gacha collection profiles will appear here</p>
-              </div>
-            ) : (
-              <>
-                {collectionChirps.map((chirp, index) => (
-                  <ChirpCard 
-                    key={`${chirp.id}-${index}`} 
-                    chirp={chirp} 
-                    onLikeUpdate={handleChirpLikeUpdate}
-                    onReplyPosted={handleChirpReplyUpdate}
-                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
-                  />
-                ))}
-                
-                {/* Load More Button */}
-                {hasMoreCollectionChirps && (
-                  <div className="py-4">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={loadMoreChirps}
-                      disabled={isLoadingMore}
-                    >
-                      {isLoadingMore ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                          Loading...
-                        </>
-                      ) : (
-                        'Load More Collection Chirps'
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <div className="px-4">
+          {chirps.length === 0 && !isLoading ? (
+            <div className="py-8 text-center">
+              <div className="text-4xl mb-4">💬</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No chirps yet</h3>
+              <p className="text-gray-500">Be the first to chirp!</p>
+            </div>
+          ) : (
+            <>
+              {chirps.map((chirp, index) => (
+                <ChirpCard 
+                  key={`${chirp.id}-${index}`} 
+                  chirp={chirp} 
+                  onLikeUpdate={handleChirpLikeUpdate}
+                  onDeleteSuccess={handleChirpDelete}
+                  onReplyPosted={handleChirpReplyUpdate}
+                  onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                />
+              ))}
+              
+              {/* Loading more indicator */}
+              {isLoadingMore && (
+                <div className="flex items-center justify-center py-4">
+                  <RefreshCw className="h-4 w-4 animate-spin text-purple-600 mr-2" />
+                  <span className="text-sm text-gray-500">Loading more chirps...</span>
+                </div>
+              )}
+              
+              {/* End of feed indicator */}
+              {!hasMoreChirps && chirps.length > 0 && (
+                <div className="py-4 text-center">
+                  <p className="text-sm text-gray-500">You've reached the end! 🎉</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Floating Compose Button */}

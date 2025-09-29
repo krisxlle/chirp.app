@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
-import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from './api';
-import { HomeIcon, NotificationIcon, ProfileIcon, GachaIcon } from './icons';
+import { CollectionIcon, GachaIcon, HomeIcon, NotificationIcon, ProfileIcon } from './icons';
 
 interface BottomNavigationProps {
   activeTab?: string;
@@ -51,6 +51,12 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       isActive: activeTab === "profile" || location.startsWith("/profile"),
       component: ProfileIcon,
       path: `/profile/${user?.id}`,
+    },
+    {
+      key: "collection",
+      isActive: activeTab === "collection" || location === "/collection",
+      component: CollectionIcon,
+      path: "/collection",
     },
     {
       key: "gacha",
