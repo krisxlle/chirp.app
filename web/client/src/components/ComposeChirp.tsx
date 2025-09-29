@@ -190,14 +190,12 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg p-4 max-w-md mx-auto shadow-lg">
       <div className="flex space-x-3">
-        <div className="pt-2">
-          <UserAvatar user={user} size="md" />
-        </div>
+        <UserAvatar user={user} size="md" />
         
         <div className="flex-1">
           <textarea
             ref={textareaRef}
-            className="w-full min-h-[80px] resize-none border-none outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-lg leading-6"
+            className="w-full min-h-[80px] resize-none border-none outline-none bg-transparent text-gray-900 dark:text-white text-lg leading-6"
             style={{
               fontSize: '18px',
               lineHeight: '24px',
@@ -208,6 +206,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               textAlign: 'start'
             }}
             placeholder="What's on your mind?"
+            placeholderTextColor="#9ca3af"
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
