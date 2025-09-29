@@ -166,7 +166,7 @@ export default function HomePage() {
     setForYouChirps(updateChirp);
   }, []);
   
-  // Function to add a new chirp to the For You feed
+  // Function to add a new chirp to the feed
   const handleNewChirp = useCallback(async (content: string, imageData?: {
     imageUrl?: string;
     imageAltText?: string;
