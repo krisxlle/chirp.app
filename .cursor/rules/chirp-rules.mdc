@@ -12,3 +12,4 @@ alwaysApply: true
 - When adding visuals to the front end, use custom icons instead of emojis. Do not use emojis.
 - If any relevant changes are made, update README.md and SECURITY.md.
 - Chirp branding colors are #C671FF, #FF61A6, and #f5a5e0
+- Do not create or use mock data, prioritize functional connections to real data from database

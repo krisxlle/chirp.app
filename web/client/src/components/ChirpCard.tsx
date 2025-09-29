@@ -7,7 +7,6 @@ import {
     MessageCircle,
     MoreHorizontal,
     Repeat2,
-    Share2,
     Sparkles,
     Trash2,
     UserMinus,
