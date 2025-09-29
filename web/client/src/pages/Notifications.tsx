@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { Card, CardContent } from '../components/ui/card';
+import { Bell, Heart, MessageCircle, Repeat2, Sparkles, UserPlus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Bell, Heart, MessageCircle, Repeat2, UserPlus, Sparkles } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
 import UserAvatar from '../components/UserAvatar';
+import { useAuth } from '../hooks/useAuth';
 
 interface Notification {
   id: string;
@@ -50,10 +50,6 @@ export default function Notifications() {
             handle: 'chirpteam',
             profileImageUrl: null
           },
-          chirp: {
-            id: '1',
-            content: 'Welcome to Chirp! This is your first chirp. 🐦'
-          },
           timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
           isRead: false
         },
@@ -82,15 +78,39 @@ export default function Notifications() {
             handle: 'sarahw',
             profileImageUrl: null
           },
-          chirp: {
-            id: '2',
-            content: 'Chirp is now live! Share your thoughts with the world. ✨'
-          },
           timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
           isRead: true
         },
         {
           id: '4',
+          type: 'repost',
+          message: 'reposted your chirp',
+          user: {
+            id: '4',
+            firstName: 'Mike',
+            lastName: 'Chen',
+            handle: 'mikec',
+            profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+          },
+          timestamp: new Date(Date.now() - 2400000).toISOString(), // 40 minutes ago
+          isRead: false
+        },
+        {
+          id: '5',
+          type: 'mention',
+          message: 'mentioned you',
+          user: {
+            id: '5',
+            firstName: 'Emma',
+            lastName: 'Davis',
+            handle: 'emmad',
+            profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+          },
+          timestamp: new Date(Date.now() - 3000000).toISOString(), // 50 minutes ago
+          isRead: true
+        },
+        {
+          id: '6',
           type: 'system',
           message: 'Welcome to Chirp! Complete your profile to get started.',
           timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
@@ -103,6 +123,25 @@ export default function Notifications() {
       console.error('Failed to load notifications:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getNotificationMessage = (type: string) => {
+    switch (type) {
+      case 'like':
+        return 'liked your chirp';
+      case 'follow':
+        return 'started following you';
+      case 'reply':
+        return 'replied to your chirp';
+      case 'mention':
+        return 'mentioned you';
+      case 'repost':
+        return 'reposted your chirp';
+      case 'system':
+        return 'system notification';
+      default:
+        return 'interacted with your content';
     }
   };
 
@@ -217,16 +256,10 @@ export default function Notifications() {
                                 {notification.user.firstName} {notification.user.lastName}
                               </span>
                               <span className="text-gray-500">@{notification.user.handle}</span>
-                              <span className="text-gray-600">{notification.message}</span>
+                              <span className="text-gray-600">{getNotificationMessage(notification.type)}</span>
                             </div>
                           ) : (
                             <p className="text-gray-900">{notification.message}</p>
-                          )}
-                          
-                          {notification.chirp && (
-                            <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                              <p className="text-gray-700 text-sm">{notification.chirp.content}</p>
-                            </div>
                           )}
                         </div>
                         

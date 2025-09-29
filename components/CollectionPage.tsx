@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Image, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getUserCollection } from '../lib/database/mobile-db-supabase';
 import AnalyticsPage from './AnalyticsPage';
 import { useAuth } from './AuthContext';
@@ -45,7 +45,6 @@ export default function CollectionPage() {
   const [collection, setCollection] = useState<ProfileCard[]>([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Load user's collection from database
   useEffect(() => {
@@ -85,21 +84,6 @@ export default function CollectionPage() {
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      if (user?.id) {
-        const userCollection = await getUserCollection(user.id);
-        setCollection(userCollection);
-        console.log('🔄 CollectionPage refreshed user collection:', userCollection.length, 'items');
-      }
-    } catch (error) {
-      console.error('❌ Error refreshing user collection:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   if (showAnalytics) {
     return <AnalyticsPage onClose={() => setShowAnalytics(false)} />;
   }
@@ -113,13 +97,6 @@ export default function CollectionPage() {
           <Text style={styles.headerSubtitle}>Your collected profile cards</Text>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <Text style={styles.refreshButtonText}>🔄</Text>
-          </TouchableOpacity>
           <TouchableOpacity 
             style={styles.analyticsIconButton}
             onPress={() => setShowAnalytics(true)}
@@ -132,14 +109,6 @@ export default function CollectionPage() {
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor="#C671FF"
-            colors={["#C671FF", "#FF61A6"]}
-          />
-        }
       >
 
         {/* Collection Display */}
@@ -259,7 +228,6 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
   headerTitle: {
     fontSize: 28,
@@ -270,18 +238,6 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#6b7280',
-  },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#C671FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  refreshButtonText: {
-    fontSize: 18,
-    color: '#ffffff',
   },
   analyticsIconButton: {
     width: 44,

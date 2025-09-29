@@ -2,10 +2,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { HelpCircle, Sparkles } from 'lucide-react';
-import React, { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import React, { useEffect, useState } from 'react';
 
 interface ProfileCard {
   id: string;
@@ -118,6 +118,14 @@ export default function Gacha() {
   const [showPulledCards, setShowPulledCards] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showCrystalInfoModal, setShowCrystalInfoModal] = useState(false);
+  const [isLoadingCollection, setIsLoadingCollection] = useState(false);
+
+  // Load collection when component mounts
+  useEffect(() => {
+    if (user?.id) {
+      loadUserCollection();
+    }
+  }, [user?.id]);
 
   // Helper function to get current crystal balance
   const getCurrentCrystalBalance = (): number => {
@@ -141,13 +149,107 @@ export default function Gacha() {
     return 0;
   };
 
+  // Load user's frame collection
+  const loadUserCollection = async () => {
+    if (!user?.id) return;
+    
+    setIsLoadingCollection(true);
+    try {
+      console.log('📚 Loading user collection...');
+      
+      const response = await fetch('/api/gacha', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'getCollection',
+          userId: user.id
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load collection');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const collectionData = result.data;
+        console.log('📚 Collection loaded:', collectionData);
+        
+        // Convert collection data to ProfileCard format
+        const profileCards: ProfileCard[] = collectionData.map((item: any) => ({
+          id: item.frameId.toString(),
+          name: item.frameName,
+          handle: `@${item.frameName.toLowerCase().replace(/\s+/g, '_')}`,
+          rarity: item.frameRarity,
+          imageUrl: item.frameImageUrl,
+          bio: `A ${item.frameRarity} profile frame in your collection!`,
+          followers: Math.floor(Math.random() * 100000) + 10000,
+          profilePower: Math.floor(Math.random() * 1000) + 100,
+          quantity: item.quantity,
+          obtainedAt: item.obtainedAt
+        }));
+        
+        setCollection(profileCards);
+      }
+    } catch (error) {
+      console.error('❌ Error loading collection:', error);
+    } finally {
+      setIsLoadingCollection(false);
+    }
+  };
+
   const openCapsule = async (): Promise<ProfileCard | null> => {
     try {
-      // For now, use mock data - can be replaced with real API calls later
-      const randomMockCard = mockProfileCards[Math.floor(Math.random() * mockProfileCards.length)];
-      return randomMockCard;
+      console.log('🎲 Opening capsule via API...');
+      
+      const response = await fetch('/api/gacha', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'roll',
+          userId: user?.id
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to roll for frame');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const frameData = result.data;
+        console.log('🎲 API roll result:', frameData);
+        
+        // Convert frame data to ProfileCard format
+        const profileCard: ProfileCard = {
+          id: frameData.frameId.toString(),
+          name: frameData.frameName,
+          handle: `@${frameData.frameName.toLowerCase().replace(/\s+/g, '_')}`,
+          rarity: frameData.frameRarity,
+          imageUrl: frameData.frameImageUrl,
+          bio: `A ${frameData.frameRarity} profile frame obtained from the gacha!`,
+          followers: Math.floor(Math.random() * 100000) + 10000,
+          profilePower: Math.floor(Math.random() * 1000) + 100,
+          quantity: 1,
+          obtainedAt: frameData.obtainedAt
+        };
+        
+        return profileCard;
+      }
+      
+      throw new Error('Invalid API response');
     } catch (error) {
       console.error('❌ Error in openCapsule:', error);
+      
+      // Fallback to mock data if API fails
       const randomMockCard = mockProfileCards[Math.floor(Math.random() * mockProfileCards.length)];
       return randomMockCard;
     }
@@ -207,6 +309,9 @@ export default function Gacha() {
             title: "Capsule Opened!",
             description: `Successfully opened ${results.length} capsule${results.length > 1 ? 's' : ''}!`,
           });
+          
+          // Refresh collection after successful roll
+          await loadUserCollection();
         }
         
         setIsRolling(false);
@@ -225,8 +330,8 @@ export default function Gacha() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
       {/* Header */}
-      <div className="flex justify-between items-center p-6 pt-16">
-        <h1 className="text-3xl font-bold text-gray-900">Chirp Gacha - WEB VERSION</h1>
+      <div className="flex justify-between items-center p-6 pt-12">
+        <h1 className="text-3xl font-bold text-gray-900">Chirp Blind Boxes</h1>
         <Dialog open={showHelpModal} onOpenChange={setShowHelpModal}>
           <DialogTrigger asChild>
             <Button variant="outline" size="icon" className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:scale-105 transition-transform">
@@ -239,20 +344,20 @@ export default function Gacha() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">1</div>
+                <div className="w-8 h-8 min-w-8 min-h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">1</div>
                 <p className="text-gray-700">Like chirps to earn 1 crystal each</p>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">2</div>
+                <div className="w-8 h-8 min-w-8 min-h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">2</div>
                 <p className="text-gray-700">Comment on chirps to earn 2 crystals each</p>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">3</div>
-                <p className="text-gray-700">Use crystals to open capsules and collect rare profiles</p>
+                <div className="w-8 h-8 min-w-8 min-h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">3</div>
+                <p className="text-gray-700">Use crystals to open blind boxes and collect rare frames</p>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">4</div>
-                <p className="text-gray-700">Build your collection and discover amazing people</p>
+                <div className="w-8 h-8 min-w-8 min-h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">4</div>
+                <p className="text-gray-700">Build your collection and discover amazing frames</p>
               </div>
             </div>
           </DialogContent>
@@ -260,9 +365,9 @@ export default function Gacha() {
       </div>
 
       {/* Crystal Balance */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-4">
         <Card className="max-w-[600px] mx-auto border-2 border-purple-500">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <Dialog open={showCrystalInfoModal} onOpenChange={setShowCrystalInfoModal}>
               <DialogTrigger asChild>
                 <div className="flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
@@ -290,6 +395,52 @@ export default function Gacha() {
                 </div>
               </DialogContent>
             </Dialog>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Collection Section */}
+      <div className="px-6 mb-4">
+        <Card className="max-w-[600px] mx-auto">
+          <CardContent className="p-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Collection</h2>
+            {isLoadingCollection ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                <p className="text-gray-500">Loading collection...</p>
+              </div>
+            ) : collection.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4">
+                {collection.map((card) => (
+                  <Card key={card.id} className="text-center">
+                    <CardContent className="p-4">
+                      <div className="relative inline-block mb-2">
+                        <img
+                          src={card.imageUrl}
+                          alt={card.name}
+                          className="w-16 h-16 rounded-full object-cover mx-auto border-2"
+                          style={{ borderColor: rarityColors[card.rarity] }}
+                        />
+                        <Badge 
+                          className="absolute -top-1 -right-1 text-xs"
+                          style={{ backgroundColor: rarityColors[card.rarity] }}
+                        >
+                          {rarityNames[card.rarity]}
+                        </Badge>
+                      </div>
+                      <h4 className="font-bold text-sm">{card.name}</h4>
+                      <p className="text-xs text-gray-600">x{card.quantity}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">📚</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No frames yet</h3>
+                <p className="text-gray-500">Open some capsules to start your collection!</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

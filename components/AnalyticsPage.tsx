@@ -3,14 +3,12 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getUserCollection } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
-import ChirpCrystalIcon from './icons/ChirpCrystalIcon';
 
-interface AnalyticsData {
-  totalProfiles: number;
-  totalValue: number;
-  averageRarity: number;
-  completionRate: number;
-  rarityBreakdown: {
+interface ProfilePowerData {
+  baseProfilePower: number;
+  collectionBonus: number;
+  totalProfilePower: number;
+  rarityMultipliers: {
     mythic: number;
     legendary: number;
     epic: number;
@@ -18,17 +16,26 @@ interface AnalyticsData {
     uncommon: number;
     common: number;
   };
-  recentAcquisitions: Array<{
-    name: string;
-    rarity: string;
-    date: string;
-  }>;
-  crystalStats: {
-    totalEarned: number;
-    totalSpent: number;
-    currentBalance: number;
-    rollsPerformed: number;
+  collectionStats: {
+    totalFrames: number;
+    uniqueFrames: number;
+    duplicateFrames: number;
+    highestRarity: string;
+    collectionValue: number;
   };
+  powerBreakdown: Array<{
+    rarity: string;
+    count: number;
+    powerContribution: number;
+    percentage: number;
+  }>;
+  milestones: Array<{
+    name: string;
+    target: number;
+    current: number;
+    achieved: boolean;
+    reward: string;
+  }>;
 }
 
 const rarityColors = {
@@ -55,61 +62,74 @@ interface AnalyticsPageProps {
 
 export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
   const { user } = useAuth();
-  const [analytics, setAnalytics] = useState<AnalyticsData>({
-    totalProfiles: 0,
-    totalValue: 0,
-    averageRarity: 0,
-    completionRate: 0,
-    rarityBreakdown: {
-      mythic: 0,
-      legendary: 0,
-      epic: 0,
-      rare: 0,
-      uncommon: 0,
-      common: 0,
+  const [profilePowerData, setProfilePowerData] = useState<ProfilePowerData>({
+    baseProfilePower: 0,
+    collectionBonus: 0,
+    totalProfilePower: 0,
+    rarityMultipliers: {
+      mythic: 50,
+      legendary: 25,
+      epic: 15,
+      rare: 10,
+      uncommon: 5,
+      common: 2,
     },
-    recentAcquisitions: [],
-    crystalStats: {
-      totalEarned: 0,
-      totalSpent: 0,
-      currentBalance: 0,
-      rollsPerformed: 0,
+    collectionStats: {
+      totalFrames: 0,
+      uniqueFrames: 0,
+      duplicateFrames: 0,
+      highestRarity: 'common',
+      collectionValue: 0,
     },
+    powerBreakdown: [],
+    milestones: [],
   });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadAnalyticsData();
+    loadProfilePowerData();
   }, []);
 
-  const loadAnalyticsData = async () => {
+  const loadProfilePowerData = async () => {
     try {
       setIsLoading(true);
       
       if (!user?.id) {
-        console.log('No user ID available for analytics');
+        console.log('No user ID available for profile power analytics');
         return;
       }
 
       // Load user's collection
       const collection = await getUserCollection(user.id);
       
-      // Calculate analytics from real data
-      const calculatedAnalytics = calculateAnalytics(collection, user);
-      setAnalytics(calculatedAnalytics);
+      // Calculate profile power impact from collection
+      const calculatedData = calculateProfilePowerImpact(collection, user);
+      setProfilePowerData(calculatedData);
       
     } catch (error) {
-      console.error('Error loading analytics data:', error);
+      console.error('Error loading profile power data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const calculateAnalytics = (collection: any[], user: any): AnalyticsData => {
-    const totalProfiles = collection.length;
+  const calculateProfilePowerImpact = (collection: any[], user: any): ProfilePowerData => {
+    // Base profile power from user stats
+    const baseProfilePower = user.profilePower || 100;
     
-    // Calculate rarity breakdown
-    const rarityBreakdown = {
+    // Rarity multipliers for profile power bonus
+    const rarityMultipliers = {
+      mythic: 50,
+      legendary: 25,
+      epic: 15,
+      rare: 10,
+      uncommon: 5,
+      common: 2,
+    };
+
+    // Calculate collection bonus
+    let collectionBonus = 0;
+    const rarityCounts = {
       mythic: 0,
       legendary: 0,
       epic: 0,
@@ -118,111 +138,128 @@ export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
       common: 0,
     };
 
-    collection.forEach(profile => {
-      if (rarityBreakdown.hasOwnProperty(profile.rarity)) {
-        rarityBreakdown[profile.rarity as keyof typeof rarityBreakdown]++;
+    collection.forEach(frame => {
+      if (rarityCounts.hasOwnProperty(frame.rarity)) {
+        rarityCounts[frame.rarity as keyof typeof rarityCounts]++;
+        collectionBonus += rarityMultipliers[frame.rarity as keyof typeof rarityMultipliers];
       }
     });
 
-    // Calculate average rarity (1=common, 6=mythic)
-    const rarityValues = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
-    const totalRarityValue = collection.reduce((sum, profile) => {
-      return sum + (rarityValues[profile.rarity as keyof typeof rarityValues] || 1);
+    const totalProfilePower = baseProfilePower + collectionBonus;
+
+    // Calculate collection stats
+    const totalFrames = collection.reduce((sum, frame) => sum + (frame.quantity || 1), 0);
+    const uniqueFrames = collection.length;
+    const duplicateFrames = totalFrames - uniqueFrames;
+    
+    // Find highest rarity
+    const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+    let highestRarity = 'common';
+    for (const rarity of rarityOrder.reverse()) {
+      if (rarityCounts[rarity as keyof typeof rarityCounts] > 0) {
+        highestRarity = rarity;
+        break;
+      }
+    }
+
+    // Calculate collection value
+    const rarityValues = { common: 50, uncommon: 100, rare: 200, epic: 400, legendary: 800, mythic: 1500 };
+    const collectionValue = collection.reduce((sum, frame) => {
+      return sum + ((rarityValues[frame.rarity as keyof typeof rarityValues] || 50) * (frame.quantity || 1));
     }, 0);
-    const averageRarity = totalProfiles > 0 ? totalRarityValue / totalProfiles : 0;
 
-    // Calculate total value (estimated crystal value based on rarity)
-    const rarityValues_crystal = { common: 50, uncommon: 100, rare: 200, epic: 400, legendary: 800, mythic: 1500 };
-    const totalValue = collection.reduce((sum, profile) => {
-      return sum + (rarityValues_crystal[profile.rarity as keyof typeof rarityValues_crystal] || 50);
-    }, 0);
+    // Calculate power breakdown
+    const powerBreakdown = Object.entries(rarityCounts).map(([rarity, count]) => ({
+      rarity,
+      count: count as number,
+      powerContribution: (count as number) * rarityMultipliers[rarity as keyof typeof rarityMultipliers],
+      percentage: totalProfilePower > 0 ? (((count as number) * rarityMultipliers[rarity as keyof typeof rarityMultipliers]) / totalProfilePower) * 100 : 0,
+    }));
 
-    // Get recent acquisitions (last 5, sorted by obtainedAt)
-    const recentAcquisitions = collection
-      .sort((a, b) => new Date(b.obtainedAt || 0).getTime() - new Date(a.obtainedAt || 0).getTime())
-      .slice(0, 5)
-      .map(profile => ({
-        name: profile.name,
-        rarity: profile.rarity,
-        date: profile.obtainedAt || new Date().toISOString(),
-      }));
-
-    // Calculate crystal stats
-    const currentBalance = typeof user.crystalBalance === 'number' ? user.crystalBalance : 
-                          (user.crystalBalance?.balance || 0);
-    
-    // Estimate rolls performed based on collection size (rough estimate)
-    const rollsPerformed = Math.max(totalProfiles, Math.floor(totalProfiles * 1.2));
-    
-    // Estimate total spent (assuming average cost per roll)
-    const totalSpent = rollsPerformed * 100; // Assuming mostly single rolls
-    
-    // Estimate total earned (current balance + total spent)
-    const totalEarned = currentBalance + totalSpent;
-
-    // Calculate completion rate (assuming there are ~100 total profiles available)
-    const estimatedTotalProfiles = 100;
-    const completionRate = Math.min(100, Math.round((totalProfiles / estimatedTotalProfiles) * 100));
+    // Define milestones
+    const milestones = [
+      { name: 'First Frame', target: 1, current: uniqueFrames, achieved: uniqueFrames >= 1, reward: '+2 Profile Power' },
+      { name: 'Rare Collector', target: 5, current: uniqueFrames, achieved: uniqueFrames >= 5, reward: '+10 Profile Power' },
+      { name: 'Epic Hunter', target: 10, current: uniqueFrames, achieved: uniqueFrames >= 10, reward: '+25 Profile Power' },
+      { name: 'Legendary Master', target: 20, current: uniqueFrames, achieved: uniqueFrames >= 20, reward: '+50 Profile Power' },
+      { name: 'Mythic Legend', target: 50, current: uniqueFrames, achieved: uniqueFrames >= 50, reward: '+100 Profile Power' },
+    ];
 
     return {
-      totalProfiles,
-      totalValue,
-      averageRarity,
-      completionRate,
-      rarityBreakdown,
-      recentAcquisitions,
-      crystalStats: {
-        totalEarned,
-        totalSpent,
-        currentBalance,
-        rollsPerformed,
+      baseProfilePower,
+      collectionBonus,
+      totalProfilePower,
+      rarityMultipliers,
+      collectionStats: {
+        totalFrames,
+        uniqueFrames,
+        duplicateFrames,
+        highestRarity,
+        collectionValue,
       },
+      powerBreakdown,
+      milestones,
     };
   };
 
-  const StatCard = ({ title, value, subtitle, color = '#7c3aed' }: {
+  const PowerCard = ({ title, value, subtitle, color = '#7c3aed', icon }: {
     title: string;
     value: string | number;
     subtitle?: string;
     color?: string;
+    icon?: string;
   }) => (
-    <View style={styles.statCard}>
-      <Text style={styles.statTitle}>{title}</Text>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+    <View style={styles.powerCard}>
+      {icon && <Text style={styles.powerCardIcon}>{icon}</Text>}
+      <Text style={styles.powerCardTitle}>{title}</Text>
+      <Text style={[styles.powerCardValue, { color }]}>{value}</Text>
+      {subtitle && <Text style={styles.powerCardSubtitle}>{subtitle}</Text>}
     </View>
   );
 
-  const RarityBar = ({ rarity, count, total }: {
+  const PowerBar = ({ rarity, count, powerContribution, percentage }: {
     rarity: keyof typeof rarityColors;
     count: number;
-    total: number;
-  }) => {
-    const percentage = total > 0 ? (count / total) * 100 : 0;
-    
-    return (
-      <View style={styles.rarityBarContainer}>
-        <View style={styles.rarityBarHeader}>
-          <View style={styles.rarityInfo}>
-            <View style={[styles.rarityDot, { backgroundColor: rarityColors[rarity] }]} />
-            <Text style={styles.rarityLabel}>{rarityNames[rarity]}</Text>
-          </View>
-          <Text style={styles.rarityCount}>{count}</Text>
+    powerContribution: number;
+    percentage: number;
+  }) => (
+    <View style={styles.powerBarContainer}>
+      <View style={styles.powerBarHeader}>
+        <View style={styles.powerBarInfo}>
+          <View style={[styles.powerBarDot, { backgroundColor: rarityColors[rarity] }]} />
+          <Text style={styles.powerBarLabel}>{rarityNames[rarity]}</Text>
+          <Text style={styles.powerBarCount}>({count})</Text>
         </View>
-        <View style={styles.rarityBarBackground}>
-          <View 
-            style={[
-              styles.rarityBarFill, 
-              { 
-                backgroundColor: rarityColors[rarity],
-                width: `${percentage}%`
-              }
-            ]} 
-          />
-        </View>
+        <Text style={styles.powerBarContribution}>+{powerContribution}</Text>
       </View>
-    );
-  };
+      <View style={styles.powerBarBackground}>
+        <View 
+          style={[
+            styles.powerBarFill, 
+            { 
+              backgroundColor: rarityColors[rarity],
+              width: `${Math.min(percentage, 100)}%`
+            }
+          ]} 
+        />
+      </View>
+    </View>
+  );
+
+  const MilestoneCard = ({ milestone }: { milestone: any }) => (
+    <View style={[styles.milestoneCard, milestone.achieved && styles.milestoneCardAchieved]}>
+      <View style={styles.milestoneHeader}>
+        <Text style={[styles.milestoneName, milestone.achieved && styles.milestoneNameAchieved]}>
+          {milestone.name}
+        </Text>
+        {milestone.achieved && <Text style={styles.milestoneCheckmark}>✓</Text>}
+      </View>
+      <Text style={styles.milestoneProgress}>
+        {milestone.current}/{milestone.target} frames
+      </Text>
+      <Text style={styles.milestoneReward}>{milestone.reward}</Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -232,7 +269,7 @@ export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Analytics</Text>
+          <Text style={styles.headerTitle}>Profile Power Analytics</Text>
         </View>
         <View style={styles.headerSpacer} />
       </View>
@@ -240,108 +277,114 @@ export default function AnalyticsPage({ onClose }: AnalyticsPageProps) {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading analytics...</Text>
+            <Text style={styles.loadingText}>Calculating profile power impact...</Text>
           </View>
         ) : (
           <>
-            {/* Overview Stats */}
+            {/* Profile Power Overview */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Collection Overview</Text>
+              <Text style={styles.sectionTitle}>Profile Power Impact</Text>
+              <View style={styles.powerOverview}>
+                <PowerCard 
+                  title="Base Power" 
+                  value={profilePowerData.baseProfilePower} 
+                  subtitle="from profile stats"
+                  color="#6b7280"
+                  icon="⚡"
+                />
+                <PowerCard 
+                  title="Collection Bonus" 
+                  value={`+${profilePowerData.collectionBonus}`} 
+                  subtitle="from frames"
+                  color="#7c3aed"
+                  icon="🎯"
+                />
+                <PowerCard 
+                  title="Total Power" 
+                  value={profilePowerData.totalProfilePower} 
+                  subtitle="combined power"
+                  color="#f59e0b"
+                  icon="💪"
+                />
+              </View>
+            </View>
+
+            {/* Collection Stats */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Collection Statistics</Text>
               <View style={styles.statsGrid}>
-                         <StatCard 
-               title="Total Profiles" 
-               value={analytics.totalProfiles} 
-               subtitle="from capsules"
-             />
-            <StatCard 
-              title="Collection Value" 
-              value={`${analytics.totalValue}`} 
-              subtitle="crystal value"
-              color="#f59e0b"
-            />
-            <StatCard 
-              title="Avg Rarity" 
-              value={analytics.averageRarity.toFixed(1)} 
-              subtitle="out of 6"
-              color="#8b5cf6"
-            />
-            <StatCard 
-              title="Completion" 
-              value={`${analytics.completionRate}%`} 
-              subtitle="of all profiles"
-              color="#10b981"
-            />
-          </View>
-        </View>
-
-        {/* Rarity Breakdown */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rarity Distribution</Text>
-          <View style={styles.rarityBreakdown}>
-            {Object.entries(analytics.rarityBreakdown).map(([rarity, count]) => (
-              <RarityBar 
-                key={rarity}
-                rarity={rarity as keyof typeof rarityColors}
-                count={count}
-                total={analytics.totalProfiles}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Crystal Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Crystal Statistics</Text>
-          <View style={styles.crystalStatsCard}>
-            <View style={styles.crystalStatsHeader}>
-              <ChirpCrystalIcon size={24} color="#7c3aed" />
-              <Text style={styles.crystalStatsTitle}>Crystal Activity</Text>
+                <PowerCard 
+                  title="Total Frames" 
+                  value={profilePowerData.collectionStats.totalFrames} 
+                  subtitle="including duplicates"
+                  color="#3b82f6"
+                />
+                <PowerCard 
+                  title="Unique Frames" 
+                  value={profilePowerData.collectionStats.uniqueFrames} 
+                  subtitle="different frames"
+                  color="#10b981"
+                />
+                <PowerCard 
+                  title="Highest Rarity" 
+                  value={rarityNames[profilePowerData.collectionStats.highestRarity as keyof typeof rarityNames]} 
+                  subtitle="in collection"
+                  color={rarityColors[profilePowerData.collectionStats.highestRarity as keyof typeof rarityColors]}
+                />
+                <PowerCard 
+                  title="Collection Value" 
+                  value={`${profilePowerData.collectionStats.collectionValue}`} 
+                  subtitle="crystal value"
+                  color="#f59e0b"
+                />
+              </View>
             </View>
-            <View style={styles.crystalStatsGrid}>
-              <View style={styles.crystalStatItem}>
-                <Text style={styles.crystalStatLabel}>Total Earned</Text>
-                <Text style={styles.crystalStatValue}>{analytics.crystalStats.totalEarned}</Text>
-              </View>
-              <View style={styles.crystalStatItem}>
-                <Text style={styles.crystalStatLabel}>Total Spent</Text>
-                <Text style={styles.crystalStatValue}>{analytics.crystalStats.totalSpent}</Text>
-              </View>
-              <View style={styles.crystalStatItem}>
-                <Text style={styles.crystalStatLabel}>Current Balance</Text>
-                <Text style={styles.crystalStatValue}>{analytics.crystalStats.currentBalance}</Text>
-              </View>
-                             <View style={styles.crystalStatItem}>
-                 <Text style={styles.crystalStatLabel}>Capsules Opened</Text>
-                 <Text style={styles.crystalStatValue}>{analytics.crystalStats.rollsPerformed}</Text>
-               </View>
-            </View>
-          </View>
-        </View>
 
-                 {/* Recent Acquisitions */}
-         <View style={styles.section}>
-           <Text style={styles.sectionTitle}>Recent Capsule Openings</Text>
-          <View style={styles.recentAcquisitions}>
-            {analytics.recentAcquisitions.map((acquisition, index) => (
-              <View key={index} style={styles.acquisitionItem}>
-                <View style={styles.acquisitionInfo}>
-                  <Text style={styles.acquisitionName}>{acquisition.name}</Text>
-                  <Text style={styles.acquisitionDate}>
-                    {new Date(acquisition.date).toLocaleDateString()}
-                  </Text>
-                </View>
-                <View style={[
-                  styles.acquisitionRarity, 
-                  { backgroundColor: rarityColors[acquisition.rarity as keyof typeof rarityColors] }
-                ]}>
-                  <Text style={styles.acquisitionRarityText}>
-                    {rarityNames[acquisition.rarity as keyof typeof rarityNames]}
-                  </Text>
+            {/* Power Breakdown */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Power Contribution by Rarity</Text>
+              <View style={styles.powerBreakdown}>
+                {profilePowerData.powerBreakdown
+                  .filter(item => item.count > 0)
+                  .sort((a, b) => b.powerContribution - a.powerContribution)
+                  .map((item) => (
+                    <PowerBar 
+                      key={item.rarity}
+                      rarity={item.rarity as keyof typeof rarityColors}
+                      count={item.count}
+                      powerContribution={item.powerContribution}
+                      percentage={item.percentage}
+                    />
+                  ))}
+              </View>
+            </View>
+
+            {/* Milestones */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Collection Milestones</Text>
+              <View style={styles.milestonesGrid}>
+                {profilePowerData.milestones.map((milestone, index) => (
+                  <MilestoneCard key={index} milestone={milestone} />
+                ))}
+              </View>
+            </View>
+
+            {/* Rarity Multipliers */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Power Multipliers</Text>
+              <View style={styles.multipliersCard}>
+                <Text style={styles.multipliersTitle}>Each frame adds this much power:</Text>
+                <View style={styles.multipliersList}>
+                  {Object.entries(profilePowerData.rarityMultipliers).map(([rarity, multiplier]) => (
+                    <View key={rarity} style={styles.multiplierItem}>
+                      <View style={[styles.multiplierDot, { backgroundColor: rarityColors[rarity as keyof typeof rarityColors] }]} />
+                      <Text style={styles.multiplierLabel}>{rarityNames[rarity as keyof typeof rarityNames]}</Text>
+                      <Text style={styles.multiplierValue}>+{multiplier}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
-            ))}
-          </View>
-        </View>
+            </View>
           </>
         )}
       </ScrollView>
@@ -399,152 +442,174 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 16,
   },
-  statsGrid: {
+  powerOverview: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  statCard: {
-    width: '48%',
+  powerCard: {
+    flex: 1,
     backgroundColor: '#f8fafc',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    marginHorizontal: 4,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  statTitle: {
+  powerCardIcon: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  powerCardTitle: {
     fontSize: 14,
     color: '#64748b',
     fontWeight: '500',
     marginBottom: 8,
     textAlign: 'center',
   },
-  statValue: {
+  powerCardValue: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  statSubtitle: {
+  powerCardSubtitle: {
     fontSize: 12,
     color: '#94a3b8',
     textAlign: 'center',
   },
-  rarityBreakdown: {
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  powerBreakdown: {
     gap: 12,
   },
-  rarityBarContainer: {
+  powerBarContainer: {
     marginBottom: 8,
   },
-  rarityBarHeader: {
+  powerBarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
   },
-  rarityInfo: {
+  powerBarInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  rarityDot: {
+  powerBarDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
     marginRight: 8,
   },
-  rarityLabel: {
+  powerBarLabel: {
     fontSize: 14,
     fontWeight: '500',
     color: '#374151',
+    marginRight: 4,
   },
-  rarityCount: {
+  powerBarCount: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  powerBarContribution: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1f2937',
   },
-  rarityBarBackground: {
+  powerBarBackground: {
     height: 8,
     backgroundColor: '#f3f4f6',
     borderRadius: 4,
     overflow: 'hidden',
   },
-  rarityBarFill: {
+  powerBarFill: {
     height: '100%',
     borderRadius: 4,
   },
-  crystalStatsCard: {
+  milestonesGrid: {
+    gap: 12,
+  },
+  milestoneCard: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  milestoneCardAchieved: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#10b981',
+  },
+  milestoneHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  milestoneName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  milestoneNameAchieved: {
+    color: '#10b981',
+  },
+  milestoneCheckmark: {
+    fontSize: 18,
+    color: '#10b981',
+    fontWeight: 'bold',
+  },
+  milestoneProgress: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  milestoneReward: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#7c3aed',
+  },
+  multipliersCard: {
     backgroundColor: '#f8fafc',
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  crystalStatsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  multipliersTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
     marginBottom: 16,
   },
-  crystalStatsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginLeft: 8,
-  },
-  crystalStatsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  crystalStatItem: {
-    width: '48%',
-    marginBottom: 12,
-  },
-  crystalStatLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginBottom: 4,
-  },
-  crystalStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  recentAcquisitions: {
+  multipliersList: {
     gap: 12,
   },
-  acquisitionItem: {
+  multiplierItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    justifyContent: 'space-between',
   },
-  acquisitionInfo: {
+  multiplierDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  multiplierLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
     flex: 1,
   },
-  acquisitionName: {
-    fontSize: 16,
+  multiplierValue: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: 4,
-  },
-  acquisitionDate: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  acquisitionRarity: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  acquisitionRarityText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,

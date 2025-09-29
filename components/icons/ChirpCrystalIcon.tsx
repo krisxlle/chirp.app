@@ -6,11 +6,15 @@ interface ChirpCrystalIconProps {
   color?: string;
 }
 
-export default function ChirpCrystalIcon({ size = 24 }: ChirpCrystalIconProps) {
+export default function ChirpCrystalIcon({ size = 24, color }: ChirpCrystalIconProps) {
   return (
     <Image
       source={require('../../public/assets/Chirp Crystal.png')}
-      style={{ width: size, height: size }}
+      style={{ 
+        width: size, 
+        height: size,
+        tintColor: color // Apply color tint if provided
+      }}
       resizeMode="contain"
     />
   );

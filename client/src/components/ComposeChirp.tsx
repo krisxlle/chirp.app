@@ -13,21 +13,10 @@ interface ComposeChirpProps {
   }) => Promise<void> | void;
 }
 
-// Thread Icon Component
-const ThreadIcon = ({ size = 16, color = "#7c3aed" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <path 
-      d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0L9.937 15.5Z" 
-      fill={color}
-    />
-  </svg>
-);
 
 export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [content, setContent] = useState("");
-  const [isThreadMode, setIsThreadMode] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-  const [threadChirps, setThreadChirps] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -114,11 +103,22 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     setSelectedImage(null);
   };
 
-  const addToThread = () => {
-    if (!content.trim()) {
+  const handleSubmit = async () => {
+    // Check if user is available
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "Please sign in to post a chirp.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Normal mode - just check for content
+    if (!content.trim() && !selectedImage) {
       toast({
         title: "Empty chirp",
-        description: "Please write something before adding to thread.",
+        description: "Please write something or add an image before posting.",
         variant: "destructive",
       });
       return;
@@ -133,82 +133,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       return;
     }
 
-    setThreadChirps([...threadChirps, content.trim()]);
-    setContent("");
-    // Note: Images are not supported in threads for now
-    if (selectedImage) {
-      toast({
-        title: "Thread Mode",
-        description: "Images are not supported in threads. The image will be removed.",
-        variant: "destructive",
-      });
-      setSelectedImage(null);
-    }
-  };
-
-  const handleSubmit = async () => {
-    // Check if user is available
-    if (!user?.id) {
-      toast({
-        title: "Authentication Error",
-        description: "Please sign in to post a chirp.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isThreadMode) {
-      // In thread mode, we're posting the entire thread
-      // First check if we have any content at all
-      const hasCurrentContent = content.trim();
-      const hasThreadChirps = threadChirps.length > 0;
-      
-      if (!hasCurrentContent && !hasThreadChirps) {
-        toast({
-          title: "Empty thread",
-          description: "Please write something before posting your thread.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Validate current content if it exists
-      if (hasCurrentContent && content.length > maxLength) {
-        toast({
-          title: "Too long",
-          description: `Current chirp must be ${maxLength} characters or less.`,
-          variant: "destructive",
-        });
-        return;
-      }
-    } else {
-      // Normal mode - just check for content
-      if (!content.trim() && !selectedImage) {
-        toast({
-          title: "Empty chirp",
-          description: "Please write something or add an image before posting.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (content.length > maxLength) {
-        toast({
-          title: "Too long",
-          description: `Chirps must be ${maxLength} characters or less.`,
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
     setIsPosting(true);
     
     try {
       let imageData = null;
       
       // Upload image if one is selected
-      if (selectedImage && !isThreadMode) {
+      if (selectedImage) {
         setIsUploadingImage(true);
         try {
           // For web, we'll use the image URL directly
@@ -279,47 +210,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         console.log('✅ Found correct user ID:', authorId);
       }
       
-      if (isThreadMode) {
-        // Create the complete thread content array
-        const allThreadContent = [...threadChirps];
-        if (content.trim()) {
-          allThreadContent.push(content.trim());
-        }
-        
-        console.log('🔄 Creating thread with', allThreadContent.length, 'parts');
-        
-        // Create each chirp in the thread
-        const threadId = Date.now().toString(); // Generate a simple thread ID
-        const createdChirps = [];
-        
-        for (let i = 0; i < allThreadContent.length; i++) {
-          const { data: chirp, error } = await supabase
-            .from('chirps')
-            .insert({
-              content: allThreadContent[i],
-              author_id: authorId,
-              thread_id: threadId,
-              thread_order: i,
-              is_thread_starter: i === 0
-            })
-            .select()
-            .single();
-          
-          if (error) {
-            console.error('Error creating thread chirp:', error);
-            throw error;
-          }
-          
-          createdChirps.push(chirp);
-        }
-        
-        console.log('✅ Thread created with', createdChirps.length, 'chirps');
-        
-        setThreadChirps([]);
-        setIsThreadMode(false);
-      } else {
-        // Post single chirp
-        const { data: chirp, error } = await supabase
+      // Post single chirp
+      const { data: chirp, error } = await supabase
           .from('chirps')
           .insert({
             content: content.trim(),
@@ -339,14 +231,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
           // Call the onPost callback to update the UI
           await onPost?.(content.trim(), imageData);
         }
-      }
       
       setContent("");
       setSelectedImage(null);
       
       toast({
         title: "Posted!",
-        description: isThreadMode ? "Your thread has been shared." : "Your chirp has been shared.",
+        description: "Your chirp has been shared.",
       });
     } catch (error) {
       console.error('Error posting chirp:', error);
@@ -360,11 +251,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     }
   };
 
-  const removeFromThread = (index: number) => {
-    const newThreadChirps = threadChirps.filter((_, i) => i !== index);
-    setThreadChirps(newThreadChirps);
-  };
-
   const getCharCountColor = () => {
     if (remainingChars < 0) return '#ef4444'; // red
     if (remainingChars < 20) return '#f59e0b'; // yellow
@@ -372,230 +258,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   };
 
   const handleTextareaClick = () => {
-    const currentRef = isThreadMode ? threadTextareaRef : textareaRef;
-    if (currentRef.current) {
-      currentRef.current.focus();
+    if (textareaRef.current) {
+      textareaRef.current.focus();
       // Also ensure the cursor is positioned at the end
-      const length = currentRef.current.value.length;
-      currentRef.current.setSelectionRange(length, length);
+      const length = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(length, length);
     }
   };
-
-  if (isThreadMode) {
-    // Thread mode - extend the compose field
-    return (
-      <div style={{
-        backgroundColor: '#ffffff',
-        marginTop: 0,
-        marginBottom: 3,
-        borderRadius: 16,
-        paddingTop: 4,
-        paddingBottom: 4,
-        paddingLeft: 16,
-        paddingRight: 16,
-        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
-        maxWidth: 600,
-        alignSelf: 'center',
-        width: '100%'
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'flex-start'
-        }}>
-          <UserAvatar user={user} size="md" />
-          
-          <div style={{
-            flex: 1,
-            marginLeft: 8,
-            overflow: 'hidden',
-            cursor: 'text',
-            position: 'relative',
-            zIndex: 1
-          }}
-          onClick={handleTextareaClick}
-          >
-            <textarea
-              ref={threadTextareaRef}
-              className="compose-textarea"
-              style={{
-                fontSize: 18,
-                lineHeight: 24,
-                minHeight: 30,
-                maxHeight: 80,
-                padding: 0,
-                color: '#1a1a1a',
-                width: '100%',
-                resize: 'none',
-                border: 'none',
-                outline: 'none',
-                backgroundColor: 'transparent',
-                overflow: 'visible',
-                cursor: 'text',
-                fontFamily: 'inherit',
-                position: 'relative',
-                zIndex: 2
-              }}
-              placeholder="Start a thread..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleTextareaClick();
-              }}
-              onFocus={() => {
-                // Ensure cursor is at the end when focused
-                setTimeout(() => {
-                  if (threadTextareaRef.current) {
-                    const length = threadTextareaRef.current.value.length;
-                    threadTextareaRef.current.setSelectionRange(length, length);
-                  }
-                }, 0);
-              }}
-              maxLength={maxLength}
-            />
-            
-            <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: 12
-            }}>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center'
-              }}>
-                <button
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingLeft: 12,
-                    paddingRight: 12,
-                    paddingTop: 6,
-                    paddingBottom: 6,
-                    borderRadius: 20,
-                    border: '1px solid #d1d5db',
-                    backgroundColor: '#ffffff',
-                    marginRight: 12,
-                    gap: 6,
-                    cursor: 'pointer',
-                    opacity: (!content.trim() || content.length > maxLength) ? 0.5 : 1
-                  }}
-                  onClick={addToThread}
-                  disabled={!content.trim() || content.length > maxLength}
-                >
-                  <ThreadIcon size={16} color="#7c3aed" />
-                  <span style={{
-                    fontSize: 14,
-                    color: '#7c3aed',
-                    fontWeight: '600'
-                  }}>Add</span>
-                </button>
-                
-                <span style={{
-                  fontSize: 14,
-                  fontWeight: '500',
-                  color: getCharCountColor()
-                }}>
-                  {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
-                </span>
-              </div>
-              
-              <button
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
-                  paddingLeft: 20,
-                  paddingRight: 20,
-                  paddingTop: 12,
-                  paddingBottom: 12,
-                  borderRadius: 20,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 3px 8px rgba(124, 58, 237, 0.3)',
-                  cursor: 'pointer',
-                  opacity: ((threadChirps.length === 0 && !content.trim()) || isPosting) ? 0.5 : 1,
-                  border: 'none'
-                }}
-                onClick={handleSubmit}
-                disabled={(threadChirps.length === 0 && !content.trim()) || isPosting}
-              >
-                <span style={{
-                  color: '#ffffff',
-                  fontSize: 14,
-                  fontWeight: '700'
-                }}>
-                  {isPosting ? "Posting..." : "Post all"}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Thread List */}
-        {threadChirps.length > 0 && (
-          <div style={{
-            marginTop: 12,
-            paddingTop: 12,
-            borderTop: '1px solid #e5e7eb'
-          }}>
-            {threadChirps.map((chirp, index) => (
-              <div key={index} style={{
-                backgroundColor: '#f8fafc',
-                borderRadius: 12,
-                padding: 12,
-                marginBottom: 8
-              }}>
-                <div style={{
-                  flex: 1
-                }}>
-                  <p style={{
-                    fontSize: 16,
-                    lineHeight: 22,
-                    color: '#1a1a1a',
-                    marginBottom: 8
-                  }}>{chirp}</p>
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{
-                      fontSize: 14,
-                      color: '#6b7280',
-                      fontWeight: '500'
-                    }}>Chirp {index + 1}</span>
-                    <button
-                      style={{
-                        paddingLeft: 8,
-                        paddingRight: 8,
-                        paddingTop: 4,
-                        paddingBottom: 4,
-                        borderRadius: 12,
-                        backgroundColor: '#fee2e2',
-                        border: '1px solid #fecaca',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => removeFromThread(index)}
-                    >
-                      <span style={{
-                        fontSize: 12,
-                        color: '#dc2626',
-                        fontWeight: '500'
-                      }}>Remove</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   // Normal compose mode
   return (
@@ -731,35 +400,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               flexDirection: 'row',
               alignItems: 'center'
             }}>
-              <button
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingLeft: 12,
-                  paddingRight: 12,
-                  paddingTop: 6,
-                  paddingBottom: 6,
-                  borderRadius: 20,
-                  border: '1px solid #d1d5db',
-                  backgroundColor: '#ffffff',
-                  marginRight: 12,
-                  gap: 6,
-                  cursor: 'pointer'
-                }}
-                onClick={() => setIsThreadMode(true)}
-              >
-                <ThreadIcon size={16} color="#7c3aed" />
-                <span style={{
-                  fontSize: 14,
-                  color: '#7c3aed',
-                  fontWeight: '600'
-                }}>Thread</span>
-              </button>
-              
               <ImagePickerButton
                 onImageSelected={handleImageSelected}
-                disabled={isThreadMode || isPosting}
+                disabled={isPosting}
                 size={20}
                 color="#7c3aed"
               />

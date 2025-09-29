@@ -23,7 +23,7 @@ export default function handler(req, res) {
         email: 'team@chirp.com',
         handle: 'chirpteam',
         customHandle: 'chirpteam',
-        profileImageUrl: null,
+        profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         isChirpPlus: true,
         showChirpPlusBadge: true
       },
@@ -48,10 +48,10 @@ export default function handler(req, res) {
       threadId: null,
       threadOrder: null,
       isThreadStarter: true,
-      imageUrl: null,
-      imageAltText: null,
-      imageWidth: null,
-      imageHeight: null
+      imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop',
+      imageAltText: 'Beautiful mountain landscape',
+      imageWidth: 600,
+      imageHeight: 400
     },
     {
       id: '2',
@@ -63,7 +63,7 @@ export default function handler(req, res) {
         email: 'team@chirp.com',
         handle: 'chirpteam',
         customHandle: 'chirpteam',
-        profileImageUrl: null,
+        profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         isChirpPlus: true,
         showChirpPlusBadge: true
       },
@@ -88,10 +88,10 @@ export default function handler(req, res) {
       threadId: null,
       threadOrder: null,
       isThreadStarter: true,
-      imageUrl: null,
-      imageAltText: null,
-      imageWidth: null,
-      imageHeight: null
+      imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=400&fit=crop',
+      imageAltText: 'Peaceful forest path',
+      imageWidth: 600,
+      imageHeight: 400
     },
     {
       id: '3',
@@ -103,7 +103,7 @@ export default function handler(req, res) {
         email: 'kriselle.t@gmail.com',
         handle: 'kriselle',
         customHandle: 'kriselle',
-        profileImageUrl: null,
+        profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
         isChirpPlus: false,
         showChirpPlusBadge: false
       },
@@ -128,10 +128,10 @@ export default function handler(req, res) {
       threadId: null,
       threadOrder: null,
       isThreadStarter: true,
-      imageUrl: null,
-      imageAltText: null,
-      imageWidth: null,
-      imageHeight: null
+      imageUrl: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=400&fit=crop',
+      imageAltText: 'Modern city skyline',
+      imageWidth: 600,
+      imageHeight: 400
     }
   ];
 
@@ -183,7 +183,7 @@ export default function handler(req, res) {
         email: 'user@example.com',
         customHandle: 'user',
         handle: 'user',
-        profileImageUrl: null,
+        profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         avatarUrl: null,
         bio: '',
         isVerified: false,

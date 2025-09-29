@@ -1,24 +1,21 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { useToast } from "../hooks/use-toast";
-import ComposeChirp from "../components/ComposeChirp";
-import ChirpCard from "../components/ChirpCard";
-import ContactsPrompt from "../components/ContactsPrompt";
 import { useQuery } from "@tanstack/react-query";
-import { isUnauthorizedError } from "./authUtils.ts";
+import { useEffect } from "react";
+import ChirpCard from "../components/ChirpCard";
+import ComposeChirp from "../components/ComposeChirp";
+import ContactsPrompt from "../components/ContactsPrompt";
 import { Skeleton } from "../components/ui/skeleton";
-import { Button } from "../components/ui/button";
-import { Sparkles, Clock, TrendingUp } from "lucide-react";
+import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../hooks/useAuth";
+import { isUnauthorizedError } from "./authUtils.ts";
 
 export default function Home() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const [feedType, setFeedType] = useState<'personalized' | 'chronological' | 'trending'>('personalized');
 
   const { data: chirps, isLoading, error } = useQuery({
-    queryKey: ["/api/chirps", feedType],
+    queryKey: ["/api/chirps", "personalized"],
     queryFn: async () => {
-      const response = await fetch(`/api/chirps?personalized=${feedType === 'personalized'}&trending=${feedType === 'trending'}`, {
+      const response = await fetch(`/api/chirps?personalized=true`, {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch chirps');
@@ -65,51 +62,6 @@ export default function Home() {
 
   return (
     <>
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <img 
-              src="/logo.jpg" 
-              alt="Chirp" 
-              className="w-8 h-8 object-cover object-center rounded-lg"
-            />
-
-          </div>
-          
-          {/* Feed Type Selector */}
-          <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-            <Button
-              variant={feedType === 'personalized' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setFeedType('personalized')}
-              className={`h-8 px-3 ${feedType === 'personalized' ? 'bg-purple-600 text-white' : 'text-gray-600 dark:text-gray-400'}`}
-            >
-              <Sparkles className="h-3 w-3 mr-1" />
-              For You
-            </Button>
-            <Button
-              variant={feedType === 'chronological' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setFeedType('chronological')}
-              className={`h-8 px-3 ${feedType === 'chronological' ? 'bg-purple-600 text-white' : 'text-gray-600 dark:text-gray-400'}`}
-            >
-              <Clock className="h-3 w-3 mr-1" />
-              Latest
-            </Button>
-            <Button
-              variant={feedType === 'trending' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setFeedType('trending')}
-              className={`h-8 px-3 ${feedType === 'trending' ? 'bg-purple-600 text-white' : 'text-gray-600 dark:text-gray-400'}`}
-            >
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Trending
-            </Button>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="pb-4 mb-20">
         <ContactsPrompt />
