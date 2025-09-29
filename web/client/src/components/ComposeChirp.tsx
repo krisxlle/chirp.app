@@ -36,14 +36,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   // Auto-resize textarea functionality
   const autoResizeTextarea = (textarea: HTMLTextAreaElement) => {
     textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-  };
-
-  // Handle textarea click to focus
-  const handleTextareaClick = () => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
   };
 
   // Auto-resize on content change
@@ -202,44 +195,26 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         </div>
         
         <div className="flex-1">
-          <div 
-            className="w-full min-h-[100px] border border-gray-200 rounded-lg focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 cursor-text"
-            onClick={handleTextareaClick}
-          >
-            <textarea
-              ref={textareaRef}
-              className="w-full h-full resize-none border-none outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg"
-              style={{
-                fontSize: '16px',
-                lineHeight: '24px',
-                minHeight: '100px',
-                maxHeight: '120px',
-                padding: '12px',
-                fontFamily: 'inherit',
-                caretColor: '#1a1a1a'
-              }}
-              placeholder="What's on your mind?"
-              value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-                autoResizeTextarea(e.target);
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleTextareaClick();
-              }}
-              onFocus={() => {
-                // Ensure cursor is at the end when focused
-                setTimeout(() => {
-                  if (textareaRef.current) {
-                    const length = textareaRef.current.value.length;
-                    textareaRef.current.setSelectionRange(length, length);
-                  }
-                }, 0);
-              }}
-              maxLength={maxLength}
-            />
-          </div>
+          <textarea
+            ref={textareaRef}
+            className="w-full min-h-[80px] resize-none border-none outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-lg leading-6"
+            style={{
+              fontSize: '18px',
+              lineHeight: '24px',
+              minHeight: '80px',
+              padding: '0',
+              fontFamily: 'inherit',
+              color: '#1a1a1a',
+              textAlign: 'start'
+            }}
+            placeholder="What's on your mind?"
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              autoResizeTextarea(e.target);
+            }}
+            maxLength={maxLength}
+          />
           
           {/* Image Preview */}
           {selectedImage && (
