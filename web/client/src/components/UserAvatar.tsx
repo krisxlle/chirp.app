@@ -24,7 +24,8 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
     userId: user.id,
     profileImageUrl: user.profileImageUrl,
     avatarUrl: user.avatarUrl,
-    hasImage: !!(user.profileImageUrl || user.avatarUrl)
+    hasImage: !!(user.profileImageUrl || user.avatarUrl),
+    imageUrl: user.profileImageUrl || user.avatarUrl
   });
   
   const getSizeClasses = () => {
@@ -67,6 +68,7 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
           className="w-full h-full rounded-full object-cover"
           style={{ aspectRatio: '1/1' }}
           onError={(e) => {
+            console.log('🖼️ Image failed to load:', user.profileImageUrl || user.avatarUrl);
             // Fallback to initials if image fails to load
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
@@ -75,6 +77,9 @@ export default function UserAvatar({ user, size = 'md', onPress }: UserAvatarPro
               // Use textContent instead of innerHTML to prevent XSS
               parent.textContent = getInitials();
             }
+          }}
+          onLoad={() => {
+            console.log('🖼️ Image loaded successfully:', user.profileImageUrl || user.avatarUrl);
           }}
         />
       ) : (

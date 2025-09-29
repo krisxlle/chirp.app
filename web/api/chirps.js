@@ -137,7 +137,7 @@ export default function handler(req, res) {
 
   // Handle GET /api/chirps
   if (req.method === 'GET') {
-    const { personalized, trending } = req.query;
+    const { personalized, trending, limit, offset } = req.query;
     
     // Filter chirps based on query parameters
     let filteredChirps = [...mockChirps];
@@ -145,14 +145,32 @@ export default function handler(req, res) {
     if (personalized === 'true') {
       // For personalized feed, show chirps from followed users
       filteredChirps = mockChirps.filter(chirp => chirp.author.id === '1'); // Show team chirps
+    } else {
+      // For non-personalized feed, show all chirps
+      filteredChirps = mockChirps;
     }
     
     if (trending === 'true') {
       // For trending, sort by likesCount
-      filteredChirps = mockChirps.sort((a, b) => b.likesCount - a.likesCount);
+      filteredChirps = filteredChirps.sort((a, b) => b.likesCount - a.likesCount);
     }
 
-    res.status(200).json(filteredChirps);
+    // Handle pagination
+    const limitNum = parseInt(limit) || 10;
+    const offsetNum = parseInt(offset) || 0;
+    
+    const paginatedChirps = filteredChirps.slice(offsetNum, offsetNum + limitNum);
+
+    console.log('📊 API Response:', {
+      totalChirps: filteredChirps.length,
+      limit: limitNum,
+      offset: offsetNum,
+      returnedChirps: paginatedChirps.length,
+      hasImages: paginatedChirps.filter(c => c.imageUrl).length,
+      hasTimestamps: paginatedChirps.filter(c => c.createdAt).length
+    });
+
+    res.status(200).json(paginatedChirps);
     return;
   }
 

@@ -30,6 +30,11 @@ export default function Home() {
       return response.json();
     },
     getNextPageParam: (lastPage, allPages) => {
+      console.log('📄 getNextPageParam:', {
+        lastPageLength: lastPage.length,
+        allPagesLength: allPages.length,
+        hasNextPage: lastPage.length >= 10
+      });
       // If the last page has fewer than 10 items, we've reached the end
       if (lastPage.length < 10) return undefined;
       // Return the next offset
@@ -48,20 +53,33 @@ export default function Home() {
 
   // Infinite scroll handler
   const handleScroll = useCallback(() => {
-    if (
-      window.innerHeight + document.documentElement.scrollTop >=
-      document.documentElement.offsetHeight - 1000
-    ) {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.offsetHeight;
+    
+    // Trigger when user is 200px from bottom
+    if (scrollTop + windowHeight >= documentHeight - 200) {
       if (hasNextPage && !isFetchingNextPage) {
+        console.log('🔄 Triggering infinite scroll - fetching next page');
         fetchNextPage();
       }
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Add scroll event listener
+  // Add scroll event listener with throttling
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    let timeoutId: NodeJS.Timeout;
+    
+    const throttledHandleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleScroll, 100);
+    };
+    
+    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', throttledHandleScroll);
+      clearTimeout(timeoutId);
+    };
   }, [handleScroll]);
 
   useEffect(() => {
@@ -103,7 +121,7 @@ export default function Home() {
   return (
     <>
       {/* Main Content */}
-      <main className="pb-4 mb-20">
+      <main className="pb-4 mb-20 overflow-y-auto scrollbar-hide">
         <ContactsPrompt />
         <ComposeChirp />
         

@@ -277,6 +277,14 @@ export default function ChirpCard({
         <div className="flex space-x-3">
           {/* Avatar */}
           <div className="flex-shrink-0">
+            {console.log('🔍 ChirpCard author data:', {
+              id: chirp.author.id,
+              firstName: chirp.author.firstName,
+              lastName: chirp.author.lastName,
+              profileImageUrl: chirp.author.profileImageUrl,
+              avatarUrl: chirp.author.avatarUrl,
+              hasImage: !!(chirp.author.profileImageUrl || chirp.author.avatarUrl)
+            })}
             <UserAvatar 
               user={chirp.author} 
               size="md" 
@@ -308,6 +316,11 @@ export default function ChirpCard({
               
               <span className="text-gray-500 dark:text-gray-400">·</span>
               <span className="text-gray-500 dark:text-gray-400">
+                {console.log('🕒 Timestamp data:', {
+                  createdAt: chirp.createdAt,
+                  type: typeof chirp.createdAt,
+                  isValid: chirp.createdAt ? !isNaN(new Date(chirp.createdAt).getTime()) : false
+                })}
                 {chirp.createdAt ? formatDistanceToNow(new Date(chirp.createdAt), { addSuffix: true }) : 'now'}
               </span>
 
@@ -345,6 +358,14 @@ export default function ChirpCard({
             </div>
 
             {/* Image */}
+            {console.log('🖼️ ChirpCard image data:', {
+              chirpId: chirp.id,
+              imageUrl: chirp.imageUrl,
+              imageAltText: chirp.imageAltText,
+              imageWidth: chirp.imageWidth,
+              imageHeight: chirp.imageHeight,
+              hasImage: !!chirp.imageUrl
+            })}
             {chirp.imageUrl && (
               <ChirpImage
                 imageUrl={chirp.imageUrl}

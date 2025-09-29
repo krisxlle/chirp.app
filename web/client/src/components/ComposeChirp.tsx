@@ -197,22 +197,24 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg p-4 max-w-md mx-auto shadow-lg">
       <div className="flex space-x-3">
-        <UserAvatar user={user} size="md" />
+        <div className="pt-2">
+          <UserAvatar user={user} size="md" />
+        </div>
         
         <div className="flex-1">
           <div 
-            className="w-full min-h-[100px] border-none focus-visible:ring-0 text-base p-0 dark:bg-gray-900 dark:text-white cursor-text"
+            className="w-full min-h-[100px] border border-gray-200 rounded-lg focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 dark:bg-gray-800 dark:border-gray-600 cursor-text"
             onClick={handleTextareaClick}
           >
             <textarea
               ref={textareaRef}
-              className="w-full resize-none border-none outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              className="w-full h-full resize-none border-none outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg"
               style={{
                 fontSize: '16px',
                 lineHeight: '24px',
                 minHeight: '100px',
                 maxHeight: '120px',
-                padding: '8px 0',
+                padding: '12px',
                 fontFamily: 'inherit',
                 caretColor: '#1a1a1a'
               }}

@@ -1,6 +1,6 @@
+import { Download } from 'lucide-react';
 import React, { useState } from 'react';
 import { Button } from './ui/button';
-import { Download, Eye, EyeOff } from 'lucide-react';
 
 interface ChirpImageProps {
   imageUrl: string;
@@ -20,15 +20,27 @@ export default function ChirpImage({
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  console.log('🖼️ ChirpImage render:', {
+    imageUrl,
+    imageAltText,
+    imageWidth,
+    imageHeight,
+    hasImageUrl: !!imageUrl,
+    imageError
+  });
+
   if (!imageUrl || imageError) {
+    console.log('🖼️ ChirpImage not rendering:', { imageUrl, imageError });
     return null;
   }
 
   const handleImageLoad = () => {
+    console.log('🖼️ Image loaded successfully:', imageUrl);
     setIsLoading(false);
   };
 
   const handleImageError = () => {
+    console.log('🖼️ Image failed to load:', imageUrl);
     setImageError(true);
     setIsLoading(false);
   };
