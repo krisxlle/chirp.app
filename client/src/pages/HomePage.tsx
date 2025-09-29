@@ -4,26 +4,120 @@ import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 
-// Use API endpoint instead of direct Supabase client
+// Use real Supabase client to fetch actual database chirps
 const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
   console.log('🔍 getForYouChirps called with:', { limit, offset });
   
   try {
-    console.log('✅ Using API endpoint for getForYouChirps');
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
     
-    const response = await fetch(`/api/chirps?personalized=true&limit=${limit}&offset=${offset}`, {
-      credentials: 'include'
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
     });
+
+    console.log('✅ Using real Supabase client for getForYouChirps');
     
-    if (!response.ok) {
-      throw new Error('Failed to fetch chirps');
+    // Fetch chirps with proper data mapping
+    const { data: chirps, error: chirpsError } = await supabase
+      .from('chirps')
+      .select(`
+        id,
+        content,
+        created_at,
+        author_id,
+        image_url,
+        image_alt_text,
+        image_width,
+        image_height
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+      .range(offset, offset + limit - 1);
+
+    if (chirpsError) {
+      console.error('❌ Supabase chirps error:', chirpsError);
+      throw chirpsError;
     }
-    
-    const chirps = await response.json();
-    console.log('✅ Fetched', chirps.length, 'chirps from API');
-    return chirps;
+
+    if (!chirps || chirps.length === 0) {
+      console.log('📊 No chirps found in database');
+      return [];
+    }
+
+    // Get user data for the chirps
+    const authorIds = [...new Set(chirps.map((chirp: any) => chirp.author_id))];
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, first_name, last_name, email, handle, custom_handle, profile_image_url')
+      .in('id', authorIds);
+
+    if (usersError) {
+      console.error('❌ Supabase users error:', usersError);
+    }
+
+    // Create user map for efficient lookup
+    const userMap = new Map();
+    (users || []).forEach((user: any) => {
+      userMap.set(user.id, user);
+    });
+
+    // Transform chirps with proper data mapping
+    const transformedChirps = chirps.map((chirp: any) => {
+      const user = userMap.get(chirp.author_id);
+      
+      return {
+        id: chirp.id.toString(),
+        content: chirp.content,
+        createdAt: chirp.created_at || new Date().toISOString(),
+        author: {
+          id: user?.id || chirp.author_id || 'unknown',
+          firstName: user?.first_name || 'User',
+          lastName: user?.last_name || '',
+          email: user?.email || 'user@example.com',
+          customHandle: user?.custom_handle || user?.handle || 'user',
+          handle: user?.handle || 'user',
+          profileImageUrl: user?.profile_image_url || null,
+          avatarUrl: user?.profile_image_url || null,
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        },
+        imageUrl: chirp.image_url || null,
+        imageAltText: chirp.image_alt_text || null,
+        imageWidth: chirp.image_width || null,
+        imageHeight: chirp.image_height || null,
+        likesCount: 0,
+        repliesCount: 0,
+        repostsCount: 0,
+        sharesCount: 0,
+        reactionCounts: {},
+        userReaction: null,
+        isLiked: false,
+        isReposted: false,
+        isAiGenerated: false,
+        isWeeklySummary: false,
+        threadId: null,
+        threadOrder: null,
+        isThreadStarter: true
+      };
+    });
+
+    console.log('✅ Fetched', transformedChirps.length, 'real chirps from database');
+    return transformedChirps;
   } catch (error) {
-    console.error('❌ Error fetching chirps from API:', error);
+    console.error('❌ Error fetching real chirps from Supabase:', error);
     throw error;
   }
 };
