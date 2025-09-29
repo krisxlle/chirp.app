@@ -4,125 +4,27 @@ import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 
-// Inline API functions to fetch real data from database
+// Use API endpoint instead of direct Supabase client
 const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
   console.log('🔍 getForYouChirps called with:', { limit, offset });
   
   try {
-    // Create Supabase client directly for web
-    const { createClient } = await import('@supabase/supabase-js');
+    console.log('✅ Using API endpoint for getForYouChirps');
     
-    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-    
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        storage: {
-          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
-          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
-          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
-        },
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
+    const response = await fetch(`/api/chirps?personalized=true&limit=${limit}&offset=${offset}`, {
+      credentials: 'include'
     });
-
-    console.log('✅ Using real Supabase client for getForYouChirps');
     
-    // Simplified query to prevent timeouts - fetch chirps first, then users separately
-    const chirpsQueryPromise = supabase
-      .from('chirps')
-      .select(`
-        id,
-        content,
-        created_at,
-        reply_to_id,
-        author_id,
-        image_url,
-        image_alt_text,
-        image_width,
-        image_height
-      `)
-      .order('created_at', { ascending: false })
-      .limit(Math.min(limit, 5)) // Further reduced limit to prevent timeout
-      .range(offset, offset + Math.min(limit, 5) - 1);
-
-    // Add timeout to prevent hanging queries
-    const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Query timeout')), 8000) // Reduced timeout to 8 seconds
-    );
-
-    const chirpsResult = await Promise.race([chirpsQueryPromise, timeoutPromise]) as any;
-    const { data: chirps, error: chirpsError } = chirpsResult;
-
-    if (chirpsError) {
-      console.error('❌ Supabase chirps error:', chirpsError);
-      throw chirpsError;
+    if (!response.ok) {
+      throw new Error('Failed to fetch chirps');
     }
-
-    if (!chirps || chirps.length === 0) {
-      console.log('📊 No chirps found in database');
-      return [];
-    }
-
-    // Get user data separately to avoid complex joins
-    const authorIds = [...new Set(chirps.map((chirp: any) => chirp.author_id))];
-    const usersQueryPromise = supabase
-      .from('users')
-      .select('id, first_name, last_name, email, handle, custom_handle, profile_image_url, avatar_url')
-      .in('id', authorIds);
-
-    const usersResult = await Promise.race([usersQueryPromise, timeoutPromise]) as any;
-    const { data: users, error: usersError } = usersResult;
-
-    if (usersError) {
-      console.error('❌ Supabase users error:', usersError);
-      // Continue with empty users array rather than failing completely
-    }
-
-    // Create user map for efficient lookup
-    const userMap = new Map();
-    (users || []).forEach((user: any) => {
-      userMap.set(user.id, user);
-    });
-
-    // Transform chirps with user data
-    const transformedChirps = chirps.map((chirp: any) => {
-      const user = userMap.get(chirp.author_id);
-      return {
-        ...chirp,
-        author: user || {
-          id: chirp.author_id,
-          first_name: 'Unknown',
-          last_name: '',
-          email: '',
-          handle: 'unknown',
-          custom_handle: 'unknown',
-          profile_image_url: null,
-          avatar_url: null
-        },
-        replyCount: 0, // Simplified - no individual count queries
-        reactionCount: 0, // Simplified - no individual count queries
-        userHasLiked: false // Simplified - no individual like status queries
-      };
-    });
-
-    console.log('✅ Fetched', transformedChirps.length, 'real chirps from database');
     
-    return transformedChirps;
+    const chirps = await response.json();
+    console.log('✅ Fetched', chirps.length, 'chirps from API');
+    return chirps;
   } catch (error) {
-    console.error('❌ Error fetching real chirps from Supabase:', error);
-    console.error('❌ Supabase connection details:', {
-      url: 'https://qrzbtituxxilnbgocdge.supabase.co',
-      hasKey: true,
-      errorMessage: error.message,
-      errorCode: error.code
-    });
-    
-    // Instead of falling back to mock data, throw the error
-    // This will be handled by the calling component
-    throw new Error(`Failed to fetch chirps from database: ${error.message}`);
+    console.error('❌ Error fetching chirps from API:', error);
+    throw error;
   }
 };
 
