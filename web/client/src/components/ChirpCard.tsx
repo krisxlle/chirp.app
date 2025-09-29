@@ -431,7 +431,7 @@ export default function ChirpCard({
                 onClick={handleShare}
                 className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <Share2 className="h-4 w-4" />
+                <Repeat2 className="h-4 w-4 -scale-x-100" />
               </Button>
 
               {/* More options */}
