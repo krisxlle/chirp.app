@@ -797,10 +797,21 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
   const transformedChirps = (chirps || []).map((chirp: any) => {
     const user = userMap.get(chirp.author_id);
     
+    // Debug logging for first chirp
+    if (chirp.id === chirps[0]?.id) {
+      console.log('🔍 First chirp raw data:', {
+        id: chirp.id,
+        created_at: chirp.created_at,
+        created_at_type: typeof chirp.created_at,
+        image_url: chirp.image_url,
+        has_image: !!chirp.image_url
+      });
+    }
+    
     return {
       id: chirp.id.toString(),
       content: chirp.content,
-      createdAt: chirp.created_at,
+      createdAt: chirp.created_at || new Date().toISOString(),
       replyToId: null, // Simplified - no reply_to_id in basic query
       isWeeklySummary: false, // Simplified - assume not weekly summary
       reactionCount: reactionCounts.get(chirp.id) || 0,
@@ -811,10 +822,10 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
       originalChirp: undefined,
       userHasLiked: false,
       // Image-related fields - now using actual data from database
-      imageUrl: chirp.image_url,
-      imageAltText: chirp.image_alt_text,
-      imageWidth: chirp.image_width,
-      imageHeight: chirp.image_height,
+      imageUrl: chirp.image_url || null,
+      imageAltText: chirp.image_alt_text || null,
+      imageWidth: chirp.image_width || null,
+      imageHeight: chirp.image_height || null,
       author: {
         id: user?.id || chirp.author_id || 'unknown',
         firstName: user?.first_name || 'User',
@@ -822,8 +833,8 @@ async function getBasicForYouFeed(limit: number = 10, offset: number = 0): Promi
         email: 'user@example.com',
         customHandle: user?.custom_handle || user?.handle || 'user',
         handle: user?.handle || 'user',
-        profileImageUrl: user?.profile_image_url,
-        avatarUrl: user?.profile_image_url,
+        profileImageUrl: user?.profile_image_url || null,
+        avatarUrl: user?.profile_image_url || null,
         bannerImageUrl: null,
         bio: '',
         joinedAt: new Date().toISOString(),
