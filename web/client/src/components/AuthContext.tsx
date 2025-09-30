@@ -1,4 +1,7 @@
+console.log('🔍 AuthContext.tsx: Starting to load...');
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
+console.log('✅ AuthContext.tsx: React imported successfully');
 
 // Web-compatible storage
 const storage = {
@@ -56,8 +59,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  console.log('🔍 AuthProvider: Component starting to render...');
+  
+  console.log('🔍 AuthProvider: Creating state...');
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  console.log('✅ AuthProvider: State created successfully');
 
   const checkAuthState = async () => {
     try {
@@ -90,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  console.log('🔍 AuthProvider: Setting up useEffect...');
   useEffect(() => {
     console.log('🚀 AuthProvider: Starting auth state check...');
     checkAuthState().catch(error => {
@@ -97,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     });
   }, []);
+  console.log('✅ AuthProvider: useEffect set up successfully');
 
   const signIn = async (username: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -184,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  console.log('🔍 AuthProvider: Creating context value...');
   const value = {
     user,
     isLoading,
@@ -194,6 +204,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user,
     clearSession
   };
+  console.log('✅ AuthProvider: Context value created successfully');
 
   console.log('AuthProvider render:', { 
     userExists: !!user, 
@@ -202,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user 
   });
 
+  console.log('🔍 AuthProvider: Rendering provider...');
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -210,12 +222,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
+  console.log('🔍 useAuth: Hook called...');
   const context = useContext(AuthContext);
+  console.log('✅ useAuth: Context retrieved successfully', { contextExists: !!context });
   
   if (context === undefined) {
     console.error('useAuth must be used within an AuthProvider');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   
+  console.log('✅ useAuth: Returning context successfully');
   return context;
 }
