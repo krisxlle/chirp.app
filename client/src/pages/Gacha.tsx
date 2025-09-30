@@ -336,16 +336,15 @@ const rarityNames = {
 
 // Custom Icon Components
 const ChirpCrystalIcon = ({ size = 24, color = "#C671FF" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <path 
-      d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" 
-      fill={color}
-    />
-    <path 
-      d="M12 18L13.09 20.26L16 21L13.09 21.74L12 24L10.91 21.74L8 21L10.91 20.26L12 18Z" 
-      fill={color}
-    />
-  </svg>
+  <img 
+    src="/assets/Season 1/Chirp Crystal v2.png" 
+    alt="Chirp Crystal" 
+    style={{ 
+      width: size, 
+      height: size,
+      filter: color !== "#C671FF" ? `hue-rotate(${color === "white" ? "0deg" : "180deg"}) saturate(2)` : "none"
+    }}
+  />
 );
 
 const GachaIcon = ({ size = 24, color = "#FF61A6" }) => (
