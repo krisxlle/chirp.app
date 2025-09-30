@@ -17,7 +17,6 @@ import HomePage from "./pages/HomePage";
 import NotFound from "./pages/not-found";
 import Notifications from "./pages/Notifications";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 import SettingsPage from "./pages/Settings";
 import Subscribe from "./pages/Subscribe";
@@ -75,7 +74,7 @@ function Router() {
             <Route path="/" component={HomePage} />
             <Route path="/search" component={Search} />
             <Route path="/notifications" component={Notifications} />
-            <Route path="/profile/:userId?" component={Profile} />
+            <Route path="/profile/:userId?" component={() => <div>Simple Profile</div>} />
             <Route path="/collection" component={CollectionPage} />
             <Route path="/settings" component={Settings} />
             <Route path="/subscribe" component={Subscribe} />
