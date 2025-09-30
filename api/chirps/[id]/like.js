@@ -58,12 +58,15 @@ export default async function handler(req, res) {
       console.log('🔴 Like request:', { chirpId: id, userId });
 
       // Check if the user has already liked the chirp
+      console.log('🔍 Checking existing reaction for chirp:', id, 'user:', userId);
       const { data: existingReaction, error: checkError } = await supabase
         .from('reactions')
         .select('id')
         .eq('chirp_id', id)
         .eq('user_id', userId)
         .single();
+
+      console.log('🔍 Existing reaction check result:', { existingReaction, checkError });
 
       if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
         console.error('❌ Error checking existing reaction:', checkError);
@@ -76,6 +79,7 @@ export default async function handler(req, res) {
       }
 
       const hasLiked = !!existingReaction;
+      console.log('🔍 Has liked:', hasLiked);
 
       if (hasLiked) {
         // Unlike: remove the reaction
@@ -114,12 +118,16 @@ export default async function handler(req, res) {
         });
       } else {
         // Like: add the reaction
-        const { error: insertError } = await supabase
+        console.log('🔍 Inserting reaction for chirp:', parseInt(id), 'user:', userId);
+        const { data: insertData, error: insertError } = await supabase
           .from('reactions')
           .insert({
             chirp_id: parseInt(id),
             user_id: userId
-          });
+          })
+          .select();
+
+        console.log('🔍 Insert reaction result:', { insertData, insertError });
 
         if (insertError) {
           console.error('❌ Error adding reaction:', insertError);

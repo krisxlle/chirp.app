@@ -84,10 +84,13 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
     
     if (chirpIds.length > 0) {
       // Get like counts for all chirps
+      console.log('🔍 Fetching like counts for chirps:', chirpIds);
       const { data: likeCounts, error: likeCountsError } = await supabase
         .from('reactions')
         .select('chirp_id')
         .in('chirp_id', chirpIds);
+
+      console.log('🔍 Like counts result:', { likeCounts, likeCountsError });
 
       if (likeCountsError) {
         console.error('❌ Error fetching like counts:', likeCountsError);
@@ -96,15 +99,19 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
         likeCounts?.forEach(reaction => {
           likeData[reaction.chirp_id] = (likeData[reaction.chirp_id] || 0) + 1;
         });
+        console.log('🔍 Processed like data:', likeData);
       }
 
       // Get user's like status for all chirps
       if (currentUserId) {
+        console.log('🔍 Fetching user likes for user:', currentUserId, 'chirps:', chirpIds);
         const { data: userLikes, error: userLikesError } = await supabase
           .from('reactions')
           .select('chirp_id')
           .in('chirp_id', chirpIds)
           .eq('user_id', currentUserId);
+
+        console.log('🔍 User likes result:', { userLikes, userLikesError });
 
         if (userLikesError) {
           console.error('❌ Error fetching user likes:', userLikesError);
@@ -113,6 +120,7 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
           userLikes?.forEach(reaction => {
             likeData[`${reaction.chirp_id}_userLiked`] = true;
           });
+          console.log('🔍 Final like data with user likes:', likeData);
         }
       }
     }
