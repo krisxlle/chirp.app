@@ -565,7 +565,7 @@ export default function ChirpCard({
     >
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2px' }}>
         <div onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }} style={{ marginLeft: '0' }}>
-          <UserAvatar user={chirp.author} size="md" showFrame={true} />
+          <UserAvatar user={chirp.author} size="lg" showFrame={true} />
         </div>
         <div style={{ flex: 1, marginLeft: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>

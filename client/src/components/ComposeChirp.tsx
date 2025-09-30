@@ -287,7 +287,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         flexDirection: 'row',
         alignItems: 'flex-start'
       }}>
-        <UserAvatar user={user} size="md" showFrame={true} />
+        <UserAvatar user={user} size="lg" showFrame={true} />
         
         <div style={{
           flex: 1,
