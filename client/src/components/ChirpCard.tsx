@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
-import { useLike } from '../contexts/LikeContext';
 import ChirpImage from '../components/ChirpImage';
 import ChirpLikesModal from '../components/ChirpLikesModal';
 import ImageViewerModal from '../components/ImageViewerModal';
@@ -10,6 +9,7 @@ import { apiRequest } from '../components/api';
 import HeartIcon from '../components/icons/HeartIcon';
 import ShareIcon from '../components/icons/ShareIcon';
 import SpeechBubbleIcon from '../components/icons/SpeechBubbleIcon';
+import { useLike } from '../contexts/LikeContext';
 
 interface User {
   id: string;
@@ -104,9 +104,9 @@ export default function ChirpCard({
   // User available, rendering chirp
   // Get initial state from global like context or fallback to chirp props
   const globalLikeState = getLikeState(chirp.id);
-  const [likes, setLikes] = useState(globalLikeState?.likesCount ?? chirp.reactionCount || 0);
+  const [likes, setLikes] = useState(globalLikeState?.likesCount ?? (chirp.reactionCount || 0));
   const [replies, setReplies] = useState(chirp.replyCount || 0);
-  const [userHasLiked, setUserHasLiked] = useState(globalLikeState?.userHasLiked ?? chirp.userHasLiked || false);
+  const [userHasLiked, setUserHasLiked] = useState(globalLikeState?.userHasLiked ?? (chirp.userHasLiked || false));
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showReplyInput, setShowReplyInput] = useState(false);
