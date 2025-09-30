@@ -200,7 +200,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               fontSize: '18px',
               lineHeight: '24px',
               minHeight: '80px',
-              padding: '0',
+              padding: '12px',
               fontFamily: 'inherit',
               color: '#1a1a1a',
               textAlign: 'start'
