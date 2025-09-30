@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import { LikeProvider } from "./contexts/LikeContext";
+import { EquippedFrameProvider } from "./contexts/EquippedFrameContext";
 import BottomNavigation from "./components/BottomNavigation";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
 import { FloatingFeedback } from "./components/ui/floating-feedback";
@@ -102,10 +103,12 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
         <LikeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
+          <EquippedFrameProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </EquippedFrameProvider>
         </LikeProvider>
       </QueryClientProvider>
     </AuthProvider>

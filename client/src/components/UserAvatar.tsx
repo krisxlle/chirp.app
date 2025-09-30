@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ProfileFrame from './ProfileFrame';
-
-// Profile Frame Functions - Inline to avoid import issues
-const getUserEquippedFrame = async (userId: string) => {
-  console.log('👤 getUserEquippedFrame called with:', { userId });
-  
-  // Return null to simulate no equipped frame for testing
-  // In production, this would check the database for equipped frames
-  return null;
-};
+import { useEquippedFrame } from '../contexts/EquippedFrameContext';
 
 // Inline rarity determination function to avoid import issues
 const determineUserRarity = (user: {
@@ -77,18 +69,19 @@ interface UserAvatarProps {
 export default function UserAvatar({ user, size = 'md', onPress, showFrame = false, style }: UserAvatarProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { equippedFrames, fetchEquippedFrame } = useEquippedFrame();
   const [equippedFrame, setEquippedFrame] = useState<any>(null);
   
   // Load equipped frame for the user
   useEffect(() => {
-    if (user?.id && showFrame) {
+    if (user?.id) {
       loadEquippedFrame();
     }
-  }, [user?.id, showFrame]);
+  }, [user?.id]);
 
   const loadEquippedFrame = async () => {
     try {
-      const frame = await getUserEquippedFrame(user.id);
+      const frame = await fetchEquippedFrame(user.id);
       setEquippedFrame(frame);
     } catch (error) {
       console.error('Error loading equipped frame:', error);
@@ -277,8 +270,8 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       </div>
     );
 
-    if (showFrame && equippedFrame) {
-      console.log('🖼️ UserAvatar showFrame debug:', {
+    if (equippedFrame) {
+      console.log('🖼️ UserAvatar equipped frame debug:', {
         userId: user.id,
         userHandle: user.handle,
         userName: user.firstName || user.customHandle,
@@ -319,8 +312,8 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     </div>
   );
 
-  if (showFrame && equippedFrame) {
-    console.log('🖼️ UserAvatar showFrame debug (fallback):', {
+  if (equippedFrame) {
+    console.log('🖼️ UserAvatar equipped frame debug (fallback):', {
       userId: user.id,
       userHandle: user.handle,
       userName: user.firstName || user.customHandle,
