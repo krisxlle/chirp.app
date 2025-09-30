@@ -108,10 +108,10 @@ BEGIN
   
   -- Return the result
   RETURN QUERY SELECT 
-    selected_frame.id,
-    selected_frame.name,
-    selected_frame.rarity,
-    selected_frame.image_url,
+    selected_frame.id as frame_id,
+    selected_frame.name as frame_name,
+    selected_frame.rarity as frame_rarity,
+    selected_frame.image_url as frame_image_url,
     (existing_collection = 0) as is_new;
 END;
 $$ LANGUAGE plpgsql;

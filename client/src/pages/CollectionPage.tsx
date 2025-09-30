@@ -96,7 +96,7 @@ const getUserFrameCollection = async (userId: string) => {
             previewUrl: sampleFrame.imageUrl,
             quantity: 1,
             obtainedAt: new Date().toISOString(),
-            seasonName: 'Season 1: Genesis',
+            seasonName: 'Season 1',
             isEquipped: false
           }];
         }

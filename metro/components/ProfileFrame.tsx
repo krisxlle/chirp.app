@@ -9,12 +9,12 @@ interface ProfileFrameProps {
 }
 
 const rarityFrameImages = {
-  mythic: require('../public/assets/Mystical Frame.png'),
-  legendary: require('../public/assets/Legendary Frame.png'),
-  epic: require('../public/assets/Epic Frame.png'),
-  rare: require('../public/assets/Rare Frame.png'),
-  uncommon: require('../public/assets/Uncommon Frame.png'),
-  common: require('../public/assets/Common Frame.png'),
+  mythic: require('../public/assets/Season 1/Purple Bird Frame Mythic.png'),
+  legendary: require('../public/assets/Season 1/Green Leaf Frame Legendary.png'),
+  epic: require('../public/assets/Season 1/Red Cat Frame Epic.png'),
+  rare: require('../public/assets/Season 1/Pink Fairy Frame Rare.png'),
+  uncommon: require('../public/assets/Season 1/Green Mushroom Frame Uncommon.png'),
+  common: require('../public/assets/Season 1/Simple Gray Frame Common.png'),
 };
 
 export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {

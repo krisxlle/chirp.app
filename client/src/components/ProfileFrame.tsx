@@ -21,14 +21,14 @@ const getRarityColor = (rarity: string) => {
 };
 
 const getRarityFrameImage = (rarity: string) => {
-  // Try multiple approaches for better reliability
+  // Use Season 1 frame assets
   const frameImages = {
-    mythic: '/assets/Mystical Frame.png',
-    legendary: '/assets/Legendary Frame.png',
-    epic: '/assets/Epic Frame.png',
-    rare: '/assets/Rare Frame.png',
-    uncommon: '/assets/Uncommon Frame.png',
-    common: '/assets/Common Frame.png',
+    mythic: '/assets/Season 1/Purple Bird Frame Mythic.png',
+    legendary: '/assets/Season 1/Green Leaf Frame Legendary.png',
+    epic: '/assets/Season 1/Red Cat Frame Epic.png',
+    rare: '/assets/Season 1/Pink Fairy Frame Rare.png',
+    uncommon: '/assets/Season 1/Green Mushroom Frame Uncommon.png',
+    common: '/assets/Season 1/Simple Gray Frame Common.png',
   };
   
   // Also try with different base paths for different environments

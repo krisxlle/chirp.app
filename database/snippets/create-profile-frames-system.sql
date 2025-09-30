@@ -81,35 +81,30 @@ CREATE POLICY "Allow all operations for authenticated users" ON user_equipped_fr
 
 -- Insert default season (Season 1)
 INSERT INTO seasons (name, description, start_date, end_date, is_active) VALUES 
-('Season 1: Genesis', 'The inaugural season featuring classic profile frames', NOW(), NOW() + INTERVAL '1 month', true)
+('Season 1', 'The inaugural season featuring classic profile frames', NOW(), NOW() + INTERVAL '1 month', true)
 ON CONFLICT DO NOTHING;
 
--- Insert default profile frames for Season 1
+-- Insert default profile frames for Season 1 using actual assets
 INSERT INTO profile_frames (name, description, rarity, season_id, image_url, drop_rate) VALUES 
--- Common frames (35% total)
-('Classic Circle', 'A simple circular frame', 'common', 1, '/assets/frames/season1/Classic Circle.png', 0.1500),
-('Basic Square', 'A clean square frame', 'common', 1, '/assets/frames/season1/Basic Square.png', 0.1000),
-('Simple Hexagon', 'A geometric hexagonal frame', 'common', 1, '/assets/frames/season1/Simple Hexagon.png', 0.1000),
+-- Common frames (70% total)
+('Simple Gray Frame', 'A simple and elegant gray frame for everyday use', 'common', 1, '/assets/Season 1/Simple Gray Frame Common.png', 0.4000),
+('Purple Heart Frame', 'A charming purple heart frame with romantic vibes', 'common', 1, '/assets/Season 1/Purple Heart Frame Common.png', 0.3000),
 
--- Uncommon frames (30% total)
-('Vibrant Circle', 'A colorful circular frame', 'uncommon', 1, '/assets/frames/season1/Vibrant Circle.png', 0.1200),
-('Elegant Square', 'A refined square frame', 'uncommon', 1, '/assets/frames/season1/Elegant Square.png', 0.1000),
-('Modern Hexagon', 'A contemporary hexagonal frame', 'uncommon', 1, '/assets/frames/season1/Modern Hexagon.png', 0.0800),
+-- Uncommon frames (20% total)
+('Green Mushroom Frame', 'A whimsical green mushroom frame from the forest', 'uncommon', 1, '/assets/Season 1/Green Mushroom Frame Uncommon.png', 0.1000),
+('Yellow Star Frame', 'A bright yellow star frame that shines with optimism', 'uncommon', 1, '/assets/Season 1/Yellow Star Frame Uncommon.png', 0.1000),
 
--- Rare frames (20% total)
-('Golden Circle', 'A luxurious golden frame', 'rare', 1, '/assets/frames/season1/Golden Circle.png', 0.0800),
-('Silver Square', 'A sleek silver frame', 'rare', 1, '/assets/frames/season1/Silver Square.png', 0.0600),
-('Crystal Hexagon', 'A sparkling crystal frame', 'rare', 1, '/assets/frames/season1/Crystal Hexagon.png', 0.0600),
+-- Rare frames (8% total)
+('Pink Fairy Frame', 'A magical pink fairy frame with enchanting sparkles', 'rare', 1, '/assets/Season 1/Pink Fairy Frame Rare.png', 0.0400),
+('Blue Butterfly Frame', 'A delicate blue butterfly frame with graceful wings', 'rare', 1, '/assets/Season 1/Blue Butterfly Frame Rare.png', 0.0400),
 
--- Epic frames (10% total)
-('Mystic Circle', 'A mystical circular frame', 'epic', 1, '/assets/frames/season1/Mystic Circle.png', 0.0400),
-('Royal Square', 'A regal square frame', 'epic', 1, '/assets/frames/season1/Royal Square.png', 0.0300),
-('Cosmic Hexagon', 'A cosmic hexagonal frame', 'epic', 1, '/assets/frames/season1/Cosmic Hexagon.png', 0.0300),
+-- Epic frames (1.5% total)
+('Red Cat Frame', 'A fierce red cat frame with mysterious feline energy', 'epic', 1, '/assets/Season 1/Red Cat Frame Epic.png', 0.0150),
 
--- Legendary frames (4% total)
-('Divine Circle', 'A divine circular frame', 'legendary', 1, '/assets/frames/season1/Divine Circle.png', 0.0200),
-('Legendary Square', 'A legendary square frame', 'legendary', 1, '/assets/frames/season1/Legendary Square.png', 0.0200),
+-- Legendary frames (0.4% total)
+('Green Leaf Frame', 'A legendary green leaf frame representing nature''s power', 'legendary', 1, '/assets/Season 1/Green Leaf Frame Legendary.png', 0.0020),
+('Red Heart Frame', 'A legendary red heart frame symbolizing eternal love', 'legendary', 1, '/assets/Season 1/Red Heart Frame Legendary.png', 0.0020),
 
--- Mythic frames (1% total)
-('Eternal Circle', 'An eternal circular frame', 'mythic', 1, '/assets/frames/season1/Eternal Circle.png', 0.0100)
+-- Mythic frames (0.1% total)
+('Purple Bird Frame', 'A mythical purple bird frame with divine avian grace', 'mythic', 1, '/assets/Season 1/Purple Bird Frame Mythic.png', 0.0010)
 ON CONFLICT (name, season_id) DO NOTHING;
