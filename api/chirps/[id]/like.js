@@ -123,7 +123,8 @@ export default async function handler(req, res) {
           .from('reactions')
           .insert({
             chirp_id: parseInt(id),
-            user_id: userId
+            user_id: userId,
+            emoji: '❤️' // Add required emoji field
           })
           .select();
 
