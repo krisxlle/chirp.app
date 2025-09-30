@@ -1,45 +1,107 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 
-// Profile Frame Collection Functions - Inline to avoid import issues
+// Profile Frame Collection Functions - Real database integration
 const getUserFrameCollection = async (userId: string) => {
   console.log('🎮 getUserFrameCollection called with:', { userId });
   
-  // Return mock collection data for web compatibility
-  return [
-    {
-      id: 1,
-      frameId: 1,
-      name: 'Golden Aura',
-      description: 'A legendary frame with golden energy',
-      rarity: 'legendary' as const,
-      imageUrl: '/assets/Legendary Frame.png',
-      quantity: 1,
-      obtainedAt: new Date().toISOString(),
-      seasonName: 'Season 1',
-      isEquipped: true
-    },
-    {
-      id: 2,
-      frameId: 2,
-      name: 'Crystal Shard',
-      description: 'An epic frame with crystal effects',
-      rarity: 'epic' as const,
-      imageUrl: '/assets/Epic Frame.png',
-      quantity: 2,
-      obtainedAt: new Date(Date.now() - 86400000).toISOString(),
-      seasonName: 'Season 1',
-      isEquipped: false
+  try {
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+
+    console.log('✅ Using real Supabase client for getUserFrameCollection');
+    
+    // Use the database function to get user's frame collection
+    const { data, error } = await supabase.rpc('get_user_frame_collection', {
+      user_uuid: userId
+    });
+    
+    if (error) {
+      console.error('❌ Error fetching user frame collection:', error);
+      return [];
     }
-  ];
+    
+    const transformedCollection = (data || []).map((item: any) => ({
+      id: item.collection_id,
+      frameId: item.frame_id,
+      name: item.frame_name,
+      description: item.frame_description,
+      rarity: item.frame_rarity,
+      imageUrl: item.frame_image_url,
+      previewUrl: item.frame_preview_url,
+      quantity: item.quantity,
+      obtainedAt: item.obtained_at,
+      seasonName: item.season_name,
+      isEquipped: item.is_equipped || false
+    }));
+    
+    console.log('🎮 User frame collection loaded:', transformedCollection.length, 'frames');
+    return transformedCollection;
+  } catch (error) {
+    console.error('❌ Error in getUserFrameCollection:', error);
+    return [];
+  }
 };
 
 const equipProfileFrame = async (userId: string, frameId: number) => {
   console.log('⚡ equipProfileFrame called with:', { userId, frameId });
   
-  // Return mock success response
-  return true;
+  try {
+    // Create Supabase client directly for web
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+
+    console.log('✅ Using real Supabase client for equipProfileFrame');
+    
+    // Use the database function to equip the frame
+    const { data, error } = await supabase.rpc('equip_profile_frame', {
+      user_uuid: userId,
+      frame_id: frameId
+    });
+    
+    if (error) {
+      console.error('❌ Error equipping profile frame:', error);
+      return false;
+    }
+    
+    console.log('🎯 Frame equipped successfully:', data);
+    return data === true;
+  } catch (error) {
+    console.error('❌ Error in equipProfileFrame:', error);
+    return false;
+  }
 };
 
 // Analytics Icon Component

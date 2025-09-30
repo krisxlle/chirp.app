@@ -646,6 +646,7 @@ export default function ChirpCard({
               <textarea
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="Write a reply..."
                 style={{
                   width: '100%',
@@ -662,7 +663,8 @@ export default function ChirpCard({
               />
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowReplyInput(false);
                     setReplyText('');
                   }}
@@ -679,16 +681,33 @@ export default function ChirpCard({
                   Cancel
                 </button>
                 <button
-                  onClick={submitReply}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    submitReply();
+                  }}
                   disabled={!replyText.trim()}
                   style={{
                     padding: '6px 12px',
-                    backgroundColor: replyText.trim() ? '#7c3aed' : '#d1d5db',
+                    background: replyText.trim() ? 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)' : '#d1d5db',
                     border: 'none',
                     borderRadius: '6px',
                     fontSize: '14px',
                     color: replyText.trim() ? '#ffffff' : '#9ca3af',
-                    cursor: replyText.trim() ? 'pointer' : 'not-allowed'
+                    cursor: replyText.trim() ? 'pointer' : 'not-allowed',
+                    boxShadow: replyText.trim() ? '0 2px 8px rgba(198, 113, 255, 0.3)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (replyText.trim()) {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (replyText.trim()) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
+                    }
                   }}
                 >
                   Reply
