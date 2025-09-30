@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
 
@@ -248,7 +248,7 @@ const ChirpLogo = ({ size = 24, color = "#f5a5e0" }) => (
 );
 
 export default function Gacha() {
-  const { user } = useAuth();
+  const { user, updateUser, refreshCrystalBalance } = useAuth();
   const { toast } = useToast();
   const [availableFrames, setAvailableFrames] = useState<ProfileFrame[]>([]);
   const [isRolling, setIsRolling] = useState(false);
@@ -353,6 +353,34 @@ export default function Gacha() {
         }
         
         if (results.length > 0) {
+          // Deduct crystal balance from database
+          try {
+            console.log('💎 Deducting crystals from database...');
+            
+            const { deductCrystalBalance } = await import('../lib/database/mobile-db-supabase');
+            const success = await deductCrystalBalance(user.id, cost);
+            
+            if (success) {
+              // Refresh crystal balance from database to update UI
+              await refreshCrystalBalance();
+              console.log('💎 Crystal balance updated successfully');
+            } else {
+              console.error('Failed to deduct crystal balance');
+              // If database deduction fails, still update local state as fallback
+              const currentBalance = getCurrentCrystalBalance();
+              const newBalance = currentBalance - cost;
+              await updateUser({ crystalBalance: newBalance });
+              console.log('💎 Fallback: Updated crystal balance in AuthContext');
+            }
+          } catch (error) {
+            console.error('Error deducting crystal balance:', error);
+            // Fallback to local state update if database fails
+            const currentBalance = getCurrentCrystalBalance();
+            const newBalance = currentBalance - cost;
+            await updateUser({ crystalBalance: newBalance });
+            console.log('💎 Fallback: Updated crystal balance in AuthContext');
+          }
+          
           // Show different modals based on roll count
           if (rollCount === 10) {
             // Show multi-frame results for 10-roll

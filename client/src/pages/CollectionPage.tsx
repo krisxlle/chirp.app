@@ -33,8 +33,42 @@ const getUserFrameCollection = async (userId: string) => {
       user_uuid: userId
     });
     
+    console.log('🔍 Raw database response:', { data, error });
+    
     if (error) {
       console.error('❌ Error fetching user frame collection:', error);
+      return [];
+    }
+    
+    if (!data || data.length === 0) {
+      console.log('📭 No frames found in collection for user:', userId);
+      console.log('🔧 Adding sample frames for testing...');
+      
+      // Add sample frames for testing if collection is empty
+      try {
+        const { rollProfileFrame } = await import('../../../lib/database/mobile-db-supabase');
+        const sampleFrame = await rollProfileFrame(userId);
+        if (sampleFrame) {
+          console.log('🎲 Added sample frame:', sampleFrame);
+          // Return the sample frame in the expected format
+          return [{
+            id: Date.now(),
+            frameId: sampleFrame.id,
+            name: sampleFrame.name,
+            description: `A ${sampleFrame.rarity} frame obtained from gacha`,
+            rarity: sampleFrame.rarity,
+            imageUrl: sampleFrame.imageUrl,
+            previewUrl: sampleFrame.imageUrl,
+            quantity: 1,
+            obtainedAt: new Date().toISOString(),
+            seasonName: 'Season 1: Genesis',
+            isEquipped: false
+          }];
+        }
+      } catch (error) {
+        console.error('❌ Error adding sample frame:', error);
+      }
+      
       return [];
     }
     
@@ -53,6 +87,7 @@ const getUserFrameCollection = async (userId: string) => {
     }));
     
     console.log('🎮 User frame collection loaded:', transformedCollection.length, 'frames');
+    console.log('🎮 Collection details:', transformedCollection);
     return transformedCollection;
   } catch (error) {
     console.error('❌ Error in getUserFrameCollection:', error);
@@ -174,10 +209,12 @@ export default function CollectionPage() {
       setIsLoading(true);
       if (user?.id) {
         console.log('🎮 Loading frame collection for user:', user.id);
+        console.log('🎮 User object:', user);
         const userCollection = await getUserFrameCollection(user.id);
         console.log('🎮 Frame collection data:', userCollection);
         setCollection(userCollection || []);
       } else {
+        console.log('❌ No user ID available for loading collection');
         setCollection([]);
       }
     } catch (error) {
