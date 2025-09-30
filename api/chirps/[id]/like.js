@@ -14,11 +14,24 @@ export default function handler(req, res) {
   const { id } = req.query;
   const { userId } = req.body;
 
+  console.log('🔍 Like API Debug:', {
+    method: req.method,
+    url: req.url,
+    query: req.query,
+    body: req.body,
+    extractedId: id
+  });
+
   if (!id) {
+    console.log('❌ No chirp ID found in request');
     res.status(400).json({
       success: false,
       error: 'Chirp ID is required',
-      message: 'Please provide a valid chirp ID'
+      message: 'Please provide a valid chirp ID',
+      debug: {
+        query: req.query,
+        url: req.url
+      }
     });
     return;
   }
