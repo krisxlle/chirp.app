@@ -229,7 +229,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         
         if (chirp) {
           // Call the onPost callback to update the UI
-          await onPost?.(content.trim(), imageData);
+          await onPost?.(content.trim(), imageData || undefined);
         }
       
       setContent("");
@@ -287,7 +287,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         flexDirection: 'row',
         alignItems: 'flex-start'
       }}>
-        <UserAvatar user={user} size="md" showFrame={true} />
+        <UserAvatar user={user} size="sm" showFrame={true} />
         
         <div style={{
           flex: 1,
