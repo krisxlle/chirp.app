@@ -4,6 +4,7 @@ import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider } from "./components/AuthContext";
 import BottomNavigation from "./components/BottomNavigation";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
+import SimpleProfile from "./components/SimpleProfile";
 import { FloatingFeedback } from "./components/ui/floating-feedback";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -22,16 +23,6 @@ import Settings from "./pages/Settings";
 import Subscribe from "./pages/Subscribe";
 import Support from "./pages/Support";
 import TermsOfService from "./pages/TermsOfService";
-
-// Simple inline Profile component to avoid circular dependencies
-const Profile = () => (
-  <div className="min-h-screen bg-white flex items-center justify-center">
-    <div className="text-center">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile Page</h1>
-      <p className="text-gray-600">Profile page is working!</p>
-    </div>
-  </div>
-);
 
 // Create queryClient directly here to avoid import issues
 const queryClient = new QueryClient({
@@ -74,7 +65,7 @@ function Router() {
             <Route path="/" component={HomePage} />
             <Route path="/search" component={Search} />
             <Route path="/notifications" component={Notifications} />
-            <Route path="/profile/:userId?" component={Profile} />
+            <Route path="/profile/:userId?" component={SimpleProfile} />
             <Route path="/settings" component={Settings} />
             <Route path="/subscribe" component={Subscribe} />
             <Route path="/gacha" component={Gacha} />
