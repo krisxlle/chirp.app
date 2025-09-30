@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "./hooks/useAuth";
+import { useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 import ContactsIntegration from "./ContactsIntegration";
 
 interface SignupContactsPromptProps {

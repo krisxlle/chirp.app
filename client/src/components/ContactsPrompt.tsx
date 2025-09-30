@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 import ContactsIntegration from "./ContactsIntegration";
-import { useAuth } from "./hooks/useAuth";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 

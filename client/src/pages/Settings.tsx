@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
+import { useAuth } from '../components/AuthContext';
 import UserAvatar from '../components/UserAvatar';
-import { useAuth } from '../hooks/useAuth';
 
 // Inline API functions to avoid import issues in production
 const getUserStats = async (userId: string) => {

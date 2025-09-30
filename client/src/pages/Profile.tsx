@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
+import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ProfileFrame from '../components/ProfileFrame';
 import UserAvatar from '../components/UserAvatar';
 import GearIcon from '../components/icons/GearIcon';
 import LinkIcon from '../components/icons/LinkIcon';
-import { useAuth } from '../hooks/useAuth';
 
 // Profile Frame Functions - Inline to avoid import issues
 const getUserEquippedFrame = async (userId: string) => {

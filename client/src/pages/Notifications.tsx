@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
+import { useAuth } from '../components/AuthContext';
 import UserAvatar from '../components/UserAvatar';
-import { apiRequest } from '../components/api';
-import { useAuth } from '../hooks/useAuth';
 
 // Bell Icon Component
 const BellIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: string }) => (

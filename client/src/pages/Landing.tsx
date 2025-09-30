@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAuth } from '../hooks/useAuth';
 import { useLocation } from 'wouter';
+import { useAuth } from '../components/AuthContext';
 
 export default function Landing() {
   const { signOut, user } = useAuth();
