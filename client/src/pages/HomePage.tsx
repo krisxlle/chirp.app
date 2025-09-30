@@ -158,12 +158,13 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: an
         imageWidth: chirp.image_width || null,
         imageHeight: chirp.image_height || null,
         likesCount: likesCount,
+        likes: likesCount, // Add likes field for ChirpCard compatibility
         repliesCount: 0,
         repostsCount: 0,
         sharesCount: 0,
+        isLiked: userHasLiked, // Add isLiked field for ChirpCard compatibility
         reactionCounts: {},
         userReaction: null,
-        isLiked: userHasLiked,
         isReposted: false,
         isAiGenerated: false,
         isWeeklySummary: false,
