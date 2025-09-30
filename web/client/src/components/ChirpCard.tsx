@@ -1,16 +1,14 @@
 import { formatDistanceToNow } from 'date-fns';
 import {
-    BellOff,
-    Bot,
-    Heart,
-    Link as LinkIcon,
-    MessageCircle,
-    MoreHorizontal,
-    Repeat2,
-    Sparkles,
-    Trash2,
-    UserMinus,
-    UserX
+  BellOff,
+  Heart,
+  Link as LinkIcon,
+  MessageCircle,
+  MoreHorizontal,
+  Repeat2,
+  Trash2,
+  UserMinus,
+  UserX
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
@@ -19,16 +17,14 @@ import { useToast } from '../hooks/use-toast';
 import { apiRequest } from './api';
 import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
-import ChirpPlusBadge from './ChirpPlusBadge';
 import ImageViewerModal from './ImageViewerModal';
 import MentionText from './MentionText';
-import MoodReactions from './MoodReactions';
 import { Button } from './ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Textarea } from './ui/textarea';
 import UserAvatar from './UserAvatar';
@@ -276,14 +272,6 @@ export default function ChirpCard({
         <div className="flex space-x-3">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            {console.log('🔍 ChirpCard author data:', {
-              id: chirp.author.id,
-              firstName: chirp.author.firstName,
-              lastName: chirp.author.lastName,
-              profileImageUrl: chirp.author.profileImageUrl,
-              avatarUrl: chirp.author.avatarUrl,
-              hasImage: !!(chirp.author.profileImageUrl || chirp.author.avatarUrl)
-            })}
             <UserAvatar 
               user={chirp.author} 
               size="md" 
@@ -305,39 +293,14 @@ export default function ChirpCard({
                 }
               </button>
               
-              {chirp.author.isChirpPlus && chirp.author.showChirpPlusBadge && (
-                <ChirpPlusBadge size={16} />
-              )}
-              
               <span className="text-gray-500 dark:text-gray-400">
                 @{chirp.author.customHandle || chirp.author.handle || chirp.author.email.split('@')[0]}
               </span>
               
               <span className="text-gray-500 dark:text-gray-400">·</span>
               <span className="text-gray-500 dark:text-gray-400">
-                {console.log('🕒 Timestamp data:', {
-                  createdAt: chirp.createdAt,
-                  type: typeof chirp.createdAt,
-                  isValid: chirp.createdAt ? !isNaN(new Date(chirp.createdAt).getTime()) : false
-                })}
                 {chirp.createdAt ? formatDistanceToNow(new Date(chirp.createdAt), { addSuffix: true }) : 'now'}
               </span>
-
-              {/* AI Generated indicator */}
-              {chirp.isAiGenerated && (
-                <div className="flex items-center space-x-1">
-                  <Bot className="h-4 w-4 text-purple-600" />
-                  <span className="text-xs text-purple-600 font-medium">AI</span>
-                </div>
-              )}
-
-              {/* Weekly Summary indicator */}
-              {chirp.isWeeklySummary && (
-                <div className="flex items-center space-x-1">
-                  <Sparkles className="h-4 w-4 text-blue-600" />
-                  <span className="text-xs text-blue-600 font-medium">Weekly Summary</span>
-                </div>
-              )}
 
               {/* Thread indicator */}
               {chirp.threadId && (
@@ -357,14 +320,6 @@ export default function ChirpCard({
             </div>
 
             {/* Image */}
-            {console.log('🖼️ ChirpCard image data:', {
-              chirpId: chirp.id,
-              imageUrl: chirp.imageUrl,
-              imageAltText: chirp.imageAltText,
-              imageWidth: chirp.imageWidth,
-              imageHeight: chirp.imageHeight,
-              hasImage: !!chirp.imageUrl
-            })}
             {chirp.imageUrl && (
               <ChirpImage
                 imageUrl={chirp.imageUrl}
@@ -374,13 +329,6 @@ export default function ChirpCard({
                 onImagePress={() => setShowImageViewer(true)}
               />
             )}
-
-            {/* Mood Reactions */}
-            <MoodReactions
-              chirpId={chirp.id}
-              reactionCounts={chirp.reactionCounts}
-              userReaction={chirp.userReaction}
-            />
 
             {/* Actions */}
             <div className="flex items-center justify-between mt-3 max-w-md">
@@ -394,21 +342,7 @@ export default function ChirpCard({
                 <MessageCircle className="h-4 w-4 mr-1" />
                 <span className="text-sm">{chirp.replies}</span>
               </Button>
-
-              {/* Repost */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRepost}
-                disabled={isReposting}
-                className={`text-gray-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 ${
-                  chirp.isReposted ? 'text-green-500' : ''
-                }`}
-              >
-                <Repeat2 className="h-4 w-4 mr-1" />
-                <span className="text-sm">{chirp.reposts}</span>
-              </Button>
-
+              
               {/* Like */}
               <Button
                 variant="ghost"
