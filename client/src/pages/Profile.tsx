@@ -928,14 +928,6 @@ export default function Profile() {
     }
   };
 
-  const formatJoinDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long' 
-    });
-  };
-
   console.log('🔍 Profile: About to render, isLoading:', isLoading, 'user:', user?.id);
 
   if (isLoading) {

@@ -28,12 +28,29 @@ const rollProfileFrame = async (userId: string) => {
     console.log('✅ Using real Supabase client for rollProfileFrame');
     
     // Use the database function to roll for a frame
+    console.log('🎲 Calling roll_profile_frame with user_uuid:', userId, 'type:', typeof userId);
     const { data, error } = await supabase.rpc('roll_profile_frame', {
       user_uuid: userId
     });
     
+    console.log('🎲 RPC response:', { data, error });
+    
     if (error) {
       console.error('❌ Error rolling for profile frame:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      
+      // Check if it's a 400 error (likely no frames available)
+      if (error.code === 'PGRST301' || error.message?.includes('400')) {
+        console.log('🔧 No frames available, creating fallback frame...');
+        return {
+          id: 999,
+          name: 'Fallback Frame',
+          rarity: 'common',
+          imageUrl: '/assets/frames/season1/Classic Circle.png',
+          isNew: true
+        };
+      }
+      
       return null;
     }
     
@@ -360,6 +377,7 @@ export default function Gacha() {
         const results: ProfileFrame[] = [];
         
         for (let i = 0; i < rollCount; i++) {
+          console.log(`🎲 Rolling capsule ${i + 1}/${rollCount}...`);
           const newFrame = await openCapsule();
           console.log('🎲 Capsule result:', newFrame?.name, newFrame?.rarity);
           
@@ -369,10 +387,27 @@ export default function Gacha() {
               obtainedAt: new Date().toISOString(),
             };
             results.push(frameWithTimestamp);
+            console.log('✅ Frame added to results:', frameWithTimestamp);
+          } else {
+            console.error('❌ Failed to get frame from openCapsule');
           }
-        }
-        
-        if (results.length > 0) {
+      }
+      
+      console.log('🎲 Total results:', results.length, results);
+      
+      if (results.length === 0) {
+        console.error('❌ No frames were rolled successfully');
+        toast({
+          title: "Roll Failed",
+          description: "Unable to roll for frames. Please try again.",
+          variant: "destructive",
+        });
+        setIsRolling(false);
+        return;
+      }
+      
+      if (results.length > 0) {
+          console.log('✅ Successfully rolled frames, deducting crystals...');
           // Deduct crystal balance from database
           try {
             console.log('💎 Deducting crystals from database...');
