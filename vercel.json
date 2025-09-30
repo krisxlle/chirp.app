@@ -5,6 +5,10 @@
   "devCommand": "npm run dev",
   "rewrites": [
     {
+      "source": "/api/chirps/([^/]+)/like",
+      "destination": "/api/chirps/[id]/like.js"
+    },
+    {
       "source": "/api/chirps",
       "destination": "/api/chirps.js"
     },
