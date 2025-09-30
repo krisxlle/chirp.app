@@ -6,34 +6,54 @@ import { useToast } from '../hooks/use-toast';
 const rollProfileFrame = async (userId: string) => {
   console.log('🎲 rollProfileFrame called with:', { userId });
   
-  // Return mock frame data for web compatibility
-  const mockFrames = [
-    {
-      id: 1,
-      name: 'Golden Aura',
-      rarity: 'legendary' as const,
-      imageUrl: '/assets/Legendary Frame.png',
-      isNew: true
-    },
-    {
-      id: 2,
-      name: 'Crystal Shard',
-      rarity: 'epic' as const,
-      imageUrl: '/assets/Epic Frame.png',
-      isNew: false
-    },
-    {
-      id: 3,
-      name: 'Silver Lining',
-      rarity: 'rare' as const,
-      imageUrl: '/assets/Rare Frame.png',
-      isNew: true
+  try {
+    // Use direct Supabase client for web
+    const { createClient } = await import('@supabase/supabase-js');
+    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: {
+          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+        },
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+
+    console.log('✅ Using real Supabase client for rollProfileFrame');
+    
+    // Use the database function to roll for a frame
+    const { data, error } = await supabase.rpc('roll_profile_frame', {
+      user_uuid: userId
+    });
+    
+    if (error) {
+      console.error('❌ Error rolling for profile frame:', error);
+      return null;
     }
-  ];
-  
-  // Return a random frame
-  const randomFrame = mockFrames[Math.floor(Math.random() * mockFrames.length)];
-  return randomFrame;
+    
+    if (data && data.length > 0) {
+      const result = data[0];
+      console.log('🎲 Rolled frame:', result);
+      return {
+        id: result.frame_id,
+        name: result.frame_name,
+        rarity: result.frame_rarity,
+        imageUrl: result.frame_image_url,
+        isNew: result.is_new
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error in rollProfileFrame:', error);
+    return null;
+  }
 };
 
 const getAvailableFrames = async () => {
