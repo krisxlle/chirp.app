@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider } from "./components/AuthContext";
 import BottomNavigation from "./components/BottomNavigation";
@@ -17,12 +17,13 @@ import HomePage from "./pages/HomePage";
 import NotFound from "./pages/not-found";
 import Notifications from "./pages/Notifications";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 import Settings from "./pages/Settings";
 import Subscribe from "./pages/Subscribe";
 import Support from "./pages/Support";
 import TermsOfService from "./pages/TermsOfService";
+
+const Profile = lazy(() => import("./pages/Profile"));
 
 // Create queryClient directly here to avoid import issues
 const queryClient = new QueryClient({
@@ -65,7 +66,13 @@ function Router() {
             <Route path="/" component={HomePage} />
             <Route path="/search" component={Search} />
             <Route path="/notifications" component={Notifications} />
-            <Route path="/profile/:userId?" component={Profile} />
+            <Route path="/profile/:userId?" component={() => (
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+              </div>}>
+                <Profile />
+              </Suspense>
+            )} />
             <Route path="/settings" component={Settings} />
             <Route path="/subscribe" component={Subscribe} />
             <Route path="/gacha" component={Gacha} />
