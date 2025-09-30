@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase.ts';
+import { supabase } from '../lib/supabase';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
