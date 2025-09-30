@@ -158,7 +158,7 @@ const equipProfileFrame = async (userId: string, frameId: number) => {
     // Use the database function to equip the frame
     const { data, error } = await supabase.rpc('equip_profile_frame', {
       user_uuid: userId,
-      frame_id: frameId
+      target_frame_id: frameId
     });
     
     if (error) {
