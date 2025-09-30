@@ -349,7 +349,7 @@ export default function ChirpCard({
             </div>
 
             {/* Content */}
-            <div className="mb-3 pl-0">
+            <div className="mb-3">
               <MentionText 
                 text={chirp.content} 
                 onMentionPress={handleMentionPress}
