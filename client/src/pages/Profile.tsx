@@ -1074,10 +1074,10 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Positioned at bottom of banner */}
+        {/* Profile Avatar - Overlapping banner and next to name */}
         <div style={{
           position: 'absolute',
-          bottom: '-20px', // Position at bottom of banner, more overlapping
+          bottom: '-44px', // Half overlapping banner, half in profile info
           left: '16px',
           width: '88px',
           height: '88px',
@@ -1104,13 +1104,20 @@ export default function Profile() {
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
-          marginTop: '20px' // Account for avatar overlap
+          marginTop: '44px' // Account for avatar overlap
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
             gap: '16px'
           }}>
+            {/* Spacer for avatar */}
+            <div style={{
+              width: '88px',
+              height: '88px',
+              flexShrink: 0
+            }}></div>
+            
             <div style={{ flex: 1 }}>
               <div style={{
                 display: 'flex',
