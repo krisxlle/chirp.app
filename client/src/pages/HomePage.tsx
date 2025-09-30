@@ -1,9 +1,9 @@
+import { supabase } from '@/lib/supabase';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
-import { supabase } from '@/lib/supabase';
 
 // Use real Supabase client to fetch actual database chirps
 const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: any) => {
