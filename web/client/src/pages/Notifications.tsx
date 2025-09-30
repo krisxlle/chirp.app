@@ -1,10 +1,10 @@
 import { Bell, Heart, MessageCircle, Repeat2, Sparkles, UserPlus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../components/AuthContext';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import UserAvatar from '../components/UserAvatar';
-import { useAuth } from '../hooks/useAuth';
 
 interface Notification {
   id: string;

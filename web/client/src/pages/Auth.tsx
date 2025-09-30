@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../components/AuthContext';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);

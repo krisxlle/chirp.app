@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "./ui/card";
-import { Button } from "./ui/button";
 import { Users, X } from "lucide-react";
-import { useAuth } from "./hooks/useAuth";
+import { useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 import ContactsIntegration from "./ContactsIntegration";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
 
 export default function ContactsPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);

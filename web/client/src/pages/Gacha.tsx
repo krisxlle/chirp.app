@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { HelpCircle, Sparkles } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../components/AuthContext';
 
 interface ProfileCard {
   id: string;

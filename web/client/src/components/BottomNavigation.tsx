@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from './AuthContext';
 import { apiRequest } from './api';
 import { CollectionIcon, GachaIcon, HomeIcon, NotificationIcon, ProfileIcon } from './icons';
 

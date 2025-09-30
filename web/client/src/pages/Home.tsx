@@ -1,11 +1,11 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "../components/AuthContext";
 import ChirpCard from "../components/ChirpCard";
 import ComposeChirp from "../components/ComposeChirp";
 import ContactsPrompt from "../components/ContactsPrompt";
 import { Skeleton } from "../components/ui/skeleton";
 import { useToast } from "../hooks/use-toast";
-import { useAuth } from "../hooks/useAuth";
 import { isUnauthorizedError } from "./authUtils.ts";
 
 export default function Home() {

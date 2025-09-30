@@ -1,11 +1,11 @@
+import { Hash, MessageSquare, Search, TrendingUp, Users } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../hooks/useAuth';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { useAuth } from '../components/AuthContext';
 import { Badge } from '../components/ui/badge';
-import { Search, TrendingUp, Users, MessageSquare, Hash } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Input } from '../components/ui/input';
 import UserAvatar from '../components/UserAvatar';
 
 export default function Search() {

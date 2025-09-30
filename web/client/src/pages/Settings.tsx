@@ -1,13 +1,13 @@
+import { ArrowLeft, BarChart3, LogOut, Save, Settings, Shield, User } from 'lucide-react';
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../components/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { ArrowLeft, Settings, User, BarChart3, Shield, LogOut, Save } from 'lucide-react';
+import { Textarea } from '../components/ui/textarea';
 import UserAvatar from '../components/UserAvatar';
 
 export default function Settings() {

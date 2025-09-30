@@ -13,8 +13,8 @@ import {
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '../hooks/use-toast';
-import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from './api';
+import { useAuth } from './AuthContext';
 import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
 import ImageViewerModal from './ImageViewerModal';
