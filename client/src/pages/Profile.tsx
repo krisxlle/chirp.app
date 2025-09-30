@@ -231,9 +231,11 @@ const getUserChirps = async (userId: string, userData?: any) => {
 
     console.log('✅ Using real Supabase client for getUserChirps');
     
-    // Get current user ID for like status
-    const { data: { user } } = await supabase.auth.getUser();
-    const currentUserId = user?.id;
+    // Get current user ID for like status from AuthContext
+    // Note: We can't use supabase.auth.getUser() here because AuthContext uses localStorage
+    // Instead, we'll get the user ID from the userData parameter passed to this function
+    const currentUserId = userData?.id;
+    console.log('🔍 Profile getUserChirps - currentUserId:', currentUserId, 'userData:', userData);
     
     // Simplified query to avoid timeout - fetch chirps without user join
     const queryPromise = supabase
