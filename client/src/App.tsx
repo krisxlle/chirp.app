@@ -42,8 +42,10 @@ const queryClient = new QueryClient({
 const Settings = () => <SettingsPage />;
 
 function Router() {
+  console.log('🔍 Router: Component starting to render...');
   const { isAuthenticated, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
+  console.log('🔍 Router: Auth state:', { isAuthenticated, isLoading, location });
 
   // Redirect unauthenticated users to /auth only if they're on the root path
   useEffect(() => {
@@ -53,6 +55,7 @@ function Router() {
   }, [isAuthenticated, isLoading, setLocation, location]);
 
   if (isLoading) {
+    console.log('🔍 Router: Rendering loading state...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -60,10 +63,14 @@ function Router() {
     );
   }
 
+  console.log('🔍 Router: Rendering main content...');
   return (
     <div className="max-w-md mx-auto bg-white dark:bg-gray-900 min-h-screen relative">
       <Switch>
         {isAuthenticated ? (
+          (() => {
+            console.log('🔍 Router: Rendering authenticated routes...');
+            return (
           <>
             <Route path="/" component={HomePage} />
             <Route path="/search" component={Search} />
@@ -77,11 +84,18 @@ function Router() {
             <Route path="/admin/feedback" component={AdminFeedback} />
             <Route path="/chirp/:id" component={ChirpDetail} />
           </>
+            );
+          })()
         ) : (
+          (() => {
+            console.log('🔍 Router: Rendering unauthenticated routes...');
+            return (
           <>
             <Route path="/auth" component={Auth} />
             <Route path="/" component={Auth} />
           </>
+            );
+          })()
         )}
         <Route path="/terms" component={TermsOfService} />
         <Route path="/privacy" component={PrivacyPolicy} />
@@ -97,6 +111,13 @@ function Router() {
 }
 
 function App() {
+  console.log('🔍 App: Component starting to render...');
+  console.log('✅ App: AuthProvider rendered successfully');
+  console.log('✅ App: QueryClientProvider rendered successfully');
+  console.log('✅ App: TooltipProvider rendered successfully');
+  console.log('✅ App: Toaster rendered successfully');
+  console.log('✅ App: Router rendered successfully');
+  
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
