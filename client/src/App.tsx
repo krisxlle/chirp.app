@@ -52,7 +52,7 @@ function Router() {
     if (!isLoading && !isAuthenticated && location === '/') {
       setLocation('/auth');
     }
-  }, [isAuthenticated, isLoading, setLocation, location]);
+  }, [isAuthenticated, isLoading, setLocation]);
 
   if (isLoading) {
     console.log('🔍 Router: Rendering loading state...');
