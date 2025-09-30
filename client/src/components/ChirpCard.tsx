@@ -10,6 +10,7 @@ import HeartIcon from '../components/icons/HeartIcon';
 import ShareIcon from '../components/icons/ShareIcon';
 import SpeechBubbleIcon from '../components/icons/SpeechBubbleIcon';
 import { useLike } from '../contexts/LikeContext';
+import { useToast } from '../hooks/use-toast';
 
 interface User {
   id: string;
@@ -73,6 +74,7 @@ export default function ChirpCard({
   const { user } = useAuth();
   const { updateLike, getLikeState } = useLike();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   
   // Safety check for user - if user is not available, show a loading state
   if (!user) {
@@ -136,14 +138,22 @@ export default function ChirpCard({
   const handleLike = async () => {
     try {
       if (!user?.id) {
-        alert('Sign in required', 'Please sign in to like chirps.');
+        toast({
+          title: 'Sign in required',
+          description: 'Please sign in to like chirps.',
+          variant: 'destructive'
+        });
         return;
       }
 
       // Check if chirp has a temporary ID (starts with 'temp_')
       if (String(chirp.id).startsWith('temp_')) {
         console.log('⚠️ Cannot like chirp with temporary ID:', chirp.id);
-        alert('Please wait', 'This chirp is still being processed. Please wait a moment and try again.');
+        toast({
+          title: 'Please wait',
+          description: 'This chirp is still being processed. Please wait a moment and try again.',
+          variant: 'destructive'
+        });
         return;
       }
 
@@ -212,7 +222,11 @@ export default function ChirpCard({
       }
     } catch (error) {
       console.error('❌ Error handling like:', error);
-      alert('Error', 'Failed to like chirp. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to like chirp. Please try again.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -230,7 +244,11 @@ export default function ChirpCard({
     if (!replyText.trim()) return;
     
     if (!user?.id) {
-      alert('Sign in required', 'Please sign in to reply to chirps.');
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to reply to chirps.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -275,7 +293,11 @@ export default function ChirpCard({
       }
     } catch (error) {
       console.error('❌ Error posting reply:', error);
-      alert('Error', `Failed to post reply: ${error.message}`);
+      toast({
+        title: 'Error',
+        description: `Failed to post reply: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -292,6 +314,7 @@ export default function ChirpCard({
         return;
       } catch (error) {
         // Fall back to clipboard if share is cancelled or fails
+        console.log('Share cancelled or failed:', error);
       }
     }
     
@@ -299,17 +322,22 @@ export default function ChirpCard({
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(chirpUrl);
-        alert('Link Copied!', 'The chirp link has been copied to your clipboard.');
+        toast({
+          title: 'Link Copied!',
+          description: 'The chirp link has been copied to your clipboard.'
+        });
       } else {
         // Fallback for environments without clipboard API
-        alert('Share Link', chirpUrl, [
-          { text: 'OK', style: 'default' }
-        ]);
+        toast({
+          title: 'Share Link',
+          description: chirpUrl
+        });
       }
     } catch (error) {
-      alert('Share Link', `Copy this link: ${chirpUrl}`, [
-        { text: 'OK', style: 'default' }
-      ]);
+      toast({
+        title: 'Share Link',
+        description: `Copy this link: ${chirpUrl}`
+      });
     }
   };
 
@@ -331,7 +359,11 @@ export default function ChirpCard({
 
   const handleDeleteChirp = async () => {
     if (!user?.id) {
-      alert('Error', 'You must be signed in to delete chirps.');
+      toast({
+        title: 'Error',
+        description: 'You must be signed in to delete chirps.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -359,13 +391,21 @@ export default function ChirpCard({
       }
     } catch (error) {
       console.error('Error deleting chirp:', error);
-      alert('Error', 'Failed to delete chirp. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to delete chirp. Please try again.',
+        variant: 'destructive'
+      });
     }
   };
 
   const handleFollowToggle = async () => {
     if (!user?.id) {
-      alert('Error', 'You must be signed in to follow users.');
+      toast({
+        title: 'Error',
+        description: 'You must be signed in to follow users.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -390,13 +430,21 @@ export default function ChirpCard({
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
-      alert('Error', `Failed to ${isFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
+      toast({
+        title: 'Error',
+        description: `Failed to ${isFollowing ? 'unfollow' : 'follow'} user. Please try again.`,
+        variant: 'destructive'
+      });
     }
   };
 
   const handleBlockToggle = async () => {
     if (!user?.id) {
-      alert('Error', 'You must be signed in to block users.');
+      toast({
+        title: 'Error',
+        description: 'You must be signed in to block users.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -421,7 +469,11 @@ export default function ChirpCard({
       }
     } catch (error) {
       console.error('Error toggling block:', error);
-      alert('Error', `Failed to ${isBlocked ? 'unblock' : 'block'} user. Please try again.`);
+      toast({
+        title: 'Error',
+        description: `Failed to ${isBlocked ? 'unblock' : 'block'} user. Please try again.`,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -586,14 +638,17 @@ export default function ChirpCard({
       )}
 
       {/* Debug logging for chirp image data */}
-      {console.log('🖼️ ChirpCard image data:', {
-        chirpId: chirp.id,
-        hasImageUrl: !!chirp.imageUrl,
-        imageUrl: chirp.imageUrl?.substring(0, 50) + '...',
-        imageAltText: chirp.imageAltText,
-        imageWidth: chirp.imageWidth,
-        imageHeight: chirp.imageHeight
-      })}
+      {(() => {
+        console.log('🖼️ ChirpCard image data:', {
+          chirpId: chirp.id,
+          hasImageUrl: !!chirp.imageUrl,
+          imageUrl: chirp.imageUrl?.substring(0, 50) + '...',
+          imageAltText: chirp.imageAltText,
+          imageWidth: chirp.imageWidth,
+          imageHeight: chirp.imageHeight
+        });
+        return null;
+      })()}
 
       {/* Display chirp image if available */}
       {chirp.imageUrl && (
@@ -612,8 +667,8 @@ export default function ChirpCard({
           <ChirpImage
             imageUrl={chirp.imageUrl}
             imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
-            imageWidth={chirp.imageWidth}
-            imageHeight={chirp.imageHeight}
+            imageWidth={chirp.imageWidth || undefined}
+            imageHeight={chirp.imageHeight || undefined}
             maxWidth={400}
             maxHeight={300}
             onImagePress={() => {
@@ -637,10 +692,8 @@ export default function ChirpCard({
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
             <UserAvatar 
-              userId={user.id}
-              profileImageUrl={user.profileImageUrl}
-              avatarUrl={user.avatarUrl}
-              size={32}
+              user={user}
+              size="sm"
             />
             <div style={{ flex: 1 }}>
               <textarea
@@ -778,9 +831,9 @@ export default function ChirpCard({
         }}>
           {chirp.repliesList.map((reply, index) => (
             <div key={reply.id} style={{
-              marginBottom: index < chirp.repliesList.length - 1 ? '8px' : '0',
-              paddingBottom: index < chirp.repliesList.length - 1 ? '8px' : '0',
-              borderBottom: index < chirp.repliesList.length - 1 ? '1px solid #f3f4f6' : 'none'
+              marginBottom: index < (chirp.repliesList?.length || 0) - 1 ? '8px' : '0',
+              paddingBottom: index < (chirp.repliesList?.length || 0) - 1 ? '8px' : '0',
+              borderBottom: index < (chirp.repliesList?.length || 0) - 1 ? '1px solid #f3f4f6' : 'none'
             }}>
               <ChirpCard 
                 chirp={reply} 
@@ -796,6 +849,7 @@ export default function ChirpCard({
       <ChirpLikesModal
         visible={showLikesModal}
         chirpId={chirp.id}
+        likes={[]}
         onClose={() => setShowLikesModal(false)}
       />
 
