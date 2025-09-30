@@ -568,11 +568,12 @@ export default function Profile() {
       fetchUserReplies();
       
       // Check follow status if viewing another user's profile
+      const isOwnProfile = authUser?.id === user.id;
       if (!isOwnProfile && authUser?.id) {
         checkFollowStatus(authUser.id, user.id).then(setIsFollowing);
       }
     }
-  }, [user?.id, authUser?.id, isOwnProfile]);
+  }, [user?.id, authUser?.id]);
 
   const loadEquippedFrame = async () => {
     try {
