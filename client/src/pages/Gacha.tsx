@@ -357,7 +357,7 @@ export default function Gacha() {
           try {
             console.log('💎 Deducting crystals from database...');
             
-            const { deductCrystalBalance } = await import('../lib/database/mobile-db-supabase');
+            const { deductCrystalBalance } = await import('../../lib/database/mobile-db-supabase');
             const success = await deductCrystalBalance(user.id, cost);
             
             if (success) {
