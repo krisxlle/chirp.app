@@ -1285,14 +1285,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: '#14171a',
-    marginLeft: 20, // Moved further left (reduced from 40)
+    marginLeft: 40,
     marginBottom: 8, // Added padding between content and image
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginLeft: 20, // Moved further left (reduced from 40)
+    marginLeft: 40,
     marginRight: 8, // Reduced right margin
     paddingTop: 0, // Reduced from 4 to 0
     overflow: 'visible', // Allow buttons to be visible
