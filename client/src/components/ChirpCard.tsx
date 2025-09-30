@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
+import { useLike } from '../contexts/LikeContext';
 import ChirpImage from '../components/ChirpImage';
 import ChirpLikesModal from '../components/ChirpLikesModal';
 import ImageViewerModal from '../components/ImageViewerModal';
@@ -70,6 +71,7 @@ export default function ChirpCard({
   }
 
   const { user } = useAuth();
+  const { updateLike, getLikeState } = useLike();
   const [, setLocation] = useLocation();
   
   // Safety check for user - if user is not available, show a loading state
@@ -100,9 +102,11 @@ export default function ChirpCard({
   }
   
   // User available, rendering chirp
-  const [likes, setLikes] = useState(chirp.reactionCount || 0);
+  // Get initial state from global like context or fallback to chirp props
+  const globalLikeState = getLikeState(chirp.id);
+  const [likes, setLikes] = useState(globalLikeState?.likesCount ?? chirp.reactionCount || 0);
   const [replies, setReplies] = useState(chirp.replyCount || 0);
-  const [userHasLiked, setUserHasLiked] = useState(chirp.userHasLiked || false);
+  const [userHasLiked, setUserHasLiked] = useState(globalLikeState?.userHasLiked ?? chirp.userHasLiked || false);
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [showReplyInput, setShowReplyInput] = useState(false);
@@ -111,12 +115,18 @@ export default function ChirpCard({
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   
-  // Update local state when chirp data changes
+  // Update local state when chirp data changes or global like state changes
   useEffect(() => {
-    setLikes(chirp.reactionCount || 0);
+    const globalState = getLikeState(chirp.id);
+    if (globalState) {
+      setLikes(globalState.likesCount);
+      setUserHasLiked(globalState.userHasLiked);
+    } else {
+      setLikes(chirp.reactionCount || 0);
+      setUserHasLiked(chirp.userHasLiked || false);
+    }
     setReplies(chirp.replyCount || 0);
-    setUserHasLiked(chirp.userHasLiked || false);
-  }, [chirp.reactionCount, chirp.replyCount, chirp.userHasLiked]);
+  }, [chirp.reactionCount, chirp.replyCount, chirp.userHasLiked, getLikeState, chirp.id]);
 
   // Calculate display name for the chirp author
   const displayName = chirp.author.firstName 
@@ -158,12 +168,18 @@ export default function ChirpCard({
         });
 
         // Update local state with API response
-        setLikes(response.likesCount || Math.max(0, likes - 1));
-        setUserHasLiked(response.liked);
+        const newLikesCount = response.likesCount || Math.max(0, likes - 1);
+        const newUserHasLiked = response.liked;
+        
+        setLikes(newLikesCount);
+        setUserHasLiked(newUserHasLiked);
+        
+        // Update global like state
+        updateLike(chirp.id, newLikesCount, newUserHasLiked);
         
         // Notify parent component of the change
         if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, response.likesCount || Math.max(0, likes - 1), response.liked);
+          onLikeUpdate(chirp.id, newLikesCount, newUserHasLiked);
         }
         
         console.log('✅ Like removed successfully');
@@ -178,12 +194,18 @@ export default function ChirpCard({
         });
 
         // Update local state with API response
-        setLikes(response.likesCount || likes + 1);
-        setUserHasLiked(response.liked);
+        const newLikesCount = response.likesCount || likes + 1;
+        const newUserHasLiked = response.liked;
+        
+        setLikes(newLikesCount);
+        setUserHasLiked(newUserHasLiked);
+        
+        // Update global like state
+        updateLike(chirp.id, newLikesCount, newUserHasLiked);
         
         // Notify parent component of the change
         if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, response.likesCount || likes + 1, response.liked);
+          onLikeUpdate(chirp.id, newLikesCount, newUserHasLiked);
         }
         
         console.log('✅ Like added successfully');

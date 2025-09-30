@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider, useAuth } from "./components/AuthContext";
+import { LikeProvider } from "./contexts/LikeContext";
 import BottomNavigation from "./components/BottomNavigation";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
 import { FloatingFeedback } from "./components/ui/floating-feedback";
@@ -100,10 +101,12 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <LikeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </LikeProvider>
       </QueryClientProvider>
     </AuthProvider>
   );

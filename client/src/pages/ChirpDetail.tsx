@@ -359,6 +359,38 @@ export default function ChirpDetail() {
     setLocation(`/profile/${userId}`);
   };
 
+  // Function to update chirp like count
+  const handleChirpLikeUpdate = (chirpId: string, newLikeCount: number, userHasLiked?: boolean) => {
+    const updateChirp = (prevChirp: any) => 
+      prevChirp && prevChirp.id === chirpId 
+        ? { 
+            ...prevChirp, 
+            likes: newLikeCount,
+            likesCount: newLikeCount,
+            reactionCount: newLikeCount,
+            isLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (prevChirp.likes || 0)),
+            userHasLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (prevChirp.likes || 0))
+          }
+        : prevChirp;
+    
+    const updateReplies = (prevReplies: any[]) => 
+      prevReplies.map(reply => 
+        reply.id === chirpId 
+          ? { 
+              ...reply, 
+              likes: newLikeCount,
+              likesCount: newLikeCount,
+              reactionCount: newLikeCount,
+              isLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (reply.likes || 0)),
+              userHasLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (reply.likes || 0))
+            }
+          : reply
+      );
+    
+    setChirp(updateChirp);
+    setReplies(updateReplies);
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -421,6 +453,7 @@ export default function ChirpDetail() {
           <ChirpCard 
             chirp={chirp} 
             onProfilePress={handleProfilePress}
+            onLikeUpdate={handleChirpLikeUpdate}
           />
         </div>
 
@@ -499,6 +532,7 @@ export default function ChirpDetail() {
                 <ChirpCard 
                   chirp={reply} 
                   onProfilePress={handleProfilePress}
+                  onLikeUpdate={handleChirpLikeUpdate}
                 />
               </div>
             ))}

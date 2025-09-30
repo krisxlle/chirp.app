@@ -595,6 +595,26 @@ export default function Profile() {
 
   console.log('🔍 Profile: State initialized, location:', location, 'authUser:', authUser?.id);
 
+  // Function to update chirp like count
+  const handleChirpLikeUpdate = (chirpId: string, newLikeCount: number, userHasLiked?: boolean) => {
+    const updateChirp = (prevChirps: any[]) => 
+      prevChirps.map(chirp => 
+        chirp.id === chirpId 
+          ? { 
+              ...chirp, 
+              likes: newLikeCount,
+              likesCount: newLikeCount,
+              reactionCount: newLikeCount,
+              isLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (chirp.likes || 0)),
+              userHasLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (chirp.likes || 0))
+            }
+          : chirp
+      );
+    
+    setUserChirps(updateChirp);
+    setUserReplies(updateChirp);
+  };
+
   // Extract userId from URL or use current user
   const userId = location.includes('/profile/') 
     ? location.split('/profile/')[1] 
@@ -1497,7 +1517,12 @@ export default function Profile() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {userChirps.length > 0 ? (
                 userChirps.map((chirp) => (
-                  <ChirpCard key={chirp.id} chirp={chirp} />
+                  <ChirpCard 
+                    key={chirp.id} 
+                    chirp={chirp} 
+                    onLikeUpdate={handleChirpLikeUpdate}
+                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                  />
                 ))
               ) : (
                 <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
@@ -1524,7 +1549,12 @@ export default function Profile() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {userReplies.length > 0 ? (
                 userReplies.map((reply) => (
-                  <ChirpCard key={reply.id} chirp={reply} />
+                  <ChirpCard 
+                    key={reply.id} 
+                    chirp={reply} 
+                    onLikeUpdate={handleChirpLikeUpdate}
+                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                  />
                 ))
               ) : (
                 <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
