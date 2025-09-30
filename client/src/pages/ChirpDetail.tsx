@@ -66,6 +66,36 @@ export default function ChirpDetail() {
         }
 
         if (chirpData) {
+          // Get current user ID for like status
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          const currentUserId = currentUser?.id;
+          
+          // Fetch like count and user like status for the main chirp
+          let likeCount = 0;
+          let userHasLiked = false;
+          
+          const { data: likeCounts, error: likeCountsError } = await supabase
+            .from('reactions')
+            .select('chirp_id')
+            .eq('chirp_id', chirpData.id);
+
+          if (!likeCountsError && likeCounts) {
+            likeCount = likeCounts.length;
+          }
+
+          // Get user's like status for the main chirp
+          if (currentUserId) {
+            const { data: userLikes, error: userLikesError } = await supabase
+              .from('reactions')
+              .select('chirp_id')
+              .eq('chirp_id', chirpData.id)
+              .eq('user_id', currentUserId);
+
+            if (!userLikesError && userLikes && userLikes.length > 0) {
+              userHasLiked = true;
+            }
+          }
+
           // Transform the chirp data to match expected format
           const transformedChirp = {
             id: chirpData.id,
@@ -85,8 +115,8 @@ export default function ChirpDetail() {
               showChirpPlusBadge: false
             },
             replyCount: 0, // Will be updated below
-            reactionCount: 0, // Default value
-            userHasLiked: false, // Default value
+            reactionCount: likeCount,
+            userHasLiked: userHasLiked,
             isWeeklySummary: false,
             imageUrl: null,
             imageAltText: null,
@@ -124,6 +154,42 @@ export default function ChirpDetail() {
           if (repliesError) {
             console.error('❌ Error fetching replies:', repliesError);
           } else if (repliesData) {
+            // Get like counts and user like status for all replies
+            const replyIds = repliesData.map(reply => reply.id);
+            let replyLikeCounts: Record<string, number> = {};
+            let replyUserLikes: Record<string, boolean> = {};
+            
+            if (replyIds.length > 0) {
+              // Get like counts for all replies
+              const { data: replyLikeCountsData, error: replyLikeCountsError } = await supabase
+                .from('reactions')
+                .select('chirp_id')
+                .in('chirp_id', replyIds);
+
+              if (!replyLikeCountsError && replyLikeCountsData) {
+                // Count likes per reply
+                replyLikeCountsData.forEach(reaction => {
+                  replyLikeCounts[reaction.chirp_id] = (replyLikeCounts[reaction.chirp_id] || 0) + 1;
+                });
+              }
+
+              // Get user's like status for all replies
+              if (currentUserId) {
+                const { data: replyUserLikesData, error: replyUserLikesError } = await supabase
+                  .from('reactions')
+                  .select('chirp_id')
+                  .in('chirp_id', replyIds)
+                  .eq('user_id', currentUserId);
+
+                if (!replyUserLikesError && replyUserLikesData) {
+                  // Mark which replies the user has liked
+                  replyUserLikesData.forEach(reaction => {
+                    replyUserLikes[reaction.chirp_id] = true;
+                  });
+                }
+              }
+            }
+
             // Transform replies data
             const transformedReplies = repliesData.map(reply => ({
               id: reply.id,
@@ -143,8 +209,8 @@ export default function ChirpDetail() {
                 showChirpPlusBadge: false
               },
               replyCount: 0,
-              reactionCount: 0,
-              userHasLiked: false,
+              reactionCount: replyLikeCounts[reply.id] || 0,
+              userHasLiked: replyUserLikes[reply.id] || false,
               isWeeklySummary: false,
               imageUrl: null,
               imageAltText: null,
