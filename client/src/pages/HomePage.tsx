@@ -5,8 +5,8 @@ import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 
 // Use real Supabase client to fetch actual database chirps
-const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
-  console.log('🔍 getForYouChirps called with:', { limit, offset });
+const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: any) => {
+  console.log('🔍 getForYouChirps called with:', { limit, offset, user: user?.id });
   
   try {
     // Create Supabase client directly for web
@@ -30,8 +30,9 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
 
     console.log('✅ Using real Supabase client for getForYouChirps');
     
-    // Get current user ID for like status
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get current user ID for like status from AuthContext
+    // Note: We can't use supabase.auth.getUser() here because AuthContext uses localStorage
+    // Instead, we'll get the user ID from the AuthContext user that's passed to this function
     const currentUserId = user?.id;
     console.log('🔍 Current user ID for like status:', currentUserId);
     
@@ -201,9 +202,10 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
 
     console.log('✅ Using real Supabase client for getCollectionFeedChirps');
     
-    // Get current user ID for like status
-    const { data: { user } } = await supabase.auth.getUser();
-    const currentUserId = user?.id;
+    // Get current user ID for like status from AuthContext
+    // Note: We can't use supabase.auth.getUser() here because AuthContext uses localStorage
+    // Instead, we'll get the user ID from the userId parameter passed to this function
+    const currentUserId = userId;
     console.log('🔍 Current user ID for collection feed:', currentUserId);
     
     // For collection feed, we'll fetch chirps from users that the current user follows
@@ -384,7 +386,7 @@ export default function HomePage() {
       const startTime = Date.now();
       
       // Use Supabase mobile API instead of backend server
-      const realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
+      const realChirps = await getForYouChirps(INITIAL_LIMIT, 0, user);
       const loadTime = Date.now() - startTime;
       
       console.log(`✅ HomePage: Loaded ${realChirps.length} initial chirps from database in ${loadTime}ms`);
@@ -479,7 +481,7 @@ export default function HomePage() {
       
       if (isForYouFeed) {
         // Load more for you chirps using Supabase
-        moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, currentChirps.length);
+        moreChirps = await getForYouChirps(LOAD_MORE_LIMIT, currentChirps.length, user);
       } else {
         // Load more collection chirps using Supabase
         if (user?.id) {
@@ -560,7 +562,7 @@ export default function HomePage() {
       
       if (feedType === 'forYou') {
         // Use Supabase mobile API for for you feed
-        realChirps = await getForYouChirps(INITIAL_LIMIT, 0);
+        realChirps = await getForYouChirps(INITIAL_LIMIT, 0, user);
         setForYouChirps(realChirps);
         setHasMoreChirps(realChirps.length === INITIAL_LIMIT);
       } else {
