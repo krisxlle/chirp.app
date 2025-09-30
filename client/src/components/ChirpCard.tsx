@@ -51,7 +51,7 @@ interface ChirpCardProps {
   chirp: Chirp;
   onDeleteSuccess?: (deletedChirpId?: string) => void;
   onProfilePress?: (userId: string) => void;
-  onLikeUpdate?: (chirpId: string, newLikeCount: number) => void;
+  onLikeUpdate?: (chirpId: string, newLikeCount: number, userHasLiked?: boolean) => void;
   onReplyPosted?: (chirpId: string) => void;
   isHighlighted?: boolean;
 }
@@ -163,7 +163,7 @@ export default function ChirpCard({
         
         // Notify parent component of the change
         if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, response.likesCount || Math.max(0, likes - 1));
+          onLikeUpdate(chirp.id, response.likesCount || Math.max(0, likes - 1), response.liked);
         }
         
         console.log('✅ Like removed successfully');
@@ -183,7 +183,7 @@ export default function ChirpCard({
         
         // Notify parent component of the change
         if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, response.likesCount || likes + 1);
+          onLikeUpdate(chirp.id, response.likesCount || likes + 1, response.liked);
         }
         
         console.log('✅ Like added successfully');
