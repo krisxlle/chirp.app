@@ -97,54 +97,6 @@ function Router() {
 }
 
 function App() {
-  // Add global error handler to suppress Chrome extension errors
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      // Suppress Chrome extension listener errors
-      if (event.message && (
-        event.message.includes('listener indicated an asynchronous response') ||
-        event.message.includes('Cannot read properties of undefined') ||
-        event.message.includes('chrome-extension://') ||
-        event.filename?.includes('chrome-extension://')
-      )) {
-        event.preventDefault();
-        return false;
-      }
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      // Suppress Chrome extension promise rejection errors
-      if (event.reason && typeof event.reason === 'string' && 
-          (event.reason.includes('listener indicated an asynchronous response') ||
-           event.reason.includes('Cannot read properties of undefined') ||
-           event.reason.includes('chrome-extension://'))) {
-        event.preventDefault();
-        return false;
-      }
-    };
-
-    // Also suppress console errors from Chrome extensions
-    const originalConsoleError = console.error;
-    console.error = (...args) => {
-      const message = args.join(' ');
-      if (message.includes('chrome-extension://') || 
-          message.includes('listener indicated an asynchronous response') ||
-          message.includes('Cannot read properties of undefined')) {
-        return; // Suppress Chrome extension errors
-      }
-      originalConsoleError.apply(console, args);
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-      console.error = originalConsoleError; // Restore original console.error
-    };
-  }, []);
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
