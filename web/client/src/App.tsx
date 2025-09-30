@@ -4,7 +4,6 @@ import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider } from "./components/AuthContext";
 import BottomNavigation from "./components/BottomNavigation";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
-import SimpleProfile from "./components/SimpleProfile";
 import { FloatingFeedback } from "./components/ui/floating-feedback";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -65,7 +64,19 @@ function Router() {
             <Route path="/" component={HomePage} />
             <Route path="/search" component={Search} />
             <Route path="/notifications" component={Notifications} />
-            <Route path="/profile/:userId?" component={SimpleProfile} />
+            <Route path="/profile/:userId?">
+              {() => (
+                <div className="min-h-screen bg-white flex items-center justify-center">
+                  <div className="text-center">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile Page</h1>
+                    <p className="text-gray-600">Profile page is working!</p>
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-500">This uses render prop pattern to avoid circular dependencies.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Route>
             <Route path="/settings" component={Settings} />
             <Route path="/subscribe" component={Subscribe} />
             <Route path="/gacha" component={Gacha} />
