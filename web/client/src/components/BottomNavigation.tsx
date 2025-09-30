@@ -70,10 +70,20 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     console.log(`🔄 Navigation: Switching from ${activeTab || location} to ${tab}`);
     const startTime = Date.now();
     
-    if (onTabChange) {
-      onTabChange(tab);
-    } else {
-      setLocation(path);
+    try {
+      if (onTabChange) {
+        onTabChange(tab);
+      } else {
+        setLocation(path);
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback to window.location for profile navigation
+      if (tab === 'profile') {
+        console.log('🔄 Using fallback navigation for profile');
+        window.location.href = path;
+        return;
+      }
     }
     
     // Log navigation completion after a short delay

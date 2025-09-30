@@ -240,15 +240,27 @@ export default function ChirpCard({
   };
 
   const handleProfilePress = () => {
-    if (onProfilePress) {
-      onProfilePress(chirp.author.id);
-    } else {
-      setLocation(`/profile/${chirp.author.id}`);
+    try {
+      if (onProfilePress) {
+        onProfilePress(chirp.author.id);
+      } else {
+        setLocation(`/profile/${chirp.author.id}`);
+      }
+    } catch (error) {
+      console.error('Profile navigation error:', error);
+      // Fallback to window.location
+      window.location.href = `/profile/${chirp.author.id}`;
     }
   };
 
   const handleMentionPress = (handle: string) => {
-    setLocation(`/profile/${handle}`);
+    try {
+      setLocation(`/profile/${handle}`);
+    } catch (error) {
+      console.error('Mention navigation error:', error);
+      // Fallback to window.location
+      window.location.href = `/profile/${handle}`;
+    }
   };
 
   const isOwnChirp = currentUser?.id === chirp.author.id;

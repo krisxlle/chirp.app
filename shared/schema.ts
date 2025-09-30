@@ -69,6 +69,11 @@ export const chirps = pgTable("chirps", {
   threadId: integer("thread_id").references(() => chirps.id, { onDelete: "cascade" }),
   threadOrder: integer("thread_order").default(0),
   isThreadStarter: boolean("is_thread_starter").default(false),
+  // Image fields
+  imageUrl: text("image_url"),
+  imageAltText: text("image_alt_text"),
+  imageWidth: integer("image_width"),
+  imageHeight: integer("image_height"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
-import { secureRandomString } from "../utils/secureRandom";
 import { insertChirpSchema, insertFeedbackSchema, insertFollowSchema, insertNotificationSchema, insertPushTokenSchema, insertReactionSchema } from "../shared/schema";
+import { secureRandomString } from "../utils/secureRandom";
 import { isAuthenticated, setupAuth } from "./auth";
 import { processMentions } from "./mentionUtils";
 import { generatePersonalizedProfile, generateUserAvatar, generateUserBanner, generateUserBio, generateUserInterests, generateWeeklySummary } from "./openai";
@@ -242,6 +242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         content,
         authorId: userId,
+        // Include image data if provided
+        imageUrl: req.body.imageData?.imageUrl || null,
+        imageAltText: req.body.imageData?.imageAltText || null,
+        imageWidth: req.body.imageData?.imageWidth || null,
+        imageHeight: req.body.imageData?.imageHeight || null,
       });
 
       if (chirpData.content.length > 280) {
