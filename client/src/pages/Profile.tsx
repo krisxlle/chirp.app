@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
@@ -6,6 +6,7 @@ import ProfileFrame from '../components/ProfileFrame';
 import UserAvatar from '../components/UserAvatar';
 import GearIcon from '../components/icons/GearIcon';
 import LinkIcon from '../components/icons/LinkIcon';
+import { useLike } from '../contexts/LikeContext';
 
 // Profile Frame Functions - Inline to avoid import issues
 const getUserEquippedFrame = async (userId: string) => {
@@ -14,51 +15,6 @@ const getUserEquippedFrame = async (userId: string) => {
   // Return null to simulate no equipped frame for testing
   // In production, this would check the database for equipped frames
   return null;
-};
-
-// Inline rarity determination function to avoid import issues
-const determineUserRarity = (user: {
-  id: string;
-  handle?: string;
-  firstName?: string;
-  customHandle?: string;
-}): 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common' => {
-  if (!user) return 'common';
-  
-  const userHandle = (user.handle || '').toLowerCase();
-  const userName = (user.firstName || user.customHandle || '').toLowerCase();
-  
-  // Bot detection with hardcoded rarities
-  if (userHandle.includes('crimsontalon') || userName.includes('crimsontalon')) {
-    return 'mythic';
-  } else if (userHandle.includes('solarius') || userName.includes('solarius')) {
-    return 'legendary';
-  } else if (userHandle.includes('prisma') || userName.includes('prisma')) {
-    return 'epic';
-  } else if (userHandle.includes('skye') || userName.includes('skye')) {
-    return 'rare';
-  } else if (userHandle.includes('thorne') || userName.includes('thorne')) {
-    return 'uncommon';
-  } else if (userHandle.includes('obsidian') || userName.includes('obsidian')) {
-    return 'common';
-  }
-  
-  // For regular users, we need a consistent way to determine rarity
-  // We'll use a hash of the user ID to ensure consistency
-  const userId = user.id;
-  const hash = userId.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
-  const rarityRoll = Math.abs(hash) % 100;
-  
-  if (rarityRoll < 1) return 'mythic';      // 1%
-  else if (rarityRoll < 5) return 'legendary';  // 4%
-  else if (rarityRoll < 15) return 'epic';      // 10%
-  else if (rarityRoll < 35) return 'rare';      // 20%
-  else if (rarityRoll < 65) return 'uncommon';  // 30%
-  else return 'common';                           // 35%
 };
 
 // Utility function to add sample relationships data
@@ -271,8 +227,8 @@ const getUserChirps = async (userId: string, userData?: any) => {
       console.log('✅ Fetched', chirps.length, 'real user chirps from database');
       
       // Get like counts and user like status for all chirps
-      const chirpIds = chirps.map(chirp => chirp.id);
-      let likeData = {};
+      const chirpIds = chirps.map((chirp: any) => chirp.id);
+      let likeData: { [key: string]: any } = {};
       
       if (chirpIds.length > 0) {
         // Get like counts for all chirps
@@ -285,7 +241,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
           console.error('❌ Error fetching like counts:', likeCountsError);
         } else {
           // Count likes per chirp
-          likeCounts?.forEach(reaction => {
+          likeCounts?.forEach((reaction: { chirp_id: string }) => {
             likeData[reaction.chirp_id] = (likeData[reaction.chirp_id] || 0) + 1;
           });
         }
@@ -302,7 +258,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
             console.error('❌ Error fetching user likes:', userLikesError);
           } else {
             // Mark which chirps the user has liked
-            userLikes?.forEach(reaction => {
+            userLikes?.forEach((reaction: { chirp_id: string }) => {
               likeData[`${reaction.chirp_id}_userLiked`] = true;
             });
           }
@@ -310,7 +266,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
       }
       
       // Transform the data to match expected format
-      return chirps.map(chirp => {
+      return chirps.map((chirp: any) => {
         const likesCount = likeData[chirp.id] || 0;
         const userHasLiked = likeData[`${chirp.id}_userLiked`] || false;
         
@@ -354,7 +310,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
       console.log('📭 No user chirps found in database');
       return [];
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error fetching real user chirps from Supabase:', error);
     console.error('❌ Supabase connection details:', {
       url: 'https://qrzbtituxxilnbgocdge.supabase.co',
@@ -473,7 +429,7 @@ const getUserStats = async (userId: string) => {
         
         console.log('📊 Retry counts:', { followingCount, followersCount });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log('📊 Error fetching relationships, using mock data:', error.message);
       // Fallback to mock data if there's an error
       followingCount = Math.floor(Math.random() * 50) + 10; // Random between 10-60
@@ -544,7 +500,7 @@ const getProfilePowerBreakdown = async (userId: string) => {
       totalLikes: 0, // Will be calculated from likes count
       totalComments: 0 // Will be calculated from comments count
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error fetching profile power breakdown from Supabase:', error);
     throw new Error(`Failed to fetch profile power breakdown from database: ${error.message}`);
   }
@@ -578,6 +534,7 @@ export default function Profile() {
   console.log('🔍 Profile: Component starting to render...');
   
   const { user: authUser } = useAuth();
+  const { updateLike } = useLike();
   const [location, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
@@ -613,6 +570,9 @@ export default function Profile() {
     
     setUserChirps(updateChirp);
     setUserReplies(updateChirp);
+    
+    // Update global like context to maintain consistency across pages
+    updateLike(chirpId, newLikeCount, userHasLiked !== undefined ? userHasLiked : (newLikeCount > 0));
   };
 
   // Extract userId from URL or use current user
@@ -645,7 +605,7 @@ export default function Profile() {
 
   const loadEquippedFrame = async () => {
     try {
-      const frame = await getUserEquippedFrame(user.id);
+      const frame = await getUserEquippedFrame(user!.id);
       setEquippedFrame(frame);
     } catch (error) {
       console.error('Error loading equipped frame:', error);
@@ -924,7 +884,7 @@ export default function Profile() {
             followers: statsData.followers || 0,
             profilePower: statsData.profilePower || 0
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error('❌ Profile: Error loading user profile data:', error);
           // Only clear data if it's a critical error (not just chirps timeout)
           if (error.message && error.message.includes('timeout')) {
