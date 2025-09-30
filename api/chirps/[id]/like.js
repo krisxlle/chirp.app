@@ -95,10 +95,21 @@ export default async function handler(req, res) {
           return;
         }
 
+        // Get updated like count
+        const { count: likesCount, error: countError } = await supabase
+          .from('reactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('chirp_id', id);
+
+        if (countError) {
+          console.error('❌ Error getting like count after unlike:', countError);
+        }
+
         console.log('✅ Chirp unliked successfully');
         res.status(200).json({
           success: true,
           liked: false,
+          likesCount: likesCount || 0,
           message: 'Chirp unliked successfully'
         });
       } else {
@@ -120,10 +131,21 @@ export default async function handler(req, res) {
           return;
         }
 
+        // Get updated like count
+        const { count: likesCount, error: countError } = await supabase
+          .from('reactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('chirp_id', id);
+
+        if (countError) {
+          console.error('❌ Error getting like count after like:', countError);
+        }
+
         console.log('✅ Chirp liked successfully');
         res.status(200).json({
           success: true,
           liked: true,
+          likesCount: likesCount || 0,
           message: 'Chirp liked successfully'
         });
       }

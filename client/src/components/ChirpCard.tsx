@@ -148,22 +148,22 @@ export default function ChirpCard({
       const userIdStr = String(user.id);
       
       if (userHasLiked) {
-        // Unlike: Remove the reaction
+        // Unlike: Remove the reaction (using the same like endpoint which toggles)
         console.log('🔴 Unliking chirp...');
         
-        const response = await apiRequest(`/api/chirps/${chirpIdStr}/unlike`, {
+        const response = await apiRequest(`/api/chirps/${chirpIdStr}/like`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: userIdStr })
         });
 
-        // Update local state
-        setLikes(prev => Math.max(0, prev - 1));
-        setUserHasLiked(false);
+        // Update local state with API response
+        setLikes(response.likesCount || Math.max(0, likes - 1));
+        setUserHasLiked(response.liked);
         
         // Notify parent component of the change
         if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, likes - 1);
+          onLikeUpdate(chirp.id, response.likesCount || Math.max(0, likes - 1));
         }
         
         console.log('✅ Like removed successfully');
@@ -177,13 +177,13 @@ export default function ChirpCard({
           body: JSON.stringify({ userId: userIdStr })
         });
 
-        // Update local state
-        setLikes(prev => prev + 1);
-        setUserHasLiked(true);
+        // Update local state with API response
+        setLikes(response.likesCount || likes + 1);
+        setUserHasLiked(response.liked);
         
         // Notify parent component of the change
         if (onLikeUpdate) {
-          onLikeUpdate(chirp.id, likes + 1);
+          onLikeUpdate(chirp.id, response.likesCount || likes + 1);
         }
         
         console.log('✅ Like added successfully');
