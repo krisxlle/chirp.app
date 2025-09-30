@@ -527,6 +527,8 @@ interface ProfileStats {
 }
 
 export default function Profile() {
+  console.log('🔍 Profile: Component starting to render...');
+  
   const { user: authUser } = useAuth();
   const [location, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
@@ -543,12 +545,17 @@ export default function Profile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
 
+  console.log('🔍 Profile: State initialized, location:', location, 'authUser:', authUser?.id);
+
   // Extract userId from URL or use current user
   const userId = location.includes('/profile/') 
     ? location.split('/profile/')[1] 
     : authUser?.id;
 
+  console.log('🔍 Profile: userId extracted:', userId);
+
   useEffect(() => {
+    console.log('🔍 Profile: useEffect triggered, userId:', userId);
     if (userId) {
       loadUserProfile();
     }
@@ -900,7 +907,10 @@ export default function Profile() {
     });
   };
 
+  console.log('🔍 Profile: About to render, isLoading:', isLoading, 'user:', user?.id);
+
   if (isLoading) {
+    console.log('🔍 Profile: Rendering loading state');
     return (
       <div style={{
         minHeight: '100vh',
@@ -922,6 +932,7 @@ export default function Profile() {
   }
 
   if (!user) {
+    console.log('🔍 Profile: Rendering user not found state');
     return (
       <div style={{
         minHeight: '100vh',
@@ -946,6 +957,8 @@ export default function Profile() {
       </div>
     );
   }
+
+  console.log('🔍 Profile: Rendering main profile content for user:', user.id);
 
   const isOwnProfile = authUser?.id === user.id;
 
