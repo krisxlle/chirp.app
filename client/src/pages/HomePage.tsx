@@ -93,6 +93,8 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: an
         .in('chirp_id', chirpIds);
 
       console.log('🔍 Like counts result:', { likeCounts, likeCountsError });
+      console.log('🔍 Like counts length:', likeCounts?.length);
+      console.log('🔍 Like counts data:', likeCounts);
 
       if (likeCountsError) {
         console.error('❌ Error fetching like counts:', likeCountsError);
@@ -106,14 +108,16 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: an
 
       // Get user's like status for all chirps
       if (currentUserId) {
-        console.log('🔍 Fetching user likes for user:', currentUserId, 'chirps:', chirpIds);
-        const { data: userLikes, error: userLikesError } = await supabase
-          .from('reactions')
-          .select('chirp_id')
-          .in('chirp_id', chirpIds)
-          .eq('user_id', currentUserId);
+      console.log('🔍 Fetching user likes for user:', currentUserId, 'chirps:', chirpIds);
+      const { data: userLikes, error: userLikesError } = await supabase
+        .from('reactions')
+        .select('chirp_id')
+        .in('chirp_id', chirpIds)
+        .eq('user_id', currentUserId);
 
-        console.log('🔍 User likes result:', { userLikes, userLikesError });
+      console.log('🔍 User likes result:', { userLikes, userLikesError });
+      console.log('🔍 User likes length:', userLikes?.length);
+      console.log('🔍 User likes data:', userLikes);
 
         if (userLikesError) {
           console.error('❌ Error fetching user likes:', userLikesError);
