@@ -30,6 +30,10 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
 
     console.log('✅ Using real Supabase client for getForYouChirps');
     
+    // Get current user ID for like status
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
+    
     // Fetch chirps with proper data mapping
     const { data: chirps, error: chirpsError } = await supabase
       .from('chirps')
@@ -74,9 +78,50 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
       userMap.set(user.id, user);
     });
 
+    // Get like counts and user like status for all chirps
+    const chirpIds = chirps.map(chirp => chirp.id);
+    let likeData = {};
+    
+    if (chirpIds.length > 0) {
+      // Get like counts for all chirps
+      const { data: likeCounts, error: likeCountsError } = await supabase
+        .from('reactions')
+        .select('chirp_id')
+        .in('chirp_id', chirpIds);
+
+      if (likeCountsError) {
+        console.error('❌ Error fetching like counts:', likeCountsError);
+      } else {
+        // Count likes per chirp
+        likeCounts?.forEach(reaction => {
+          likeData[reaction.chirp_id] = (likeData[reaction.chirp_id] || 0) + 1;
+        });
+      }
+
+      // Get user's like status for all chirps
+      if (currentUserId) {
+        const { data: userLikes, error: userLikesError } = await supabase
+          .from('reactions')
+          .select('chirp_id')
+          .in('chirp_id', chirpIds)
+          .eq('user_id', currentUserId);
+
+        if (userLikesError) {
+          console.error('❌ Error fetching user likes:', userLikesError);
+        } else {
+          // Mark which chirps the user has liked
+          userLikes?.forEach(reaction => {
+            likeData[`${reaction.chirp_id}_userLiked`] = true;
+          });
+        }
+      }
+    }
+
     // Transform chirps with proper data mapping
     const transformedChirps = chirps.map((chirp: any) => {
       const user = userMap.get(chirp.author_id);
+      const likesCount = likeData[chirp.id] || 0;
+      const userHasLiked = likeData[`${chirp.id}_userLiked`] || false;
       
       return {
         id: chirp.id.toString(),
@@ -98,13 +143,13 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
         imageAltText: chirp.image_alt_text || null,
         imageWidth: chirp.image_width || null,
         imageHeight: chirp.image_height || null,
-        likesCount: 0,
+        likesCount: likesCount,
         repliesCount: 0,
         repostsCount: 0,
         sharesCount: 0,
         reactionCounts: {},
         userReaction: null,
-        isLiked: false,
+        isLiked: userHasLiked,
         isReposted: false,
         isAiGenerated: false,
         isWeeklySummary: false,
@@ -147,6 +192,10 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
 
     console.log('✅ Using real Supabase client for getCollectionFeedChirps');
     
+    // Get current user ID for like status
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
+    
     // For collection feed, we'll fetch chirps from users that the current user follows
     // For now, let's fetch recent chirps as a placeholder
     const { data: chirps, error } = await supabase
@@ -182,10 +231,51 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
     if (chirps && chirps.length > 0) {
       console.log('✅ Fetched', chirps.length, 'real collection chirps from database');
       
+      // Get like counts and user like status for all chirps
+      const chirpIds = chirps.map(chirp => chirp.id);
+      let likeData = {};
+      
+      if (chirpIds.length > 0) {
+        // Get like counts for all chirps
+        const { data: likeCounts, error: likeCountsError } = await supabase
+          .from('reactions')
+          .select('chirp_id')
+          .in('chirp_id', chirpIds);
+
+        if (likeCountsError) {
+          console.error('❌ Error fetching like counts:', likeCountsError);
+        } else {
+          // Count likes per chirp
+          likeCounts?.forEach(reaction => {
+            likeData[reaction.chirp_id] = (likeData[reaction.chirp_id] || 0) + 1;
+          });
+        }
+
+        // Get user's like status for all chirps
+        if (currentUserId) {
+          const { data: userLikes, error: userLikesError } = await supabase
+            .from('reactions')
+            .select('chirp_id')
+            .in('chirp_id', chirpIds)
+            .eq('user_id', currentUserId);
+
+          if (userLikesError) {
+            console.error('❌ Error fetching user likes:', userLikesError);
+          } else {
+            // Mark which chirps the user has liked
+            userLikes?.forEach(reaction => {
+              likeData[`${reaction.chirp_id}_userLiked`] = true;
+            });
+          }
+        }
+      }
+      
       // Transform the data to match expected format
       return chirps.map(chirp => {
         // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
         const author = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
+        const likesCount = likeData[chirp.id] || 0;
+        const userHasLiked = likeData[`${chirp.id}_userLiked`] || false;
         
         return {
           id: chirp.id,
@@ -207,10 +297,10 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
             isChirpPlus: false, // Default to false since column doesn't exist
             showChirpPlusBadge: false // Default to false since column doesn't exist
           },
-        likes: 0, // Default to 0 since column doesn't exist
+        likes: likesCount, // Use actual like count from database
         replies: 0, // Default to 0 since column doesn't exist
         reposts: 0, // Default to 0 since column doesn't exist
-        isLiked: false, // Default to false since column doesn't exist
+        isLiked: userHasLiked, // Use actual like status from database
         isReposted: false, // Default to false since column doesn't exist
         reactionCounts: {}, // Default to empty object since column doesn't exist
         userReaction: null, // Default to null since column doesn't exist

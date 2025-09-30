@@ -231,6 +231,10 @@ const getUserChirps = async (userId: string, userData?: any) => {
 
     console.log('✅ Using real Supabase client for getUserChirps');
     
+    // Get current user ID for like status
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
+    
     // Simplified query to avoid timeout - fetch chirps without user join
     const queryPromise = supabase
       .from('chirps')
@@ -264,8 +268,50 @@ const getUserChirps = async (userId: string, userData?: any) => {
     if (chirps && chirps.length > 0) {
       console.log('✅ Fetched', chirps.length, 'real user chirps from database');
       
+      // Get like counts and user like status for all chirps
+      const chirpIds = chirps.map(chirp => chirp.id);
+      let likeData = {};
+      
+      if (chirpIds.length > 0) {
+        // Get like counts for all chirps
+        const { data: likeCounts, error: likeCountsError } = await supabase
+          .from('reactions')
+          .select('chirp_id')
+          .in('chirp_id', chirpIds);
+
+        if (likeCountsError) {
+          console.error('❌ Error fetching like counts:', likeCountsError);
+        } else {
+          // Count likes per chirp
+          likeCounts?.forEach(reaction => {
+            likeData[reaction.chirp_id] = (likeData[reaction.chirp_id] || 0) + 1;
+          });
+        }
+
+        // Get user's like status for all chirps
+        if (currentUserId) {
+          const { data: userLikes, error: userLikesError } = await supabase
+            .from('reactions')
+            .select('chirp_id')
+            .in('chirp_id', chirpIds)
+            .eq('user_id', currentUserId);
+
+          if (userLikesError) {
+            console.error('❌ Error fetching user likes:', userLikesError);
+          } else {
+            // Mark which chirps the user has liked
+            userLikes?.forEach(reaction => {
+              likeData[`${reaction.chirp_id}_userLiked`] = true;
+            });
+          }
+        }
+      }
+      
       // Transform the data to match expected format
       return chirps.map(chirp => {
+        const likesCount = likeData[chirp.id] || 0;
+        const userHasLiked = likeData[`${chirp.id}_userLiked`] || false;
+        
         return {
           id: chirp.id,
           content: chirp.content,
@@ -287,10 +333,10 @@ const getUserChirps = async (userId: string, userData?: any) => {
             isChirpPlus: userData?.isChirpPlus || false,
             showChirpPlusBadge: userData?.showChirpPlusBadge || false
           },
-          likes: 0, // Default to 0 since column doesn't exist
+          likes: likesCount, // Use actual like count from database
           replies: 0, // Default to 0 since column doesn't exist
           reposts: 0, // Default to 0 since column doesn't exist
-          isLiked: false, // Default to false since column doesn't exist
+          isLiked: userHasLiked, // Use actual like status from database
           isReposted: false, // Default to false since column doesn't exist
           reactionCounts: {}, // Default to empty object since column doesn't exist
           userReaction: null, // Default to null since column doesn't exist
