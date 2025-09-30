@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
+import { supabase } from '../lib/supabase';
 
 // Use real Supabase client to fetch actual database chirps
 const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: any) => {
@@ -10,7 +11,6 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: an
   
   try {
     // Use shared Supabase client
-    const { supabase } = await import('../lib/supabase');
 
     console.log('✅ Using real Supabase client for getForYouChirps');
     
@@ -171,7 +171,6 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
   
   try {
     // Use shared Supabase client
-    const { supabase } = await import('../lib/supabase');
 
     console.log('✅ Using real Supabase client for getCollectionFeedChirps');
     
