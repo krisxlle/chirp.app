@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from './api';
 import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
@@ -312,7 +312,7 @@ export default function ChirpCard({
             </div>
 
             {/* Content */}
-            <div className="mb-3">
+            <div className="mb-3 pl-1">
               <MentionText 
                 text={chirp.content} 
                 onMentionPress={handleMentionPress}

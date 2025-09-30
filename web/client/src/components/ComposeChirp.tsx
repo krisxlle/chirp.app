@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { useAuth } from '../hooks/useAuth';
 import { apiRequest } from './api';
 import ImagePickerButton from './ImagePickerButton';
 import { Button } from './ui/button';
