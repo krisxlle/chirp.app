@@ -9,7 +9,7 @@ interface ChirpCrystalIconProps {
 export default function ChirpCrystalIcon({ size = 24, color }: ChirpCrystalIconProps) {
   return (
     <Image
-      source={require('../../public/assets/Chirp Crystal.png')}
+      source={require('../../public/assets/Season 1/Chirp Crystal v2.png')}
       style={{ 
         width: size, 
         height: size,
