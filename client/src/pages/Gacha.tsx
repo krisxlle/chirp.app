@@ -81,7 +81,7 @@ const getAvailableFrames = async () => {
     {
       id: 1,
       name: 'Green Leaf Frame',
-      description: 'A legendary green leaf frame representing nature''s power',
+      description: 'A legendary green leaf frame representing nature\'s power',
       rarity: 'legendary' as const,
       imageUrl: '/assets/Season 1/Green Leaf Frame Legendary.png',
       previewUrl: '/assets/Season 1/Green Leaf Frame Legendary.png',
