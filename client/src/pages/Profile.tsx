@@ -1105,7 +1105,7 @@ export default function Profile() {
           justifyContent: 'center'
         }}>
           {equippedFrame ? (
-            <ProfileFrame rarity={equippedFrame.rarity} size={120} customFrameImage={equippedFrame.imageUrl}>
+            <ProfileFrame rarity={equippedFrame.rarity} size={140} customFrameImage={equippedFrame.imageUrl}>
               <UserAvatar user={user} size="xl" />
             </ProfileFrame>
           ) : (
