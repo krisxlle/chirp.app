@@ -33,6 +33,7 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0) => {
     // Get current user ID for like status
     const { data: { user } } = await supabase.auth.getUser();
     const currentUserId = user?.id;
+    console.log('🔍 Current user ID for like status:', currentUserId);
     
     // Fetch chirps with proper data mapping
     const { data: chirps, error: chirpsError } = await supabase
@@ -203,6 +204,7 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
     // Get current user ID for like status
     const { data: { user } } = await supabase.auth.getUser();
     const currentUserId = user?.id;
+    console.log('🔍 Current user ID for collection feed:', currentUserId);
     
     // For collection feed, we'll fetch chirps from users that the current user follows
     // For now, let's fetch recent chirps as a placeholder
