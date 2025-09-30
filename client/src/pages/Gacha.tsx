@@ -357,8 +357,33 @@ export default function Gacha() {
           try {
             console.log('💎 Deducting crystals from database...');
             
-            const { deductCrystalBalance } = await import('../../../lib/database/mobile-db-supabase');
-            const success = await deductCrystalBalance(user.id, cost);
+            // Use direct Supabase client for web
+            const { createClient } = await import('@supabase/supabase-js');
+            const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+            
+            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+              auth: {
+                storage: {
+                  getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+                  setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+                  removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+                },
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: false,
+              },
+            });
+
+            // Deduct crystal balance directly
+            const { error } = await supabase
+              .from('users')
+              .update({ 
+                crystal_balance: supabase.raw(`crystal_balance - ${cost}`)
+              })
+              .eq('id', user.id);
+            
+            const success = !error;
             
             if (success) {
               // Refresh crystal balance from database to update UI
