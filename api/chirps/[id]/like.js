@@ -124,7 +124,7 @@ export default async function handler(req, res) {
           .insert({
             chirp_id: parseInt(id),
             user_id: userId,
-            type: 'like' // Add required type field
+            emoji: 'like' // Add required emoji field
           })
           .select();
 
