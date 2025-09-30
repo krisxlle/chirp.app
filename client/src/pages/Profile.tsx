@@ -1077,7 +1077,7 @@ export default function Profile() {
         {/* Profile Avatar - Overlapping banner and next to name */}
         <div style={{
           position: 'absolute',
-          bottom: '-44px', // Half overlapping banner, half in profile info
+          top: '148px', // 192px banner height - 44px = 148px from top
           left: '16px',
           width: '88px',
           height: '88px',
