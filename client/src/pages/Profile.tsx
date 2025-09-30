@@ -1077,7 +1077,7 @@ export default function Profile() {
         {/* Profile Avatar - Positioned at bottom of banner */}
         <div style={{
           position: 'absolute',
-          bottom: '-44px', // Position at bottom of banner, half overlapping
+          bottom: '-20px', // Position at bottom of banner, more overlapping
           left: '16px',
           width: '88px',
           height: '88px',
@@ -1104,7 +1104,7 @@ export default function Profile() {
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
-          marginTop: '44px' // Account for avatar overlap
+          marginTop: '20px' // Account for avatar overlap
         }}>
           <div style={{
             display: 'flex',
@@ -1116,7 +1116,7 @@ export default function Profile() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '4px'
+                marginBottom: '1px'
               }}>
                 <div style={{
                   display: 'flex',
@@ -1173,6 +1173,56 @@ export default function Profile() {
                       fontWeight: '600',
                       color: '#ffffff'
                     }}>Settings</span>
+                  </button>
+                )}
+
+                {/* Follow Button - Inline with name */}
+                {!isOwnProfile && (
+                  <button
+                    onClick={handleFollowToggle}
+                    disabled={isLoadingFollow}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: isFollowing ? 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)' : 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)',
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      paddingTop: '10px',
+                      paddingBottom: '10px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      cursor: isLoadingFollow ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 2px 8px rgba(198, 113, 255, 0.3)',
+                      transition: 'all 0.2s',
+                      height: '40px',
+                      color: '#ffffff',
+                      fontWeight: '600',
+                      opacity: isLoadingFollow ? 0.7 : 1
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLoadingFollow) {
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isLoadingFollow) {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
+                      }
+                    }}
+                  >
+                    <span style={{ fontSize: '16px' }}>
+                      {isLoadingFollow ? '...' : (isFollowing ? '✓' : '+')}
+                    </span>
+                    <span style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#ffffff'
+                    }}>
+                      {isLoadingFollow ? '...' : (isFollowing ? 'Following' : 'Follow')}
+                    </span>
                   </button>
                 )}
               </div>
@@ -1316,51 +1366,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginTop: '16px'
-          }}>
-            {!isOwnProfile && (
-              <button
-                onClick={handleFollowToggle}
-                disabled={isLoadingFollow}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  paddingTop: '12px',
-                  paddingBottom: '12px',
-                  paddingLeft: '16px',
-                  paddingRight: '16px',
-                  borderRadius: '20px',
-                  backgroundColor: isFollowing ? '#ffffff' : '#7c3aed',
-                  color: isFollowing ? '#7c3aed' : '#ffffff',
-                  border: isFollowing ? '1px solid #7c3aed' : 'none',
-                  cursor: isLoadingFollow ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  opacity: isLoadingFollow ? 0.7 : 1,
-                  transition: 'all 0.2s'
-                }}
-              >
-                {isLoadingFollow ? (
-                  <span>...</span>
-                ) : (
-                  <>
-                    <span style={{ fontSize: '16px' }}>
-                      {isFollowing ? '✓' : '+'}
-                    </span>
-                    <span>{isFollowing ? 'Following' : 'Follow'}</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
