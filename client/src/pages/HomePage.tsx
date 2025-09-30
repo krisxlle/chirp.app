@@ -143,10 +143,13 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: an
         imageHeight: chirp.image_height || null,
         likesCount: likesCount,
         likes: likesCount, // Add likes field for ChirpCard compatibility
+        reactionCount: likesCount, // Add reactionCount field for ChirpCard compatibility
+        replyCount: 0,
         repliesCount: 0,
         repostsCount: 0,
         sharesCount: 0,
         isLiked: userHasLiked, // Add isLiked field for ChirpCard compatibility
+        userHasLiked: userHasLiked, // Add userHasLiked field for ChirpCard compatibility
         reactionCounts: {},
         userReaction: null,
         isReposted: false,
@@ -282,9 +285,12 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
             showChirpPlusBadge: false // Default to false since column doesn't exist
           },
         likes: likesCount, // Use actual like count from database
+        reactionCount: likesCount, // Add reactionCount field for ChirpCard compatibility
+        replyCount: 0, // Add replyCount field for ChirpCard compatibility
         replies: 0, // Default to 0 since column doesn't exist
         reposts: 0, // Default to 0 since column doesn't exist
         isLiked: userHasLiked, // Use actual like status from database
+        userHasLiked: userHasLiked, // Add userHasLiked field for ChirpCard compatibility
         isReposted: false, // Default to false since column doesn't exist
         reactionCounts: {}, // Default to empty object since column doesn't exist
         userReaction: null, // Default to null since column doesn't exist
