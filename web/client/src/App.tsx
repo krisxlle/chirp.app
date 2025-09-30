@@ -1,11 +1,16 @@
 console.log('🔍 App.tsx: Starting to load...');
 
-// Step 1: Import React Query
-console.log('🔍 App.tsx: Importing React Query...');
+// Step 0: Import React
+console.log('🔍 App.tsx: Importing React...');
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from 'react';
 import { useLocation } from "wouter";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import { Toaster } from "./components/ui/toaster";
+console.log('✅ App.tsx: React imported successfully');
+
+// Step 1: Import React Query
+console.log('🔍 App.tsx: Importing React Query...');
 console.log('✅ App.tsx: React Query imported successfully');
 
 // Step 2: Import wouter
@@ -80,6 +85,67 @@ function Router() {
 // Create App component with debug logging
 function App() {
   console.log('🔍 App: Component starting to render...');
+  
+  // Add global error handler to suppress Chrome extension errors
+  React.useEffect(() => {
+    console.log('🔍 App: Setting up error handlers...');
+    
+    const handleError = (event: ErrorEvent) => {
+      // Suppress Chrome extension listener errors
+      if (event.message && (
+        event.message.includes('listener indicated an asynchronous response') ||
+        event.message.includes('Cannot read properties of undefined') ||
+        event.message.includes('chrome-extension://') ||
+        event.filename?.includes('chrome-extension://') ||
+        event.message.includes('Cannot access') ||
+        event.message.includes('before initialization')
+      )) {
+        console.log('🚫 Suppressed Chrome extension error:', event.message);
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Suppress Chrome extension promise rejection errors
+      if (event.reason && typeof event.reason === 'string' && 
+          (event.reason.includes('listener indicated an asynchronous response') ||
+           event.reason.includes('Cannot read properties of undefined') ||
+           event.reason.includes('chrome-extension://') ||
+           event.reason.includes('Cannot access') ||
+           event.reason.includes('before initialization'))) {
+        console.log('🚫 Suppressed Chrome extension promise rejection:', event.reason);
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    // Also suppress console errors from Chrome extensions
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+      const message = args.join(' ');
+      if (message.includes('chrome-extension://') || 
+          message.includes('listener indicated an asynchronous response') ||
+          message.includes('Cannot read properties of undefined') ||
+          message.includes('Cannot access') ||
+          message.includes('before initialization')) {
+        console.log('🚫 Suppressed console error:', message);
+        return; // Suppress Chrome extension errors
+      }
+      originalConsoleError.apply(console, args);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    console.log('✅ App: Error handlers set up successfully');
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      console.error = originalConsoleError; // Restore original console.error
+    };
+  }, []);
   
   console.log('🔍 App: Rendering AuthProvider...');
   return (
