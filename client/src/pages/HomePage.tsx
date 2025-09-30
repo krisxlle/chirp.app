@@ -66,51 +66,52 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: an
 
     // Get like counts and user like status for all chirps
     const chirpIds = chirps.map(chirp => chirp.id);
-    let likeData = {};
+    let likeCounts: Record<string, number> = {};
+    let userLikes: Record<string, boolean> = {};
     
     if (chirpIds.length > 0) {
       // Get like counts for all chirps
       console.log('🔍 Fetching like counts for chirps:', chirpIds);
-      const { data: likeCounts, error: likeCountsError } = await supabase
+      const { data: likeCountsData, error: likeCountsError } = await supabase
         .from('reactions')
         .select('chirp_id')
         .in('chirp_id', chirpIds);
 
-      console.log('🔍 Like counts result:', { likeCounts, likeCountsError });
-      console.log('🔍 Like counts length:', likeCounts?.length);
-      console.log('🔍 Like counts data:', likeCounts);
+      console.log('🔍 Like counts result:', { likeCountsData, likeCountsError });
+      console.log('🔍 Like counts length:', likeCountsData?.length);
+      console.log('🔍 Like counts data:', likeCountsData);
 
       if (likeCountsError) {
         console.error('❌ Error fetching like counts:', likeCountsError);
       } else {
         // Count likes per chirp
-        likeCounts?.forEach(reaction => {
-          likeData[reaction.chirp_id] = (likeData[reaction.chirp_id] || 0) + 1;
+        likeCountsData?.forEach(reaction => {
+          likeCounts[reaction.chirp_id] = (likeCounts[reaction.chirp_id] || 0) + 1;
         });
-        console.log('🔍 Processed like data:', likeData);
+        console.log('🔍 Processed like counts:', likeCounts);
       }
 
       // Get user's like status for all chirps
       if (currentUserId) {
       console.log('🔍 Fetching user likes for user:', currentUserId, 'chirps:', chirpIds);
-      const { data: userLikes, error: userLikesError } = await supabase
+      const { data: userLikesData, error: userLikesError } = await supabase
         .from('reactions')
         .select('chirp_id')
         .in('chirp_id', chirpIds)
         .eq('user_id', currentUserId);
 
-      console.log('🔍 User likes result:', { userLikes, userLikesError });
-      console.log('🔍 User likes length:', userLikes?.length);
-      console.log('🔍 User likes data:', userLikes);
+      console.log('🔍 User likes result:', { userLikesData, userLikesError });
+      console.log('🔍 User likes length:', userLikesData?.length);
+      console.log('🔍 User likes data:', userLikesData);
 
         if (userLikesError) {
           console.error('❌ Error fetching user likes:', userLikesError);
         } else {
           // Mark which chirps the user has liked
-          userLikes?.forEach(reaction => {
-            likeData[`${reaction.chirp_id}_userLiked`] = true;
+          userLikesData?.forEach(reaction => {
+            userLikes[reaction.chirp_id] = true;
           });
-          console.log('🔍 Final like data with user likes:', likeData);
+          console.log('🔍 Final user likes:', userLikes);
         }
       }
     }
@@ -118,8 +119,8 @@ const getForYouChirps = async (limit: number = 10, offset: number = 0, user?: an
     // Transform chirps with proper data mapping
     const transformedChirps = chirps.map((chirp: any) => {
       const user = userMap.get(chirp.author_id);
-      const likesCount = likeData[chirp.id] || 0;
-      const userHasLiked = likeData[`${chirp.id}_userLiked`] || false;
+      const likesCount = likeCounts[chirp.id] || 0;
+      const userHasLiked = userLikes[chirp.id] || false;
       
       return {
         id: chirp.id.toString(),
@@ -220,11 +221,12 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
       
       // Get like counts and user like status for all chirps
       const chirpIds = chirps.map(chirp => chirp.id);
-      let likeData = {};
+      let likeCounts: Record<string, number> = {};
+      let userLikes: Record<string, boolean> = {};
       
       if (chirpIds.length > 0) {
         // Get like counts for all chirps
-        const { data: likeCounts, error: likeCountsError } = await supabase
+        const { data: likeCountsData, error: likeCountsError } = await supabase
           .from('reactions')
           .select('chirp_id')
           .in('chirp_id', chirpIds);
@@ -233,14 +235,14 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
           console.error('❌ Error fetching like counts:', likeCountsError);
         } else {
           // Count likes per chirp
-          likeCounts?.forEach(reaction => {
-            likeData[reaction.chirp_id] = (likeData[reaction.chirp_id] || 0) + 1;
+          likeCountsData?.forEach(reaction => {
+            likeCounts[reaction.chirp_id] = (likeCounts[reaction.chirp_id] || 0) + 1;
           });
         }
 
         // Get user's like status for all chirps
         if (currentUserId) {
-          const { data: userLikes, error: userLikesError } = await supabase
+          const { data: userLikesData, error: userLikesError } = await supabase
             .from('reactions')
             .select('chirp_id')
             .in('chirp_id', chirpIds)
@@ -250,8 +252,8 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
             console.error('❌ Error fetching user likes:', userLikesError);
           } else {
             // Mark which chirps the user has liked
-            userLikes?.forEach(reaction => {
-              likeData[`${reaction.chirp_id}_userLiked`] = true;
+            userLikesData?.forEach(reaction => {
+              userLikes[reaction.chirp_id] = true;
             });
           }
         }
@@ -261,8 +263,8 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
       return chirps.map(chirp => {
         // Handle the case where users might be an array (shouldn't happen with !inner but safety first)
         const author = Array.isArray(chirp.users) ? chirp.users[0] : chirp.users;
-        const likesCount = likeData[chirp.id] || 0;
-        const userHasLiked = likeData[`${chirp.id}_userLiked`] || false;
+        const likesCount = likeCounts[chirp.id] || 0;
+        const userHasLiked = userLikes[chirp.id] || false;
         
         return {
           id: chirp.id,
@@ -311,13 +313,13 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
     console.error('❌ Supabase connection details:', {
       url: 'https://qrzbtituxxilnbgocdge.supabase.co',
       hasKey: true,
-      errorMessage: error.message,
-      errorCode: error.code
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorCode: error instanceof Error ? (error as any).code : 'Unknown code'
     });
     
     // Instead of falling back to mock data, throw the error
     // This will be handled by the calling component
-    throw new Error(`Failed to fetch collection chirps from database: ${error.message}`);
+    throw new Error(`Failed to fetch collection chirps from database: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -327,7 +329,7 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   
   // State for feed type
-  const [feedType, setFeedType] = useState<'forYou' | 'collection'>('forYou');
+  const [feedType] = useState<'forYou' | 'collection'>('forYou');
   
   // State for chirps with pagination support
   const [forYouChirps, setForYouChirps] = useState<any[]>([]);
@@ -381,7 +383,7 @@ export default function HomePage() {
       setForYouChirps([]);
       setLastRefresh(0); // Reset cache to allow immediate retry
       setHasError(true);
-      setErrorMessage(`Failed to load chirps: ${error.message}`);
+      setErrorMessage(`Failed to load chirps: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -421,7 +423,7 @@ export default function HomePage() {
       setCollectionChirps([]);
       setLastRefresh(0); // Reset cache to allow immediate retry
       setHasError(true);
-      setErrorMessage(`Failed to load collection chirps: ${error.message}`);
+      setErrorMessage(`Failed to load collection chirps: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
