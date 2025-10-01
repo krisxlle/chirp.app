@@ -102,7 +102,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       return (
         <ProfileFrame 
           rarity={equippedFrame.rarity} 
-          size={45}
+          size={typeof size === 'number' ? size * 1.2 : parseInt(sizeStyles.width) * 1.2}
           customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
@@ -238,7 +238,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       return (
         <ProfileFrame 
           rarity={equippedFrame.rarity} 
-          size={45}
+          size={typeof size === 'number' ? size * 1.2 : parseInt(sizeStyles.width) * 1.2}
           customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
