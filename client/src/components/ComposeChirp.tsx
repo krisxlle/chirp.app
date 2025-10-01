@@ -144,7 +144,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         try {
           // Upload image to storage and get proper URL
           imageData = await uploadChirpImage(selectedImage, user.id);
-          imageData.imageAltText = content.trim() || 'Chirp image';
           
           console.log('✅ Image uploaded successfully:', imageData.imageUrl);
         } catch (uploadError) {
@@ -216,7 +215,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       // Add image data if provided
       if (imageData) {
         chirpData.image_url = imageData.imageUrl;
-        chirpData.image_alt_text = imageData.imageAltText || '';
         chirpData.image_width = imageData.imageWidth || null;
         chirpData.image_height = imageData.imageHeight || null;
       }
