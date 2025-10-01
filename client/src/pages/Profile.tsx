@@ -1134,7 +1134,7 @@ export default function Profile() {
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
-          marginTop: '120px' // Account for centered avatar
+          marginTop: '60px' // Reduced to remove white space between photo and info
         }}>
           <div style={{
             display: 'flex',
