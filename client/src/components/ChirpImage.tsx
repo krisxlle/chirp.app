@@ -26,43 +26,34 @@ export default function ChirpImage({
   useEffect(() => {
     setImageError(false);
     setIsLoading(true);
+    
+    // Check if image is already loaded (cached)
+    const img = new Image();
+    img.onload = () => {
+      setIsLoading(false);
+    };
+    img.onerror = () => {
+      setImageError(true);
+      setIsLoading(false);
+    };
+    img.src = imageUrl;
   }, [imageUrl]);
 
-  // Debug logging to help troubleshoot image loading issues
-  console.log('🖼️ ChirpImage render:', {
-    imageUrl: imageUrl?.substring(0, 50) + '...',
-    imageAltText,
-    imageWidth,
-    imageHeight,
-    maxWidth,
-    maxHeight,
-    hasImageUrl: !!imageUrl
-  });
-
   if (!imageUrl || imageError) {
-    console.log('🖼️ ChirpImage: No image URL or error state, returning null', {
-      hasImageUrl: !!imageUrl,
-      imageError,
-      imageUrl: imageUrl?.substring(0, 50) + '...'
-    });
     return null;
   }
 
   const handleImageLoad = () => {
-    console.log('🖼️ ChirpImage: Image loaded successfully');
     setIsLoading(false);
   };
 
   const handleImageError = (error: any) => {
-    console.log('🖼️ ChirpImage: Image failed to load:', error);
-    console.log('🖼️ ChirpImage: Setting imageError to true for URL:', imageUrl?.substring(0, 50) + '...');
     setImageError(true);
     setIsLoading(false);
   };
 
   const handleDownload = async () => {
     try {
-      console.log('🖼️ Attempting to download image:', imageUrl);
       const response = await fetch(imageUrl);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -76,9 +67,8 @@ export default function ChirpImage({
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      console.log('🖼️ Image download successful');
     } catch (error) {
-      console.error('🖼️ Error downloading image:', error);
+      console.error('Error downloading image:', error);
     }
   };
 

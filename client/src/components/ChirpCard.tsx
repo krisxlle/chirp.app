@@ -111,10 +111,6 @@ export default function ChirpCard({
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   
-  // Debug logging for showImageViewer state changes
-  useEffect(() => {
-    console.log('🔍 ChirpCard showImageViewer state changed:', showImageViewer, 'for chirp:', chirp.id);
-  }, [showImageViewer, chirp.id]);
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -161,11 +157,6 @@ export default function ChirpCard({
         return;
       }
 
-      console.log('🔴 Like button pressed!');
-      console.log('Chirp ID:', chirp.id, 'Type:', typeof chirp.id);
-      console.log('User ID:', user.id, 'Type:', typeof user.id);
-      console.log('Current likes:', likes);
-      console.log('User has liked:', userHasLiked);
 
       // Ensure proper string conversion for database constraints
       const chirpIdStr = String(chirp.id);
@@ -173,7 +164,6 @@ export default function ChirpCard({
       
       if (userHasLiked) {
         // Unlike: Remove the reaction (using the same like endpoint which toggles)
-        console.log('🔴 Unliking chirp...');
         
         const response = await apiRequest(`/api/chirps/${chirpIdStr}/like`, {
           method: 'POST',
@@ -196,10 +186,8 @@ export default function ChirpCard({
           onLikeUpdate(chirp.id, newLikesCount, newUserHasLiked);
         }
         
-        console.log('✅ Like removed successfully');
       } else {
         // Like: Add the reaction
-        console.log('🔴 Liking chirp...');
         
         const response = await apiRequest(`/api/chirps/${chirpIdStr}/like`, {
           method: 'POST',
@@ -222,7 +210,6 @@ export default function ChirpCard({
           onLikeUpdate(chirp.id, newLikesCount, newUserHasLiked);
         }
         
-        console.log('✅ Like added successfully');
       }
     } catch (error) {
       console.error('❌ Error handling like:', error);
@@ -346,9 +333,6 @@ export default function ChirpCard({
   };
 
   const handleMoreOptions = async () => {
-    console.log('🔥 Triple dot menu pressed!');
-    console.log('User ID:', user?.id, 'Type:', typeof user?.id);
-    console.log('Chirp author ID:', chirp.author.id, 'Type:', typeof chirp.author.id);
     
     // Ensure both are strings for comparison
     const userId = String(user?.id || '');
@@ -417,7 +401,6 @@ export default function ChirpCard({
       const userIdStr = String(user.id);
       const targetUserId = String(chirp.author.id);
       
-      console.log('👥 Toggling follow for user:', targetUserId, 'by user:', userIdStr);
       
       const endpoint = isFollowing ? 'unfollow' : 'follow';
       const response = await apiRequest(`/api/users/${targetUserId}/${endpoint}`, {
@@ -428,7 +411,6 @@ export default function ChirpCard({
 
       if (response.success) {
         setIsFollowing(!isFollowing);
-        console.log(`✅ ${isFollowing ? 'Unfollowed' : 'Followed'} user successfully`);
       } else {
         throw new Error(response.error || `Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);
       }
@@ -456,7 +438,6 @@ export default function ChirpCard({
       const userIdStr = String(user.id);
       const targetUserId = String(chirp.author.id);
       
-      console.log('🚫 Toggling block for user:', targetUserId, 'by user:', userIdStr);
       
       const endpoint = isBlocked ? 'unblock' : 'block';
       const response = await apiRequest(`/api/users/${targetUserId}/${endpoint}`, {
@@ -467,7 +448,6 @@ export default function ChirpCard({
 
       if (response.success) {
         setIsBlocked(!isBlocked);
-        console.log(`✅ ${isBlocked ? 'Unblocked' : 'Blocked'} user successfully`);
       } else {
         throw new Error(response.error || `Failed to ${isBlocked ? 'unblock' : 'block'} user`);
       }
@@ -483,19 +463,14 @@ export default function ChirpCard({
 
   const handleAvatarPress = () => {
     if (!chirp.author?.id) {
-      console.error('Avatar press failed: No author ID found');
       return;
     }
-    
-    console.log('🔥 Avatar pressed - opening profile modal for:', chirp.author.id);
-    console.log('🔍 Debug - onProfilePress prop:', typeof onProfilePress, onProfilePress);
-    console.log('🔍 Debug - chirp ID:', chirp.id, 'author:', chirp.author.customHandle || chirp.author.handle);
-    
     // Use the onProfilePress callback to open profile modal
     if (onProfilePress) {
       onProfilePress(chirp.author.id);
     } else {
-      console.warn('No profile press handler available for chirp:', chirp.id, 'author:', chirp.author.customHandle || chirp.author.handle);
+      // Fallback to direct navigation if callback is not available
+      setLocation(`/profile/${chirp.author.id}`);
     }
   };
 
@@ -505,7 +480,6 @@ export default function ChirpCard({
       
       // Check if the date is valid
       if (isNaN(date.getTime())) {
-        console.warn('Invalid date string:', dateString);
         return 'now';
       }
       
@@ -536,13 +510,11 @@ export default function ChirpCard({
         year: 'numeric'
       });
     } catch (error) {
-      console.error('Error formatting date:', error, 'dateString:', dateString);
       return 'now';
     }
   };
 
   const handleChirpPress = async () => {
-    console.log('🔍 ChirpCard: Chirp tapped, navigating to ChirpScreen for ID:', chirp.id);
     // Navigate to thread view
     setLocation(`/chirp/${chirp.id}`);
   };
@@ -677,8 +649,6 @@ export default function ChirpCard({
             maxWidth={400}
             maxHeight={300}
             onImagePress={() => {
-              console.log('Image pressed:', chirp.imageUrl?.substring(0, 50) + '...');
-              console.log('Setting showImageViewer to true');
               setShowImageViewer(true);
             }}
           />
@@ -991,10 +961,9 @@ export default function ChirpCard({
       visible={showImageViewer}
       imageUrl={chirp.imageUrl || ''}
       imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
-      onClose={() => {
-        console.log('ImageViewerModal onClose called');
-        setShowImageViewer(false);
-      }}
+        onClose={() => {
+          setShowImageViewer(false);
+        }}
     />
     </>
   );
