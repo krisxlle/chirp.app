@@ -61,8 +61,8 @@ export default function ProfileFrame({ rarity, size = 60, profilePictureSize, ch
   // Calculate proper sizing for frame and profile picture
   // Use profilePictureSize if provided, otherwise fall back to size prop for backward compatibility
   const baseSize = profilePictureSize || size;
-  const frameSize = baseSize * 1.8; // Frame is 80% larger than the base size
-  const profileSize = frameSize * 0.45; // Profile picture size within frame (45% of frame)
+  const frameSize = baseSize * 1.8; // Frame is 80% larger than the profile picture size
+  const profileSize = baseSize; // Profile picture size matches the passed size
   
   return (
     <div style={{

@@ -1107,7 +1107,7 @@ export default function Profile() {
         }}>
           {equippedFrame ? (
             <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={53} customFrameImage={equippedFrame.imageUrl}>
-              <UserAvatar user={user} size={43} />
+              <UserAvatar user={user} size={53} />
             </ProfileFrame>
           ) : (
             <div style={{
