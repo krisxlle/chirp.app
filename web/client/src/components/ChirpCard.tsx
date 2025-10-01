@@ -113,7 +113,7 @@ export default function ChirpCard({
         headers: { 'Content-Type': 'application/json' }
       });
       
-      onLikeUpdate?.(chirp.id, response.likeCount);
+      onLikeUpdate?.(chirp.id, response.likeCount, !chirp.isLiked);
       
       toast({
         title: chirp.isLiked ? "Unliked" : "Liked",

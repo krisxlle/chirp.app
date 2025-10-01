@@ -144,14 +144,14 @@ export default function HomePage() {
   }, [user?.id]);
   
   // Function to update chirp like count
-  const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number) => {
+  const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number, userHasLiked?: boolean) => {
     const updateChirp = (prevChirps: any[]) => 
       prevChirps.map(chirp => 
         chirp.id === chirpId 
           ? { 
               ...chirp, 
               likes: newLikeCount,
-              isLiked: newLikeCount > (chirp.likes || 0)
+              isLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (chirp.likes || 0))
             }
           : chirp
       );
