@@ -1093,10 +1093,10 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Centered on banner */}
+        {/* Profile Avatar - Top half overlapping banner */}
         <div style={{
           position: 'absolute',
-          top: '50%', // Center vertically on banner
+          top: '75%', // Move up so top half overlaps banner
           left: '50%', // Center horizontally on banner
           transform: 'translate(-50%, -50%)', // Center the element
           zIndex: 10,
