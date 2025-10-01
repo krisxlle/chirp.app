@@ -294,7 +294,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
           likes: likesCount, // Use actual like count from database
           replies: 0, // Default to 0 since column doesn't exist
           reposts: 0, // Default to 0 since column doesn't exist
-          isLiked: userHasLiked, // Use actual like status from database
+          userHasLiked: userHasLiked, // Use actual like status from database
           isReposted: false, // Default to false since column doesn't exist
           reactionCounts: {}, // Default to empty object since column doesn't exist
           userReaction: null, // Default to null since column doesn't exist
@@ -562,7 +562,6 @@ export default function Profile() {
               likes: newLikeCount,
               likesCount: newLikeCount,
               reactionCount: newLikeCount,
-              isLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (chirp.likes || 0)),
               userHasLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (chirp.likes || 0))
             }
           : chirp
@@ -672,7 +671,7 @@ export default function Profile() {
         likes: 0,
         replies: 0,
         reposts: 0,
-        isLiked: false,
+        userHasLiked: false,
         isReposted: false,
         reactionCounts: {},
         userReaction: null,
@@ -726,7 +725,7 @@ export default function Profile() {
         likes: 0,
         replies: 0,
         reposts: 0,
-        isLiked: false,
+        userHasLiked: false,
         isReposted: false,
         reactionCounts: {},
         userReaction: null,
@@ -1094,11 +1093,12 @@ export default function Profile() {
           }}
         />
         
-        {/* Profile Avatar - Overlapping banner and next to name */}
+        {/* Profile Avatar - Centered on banner */}
         <div style={{
           position: 'absolute',
-          top: '80px', // Moved up to accommodate larger frame
-          left: '-20px', // Moved left to accommodate larger frame
+          top: '50%', // Center vertically on banner
+          left: '50%', // Center horizontally on banner
+          transform: 'translate(-50%, -50%)', // Center the element
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
@@ -1130,20 +1130,13 @@ export default function Profile() {
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
-          marginTop: '44px' // Account for avatar overlap
+          marginTop: '120px' // Account for centered avatar
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
             gap: '16px'
           }}>
-            {/* Spacer for avatar */}
-            <div style={{
-              width: '88px',
-              height: '88px',
-              flexShrink: 0
-            }}></div>
-            
             <div style={{ flex: 1 }}>
               <div style={{
                 display: 'flex',
