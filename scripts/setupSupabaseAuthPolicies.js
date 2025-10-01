@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+
+/**
+ * Setup Supabase Auth RLS Policies
+ * This script provides the correct RLS policies for Supabase Auth
+ */
+
+console.log('🔧 SETTING UP SUPABASE AUTH RLS POLICIES');
+console.log('');
+console.log('✅ MIGRATION PLAN:');
+console.log('   • Switch from custom auth to Supabase Auth');
+console.log('   • Update RLS policies to work with Supabase Auth');
+console.log('   • Test image uploads with authenticated users');
+console.log('');
+console.log('📋 STEP 1: UPDATE RLS POLICIES');
+console.log('');
+console.log('1️⃣ Go to your Supabase Dashboard:');
+console.log('   https://supabase.com/dashboard/project/qrzbtituxxilnbgocdge');
+console.log('');
+console.log('2️⃣ Navigate to Storage → Policies');
+console.log('');
+console.log('3️⃣ Copy and paste this SQL into the SQL Editor:');
+console.log('');
+console.log('-- Drop any existing policies first');
+console.log('DROP POLICY IF EXISTS "chirp_images_upload" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "chirp_images_select" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "chirp_images_delete" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "chirp_images_update" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "allow_chirp_images_upload" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "allow_chirp_images_select" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "Authenticated users can upload chirp images" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "Anyone can view chirp images" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "Users can delete their own chirp images" ON storage.objects;');
+console.log('DROP POLICY IF EXISTS "Users can update their own chirp images" ON storage.objects;');
+console.log('');
+console.log('-- Create policies that work with Supabase Auth');
+console.log('CREATE POLICY "chirp_images_upload" ON storage.objects');
+console.log('FOR INSERT TO authenticated');
+console.log('WITH CHECK (bucket_id = \'chirp-images\');');
+console.log('');
+console.log('CREATE POLICY "chirp_images_select" ON storage.objects');
+console.log('FOR SELECT TO public');
+console.log('USING (bucket_id = \'chirp-images\');');
+console.log('');
+console.log('CREATE POLICY "chirp_images_delete" ON storage.objects');
+console.log('FOR DELETE TO authenticated');
+console.log('USING (bucket_id = \'chirp-images\');');
+console.log('');
+console.log('CREATE POLICY "chirp_images_update" ON storage.objects');
+console.log('FOR UPDATE TO authenticated');
+console.log('USING (bucket_id = \'chirp-images\')');
+console.log('WITH CHECK (bucket_id = \'chirp-images\');');
+console.log('');
+console.log('4️⃣ Click "Run" to execute the SQL');
+console.log('');
+console.log('📋 STEP 2: ENABLE SUPABASE AUTH');
+console.log('');
+console.log('5️⃣ Go to Authentication → Settings');
+console.log('');
+console.log('6️⃣ Make sure these settings are enabled:');
+console.log('   • Enable email confirmations: OFF (for development)');
+console.log('   • Enable phone confirmations: OFF');
+console.log('   • Enable email change confirmations: OFF');
+console.log('');
+console.log('📋 STEP 3: UPDATE YOUR APP');
+console.log('');
+console.log('7️⃣ Replace AuthContext with SupabaseAuthContext');
+console.log('8️⃣ Update sign in/sign up forms to use email/password');
+console.log('9️⃣ Test the authentication flow');
+console.log('');
+console.log('🔒 SECURITY FEATURES:');
+console.log('   • Only authenticated Supabase users can upload');
+console.log('   • Only authenticated Supabase users can delete');
+console.log('   • Only authenticated Supabase users can update');
+console.log('   • Public can view images (for display)');
+console.log('   • All operations restricted to chirp-images bucket');
+console.log('');
+console.log('💡 WHY THIS IS BETTER:');
+console.log('   • Proper authentication with Supabase Auth');
+console.log('   • Automatic session management');
+console.log('   • Built-in security features');
+console.log('   • Works seamlessly with RLS policies');
+console.log('');
+console.log('🚀 After completing these steps, your image uploads should work securely!');

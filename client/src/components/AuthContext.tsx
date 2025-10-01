@@ -274,7 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Sign in error:', error);
       
       // Handle email confirmation error specifically
-      if (error.message === 'EMAIL_NOT_CONFIRMED') {
+      if (error instanceof Error && error.message === 'EMAIL_NOT_CONFIRMED') {
         console.log('📧 Email confirmation required');
         setIsLoading(false);
         return { success: false, error: 'EMAIL_NOT_CONFIRMED' };

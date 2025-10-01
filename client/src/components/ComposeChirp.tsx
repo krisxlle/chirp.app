@@ -1,6 +1,6 @@
 import { uploadChirpImage } from '@/lib/imageUpload';
 import React, { useEffect, useRef, useState } from 'react';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
@@ -19,13 +19,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [content, setContent] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [, setIsUploadingImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
   // Refs for textarea focus handling
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const { user: authUser, isLoading } = useAuth();
+  const { user: authUser } = useSupabaseAuth();
   const { toast } = useToast();
 
   // Detect mobile screen size
@@ -83,13 +83,13 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   // Convert auth user to expected User format for UserAvatar component
   const user = React.useMemo(() => ({
     id: authUser.id,
-    firstName: authUser.firstName || authUser.name || authUser.email?.split('@')[0] || 'User',
-    lastName: authUser.lastName || '',
-    email: authUser.email,
-    profileImageUrl: authUser.profileImageUrl || authUser.avatarUrl,
-    customHandle: authUser.customHandle,
-    handle: authUser.handle,
-    bio: authUser.bio,
+    firstName: authUser.user_metadata?.name?.split(' ')[0] || authUser.user_metadata?.first_name || authUser.email?.split('@')[0] || 'User',
+    lastName: authUser.user_metadata?.name?.split(' ').slice(1).join(' ') || authUser.user_metadata?.last_name || '',
+    email: authUser.email || '',
+    profileImageUrl: authUser.user_metadata?.profile_image_url || authUser.user_metadata?.avatar_url,
+    customHandle: authUser.user_metadata?.custom_handle,
+    handle: authUser.user_metadata?.handle,
+    bio: authUser.user_metadata?.bio,
   }), [authUser]);
 
   console.log('ComposeChirp: Final user object:', user.id);

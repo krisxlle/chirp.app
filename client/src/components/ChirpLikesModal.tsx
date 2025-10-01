@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import { Heart, X } from 'lucide-react';
+import { useEffect } from 'react';
 import { Button } from './ui/button';
-import { X, Heart } from 'lucide-react';
 
 interface User {
   id: string;

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ProfileFrame from '../components/ProfileFrame';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import GearIcon from '../components/icons/GearIcon';
 import LinkIcon from '../components/icons/LinkIcon';
@@ -536,7 +536,7 @@ interface ProfileStats {
 export default function Profile() {
   console.log('🔍 Profile: Component starting to render...');
   
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useSupabaseAuth();
   const { updateLike } = useLike();
   const [location, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
@@ -815,20 +815,20 @@ export default function Profile() {
               // Fallback to authUser data if not found in database
               userData = authUser ? {
                 id: authUser.id,
-                firstName: authUser.firstName,
-                lastName: authUser.lastName,
+                firstName: undefined, // Supabase User doesn't have these fields
+                lastName: undefined,
                 email: authUser.email,
-                name: authUser.name,
-                customHandle: authUser.customHandle,
-                handle: authUser.handle,
-                profileImageUrl: authUser.profileImageUrl,
-                avatarUrl: authUser.avatarUrl,
-                bannerImageUrl: authUser.bannerImageUrl,
-                bio: authUser.bio,
-                linkInBio: authUser.linkInBio,
-                joinedAt: authUser.joinedAt || '2024-01-15T00:00:00Z',
-                isChirpPlus: authUser.isChirpPlus || false,
-                showChirpPlusBadge: authUser.showChirpPlusBadge || false
+                name: undefined,
+                customHandle: undefined,
+                handle: undefined,
+                profileImageUrl: undefined,
+                avatarUrl: undefined,
+                bannerImageUrl: undefined,
+                bio: undefined,
+                linkInBio: undefined,
+                joinedAt: '2024-01-15T00:00:00Z',
+                isChirpPlus: false,
+                showChirpPlusBadge: false
               } : {
                 id: userId,
                 firstName: 'User',

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
 import ChirpImage from '../components/ChirpImage';
 import ChirpLikesModal from '../components/ChirpLikesModal';
 import ImageViewerModal from '../components/ImageViewerModal';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import { apiRequest } from '../components/api';
 import HeartIcon from '../components/icons/HeartIcon';
@@ -70,7 +70,7 @@ export default function ChirpCard({
     return null;
   }
 
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const { updateLike, getLikeState } = useLike();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -668,7 +668,16 @@ export default function ChirpCard({
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
             <UserAvatar 
-              user={user}
+              user={user ? {
+                id: user.id,
+                email: user.email || '',
+                firstName: undefined,
+                lastName: undefined,
+                customHandle: undefined,
+                handle: undefined,
+                profileImageUrl: undefined,
+                avatarUrl: undefined
+              } : null}
               size="sm"
             />
             <div style={{ flex: 1 }}>

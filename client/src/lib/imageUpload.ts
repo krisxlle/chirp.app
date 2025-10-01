@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 
 export const uploadChirpImage = async (imageUri: string, userId: string): Promise<{
@@ -21,7 +22,15 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
     console.log('📤 Attempting storage upload with filename:', fileName);
     
     try {
-      // Try storage upload
+      // Check if user is authenticated with Supabase Auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No authenticated session found');
+      }
+      
+      console.log('🔐 Using authenticated session for user:', session.user.id);
+      
+      // Try storage upload with authenticated Supabase client
       const { data, error } = await supabase.storage
         .from('chirp-images')
         .upload(fileName, blob, {

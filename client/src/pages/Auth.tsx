@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 
 // Custom Icon Components (adapted for web)
 const SparklesIcon = ({ size = 24, color = "#ffffff" }) => (
@@ -88,7 +88,7 @@ export default function Auth() {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
-  const { signIn, signUp, isAuthenticated } = useAuth();
+  const { signIn, signUp, isAuthenticated } = useSupabaseAuth();
   const [, setLocation] = useLocation();
 
   // Redirect to home if already authenticated
@@ -110,21 +110,21 @@ export default function Auth() {
           return;
         }
         
-        const result = await signUp({
-          name,
-          email,
-          customHandle: customHandle || undefined,
-          password
-        });
+        const result = await signUp(email, password, name, customHandle || undefined);
         
         if (result.success) {
-          setLocation('/');
+          if (result.error === 'EMAIL_CONFIRMATION_REQUIRED') {
+            alert((result as any).message || 'Please check your email and click the confirmation link to complete your registration.');
+            // Don't redirect, let user see the message
+          } else {
+            setLocation('/');
+          }
         } else {
           alert(result.error || 'Sign up failed');
         }
       } else {
         // Handle sign in
-        const result = await signIn(email || username, password);
+        const result = await signIn(email, password);
         if (result.success) {
           setLocation('/');
         } else {

@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
-import { AuthProvider, useAuth } from "./components/AuthContext";
-import { LikeProvider } from "./contexts/LikeContext";
-import { EquippedFrameProvider } from "./contexts/EquippedFrameContext";
 import BottomNavigation from "./components/BottomNavigation";
+import EmailVerificationBanner from "./components/EmailVerificationBanner";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
+import { SupabaseAuthProvider, useSupabaseAuth } from "./components/SupabaseAuthContext";
 import { FloatingFeedback } from "./components/ui/floating-feedback";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { EquippedFrameProvider } from "./contexts/EquippedFrameContext";
+import { LikeProvider } from "./contexts/LikeContext";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminInfluencerCodes from "./pages/AdminInfluencerCodes";
 import Auth from "./pages/Auth";
@@ -44,7 +45,7 @@ const queryClient = new QueryClient({
 const Settings = () => <SettingsPage />;
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useSupabaseAuth();
   const [location, setLocation] = useLocation();
 
   // Redirect unauthenticated users to /auth only if they're on the root path
@@ -64,6 +65,7 @@ function Router() {
 
   return (
     <div className="max-w-md mx-auto bg-white dark:bg-gray-900 min-h-screen relative">
+      {isAuthenticated && <EmailVerificationBanner />}
       <Switch>
         {isAuthenticated ? (
           <>
@@ -100,7 +102,7 @@ function Router() {
 
 function App() {
   return (
-    <AuthProvider>
+    <SupabaseAuthProvider>
       <QueryClientProvider client={queryClient}>
         <LikeProvider>
           <EquippedFrameProvider>
@@ -111,7 +113,7 @@ function App() {
           </EquippedFrameProvider>
         </LikeProvider>
       </QueryClientProvider>
-    </AuthProvider>
+    </SupabaseAuthProvider>
   );
 }
 
