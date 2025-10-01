@@ -1111,16 +1111,16 @@ export default function Profile() {
             </ProfileFrame>
           ) : (
             <div style={{
-              width: '96px',
-              height: '96px',
-              borderRadius: '48px',
+              width: '144px',
+              height: '144px',
+              borderRadius: '72px',
               border: '4px solid #ffffff',
               overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <UserAvatar user={user} size="xl" />
+              <UserAvatar user={user} size={60} />
             </div>
           )}
         </div>
