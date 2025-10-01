@@ -292,8 +292,11 @@ const getUserChirps = async (userId: string, userData?: any) => {
             showChirpPlusBadge: userData?.showChirpPlusBadge || false
           },
           likes: likesCount, // Use actual like count from database
+          likesCount: likesCount, // Add likesCount field for ChirpCard compatibility
+          reactionCount: likesCount, // Add reactionCount field for ChirpCard compatibility
           replies: 0, // Default to 0 since column doesn't exist
           reposts: 0, // Default to 0 since column doesn't exist
+          isLiked: userHasLiked, // Add isLiked field for ChirpCard compatibility
           userHasLiked: userHasLiked, // Use actual like status from database
           isReposted: false, // Default to false since column doesn't exist
           reactionCounts: {}, // Default to empty object since column doesn't exist
@@ -562,6 +565,7 @@ export default function Profile() {
               likes: newLikeCount,
               likesCount: newLikeCount,
               reactionCount: newLikeCount,
+              isLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (chirp.likes || 0)),
               userHasLiked: userHasLiked !== undefined ? userHasLiked : (newLikeCount > (chirp.likes || 0))
             }
           : chirp
