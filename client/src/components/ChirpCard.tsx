@@ -548,6 +548,7 @@ export default function ChirpCard({
   };
 
   return (
+    <>
     <div 
       style={{
         backgroundColor: '#ffffff',
@@ -858,15 +859,6 @@ export default function ChirpCard({
         onClose={() => setShowLikesModal(false)}
       />
 
-      <ImageViewerModal
-        visible={showImageViewer}
-        imageUrl={chirp.imageUrl || ''}
-        imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
-        onClose={() => {
-          console.log('ImageViewerModal onClose called');
-          setShowImageViewer(false);
-        }}
-      />
 
       {/* Options Modal */}
       {showOptionsModal && (
@@ -993,5 +985,17 @@ export default function ChirpCard({
         </div>
       )}
     </div>
+    
+    {/* Image Viewer Modal - rendered outside container for proper z-index */}
+    <ImageViewerModal
+      visible={showImageViewer}
+      imageUrl={chirp.imageUrl || ''}
+      imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
+      onClose={() => {
+        console.log('ImageViewerModal onClose called');
+        setShowImageViewer(false);
+      }}
+    />
+    </>
   );
 }

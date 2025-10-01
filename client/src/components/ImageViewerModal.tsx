@@ -83,7 +83,7 @@ export default function ImageViewerModal({
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center" style={{ zIndex: 9999 }}>
       {/* Close button */}
       <Button
         variant="ghost"
@@ -141,14 +141,20 @@ export default function ImageViewerModal({
       </Button>
 
       {/* Image container */}
-      <div className="flex items-center justify-center w-full h-full p-4">
+      <div className="flex items-center justify-center w-full h-full p-4" style={{ minHeight: '100vh' }}>
         <img
           src={imageUrl}
           alt={imageAltText || 'Chirp image'}
-          className="max-w-full max-h-full object-contain"
+          className="object-contain"
           style={{
+            maxWidth: '100%',
+            maxHeight: '100%',
+            width: 'auto',
+            height: 'auto',
             transform: `scale(${scale}) rotate(${rotation}deg)`,
-            transition: 'transform 0.2s ease-in-out'
+            transition: 'transform 0.2s ease-in-out',
+            display: 'block',
+            margin: 'auto'
           }}
           draggable={false}
         />

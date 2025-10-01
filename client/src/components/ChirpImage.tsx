@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ChirpImageProps {
   imageUrl: string;
@@ -21,6 +21,12 @@ export default function ChirpImage({
 }: ChirpImageProps) {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Reset error state when imageUrl changes
+  useEffect(() => {
+    setImageError(false);
+    setIsLoading(true);
+  }, [imageUrl]);
 
   // Debug logging to help troubleshoot image loading issues
   console.log('🖼️ ChirpImage render:', {
