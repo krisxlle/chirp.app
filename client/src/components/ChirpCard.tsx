@@ -64,7 +64,6 @@ export default function ChirpCard({
   onProfilePress, 
   onLikeUpdate,
   onReplyPosted,
-  isHighlighted = false 
 }: ChirpCardProps) {
   // Safety check for author data
   if (!chirp || !chirp.author) {
@@ -111,6 +110,11 @@ export default function ChirpCard({
   const [userHasLiked, setUserHasLiked] = useState(globalLikeState?.userHasLiked ?? (chirp.userHasLiked || false));
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
+  
+  // Debug logging for showImageViewer state changes
+  useEffect(() => {
+    console.log('🔍 ChirpCard showImageViewer state changed:', showImageViewer, 'for chirp:', chirp.id);
+  }, [showImageViewer, chirp.id]);
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -673,6 +677,7 @@ export default function ChirpCard({
             maxHeight={300}
             onImagePress={() => {
               console.log('Image pressed:', chirp.imageUrl?.substring(0, 50) + '...');
+              console.log('Setting showImageViewer to true');
               setShowImageViewer(true);
             }}
           />
@@ -857,7 +862,10 @@ export default function ChirpCard({
         visible={showImageViewer}
         imageUrl={chirp.imageUrl || ''}
         imageAltText={chirp.imageAltText || chirp.content || 'Chirp image'}
-        onClose={() => setShowImageViewer(false)}
+        onClose={() => {
+          console.log('ImageViewerModal onClose called');
+          setShowImageViewer(false);
+        }}
       />
 
       {/* Options Modal */}

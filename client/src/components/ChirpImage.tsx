@@ -34,7 +34,11 @@ export default function ChirpImage({
   });
 
   if (!imageUrl || imageError) {
-    console.log('🖼️ ChirpImage: No image URL or error state, returning null');
+    console.log('🖼️ ChirpImage: No image URL or error state, returning null', {
+      hasImageUrl: !!imageUrl,
+      imageError,
+      imageUrl: imageUrl?.substring(0, 50) + '...'
+    });
     return null;
   }
 
@@ -45,6 +49,7 @@ export default function ChirpImage({
 
   const handleImageError = (error: any) => {
     console.log('🖼️ ChirpImage: Image failed to load:', error);
+    console.log('🖼️ ChirpImage: Setting imageError to true for URL:', imageUrl?.substring(0, 50) + '...');
     setImageError(true);
     setIsLoading(false);
   };
@@ -117,7 +122,10 @@ export default function ChirpImage({
         }}
         onLoad={handleImageLoad}
         onError={handleImageError}
-        onClick={onImagePress}
+        onClick={(e) => {
+          e.stopPropagation();
+          onImagePress?.();
+        }}
       />
       
       {/* Image overlay with actions */}
@@ -163,24 +171,6 @@ export default function ChirpImage({
         </div>
       </div>
       
-      {/* Alt text indicator */}
-      {imageAltText && (
-        <div style={{
-          position: 'absolute',
-          bottom: '8px',
-          left: '8px',
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          color: '#ffffff',
-          fontSize: '12px',
-          paddingLeft: '8px',
-          paddingRight: '8px',
-          paddingTop: '4px',
-          paddingBottom: '4px',
-          borderRadius: '4px'
-        }}>
-          {imageAltText}
-        </div>
-      )}
       
       {/* CSS for spinner animation */}
       <style>{`
