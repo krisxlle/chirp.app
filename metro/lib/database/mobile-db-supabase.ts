@@ -372,6 +372,10 @@ export async function getUserChirps(userId: string, retryCount = 0) {
           created_at,
           reply_to_id,
           is_weekly_summary,
+          image_url,
+          image_alt_text,
+          image_width,
+          image_height,
           users!inner(
             id,
             first_name,
@@ -483,11 +487,11 @@ export async function getUserChirps(userId: string, retryCount = 0) {
         replies: [],
         repostOfId: null,
         originalChirp: undefined,
-        // Image-related fields - set to null to avoid timeout issues
-        imageUrl: null,
-        imageAltText: null,
-        imageWidth: null,
-        imageHeight: null,
+        // Image-related fields
+        imageUrl: chirp.image_url,
+        imageAltText: chirp.image_alt_text,
+        imageWidth: chirp.image_width,
+        imageHeight: chirp.image_height,
         author: {
         id: chirp.users.id,
         firstName: chirp.users.first_name || 'User',
