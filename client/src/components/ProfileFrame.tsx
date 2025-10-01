@@ -64,6 +64,17 @@ export default function ProfileFrame({ rarity, size = 60, profilePictureSize, ch
   const frameSize = baseSize * 1.8; // Frame is 80% larger than the profile picture size
   const profileSize = baseSize; // Profile picture size matches the passed size
   
+  // Debug logging for profile page
+  if (profilePictureSize === 80) {
+    console.log('🔍 ProfileFrame debug:', {
+      profilePictureSize,
+      baseSize,
+      frameSize,
+      profileSize,
+      rarity
+    });
+  }
+  
   return (
     <div style={{
       position: 'relative',
@@ -105,10 +116,6 @@ export default function ProfileFrame({ rarity, size = 60, profilePictureSize, ch
             });
             setImageError(true);
           }}
-          onLoad={() => {
-            console.log('✅ ProfileFrame image loaded successfully:', frameImage);
-            setImageLoaded(true);
-          }}
           style={{
             position: 'absolute',
             width: frameSize,
@@ -116,6 +123,17 @@ export default function ProfileFrame({ rarity, size = 60, profilePictureSize, ch
             objectFit: 'contain',
             zIndex: 1,
             pointerEvents: 'none'
+          }}
+          onLoad={() => {
+            console.log('✅ ProfileFrame image loaded successfully:', frameImage);
+            if (profilePictureSize === 80) {
+              console.log('🔍 Frame image size debug:', {
+                frameSize,
+                imageElement: 'loaded',
+                rarity
+              });
+            }
+            setImageLoaded(true);
           }}
         />
       )}
