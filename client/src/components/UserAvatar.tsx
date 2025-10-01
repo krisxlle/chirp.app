@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import ProfileFrame from './ProfileFrame';
 import { useEquippedFrame } from '../contexts/EquippedFrameContext';
+import ProfileFrame from './ProfileFrame';
 
 // Inline rarity determination function to avoid import issues
 const determineUserRarity = (user: {
@@ -96,7 +96,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     
     const sizeStyles = {
       sm: { width: '32px', height: '32px' },
-      md: { width: '45px', height: '45px' }, // Increased from 40px for better visibility
+      md: { width: '50px', height: '50px' }, // Increased from 40px for better visibility
       lg: { width: '64px', height: '64px' }, // Increased size for better profile visibility
       xl: { width: '96px', height: '96px' }, // Increased size for profile headers
     };
