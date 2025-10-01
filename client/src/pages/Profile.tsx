@@ -1097,8 +1097,8 @@ export default function Profile() {
         {/* Profile Avatar - Overlapping banner and next to name */}
         <div style={{
           position: 'absolute',
-          top: '100px', // Moved up to accommodate larger frame
-          left: '0px', // Moved left to accommodate larger frame
+          top: '80px', // Moved up to accommodate larger frame
+          left: '-20px', // Moved left to accommodate larger frame
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
@@ -1106,21 +1106,20 @@ export default function Profile() {
           overflow: 'visible' // Ensure frame is not clipped
         }}>
           {equippedFrame ? (
-            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={80} customFrameImage={equippedFrame.imageUrl}>
-              <UserAvatar user={user} size={60} />
+            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={120} customFrameImage={equippedFrame.imageUrl}>
+              <UserAvatar user={user} size={90} />
             </ProfileFrame>
           ) : (
             <div style={{
-              width: '144px',
-              height: '144px',
-              borderRadius: '72px',
-              border: '4px solid #ffffff',
+              width: '216px',
+              height: '216px',
+              borderRadius: '108px',
               overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <UserAvatar user={user} size={60} />
+              <UserAvatar user={user} size={90} />
             </div>
           )}
         </div>
