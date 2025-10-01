@@ -1106,8 +1106,8 @@ export default function Profile() {
           overflow: 'visible' // Ensure frame is not clipped
         }}>
           {equippedFrame ? (
-            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={96} customFrameImage={equippedFrame.imageUrl}>
-              <UserAvatar user={user} size="xl" />
+            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={53} customFrameImage={equippedFrame.imageUrl}>
+              <UserAvatar user={user} size={53} />
             </ProfileFrame>
           ) : (
             <div style={{
