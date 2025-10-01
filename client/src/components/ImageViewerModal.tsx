@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-import { Button } from './ui/button';
-import { X, Download, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ImageViewerModalProps {
   visible: boolean;
@@ -15,8 +14,6 @@ export default function ImageViewerModal({
   imageAltText, 
   onClose 
 }: ImageViewerModalProps) {
-  const [scale, setScale] = React.useState(1);
-  const [rotation, setRotation] = React.useState(0);
 
   useEffect(() => {
     if (visible) {
@@ -46,39 +43,6 @@ export default function ImageViewerModal({
     };
   }, [visible, onClose]);
 
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `chirp-image-${Date.now()}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading image:', error);
-    }
-  };
-
-  const handleZoomIn = () => {
-    setScale(prev => Math.min(prev * 1.2, 3));
-  };
-
-  const handleZoomOut = () => {
-    setScale(prev => Math.max(prev / 1.2, 0.5));
-  };
-
-  const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
-  };
-
-  const handleReset = () => {
-    setScale(1);
-    setRotation(0);
-  };
 
   if (!visible) return null;
 
@@ -86,7 +50,7 @@ export default function ImageViewerModal({
     <div 
       className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center" 
       style={{ 
-        zIndex: 9999,
+        zIndex: 10, // Lower z-index to appear behind nav bar
         position: 'fixed',
         top: 0,
         left: 0,
@@ -98,61 +62,27 @@ export default function ImageViewerModal({
         maxHeight: '100vh'
       }}
     >
-      {/* Close button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 right-4 z-10 text-white hover:bg-white/20"
+      {/* Close button - white X in white circle */}
+      <button
         onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          backgroundColor: 'white',
+          border: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 20
+        }}
       >
-        <X className="h-6 w-6" />
-      </Button>
-
-      {/* Image controls */}
-      <div className="absolute top-4 left-4 z-10 flex space-x-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={handleZoomIn}
-        >
-          <ZoomIn className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={handleZoomOut}
-        >
-          <ZoomOut className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={handleRotate}
-        >
-          <RotateCw className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={handleDownload}
-        >
-          <Download className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Reset button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white hover:bg-white/20"
-        onClick={handleReset}
-      >
-        Reset View
-      </Button>
+        <X className="h-6 w-6" style={{ color: 'black' }} />
+      </button>
 
       {/* Image container */}
       <div 
@@ -170,12 +100,10 @@ export default function ImageViewerModal({
           alt={imageAltText || 'Chirp image'}
           className="object-contain"
           style={{
-            maxWidth: '90vw',
-            maxHeight: '90vh',
+            maxWidth: '100vw',
+            maxHeight: '100vh',
             width: 'auto',
             height: 'auto',
-            transform: `scale(${scale}) rotate(${rotation}deg)`,
-            transition: 'transform 0.2s ease-in-out',
             display: 'block',
             margin: 'auto'
           }}
@@ -183,12 +111,6 @@ export default function ImageViewerModal({
         />
       </div>
 
-      {/* Alt text */}
-      {imageAltText && (
-        <div className="absolute bottom-4 left-4 bg-black/50 text-white text-sm px-3 py-2 rounded">
-          {imageAltText}
-        </div>
-      )}
     </div>
   );
 }
