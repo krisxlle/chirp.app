@@ -23,7 +23,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   
   // Refs for textarea focus handling
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const threadTextareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { user: authUser, isLoading } = useAuth();
   const { toast } = useToast();
@@ -210,13 +209,23 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         console.log('✅ Found correct user ID:', authorId);
       }
       
-      // Post single chirp
+      // Post single chirp with image data
+      const chirpData: any = {
+        content: content.trim(),
+        author_id: authorId
+      };
+      
+      // Add image data if provided
+      if (imageData) {
+        chirpData.image_url = imageData.imageUrl;
+        chirpData.image_alt_text = imageData.imageAltText || '';
+        chirpData.image_width = imageData.imageWidth || null;
+        chirpData.image_height = imageData.imageHeight || null;
+      }
+      
       const { data: chirp, error } = await supabase
           .from('chirps')
-          .insert({
-            content: content.trim(),
-            author_id: authorId
-          })
+          .insert(chirpData)
           .select()
           .single();
         
