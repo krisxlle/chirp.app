@@ -72,6 +72,7 @@ export default function ProfileFrame({ rarity, size = 60, profilePictureSize, ch
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      overflow: 'visible', // Ensure frame is not clipped
       // Don't override parent positioning
       ...style
     }}>

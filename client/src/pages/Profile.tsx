@@ -1102,7 +1102,8 @@ export default function Profile() {
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          overflow: 'visible' // Ensure frame is not clipped
         }}>
           {equippedFrame ? (
             <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={96} customFrameImage={equippedFrame.imageUrl}>
@@ -1110,9 +1111,9 @@ export default function Profile() {
             </ProfileFrame>
           ) : (
             <div style={{
-              width: '88px',
-              height: '88px',
-              borderRadius: '44px',
+              width: '96px',
+              height: '96px',
+              borderRadius: '48px',
               border: '4px solid #ffffff',
               overflow: 'hidden',
               display: 'flex',
