@@ -2,51 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useEquippedFrame } from '../contexts/EquippedFrameContext';
 import ProfileFrame from './ProfileFrame';
 
-// Inline rarity determination function to avoid import issues
-const determineUserRarity = (user: {
-  id: string;
-  handle?: string;
-  firstName?: string;
-  customHandle?: string;
-}): 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common' => {
-  if (!user) return 'common';
-  
-  const userHandle = (user.handle || '').toLowerCase();
-  const userName = (user.firstName || user.customHandle || '').toLowerCase();
-  
-  // Bot detection with hardcoded rarities
-  if (userHandle.includes('crimsontalon') || userName.includes('crimsontalon')) {
-    return 'mythic';
-  } else if (userHandle.includes('solarius') || userName.includes('solarius')) {
-    return 'legendary';
-  } else if (userHandle.includes('prisma') || userName.includes('prisma')) {
-    return 'epic';
-  } else if (userHandle.includes('skye') || userName.includes('skye')) {
-    return 'rare';
-  } else if (userHandle.includes('thorne') || userName.includes('thorne')) {
-    return 'uncommon';
-  } else if (userHandle.includes('obsidian') || userName.includes('obsidian')) {
-    return 'common';
-  }
-  
-  // For regular users, we need a consistent way to determine rarity
-  // We'll use a hash of the user ID to ensure consistency
-  const userId = user.id;
-  const hash = userId.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
-  const rarityRoll = Math.abs(hash) % 100;
-  
-  if (rarityRoll < 1) return 'mythic';      // 1%
-  else if (rarityRoll < 5) return 'legendary';  // 4%
-  else if (rarityRoll < 15) return 'epic';      // 10%
-  else if (rarityRoll < 35) return 'rare';      // 20%
-  else if (rarityRoll < 65) return 'uncommon';  // 30%
-  else return 'common';                           // 35%
-};
-
 interface User {
   id: string;
   firstName?: string;
@@ -96,7 +51,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     
     const sizeStyles = {
       sm: { width: '32px', height: '32px' },
-      md: { width: '50px', height: '50px' }, // Increased from 40px for better visibility
+      md: { width: '45px', height: '45px' }, // Increased from 40px for better visibility
       lg: { width: '64px', height: '64px' }, // Increased size for better profile visibility
       xl: { width: '96px', height: '96px' }, // Increased size for profile headers
     };
@@ -325,7 +280,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     return (
       <ProfileFrame 
         rarity={equippedFrame.rarity} 
-        size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
+        size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.05}
         customFrameImage={equippedFrame.imageUrl}
       >
         {avatarContent}
