@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { uploadChirpImage } from '@/lib/imageUpload';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
-import { uploadChirpImage } from '../../lib/database/mobile-db-supabase';
 
 interface ComposeChirpProps {
   onPost?: (content: string, imageData?: {
