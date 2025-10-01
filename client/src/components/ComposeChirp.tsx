@@ -141,14 +141,14 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       if (selectedImage) {
         setIsUploadingImage(true);
         try {
-          // For web, we'll use the image URL directly
-          // In a real implementation, you'd upload to a service like Cloudinary
-          imageData = {
-            imageUrl: selectedImage,
-            imageAltText: content.trim() || 'Chirp image',
-            imageWidth: 400,
-            imageHeight: 300
-          };
+          // Import the upload function
+          const { uploadChirpImage } = await import('../lib/database/mobile-db-supabase');
+          
+          // Upload image to storage and get proper URL
+          imageData = await uploadChirpImage(selectedImage, user.id);
+          imageData.imageAltText = content.trim() || 'Chirp image';
+          
+          console.log('✅ Image uploaded successfully:', imageData.imageUrl);
         } catch (uploadError) {
           console.error('Error uploading image:', uploadError);
           toast({
