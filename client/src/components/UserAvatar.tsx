@@ -81,8 +81,10 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
 
   const loadEquippedFrame = async () => {
     try {
-      const frame = await fetchEquippedFrame(user.id);
-      setEquippedFrame(frame);
+      if (user?.id) {
+        const frame = await fetchEquippedFrame(user.id);
+        setEquippedFrame(frame);
+      }
     } catch (error) {
       console.error('Error loading equipped frame:', error);
     }
@@ -94,7 +96,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     
     const sizeStyles = {
       sm: { width: '32px', height: '32px' },
-      md: { width: '40px', height: '40px' }, 
+      md: { width: '45px', height: '45px' }, // Increased from 40px for better visibility
       lg: { width: '64px', height: '64px' }, // Increased size for better profile visibility
       xl: { width: '96px', height: '96px' }, // Increased size for profile headers
     };
@@ -145,7 +147,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       return (
         <ProfileFrame 
           rarity={equippedFrame.rarity} 
-          size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
+          size={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
           customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
@@ -281,7 +283,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       return (
         <ProfileFrame 
           rarity={equippedFrame.rarity} 
-          size={(typeof size === 'number' ? size : parseInt(sizeStyles.width)) * 1.125}
+          size={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
           customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
