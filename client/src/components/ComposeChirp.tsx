@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
 import { uploadChirpImage } from '@/lib/imageUpload';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import ImagePickerButton from './ImagePickerButton';
