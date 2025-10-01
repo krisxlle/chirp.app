@@ -1285,8 +1285,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
         const aggressiveSizeMB = aggressiveBlob.size / (1024 * 1024);
         console.log(`📏 Aggressively compressed size: ${aggressiveSizeMB.toFixed(2)}MB`);
         
-        const base64 = await blobToBase64(aggressiveBlob);
-        const dataUrl = `data:image/jpeg;base64,${base64}`;
+        const dataUrl = await blobToBase64(aggressiveBlob);
         
         return {
           imageUrl: dataUrl,
@@ -1295,8 +1294,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
         };
       }
       
-      const base64 = await blobToBase64(compressedBlob);
-      const dataUrl = `data:image/jpeg;base64,${base64}`;
+      const dataUrl = await blobToBase64(compressedBlob);
       
       return {
         imageUrl: dataUrl,
@@ -1345,8 +1343,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
       
       // Fallback to base64
       try {
-        const base64 = await blobToBase64(blob);
-        const dataUrl = `data:image/jpeg;base64,${base64}`;
+        const dataUrl = await blobToBase64(blob);
         
         console.log('✅ Base64 fallback successful - using data URL');
         
@@ -1370,12 +1367,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
 const blobToBase64 = (blob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Remove the data URL prefix to get just the base64 string
-      const base64 = result.split(',')[1];
-      resolve(base64);
-    };
+    reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
