@@ -72,7 +72,7 @@ export default function UserAvatar({ user, size = "md", style, showFrame = false
 
     if (showFrame) {
       return (
-        <ProfileFrame rarity="common" size={(typeof size === 'number' ? size : sizeStyles.width) * 1.125}>
+        <ProfileFrame rarity="common" profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}>
           {avatarContent}
         </ProfileFrame>
       );
@@ -156,7 +156,7 @@ export default function UserAvatar({ user, size = "md", style, showFrame = false
     if (showFrame) {
       const rarity = determineUserRarity(user);
       return (
-        <ProfileFrame rarity={rarity} size={(typeof size === 'number' ? size : sizeStyles.width) * 1.125}>
+        <ProfileFrame rarity={rarity} profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}>
           {avatarContent}
         </ProfileFrame>
       );

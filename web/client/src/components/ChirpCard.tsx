@@ -1,14 +1,14 @@
 import { formatDistanceToNow } from 'date-fns';
 import {
-  BellOff,
-  Heart,
-  Link as LinkIcon,
-  MessageCircle,
-  MoreHorizontal,
-  Repeat2,
-  Trash2,
-  UserMinus,
-  UserX
+    BellOff,
+    Heart,
+    Link as LinkIcon,
+    MessageCircle,
+    MoreHorizontal,
+    Repeat2,
+    Trash2,
+    UserMinus,
+    UserX
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
@@ -21,10 +21,10 @@ import ImageViewerModal from './ImageViewerModal';
 import MentionText from './MentionText';
 import { Button } from './ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Textarea } from './ui/textarea';
 import UserAvatar from './UserAvatar';
@@ -288,6 +288,7 @@ export default function ChirpCard({
               user={chirp.author} 
               size="md" 
               onPress={handleProfilePress}
+              showFrame={true}
             />
           </div>
 

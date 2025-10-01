@@ -102,7 +102,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       return (
         <ProfileFrame 
           rarity={equippedFrame.rarity} 
-          size={typeof size === 'number' ? size * 1.2 : parseInt(sizeStyles.width) * 1.2}
+          profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
           customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
@@ -238,7 +238,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       return (
         <ProfileFrame 
           rarity={equippedFrame.rarity} 
-          size={typeof size === 'number' ? size * 1.2 : parseInt(sizeStyles.width) * 1.2}
+          profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
           customFrameImage={equippedFrame.imageUrl}
         >
           {avatarContent}
@@ -280,7 +280,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     return (
       <ProfileFrame 
         rarity={equippedFrame.rarity} 
-        size={typeof size === 'number' ? size * 1.2 : parseInt(sizeStyles.width) * 1.2}
+        profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
         customFrameImage={equippedFrame.imageUrl}
       >
         {avatarContent}

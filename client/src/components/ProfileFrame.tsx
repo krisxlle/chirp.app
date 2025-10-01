@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 
 interface ProfileFrameProps {
   rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
-  size?: number;
+  size?: number; // Deprecated: use profilePictureSize instead
+  profilePictureSize?: number; // Size of the profile picture in pixels
   children: React.ReactNode;
   style?: React.CSSProperties;
   customFrameImage?: string; // Allow custom frame image for equipped frames
@@ -39,7 +40,7 @@ const getRarityFrameImage = (rarity: string) => {
   return imagePath;
 };
 
-export default function ProfileFrame({ rarity, size = 60, children, style, customFrameImage }: ProfileFrameProps) {
+export default function ProfileFrame({ rarity, size = 60, profilePictureSize, children, style, customFrameImage }: ProfileFrameProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   
@@ -58,8 +59,10 @@ export default function ProfileFrame({ rarity, size = 60, children, style, custo
   });
   
   // Calculate proper sizing for frame and profile picture
-  const frameSize = size * 1.8; // Frame is 80% larger than the base size (matching metro)
-  const profileSize = frameSize * 0.45; // Profile picture size within frame (45% of frame)
+  // Use profilePictureSize if provided, otherwise fall back to size prop for backward compatibility
+  const baseSize = profilePictureSize || size;
+  const frameSize = baseSize * 1.8; // Frame is 80% larger than the profile picture size
+  const profileSize = baseSize; // Profile picture size matches the passed size
   
   return (
     <div style={{
@@ -80,9 +83,9 @@ export default function ProfileFrame({ rarity, size = 60, children, style, custo
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        top: '30%', // Centered vertically in the frame (matching metro)
+        top: '50%', // Centered vertically in the frame
         left: '50%', // Centered horizontally in the frame
-        transform: 'translateX(-50%)', // Only translate X to center horizontally
+        transform: 'translate(-50%, -50%)', // Center both horizontally and vertically
         zIndex: 0
       }}>
         {children}

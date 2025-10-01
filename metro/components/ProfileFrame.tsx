@@ -3,7 +3,8 @@ import { Image, StyleSheet, View, ViewStyle } from 'react-native';
 
 interface ProfileFrameProps {
   rarity: 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
-  size?: number;
+  size?: number; // Deprecated: use profilePictureSize instead
+  profilePictureSize?: number; // Size of the profile picture in pixels
   children: React.ReactNode;
   style?: ViewStyle;
 }
@@ -17,12 +18,14 @@ const rarityFrameImages = {
   common: require('../public/assets/Season 1/Simple Gray Frame Common.png'),
 };
 
-export default function ProfileFrame({ rarity, size = 60, children, style }: ProfileFrameProps) {
+export default function ProfileFrame({ rarity, size = 60, profilePictureSize, children, style }: ProfileFrameProps) {
   const frameImage = rarityFrameImages[rarity];
   
   // Calculate proper sizing for frame and profile picture
-  const frameSize = size * 1.8; // Frame is 80% larger than the base size
-  const profileSize = frameSize * 0.45; // Increased from 0.5 to 0.65 for better fit
+  // Use profilePictureSize if provided, otherwise fall back to size prop for backward compatibility
+  const baseSize = profilePictureSize || size;
+  const frameSize = baseSize * 1.8; // Frame is 80% larger than the profile picture size
+  const profileSize = baseSize; // Profile picture size matches the passed size
   
   return (
     <View style={[styles.container, { width: frameSize, height: frameSize }, style]}>
