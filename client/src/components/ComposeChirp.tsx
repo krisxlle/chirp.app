@@ -3,6 +3,7 @@ import { useAuth } from '../components/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
+import { uploadChirpImage } from '../../lib/database/mobile-db-supabase';
 
 interface ComposeChirpProps {
   onPost?: (content: string, imageData?: {
@@ -141,9 +142,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       if (selectedImage) {
         setIsUploadingImage(true);
         try {
-          // Import the upload function
-          const { uploadChirpImage } = await import('../lib/database/mobile-db-supabase');
-          
           // Upload image to storage and get proper URL
           imageData = await uploadChirpImage(selectedImage, user.id);
           imageData.imageAltText = content.trim() || 'Chirp image';
