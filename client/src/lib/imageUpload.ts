@@ -7,6 +7,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
 }> => {
   try {
     console.log('🔄 Uploading chirp image for user:', userId);
+    console.log('🔄 Image URI:', imageUri.substring(0, 50) + '...');
     
     // Convert image URI to blob
     const response = await fetch(imageUri);
@@ -30,6 +31,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
         });
       
       if (error) {
+        console.log('❌ Storage upload error:', error);
         throw error;
       }
       
@@ -56,6 +58,7 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
         const dataUrl = `data:image/jpeg;base64,${base64}`;
         
         console.log('✅ Base64 fallback successful - using data URL');
+        console.log('📝 Note: Image stored as base64. Storage bucket may need to be created.');
         
         return {
           imageUrl: dataUrl,
