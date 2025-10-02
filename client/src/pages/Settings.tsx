@@ -289,7 +289,7 @@ export default function Settings({ onClose }: SettingsProps) {
         });
 
       if (!uploadError && data) {
-        const imageUrl = `${supabase.supabaseUrl}/storage/v1/object/public/avatars/${data.path}`;
+        const imageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/avatars/${data.path}`;
         
         // Update user profile with new image URL
         const { error } = await supabase
@@ -343,7 +343,7 @@ export default function Settings({ onClose }: SettingsProps) {
         });
 
       if (!uploadError && data) {
-        const imageUrl = `${supabase.supabaseUrl}/storage/v1/object/public/banners/${data.path}`;
+        const imageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/banners/${data.path}`;
         
         // Update user profile with new banner URL
         const { error } = await supabase

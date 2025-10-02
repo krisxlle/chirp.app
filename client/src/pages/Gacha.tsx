@@ -1,29 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
+import { supabase } from '../lib/supabase';
 
 // Profile Frame Gacha System Functions - Inline to avoid import issues
 const rollProfileFrame = async (userId: string) => {
   console.log('🎲 rollProfileFrame called with:', { userId });
   
   try {
-    // Use direct Supabase client for web
-    const { createClient } = await import('@supabase/supabase-js');
-    const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-    
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        storage: {
-          getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
-          setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
-          removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
-        },
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-    });
+    // Using singleton Supabase client
 
     console.log('✅ Using real Supabase client for rollProfileFrame');
     

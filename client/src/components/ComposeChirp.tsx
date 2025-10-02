@@ -2,6 +2,7 @@ import { uploadChirpImage } from '@/lib/imageUpload';
 import { useEffect, useRef, useState } from 'react';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
+import { supabase } from '../lib/supabase';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
 
@@ -154,24 +155,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       console.log('Creating chirp via Supabase...');
       console.log('User ID for chirp creation:', user.id);
       
-      // Create Supabase client directly for web
-      const { createClient } = await import('@supabase/supabase-js');
-      
-      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-      
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-          storage: {
-            getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
-            setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
-            removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
-          },
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: false,
-        },
-      });
+      // Using singleton Supabase client
       
       // Use user ID directly (Supabase auth IDs are UUIDs)
       let authorId = user.id;

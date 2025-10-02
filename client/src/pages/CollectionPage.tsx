@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
+import { supabase } from '../lib/supabase';
 
 // Profile Frame Collection Functions - Real database integration
 const getUserFrameCollection = async (userId: string) => {
