@@ -15,6 +15,26 @@ SELECT
         ELSE '❌ User missing from public.users'
     END as public_status;
 
+-- Step 1.5: Check if user exists in both tables but with different IDs
+SELECT 
+    'ID Mismatch Check' as step,
+    au.id as auth_id,
+    pu.id as public_id,
+    CASE 
+        WHEN au.id IS NOT NULL AND pu.id IS NOT NULL AND au.id != pu.id
+        THEN '⚠️ ID mismatch between auth and public users'
+        WHEN au.id IS NOT NULL AND pu.id IS NOT NULL AND au.id = pu.id
+        THEN '✅ IDs match between auth and public users'
+        WHEN au.id IS NOT NULL AND pu.id IS NULL
+        THEN '❌ User exists in auth but not in public'
+        WHEN au.id IS NULL AND pu.id IS NOT NULL
+        THEN '⚠️ User exists in public but not in auth'
+        ELSE '❌ User missing from both tables'
+    END as id_status
+FROM auth.users au
+FULL OUTER JOIN public.users pu ON au.email = pu.email
+WHERE au.email = 'kriselle.t@gmail.com' OR pu.email = 'kriselle.t@gmail.com';
+
 -- Step 2: Get auth user details
 SELECT 
     'Auth User Details' as step,
@@ -27,13 +47,14 @@ SELECT
 FROM auth.users 
 WHERE email = 'kriselle.t@gmail.com';
 
--- Step 3: Create missing public.users record
+-- Step 3: Fix user record (create if missing, update if ID mismatch)
 DO $$
 DECLARE
     auth_user_id UUID;
     auth_user_email TEXT;
     auth_user_created_at TIMESTAMP;
     auth_user_meta_data JSONB;
+    public_user_id UUID;
     user_name TEXT;
     user_handle TEXT;
 BEGIN
@@ -51,6 +72,11 @@ BEGIN
     FROM auth.users 
     WHERE email = 'kriselle.t@gmail.com';
     
+    -- Get the public user details
+    SELECT id INTO public_user_id
+    FROM public.users 
+    WHERE email = 'kriselle.t@gmail.com';
+    
     IF auth_user_id IS NOT NULL THEN
         -- Extract name from metadata or use email prefix
         user_name := COALESCE(
@@ -63,45 +89,72 @@ BEGIN
         user_handle := 'kriselle_' || substring(auth_user_id::text, 1, 8);
         
         -- Check if handle is available, if not add numbers
-        WHILE EXISTS (SELECT 1 FROM public.users WHERE handle = user_handle) LOOP
+        WHILE EXISTS (SELECT 1 FROM public.users WHERE handle = user_handle AND id != COALESCE(public_user_id, '00000000-0000-0000-0000-000000000000'::uuid)) LOOP
             user_handle := 'kriselle_' || substring(auth_user_id::text, 1, 8) || '_' || floor(random() * 1000)::text;
         END LOOP;
         
-        -- Create the public.users record
-        INSERT INTO public.users (
-            id,
-            email,
-            first_name,
-            last_name,
-            handle,
-            custom_handle,
-            bio,
-            profile_image_url,
-            banner_image_url,
-            crystal_balance,
-            created_at,
-            updated_at
-        ) VALUES (
-            auth_user_id,
-            auth_user_email,
-            split_part(user_name, ' ', 1),
-            CASE 
-                WHEN position(' ' in user_name) > 0 
-                THEN substring(user_name from position(' ' in user_name) + 1)
-                ELSE ''
-            END,
-            user_handle,
-            user_handle,
-            'New to Chirp! 🐦',
-            null,
-            null,
-            100,
-            auth_user_created_at,
-            NOW()
-        );
-        
-        RAISE NOTICE '✅ Created public.users record for % (ID: %)', auth_user_email, auth_user_id;
-        RAISE NOTICE 'Handle: %, Name: %', user_handle, user_name;
+        IF public_user_id IS NULL THEN
+            -- User doesn't exist in public.users, create it
+            INSERT INTO public.users (
+                id,
+                email,
+                first_name,
+                last_name,
+                handle,
+                custom_handle,
+                bio,
+                profile_image_url,
+                banner_image_url,
+                crystal_balance,
+                created_at,
+                updated_at
+            ) VALUES (
+                auth_user_id,
+                auth_user_email,
+                split_part(user_name, ' ', 1),
+                CASE 
+                    WHEN position(' ' in user_name) > 0 
+                    THEN substring(user_name from position(' ' in user_name) + 1)
+                    ELSE ''
+                END,
+                user_handle,
+                user_handle,
+                'New to Chirp! 🐦',
+                null,
+                null,
+                100,
+                auth_user_created_at,
+                NOW()
+            );
+            
+            RAISE NOTICE '✅ Created public.users record for % (ID: %)', auth_user_email, auth_user_id;
+            RAISE NOTICE 'Handle: %, Name: %', user_handle, user_name;
+            
+        ELSIF public_user_id != auth_user_id THEN
+            -- User exists but with different ID, update the ID to match auth
+            UPDATE public.users 
+            SET 
+                id = auth_user_id,
+                handle = user_handle,
+                custom_handle = user_handle,
+                updated_at = NOW()
+            WHERE email = auth_user_email;
+            
+            RAISE NOTICE '✅ Updated public.users record ID for % from % to %', auth_user_email, public_user_id, auth_user_id;
+            RAISE NOTICE 'Handle: %, Name: %', user_handle, user_name;
+            
+        ELSE
+            -- User exists with correct ID, just update handle if needed
+            UPDATE public.users 
+            SET 
+                handle = user_handle,
+                custom_handle = user_handle,
+                updated_at = NOW()
+            WHERE id = auth_user_id;
+            
+            RAISE NOTICE '✅ Updated handle for existing user % (ID: %)', auth_user_email, auth_user_id;
+            RAISE NOTICE 'Handle: %, Name: %', user_handle, user_name;
+        END IF;
     ELSE
         RAISE NOTICE '❌ No auth user found for kriselle.t@gmail.com';
     END IF;
