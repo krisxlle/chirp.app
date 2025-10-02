@@ -73,15 +73,12 @@ BEGIN
             email,
             first_name,
             last_name,
-            display_name,
             handle,
             custom_handle,
             bio,
             profile_image_url,
             banner_image_url,
             crystal_balance,
-            is_chirp_plus,
-            show_chirp_plus_badge,
             created_at,
             updated_at
         ) VALUES (
@@ -93,15 +90,12 @@ BEGIN
                 THEN substring(user_name from position(' ' in user_name) + 1)
                 ELSE ''
             END,
-            user_name,
             user_handle,
             user_handle,
             'New to Chirp! 🐦',
             null,
             null,
             100,
-            false,
-            false,
             auth_user_created_at,
             NOW()
         );
@@ -121,6 +115,7 @@ SELECT
     u.first_name,
     u.last_name,
     u.handle,
+    u.crystal_balance,
     u.created_at
 FROM public.users u
 WHERE u.email = 'kriselle.t@gmail.com';
