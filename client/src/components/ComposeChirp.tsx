@@ -1,5 +1,5 @@
 import { uploadChirpImage } from '@/lib/imageUpload';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
 import ImagePickerButton from './ImagePickerButton';
@@ -80,17 +80,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     );
   }
 
-  // Convert auth user to expected User format for UserAvatar component
-  const user = React.useMemo(() => ({
-    id: authUser.id,
-    firstName: authUser.user_metadata?.name?.split(' ')[0] || authUser.user_metadata?.first_name || authUser.email?.split('@')[0] || 'User',
-    lastName: authUser.user_metadata?.name?.split(' ').slice(1).join(' ') || authUser.user_metadata?.last_name || '',
-    email: authUser.email || '',
-    profileImageUrl: authUser.user_metadata?.profile_image_url || authUser.user_metadata?.avatar_url,
-    customHandle: authUser.user_metadata?.custom_handle,
-    handle: authUser.user_metadata?.handle,
-    bio: authUser.user_metadata?.bio,
-  }), [authUser]);
+  // Use the transformed user from SupabaseAuthContext directly
+  const user = authUser;
 
   console.log('ComposeChirp: Final user object:', user.id);
   console.log('ComposeChirp: User profile image:', user.profileImageUrl ? 'has image' : 'no image');
@@ -182,29 +173,22 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         },
       });
       
-      // Handle non-UUID user IDs by finding the correct user in the database
+      // Use user ID directly (Supabase auth IDs are UUIDs)
       let authorId = user.id;
       
-      // Check if user ID is not a UUID (like "1")
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(user.id)) {
-        console.log('⚠️ User ID is not a UUID, looking up correct user in database...');
-        
-        // Try to find the user by email or handle
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .or(`email.eq.${user.email},handle.eq.${user.handle},custom_handle.eq.${user.customHandle}`)
-          .single();
-        
-        if (userError || !userData) {
-          console.error('❌ Could not find user in database:', userError);
-          throw new Error('User not found in database');
-        }
-        
-        authorId = userData.id;
-        console.log('✅ Found correct user ID:', authorId);
+      // Double-check user exists in database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authorId)
+        .single();
+      
+      if (userError || !userData) {
+        console.error('❌ User not found in database:', userError);
+        throw new Error('User profile not found in database. Please ensure you have completed signup.');
       }
+      
+      console.log('✅ User verified in database:', authorId);
       
       // Post single chirp with image data
       const chirpData: any = {

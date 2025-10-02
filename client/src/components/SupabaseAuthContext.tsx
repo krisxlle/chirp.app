@@ -2,8 +2,22 @@ import { Session, User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+interface TransformedUser {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  customHandle?: string;
+  handle?: string;
+  name?: string;
+  profileImageUrl?: string;
+  bio?: string;
+  crystalBalance?: number;
+  createdAt?: string;
+}
+
 interface SupabaseAuthContextType {
-  user: User | null;
+  user: TransformedUser | null;
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -16,8 +30,30 @@ interface SupabaseAuthContextType {
 
 const SupabaseAuthContext = createContext<SupabaseAuthContextType | undefined>(undefined);
 
+// Transform Supabase User to expected format
+const transformSupabaseUser = (supabaseUser: User | null): TransformedUser | null => {
+  if (!supabaseUser) return null;
+  
+  const metadata = supabaseUser.user_metadata || {};
+  const email = supabaseUser.email || '';
+  
+  return {
+    id: supabaseUser.id,
+    firstName: metadata.first_name || metadata.name?.split(' ')[0] || '',
+    lastName: metadata.last_name || metadata.name?.split(' ').slice(1).join(' ') || '',
+    email,
+    customHandle: metadata.custom_handle || '',
+    handle: metadata.handle || '',
+    name: metadata.name || `${metadata.first_name || ''} ${metadata.last_name || ''}`.trim(),
+    profileImageUrl: metadata.profile_image_url || metadata.avatar_url || '',
+    bio: metadata.bio || '',
+    crystalBalance: metadata.crystal_balance || 100,
+    createdAt: supabaseUser.created_at
+  };
+};
+
 export function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<TransformedUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -26,7 +62,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(transformSupabaseUser(session?.user ?? null));
       setIsEmailVerified(!!session?.user?.email_confirmed_at);
       setIsLoading(false);
     });
@@ -36,7 +72,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(transformSupabaseUser(session?.user ?? null));
       setIsEmailVerified(!!session?.user?.email_confirmed_at);
       setIsLoading(false);
     });
@@ -74,6 +110,25 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
           // Don't fail sign in if profile doesn't exist yet
         } else {
           console.log('✅ User profile fetched successfully');
+          
+          // Update the user's metadata with profile data
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: {
+              first_name: userProfile.first_name || userProfile.display_name?.split(' ')[0],
+              last_name: userProfile.last_name || userProfile.display_name?.split(' ').slice(1).join(' '),
+              custom_handle: userProfile.custom_handle,
+              handle: userProfile.handle,
+              profile_image_url: userProfile.profile_image_url,
+              bio: userProfile.bio,
+              crystal_balance: userProfile.crystal_balance
+            }
+          });
+          
+          if (updateError) {
+            console.error('❌ Error updating user metadata:', updateError);
+          } else {
+            console.log('✅ User metadata updated with profile data');
+          }
         }
 
         return { success: true };
