@@ -78,7 +78,6 @@ const ChirpLogo = ({ size = 60 }) => (
 
 export default function Auth() {
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [customHandle, setCustomHandle] = useState('');
@@ -417,6 +416,25 @@ export default function Auth() {
             <>
               <div style={{ marginBottom: '16px' }}>
                 <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '16px', 
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                  required
+                />
+              </div>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <input
                   type="text"
                   placeholder="Full Name"
                   value={name}
@@ -455,18 +473,10 @@ export default function Auth() {
           ) : (
             <div style={{ marginBottom: '16px' }}>
               <input
-                type="text"
-                placeholder="Username or Email"
-                value={username || email}
-                onChange={(e) => {
-                  if (e.target.value.includes('@')) {
-                    setEmail(e.target.value);
-                    setUsername('');
-                  } else {
-                    setUsername(e.target.value);
-                    setEmail('');
-                  }
-                }}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 style={{ 
                   width: '100%', 
                   padding: '16px', 

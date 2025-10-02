@@ -85,7 +85,7 @@ export default function Auth() {
           <div style={{ marginBottom: '16px' }}>
             <input
               type="email"
-              placeholder={isSignUp ? "Enter your email" : "Enter your username or email"}
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{ 
