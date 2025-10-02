@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
+import { supabase } from '../lib/supabase';
 import UserAvatar from '../components/UserAvatar';
 
 // Inline API functions to avoid import issues in production
@@ -277,25 +278,20 @@ export default function Settings({ onClose }: SettingsProps) {
       const formData = new FormData();
       formData.append('file', blob, `profile-${user.id}.jpg`);
       
-      // Upload to Supabase storage (simplified for web)
-      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      // Upload to Supabase storage using client
+      const fileName = `profile-${user.id}.jpg`;
       
-      const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/profile-${user.id}.jpg`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: formData,
-      });
+      const { data, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, blob, {
+          contentType: blob.type || 'image/jpeg',
+          upsert: true, // Allow overwriting existing files
+        });
 
-      if (uploadResponse.ok) {
-        const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/profile-${user.id}.jpg`;
+      if (!uploadError && data) {
+        const imageUrl = `${supabase.supabaseUrl}/storage/v1/object/public/avatars/${data.path}`;
         
         // Update user profile with new image URL
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
         const { error } = await supabase
           .from('users')
           .update({ profile_image_url: imageUrl })
@@ -336,25 +332,20 @@ export default function Settings({ onClose }: SettingsProps) {
       const formData = new FormData();
       formData.append('file', blob, `banner-${user.id}.jpg`);
       
-      // Upload to Supabase storage
-      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      // Upload to Supabase storage using client
+      const fileName = `banner-${user.id}.jpg`;
       
-      const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/banners/banner-${user.id}.jpg`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: formData,
-      });
+      const { data, error: uploadError } = await supabase.storage
+        .from('banners')
+        .upload(fileName, blob, {
+          contentType: blob.type || 'image/jpeg',
+          upsert: true, // Allow overwriting existing files
+        });
 
-      if (uploadResponse.ok) {
-        const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/banners/banner-${user.id}.jpg`;
+      if (!uploadError && data) {
+        const imageUrl = `${supabase.supabaseUrl}/storage/v1/object/public/banners/${data.path}`;
         
         // Update user profile with new banner URL
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
         const { error } = await supabase
           .from('users')
           .update({ banner_image_url: imageUrl })
