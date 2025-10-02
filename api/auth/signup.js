@@ -92,10 +92,41 @@ export default async function handler(req, res) {
       }
     }
 
-    // Create new user in database
+    // Use Supabase Auth to create the user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          name: name,
+          custom_handle: customHandle,
+          handle: finalHandle
+        }
+      }
+    });
+
+    if (authError) {
+      console.error('❌ Supabase Auth error:', authError);
+      return res.status(400).json({ 
+        success: false, 
+        error: authError.message 
+      });
+    }
+
+    if (!authData.user) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Failed to create user account' 
+      });
+    }
+
+    console.log('✅ User created in Supabase Auth:', authData.user.id);
+
+    // Create user profile in public.users table
     const { data: newUser, error: createError } = await supabase
       .from('users')
       .insert({
+        id: authData.user.id, // Use the same ID from Supabase Auth
         first_name: name.split(' ')[0],
         last_name: name.split(' ').slice(1).join(' ') || '',
         display_name: name,
@@ -112,14 +143,14 @@ export default async function handler(req, res) {
       .single();
 
     if (createError) {
-      console.error('❌ Error creating user:', createError);
+      console.error('❌ Error creating user profile:', createError);
       return res.status(500).json({ 
         success: false, 
-        error: 'Failed to create account. Please try again.' 
+        error: 'Account created but profile setup failed. Please contact support.' 
       });
     }
 
-    console.log('✅ User created successfully:', newUser.email);
+    console.log('✅ User profile created successfully:', newUser.email);
     
     // Return user data (without sensitive information)
     const userData = {
@@ -137,7 +168,9 @@ export default async function handler(req, res) {
       created_at: newUser.created_at,
       crystal_balance: newUser.crystal_balance || 100,
       is_chirp_plus: newUser.is_chirp_plus || false,
-      show_chirp_plus_badge: newUser.show_chirp_plus_badge || false
+      show_chirp_plus_badge: newUser.show_chirp_plus_badge || false,
+      email_confirmed: !!authData.user.email_confirmed_at,
+      requires_email_confirmation: !authData.user.email_confirmed_at
     };
 
     res.status(201).json(userData);

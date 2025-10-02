@@ -2,15 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { checkHandleAvailability, signInWithSupabase, signUp } from '../lib/database/mobile-db-supabase';
@@ -69,7 +69,6 @@ const BotIcon = ({ size = 24, color = "#7c3aed" }) => (
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [customHandle, setCustomHandle] = useState('');
@@ -110,11 +109,11 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     console.log('🚀 handleSignIn function called!');
-    console.log('🚀 Username:', username);
+    console.log('🚀 Email:', email);
     console.log('🚀 Password provided:', password ? 'Yes' : 'No');
     
-    if (!username.trim()) {
-      Alert.alert('Error', 'Please enter your username or email');
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter your email');
       return;
     }
 
@@ -125,8 +124,8 @@ export default function SignInScreen() {
 
     setIsLoading(true);
     try {
-      console.log('🔐 Attempting to sign in with username/email:', username);
-      const result = await signIn(username, password);
+      console.log('🔐 Attempting to sign in with email:', email);
+      const result = await signIn(email, password);
       
       if (result.success) {
         console.log('✅ Sign in successful');
@@ -142,7 +141,7 @@ export default function SignInScreen() {
             ]
           );
         } else {
-          Alert.alert('Sign In Failed', 'Invalid username or password.');
+          Alert.alert('Sign In Failed', 'Invalid email or password.');
         }
       }
     } catch (error) {
@@ -346,11 +345,11 @@ export default function SignInScreen() {
           
           <TextInput
             style={styles.emailInput}
-            placeholder={isSignUp ? "Enter your email" : "Enter your username or email"}
+            placeholder="Enter your email"
             placeholderTextColor="#9ca3af"
-            value={isSignUp ? email : username}
-            onChangeText={isSignUp ? setEmail : setUsername}
-            keyboardType={isSignUp ? "email-address" : "default"}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
           />

@@ -1187,20 +1187,42 @@ export const signUp = async (email: string, password: string, name: string, cust
       }
     }
 
-    // Generate a UUID for the user (bypass Supabase auth to avoid email confirmation)
-    const userId = crypto.randomUUID();
-    console.log('✅ Generated user ID:', userId);
+    // Use Supabase Auth to create the user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          name: name,
+          custom_handle: customHandle,
+        }
+      }
+    });
+
+    if (authError) {
+      console.error('❌ Supabase Auth error:', authError);
+      throw new Error(authError.message);
+    }
+
+    if (!authData.user) {
+      throw new Error('Failed to create user account');
+    }
+
+    console.log('✅ User created in Supabase Auth:', authData.user.id);
+
+    // Generate handle if not provided
+    const finalHandle = customHandle || `user_${authData.user.id.substring(0, 8)}`;
     
-    // Create user profile directly in the users table (bypass Supabase auth)
+    // Create user profile in public.users table
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .insert({
-        id: userId,
+        id: authData.user.id, // Use the same ID from Supabase Auth
         email: email,
         first_name: name.split(' ')[0] || name,
         last_name: name.split(' ').slice(1).join(' ') || '',
         custom_handle: customHandle,
-        handle: customHandle || `user_${userId.substring(0, 8)}`,
+        handle: finalHandle,
         display_name: name,
         bio: '',
         profile_image_url: null,
@@ -1214,30 +1236,23 @@ export const signUp = async (email: string, password: string, name: string, cust
     
     if (profileError) {
       console.error('❌ Error creating user profile:', profileError);
-      
-      // Check if it's a unique constraint violation
-      if (profileError.code === '23505') {
-        if (profileError.message.includes('handle')) {
-          throw new Error(`Handle "${customHandle}" is already taken. Please choose a different handle.`);
-        } else if (profileError.message.includes('email')) {
-          throw new Error('An account with this email already exists.');
-        }
-      }
-      
-      throw new Error('Failed to create user profile');
+      throw new Error('Account created but profile setup failed');
     }
 
     console.log('✅ User profile created successfully:', userProfile.id);
     
-    // Return a mock user object that matches Supabase auth format
+    // Return user data with auth info
     return { 
       user: {
-        id: userId,
+        id: authData.user.id,
         email: email,
-        email_confirmed_at: new Date().toISOString(), // Mark as confirmed
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        email_confirmed_at: authData.user.email_confirmed_at,
+        created_at: authData.user.created_at,
+        updated_at: authData.user.updated_at
+      },
+      profile: userProfile,
+      email_confirmed: !!authData.user.email_confirmed_at,
+      requires_email_confirmation: !authData.user.email_confirmed_at
     };
   } catch (error) {
     console.error('❌ Error in sign up:', error);
