@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
 
 // Profile Frame Gacha System Functions - Inline to avoid import issues
@@ -389,7 +389,7 @@ const ChirpLogo = ({ size = 24, color = "#f5a5e0" }) => (
 );
 
 export default function Gacha() {
-  const { user, updateUser, refreshCrystalBalance } = useAuth();
+  const { user, updateUser, refreshCrystalBalance } = useSupabaseAuth();
   const { toast } = useToast();
   const [availableFrames, setAvailableFrames] = useState<ProfileFrame[]>([]);
   const [isRolling, setIsRolling] = useState(false);

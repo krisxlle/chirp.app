@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowLeft, CheckCircle, Clock, Mail, MapPin, MessageSquare, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "../components/AuthContext";
+import { useSupabaseAuth } from "../components/SupabaseAuthContext";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -34,7 +34,7 @@ interface Feedback {
 
 export default function AdminFeedback() {
   const [, setLocation] = useLocation();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useSupabaseAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);

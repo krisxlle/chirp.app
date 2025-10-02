@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { CollectionIcon, GachaIcon, HomeIcon, NotificationIcon, ProfileIcon } from './icons';
 
 interface BottomNavigationProps {
@@ -12,7 +12,7 @@ interface BottomNavigationProps {
 
 export default function BottomNavigation({ activeTab, onTabChange, unreadCount }: BottomNavigationProps) {
   const [location, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
 
   // Get unread count from Supabase if not provided
   const { data: notificationData } = useQuery({

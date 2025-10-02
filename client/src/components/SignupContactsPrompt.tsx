@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "./AuthContext";
+import { useSupabaseAuth } from "./SupabaseAuthContext";
 import ContactsIntegration from "./ContactsIntegration";
 
 interface SignupContactsPromptProps {
@@ -8,7 +8,7 @@ interface SignupContactsPromptProps {
 
 export default function SignupContactsPrompt({ onComplete }: SignupContactsPromptProps) {
   const [showContactsModal, setShowContactsModal] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useSupabaseAuth();
   const [hasShownPrompt, setHasShownPrompt] = useState(false);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "./AuthContext";
+import { useSupabaseAuth } from "./SupabaseAuthContext";
 import ContactsIntegration from "./ContactsIntegration";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -10,7 +10,7 @@ export default function ContactsPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [showContactsModal, setShowContactsModal] = useState(false);
   const [hasShownPrompt, setHasShownPrompt] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useSupabaseAuth();
 
   // Get user's follower count
   const { data: followCounts } = useQuery<{ followers: number; following: number }>({

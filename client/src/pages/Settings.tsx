@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 
 // Inline API functions to avoid import issues in production
@@ -133,7 +133,7 @@ const GearIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: str
 );
 
 export default function Settings({ onClose }: SettingsProps) {
-  const { user, signOut, updateUser } = useAuth();
+  const { user, signOut, updateUser } = useSupabaseAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('profile');
   const [isUpdating, setIsUpdating] = useState(false);

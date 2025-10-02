@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 import { supabase } from '../lib/supabase';
@@ -325,7 +325,7 @@ const getCollectionFeedChirps = async (userId: string, limit: number = 10, offse
 
 export default function HomePage() {
   // Get user from AuthContext
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [, setLocation] = useLocation();
   
   // State for feed type

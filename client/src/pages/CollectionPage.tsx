@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 
 // Profile Frame Collection Functions - Real database integration
 const getUserFrameCollection = async (userId: string) => {
@@ -227,7 +227,7 @@ const rarityNames = {
 };
 
 export default function CollectionPage() {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [, setLocation] = useLocation();
   const [collection, setCollection] = useState<ProfileFrame[]>([]);
   const [isLoading, setIsLoading] = useState(true);

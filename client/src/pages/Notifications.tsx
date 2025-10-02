@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '../components/AuthContext';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 
 // Bell Icon Component
@@ -45,7 +45,7 @@ interface Notification {
 }
 
 export default function Notifications() {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [location, setLocation] = useLocation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
