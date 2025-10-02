@@ -108,3 +108,4 @@ DROP FUNCTION IF EXISTS send_password_reset_email(TEXT);
 
 -- Success message
 SELECT 'Password reset utilities created!' as status;
+

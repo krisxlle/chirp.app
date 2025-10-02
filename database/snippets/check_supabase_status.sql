@@ -95,3 +95,4 @@ SELECT
     '3. Try restarting the project' as step3,
     '4. Check project quotas and limits' as step4,
     '5. Contact Supabase support if issues persist' as step5;
+

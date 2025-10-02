@@ -815,8 +815,8 @@ export default function Profile() {
               // Fallback to authUser data if not found in database
               userData = authUser ? {
                 id: authUser.id,
-                firstName: undefined, // Supabase User doesn't have these fields
-                lastName: undefined,
+                firstName: authUser.firstName || 'User', // Try to use auth user data
+                lastName: authUser.lastName || '',
                 email: authUser.email,
                 name: undefined,
                 customHandle: undefined,

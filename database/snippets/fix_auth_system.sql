@@ -181,3 +181,4 @@ SELECT
     'Email: kriselle.t@gmail.com' as email,
     'Password: password123' as password,
     'Try both login and password reset' as instruction;
+

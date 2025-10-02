@@ -170,3 +170,4 @@ SELECT
     '3. Check Supabase dashboard for user' as option3,
     '4. Try different browser/incognito' as option4,
     '5. Clear browser cache' as option5;
+

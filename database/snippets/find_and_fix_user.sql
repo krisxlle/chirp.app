@@ -204,3 +204,4 @@ SELECT
     'User created/updated, try login now' as message,
     'Email: kriselle.t@gmail.com' as email,
     'Password: password123' as password;
+

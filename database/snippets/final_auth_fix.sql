@@ -188,3 +188,4 @@ SELECT
     'User completely recreated, RLS configured, try login now' as message,
     'Email: kriselle.t@gmail.com' as email,
     'Password: password123' as password;
+

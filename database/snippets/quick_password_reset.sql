@@ -63,3 +63,4 @@ WHERE u.email = 'kriselle.t@gmail.com';
 
 -- Success message
 SELECT 'Password reset completed! Try logging in with password123' as status;
+

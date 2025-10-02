@@ -123,3 +123,4 @@ SELECT
     'Status' as step,
     'Foreign key constraints updated to CASCADE' as message,
     'You can now delete users from auth.users and related records will be automatically deleted' as instruction;
+

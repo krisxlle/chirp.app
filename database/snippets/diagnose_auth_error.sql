@@ -118,3 +118,4 @@ WHERE email = 'kriselle.t@gmail.com';
 SELECT 
     'Recent Errors Check' as step,
     'Check Supabase dashboard logs for any recent database errors' as instruction;
+

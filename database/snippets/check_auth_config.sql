@@ -69,3 +69,4 @@ SELECT
     '2. Check Supabase dashboard logs' as step2,
     '3. Try password reset again' as step3,
     '4. If still failing, contact Supabase support' as step4;
+

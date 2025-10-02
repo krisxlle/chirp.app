@@ -101,3 +101,4 @@ ORDER BY p.proname;
 
 -- Success message
 SELECT 'Final function search_path warnings fixed!' as status;
+

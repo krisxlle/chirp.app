@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
@@ -132,6 +132,51 @@ const GearIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: str
   </svg>
 );
 
+const CameraIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const BannerIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path 
+      d="M3 3h18v18H3z" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M3 9h18" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M9 21V9" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export default function Settings({ onClose }: SettingsProps) {
   const { user, signOut, updateUser } = useSupabaseAuth();
   const [, setLocation] = useLocation();
@@ -144,6 +189,12 @@ export default function Settings({ onClose }: SettingsProps) {
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [linkInBio, setLinkInBio] = useState(user?.linkInBio || '');
+  
+  // Image upload state
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedBannerImage, setSelectedBannerImage] = useState<string | null>(null);
+  const [isUploadingBannerImage, setIsUploadingBannerImage] = useState(false);
 
   // Real analytics data from database
   const [analyticsData, setAnalyticsData] = useState({
@@ -172,6 +223,162 @@ export default function Settings({ onClose }: SettingsProps) {
       setLinkInBio(user.linkInBio || '');
     }
   }, [user]);
+
+  // Image picker functions for web
+  const pickImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageUrl = event.target?.result as string;
+          setSelectedImage(imageUrl);
+          handleUploadProfileImage(imageUrl);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
+  const pickBannerImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageUrl = event.target?.result as string;
+          setSelectedBannerImage(imageUrl);
+          handleUploadBannerImage(imageUrl);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleUploadProfileImage = async (imageDataUrl?: string) => {
+    const imageToUpload = imageDataUrl || selectedImage;
+    if (!imageToUpload || !user) return;
+
+    setIsUploadingImage(true);
+    try {
+      // Convert data URL to blob
+      const response = await fetch(imageToUpload);
+      const blob = await response.blob();
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', blob, `profile-${user.id}.jpg`);
+      
+      // Upload to Supabase storage (simplified for web)
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/profile-${user.id}.jpg`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/profile-${user.id}.jpg`;
+        
+        // Update user profile with new image URL
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const { error } = await supabase
+          .from('users')
+          .update({ profile_image_url: imageUrl })
+          .eq('id', user.id);
+
+        if (!error) {
+          await updateUser({
+            profileImageUrl: imageUrl,
+            avatarUrl: imageUrl
+          });
+          alert('Profile picture updated successfully!');
+          setSelectedImage(null);
+        } else {
+          throw new Error('Failed to update profile');
+        }
+      } else {
+        throw new Error('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      alert(`Failed to upload profile image: ${error.message}`);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleUploadBannerImage = async (imageDataUrl?: string) => {
+    const imageToUpload = imageDataUrl || selectedBannerImage;
+    if (!imageToUpload || !user) return;
+
+    setIsUploadingBannerImage(true);
+    try {
+      // Convert data URL to blob
+      const response = await fetch(imageToUpload);
+      const blob = await response.blob();
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', blob, `banner-${user.id}.jpg`);
+      
+      // Upload to Supabase storage
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/banners/banner-${user.id}.jpg`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/banners/banner-${user.id}.jpg`;
+        
+        // Update user profile with new banner URL
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const { error } = await supabase
+          .from('users')
+          .update({ banner_image_url: imageUrl })
+          .eq('id', user.id);
+
+        if (!error) {
+          await updateUser({
+            bannerImageUrl: imageUrl
+          });
+          alert('Profile banner updated successfully!');
+          setSelectedBannerImage(null);
+        } else {
+          throw new Error('Failed to update banner');
+        }
+      } else {
+        throw new Error('Failed to upload banner image');
+      }
+    } catch (error) {
+      console.error('Error uploading banner image:', error);
+      alert(`Failed to upload banner image: ${error.message}`);
+    } finally {
+      setIsUploadingBannerImage(false);
+    }
+  };
 
   // Load real analytics data from database
   useEffect(() => {
@@ -312,6 +519,149 @@ export default function Settings({ onClose }: SettingsProps) {
               @{user?.customHandle || user?.handle || 'user'}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Profile Picture Section */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginBottom: '16px'
+        }}>
+          <CameraIcon size={20} color="#7c3aed" />
+          <h4 style={{
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: 0
+          }}>
+            Profile Picture
+          </h4>
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '20px',
+          marginBottom: '16px'
+        }}>
+          <UserAvatar 
+            user={{ 
+              ...user, 
+              profileImageUrl: selectedImage || user?.profileImageUrl 
+            }} 
+            size="xl" 
+          />
+          <div>
+            <button
+              onClick={pickImage}
+              disabled={isUploadingImage}
+              style={{
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                cursor: isUploadingImage ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#7c3aed',
+                opacity: isUploadingImage ? 0.5 : 1
+              }}
+            >
+              <CameraIcon size={16} color="#7c3aed" />
+              {isUploadingImage ? 'Uploading...' : 'Upload Photo'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Banner Section */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginBottom: '16px'
+        }}>
+          <BannerIcon size={20} color="#7c3aed" />
+          <h4 style={{
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: 0
+          }}>
+            Profile Banner
+          </h4>
+        </div>
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '400px',
+            height: '120px',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            marginBottom: '12px',
+            border: '1px solid #e2e8f0',
+            backgroundImage: selectedBannerImage 
+              ? `url(${selectedBannerImage})` 
+              : user?.bannerImageUrl 
+                ? `url(${user.bannerImageUrl})` 
+                : 'none',
+            backgroundColor: '#f8fafc',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {!selectedBannerImage && !user?.bannerImageUrl && (
+              <div style={{
+                color: '#9ca3af',
+                fontSize: '12px',
+                textAlign: 'center'
+              }}>
+                <BannerIcon size={24} color="#9ca3af" />
+                <div style={{ marginTop: '4px' }}>No banner set</div>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={pickBannerImage}
+            disabled={isUploadingBannerImage}
+            style={{
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              cursor: isUploadingBannerImage ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#7c3aed',
+              opacity: isUploadingBannerImage ? 0.5 : 1
+            }}
+          >
+            <BannerIcon size={16} color="#7c3aed" />
+            {isUploadingBannerImage ? 'Uploading...' : 'Upload Banner'}
+          </button>
         </div>
       </div>
 
