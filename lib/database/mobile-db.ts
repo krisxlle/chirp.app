@@ -1196,15 +1196,14 @@ export async function uploadProfileImage(userId: string, imageUri: string): Prom
       const response = await fetch(imageUri);
       const blob = await response.blob();
       
-      // Convert blob to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(blob);
-      
-      const base64Data = await base64Promise;
+      // Convert blob to base64 - React Native compatible approach
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < uint8Array.length; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+      }
+      const base64Data = 'data:' + blob.type + ';base64,' + btoa(binary);
       
       console.log('✅ Image converted to base64 successfully');
       return base64Data; // Return the base64 data URL
