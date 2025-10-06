@@ -233,13 +233,29 @@ export default function Settings({ onClose }: SettingsProps) {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageUrl = event.target?.result as string;
-          setSelectedImage(imageUrl);
-          handleUploadProfileImage(imageUrl);
-        };
-        reader.readAsDataURL(file);
+        try {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const imageUrl = event.target?.result as string;
+              if (imageUrl) {
+                setSelectedImage(imageUrl);
+                handleUploadProfileImage(imageUrl);
+              }
+            } catch (error) {
+              console.error('Error processing profile image:', error);
+              alert('Failed to process profile image. Please try again.');
+            }
+          };
+          reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            alert('Failed to read profile image. Please try again.');
+          };
+          reader.readAsDataURL(file);
+        } catch (error) {
+          console.error('Error creating FileReader:', error);
+          alert('Failed to process profile image. Please try again.');
+        }
       }
     };
     input.click();
@@ -252,13 +268,29 @@ export default function Settings({ onClose }: SettingsProps) {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageUrl = event.target?.result as string;
-          setSelectedBannerImage(imageUrl);
-          handleUploadBannerImage(imageUrl);
-        };
-        reader.readAsDataURL(file);
+        try {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const imageUrl = event.target?.result as string;
+              if (imageUrl) {
+                setSelectedBannerImage(imageUrl);
+                handleUploadBannerImage(imageUrl);
+              }
+            } catch (error) {
+              console.error('Error processing banner image:', error);
+              alert('Failed to process banner image. Please try again.');
+            }
+          };
+          reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            alert('Failed to read banner image. Please try again.');
+          };
+          reader.readAsDataURL(file);
+        } catch (error) {
+          console.error('Error creating FileReader:', error);
+          alert('Failed to process banner image. Please try again.');
+        }
       }
     };
     input.click();
