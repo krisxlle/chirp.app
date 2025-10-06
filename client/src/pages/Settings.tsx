@@ -230,42 +230,21 @@ export default function Settings({ onClose }: SettingsProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          // Store function reference to avoid context issues
-          const uploadFunction = handleUploadProfileImage;
+          // Direct upload without FileReader - convert file to blob URL
+          const imageUrl = URL.createObjectURL(file);
+          setSelectedImage(imageUrl);
           
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            try {
-              const imageUrl = event.target?.result as string;
-              if (imageUrl && uploadFunction) {
-                setSelectedImage(imageUrl);
-                // Use setTimeout to ensure the state update completes before calling the upload function
-                setTimeout(() => {
-                  uploadFunction(imageUrl).catch((error) => {
-                    console.error('Error in profile upload:', error);
-                    alert('Failed to upload profile image. Please try again.');
-                  });
-                }, 0);
-              } else {
-                console.error('Invalid image URL or upload function not available');
-                alert('Failed to process profile image. Please try again.');
-              }
-            } catch (error) {
-              console.error('Error processing profile image:', error);
-              alert('Failed to process profile image. Please try again.');
-            }
-          };
-          reader.onerror = (error) => {
-            console.error('FileReader error:', error);
-            alert('Failed to read profile image. Please try again.');
-          };
-          reader.readAsDataURL(file);
+          // Upload the file directly
+          await handleUploadProfileImageDirect(file);
+          
+          // Clean up the object URL
+          URL.revokeObjectURL(imageUrl);
         } catch (error) {
-          console.error('Error creating FileReader:', error);
+          console.error('Error processing profile image:', error);
           alert('Failed to process profile image. Please try again.');
         }
       }
@@ -277,47 +256,71 @@ export default function Settings({ onClose }: SettingsProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          // Store function reference to avoid context issues
-          const uploadFunction = handleUploadBannerImage;
+          // Direct upload without FileReader - convert file to blob URL
+          const imageUrl = URL.createObjectURL(file);
+          setSelectedBannerImage(imageUrl);
           
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            try {
-              const imageUrl = event.target?.result as string;
-              if (imageUrl && uploadFunction) {
-                setSelectedBannerImage(imageUrl);
-                // Use setTimeout to ensure the state update completes before calling the upload function
-                setTimeout(() => {
-                  uploadFunction(imageUrl).catch((error) => {
-                    console.error('Error in banner upload:', error);
-                    alert('Failed to upload banner image. Please try again.');
-                  });
-                }, 0);
-              } else {
-                console.error('Invalid image URL or upload function not available');
-                alert('Failed to process banner image. Please try again.');
-              }
-            } catch (error) {
-              console.error('Error processing banner image:', error);
-              alert('Failed to process banner image. Please try again.');
-            }
-          };
-          reader.onerror = (error) => {
-            console.error('FileReader error:', error);
-            alert('Failed to read banner image. Please try again.');
-          };
-          reader.readAsDataURL(file);
+          // Upload the file directly
+          await handleUploadBannerImageDirect(file);
+          
+          // Clean up the object URL
+          URL.revokeObjectURL(imageUrl);
         } catch (error) {
-          console.error('Error creating FileReader:', error);
+          console.error('Error processing banner image:', error);
           alert('Failed to process banner image. Please try again.');
         }
       }
     };
     input.click();
+  };
+
+  const handleUploadProfileImageDirect = async (file: File) => {
+    if (!file || !user) return;
+
+    setIsUploadingImage(true);
+    try {
+      // Upload to Supabase storage using client
+      const fileName = `profile-${user.id}.jpg`;
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          contentType: file.type || 'image/jpeg',
+          upsert: true, // Allow overwriting existing files
+        });
+
+      if (!uploadError && data) {
+        const imageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/avatars/${data.path}`;
+        
+        // Update user profile with new image URL
+        const { error } = await supabase
+          .from('users')
+          .update({ profile_image_url: imageUrl })
+          .eq('id', user.id);
+
+        if (!error) {
+          await updateUser({
+            profileImageUrl: imageUrl,
+            avatarUrl: imageUrl
+          });
+          alert('Profile picture updated successfully!');
+          setSelectedImage(null);
+        } else {
+          throw new Error('Failed to update profile');
+        }
+      } else {
+        throw new Error('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      alert(`Failed to upload profile image: ${error.message}`);
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const handleUploadProfileImage = async (imageDataUrl?: string) => {
@@ -371,6 +374,50 @@ export default function Settings({ onClose }: SettingsProps) {
       alert(`Failed to upload profile image: ${error.message}`);
     } finally {
       setIsUploadingImage(false);
+    }
+  };
+
+  const handleUploadBannerImageDirect = async (file: File) => {
+    if (!file || !user) return;
+
+    setIsUploadingBannerImage(true);
+    try {
+      // Upload to Supabase storage using client
+      const fileName = `banner-${user.id}.jpg`;
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('banners')
+        .upload(fileName, file, {
+          contentType: file.type || 'image/jpeg',
+          upsert: true, // Allow overwriting existing files
+        });
+
+      if (!uploadError && data) {
+        const imageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/banners/${data.path}`;
+        
+        // Update user profile with new banner URL
+        const { error } = await supabase
+          .from('users')
+          .update({ banner_image_url: imageUrl })
+          .eq('id', user.id);
+
+        if (!error) {
+          await updateUser({
+            bannerImageUrl: imageUrl
+          });
+          alert('Profile banner updated successfully!');
+          setSelectedBannerImage(null);
+        } else {
+          throw new Error('Failed to update banner');
+        }
+      } else {
+        throw new Error('Failed to upload banner image');
+      }
+    } catch (error) {
+      console.error('Error uploading banner image:', error);
+      alert(`Failed to upload banner image: ${error.message}`);
+    } finally {
+      setIsUploadingBannerImage(false);
     }
   };
 
