@@ -230,52 +230,133 @@ export default function Settings({ onClose }: SettingsProps) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        try {
-          // Direct upload without FileReader - convert file to blob URL
-          const imageUrl = URL.createObjectURL(file);
-          setSelectedImage(imageUrl);
-          
-          // Upload the file directly
-          await handleUploadProfileImageDirect(file);
-          
-          // Clean up the object URL
+        // Create preview URL
+        const imageUrl = URL.createObjectURL(file);
+        setSelectedImage(imageUrl);
+        
+        // Upload directly without async/await in the event handler
+        uploadProfileFile(file).then(() => {
           URL.revokeObjectURL(imageUrl);
-        } catch (error) {
-          console.error('Error processing profile image:', error);
-          alert('Failed to process profile image. Please try again.');
-        }
+        }).catch((error) => {
+          console.error('Error uploading profile:', error);
+          alert('Failed to upload profile image. Please try again.');
+          URL.revokeObjectURL(imageUrl);
+        });
       }
     };
     input.click();
+  };
+
+  const uploadProfileFile = async (file: File) => {
+    if (!file || !user) return;
+
+    setIsUploadingImage(true);
+    try {
+      const fileName = `profile-${user.id}.jpg`;
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          contentType: file.type || 'image/jpeg',
+          upsert: true,
+        });
+
+      if (!uploadError && data) {
+        const imageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/avatars/${data.path}`;
+        
+        const { error } = await supabase
+          .from('users')
+          .update({ profile_image_url: imageUrl })
+          .eq('id', user.id);
+
+        if (!error) {
+          await updateUser({
+            profileImageUrl: imageUrl,
+            avatarUrl: imageUrl
+          });
+          alert('Profile picture updated successfully!');
+          setSelectedImage(null);
+        } else {
+          throw new Error('Failed to update profile');
+        }
+      } else {
+        throw new Error('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const pickBannerImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        try {
-          // Direct upload without FileReader - convert file to blob URL
-          const imageUrl = URL.createObjectURL(file);
-          setSelectedBannerImage(imageUrl);
-          
-          // Upload the file directly
-          await handleUploadBannerImageDirect(file);
-          
-          // Clean up the object URL
+        // Create preview URL
+        const imageUrl = URL.createObjectURL(file);
+        setSelectedBannerImage(imageUrl);
+        
+        // Upload directly without async/await in the event handler
+        uploadBannerFile(file).then(() => {
           URL.revokeObjectURL(imageUrl);
-        } catch (error) {
-          console.error('Error processing banner image:', error);
-          alert('Failed to process banner image. Please try again.');
-        }
+        }).catch((error) => {
+          console.error('Error uploading banner:', error);
+          alert('Failed to upload banner image. Please try again.');
+          URL.revokeObjectURL(imageUrl);
+        });
       }
     };
     input.click();
+  };
+
+  const uploadBannerFile = async (file: File) => {
+    if (!file || !user) return;
+
+    setIsUploadingBannerImage(true);
+    try {
+      const fileName = `banner-${user.id}.jpg`;
+      
+      const { data, error: uploadError } = await supabase.storage
+        .from('banners')
+        .upload(fileName, file, {
+          contentType: file.type || 'image/jpeg',
+          upsert: true,
+        });
+
+      if (!uploadError && data) {
+        const imageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/banners/${data.path}`;
+        
+        const { error } = await supabase
+          .from('users')
+          .update({ banner_image_url: imageUrl })
+          .eq('id', user.id);
+
+        if (!error) {
+          await updateUser({
+            bannerImageUrl: imageUrl
+          });
+          alert('Profile banner updated successfully!');
+          setSelectedBannerImage(null);
+        } else {
+          throw new Error('Failed to update banner');
+        }
+      } else {
+        throw new Error('Failed to upload banner image');
+      }
+    } catch (error) {
+      console.error('Error uploading banner image:', error);
+      throw error;
+    } finally {
+      setIsUploadingBannerImage(false);
+    }
   };
 
   const handleUploadProfileImageDirect = async (file: File) => {
