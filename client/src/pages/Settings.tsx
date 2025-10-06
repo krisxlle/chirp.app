@@ -234,19 +234,25 @@ export default function Settings({ onClose }: SettingsProps) {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
+          // Store function reference to avoid context issues
+          const uploadFunction = handleUploadProfileImage;
+          
           const reader = new FileReader();
           reader.onload = (event) => {
             try {
               const imageUrl = event.target?.result as string;
-              if (imageUrl) {
+              if (imageUrl && uploadFunction) {
                 setSelectedImage(imageUrl);
                 // Use setTimeout to ensure the state update completes before calling the upload function
                 setTimeout(() => {
-                  handleUploadProfileImage(imageUrl).catch((error) => {
+                  uploadFunction(imageUrl).catch((error) => {
                     console.error('Error in profile upload:', error);
                     alert('Failed to upload profile image. Please try again.');
                   });
                 }, 0);
+              } else {
+                console.error('Invalid image URL or upload function not available');
+                alert('Failed to process profile image. Please try again.');
               }
             } catch (error) {
               console.error('Error processing profile image:', error);
@@ -275,19 +281,25 @@ export default function Settings({ onClose }: SettingsProps) {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
+          // Store function reference to avoid context issues
+          const uploadFunction = handleUploadBannerImage;
+          
           const reader = new FileReader();
           reader.onload = (event) => {
             try {
               const imageUrl = event.target?.result as string;
-              if (imageUrl) {
+              if (imageUrl && uploadFunction) {
                 setSelectedBannerImage(imageUrl);
                 // Use setTimeout to ensure the state update completes before calling the upload function
                 setTimeout(() => {
-                  handleUploadBannerImage(imageUrl).catch((error) => {
+                  uploadFunction(imageUrl).catch((error) => {
                     console.error('Error in banner upload:', error);
                     alert('Failed to upload banner image. Please try again.');
                   });
                 }, 0);
+              } else {
+                console.error('Invalid image URL or upload function not available');
+                alert('Failed to process banner image. Please try again.');
               }
             } catch (error) {
               console.error('Error processing banner image:', error);
