@@ -349,10 +349,15 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the new profile image
-      await updateUser({
-        profileImageUrl: imageUrl,
-        avatarUrl: imageUrl
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          profileImageUrl: imageUrl,
+          avatarUrl: imageUrl
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Profile picture updated successfully!');
       setSelectedImage(null);
@@ -392,9 +397,14 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the new banner image
-      await updateUser({
-        bannerImageUrl: imageUrl
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          bannerImageUrl: imageUrl
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Profile banner updated successfully!');
       setSelectedBannerImage(null);
@@ -417,9 +427,14 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the name change
-      await updateUser({
-        firstName: firstName,
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          firstName: firstName,
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Name updated successfully!');
     } catch (error) {
@@ -443,11 +458,16 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the changes
-      await updateUser({
-        firstName: firstName,
-        bio: bio,
-        linkInBio: linkInBio
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          firstName: firstName,
+          bio: bio,
+          linkInBio: linkInBio
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
