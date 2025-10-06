@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
+import ChirpCard from '../components/ChirpCard';
 
 // Bell Icon Component
 const BellIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: string }) => (
@@ -521,18 +522,12 @@ export default function Notifications() {
                     {notification.chirp && (
                       <div style={{
                         marginTop: '12px',
-                        marginLeft: '52px',
-                        padding: '12px',
-                        backgroundColor: '#F7F9FA',
-                        borderRadius: '8px',
-                        borderLeft: '3px solid #7c3aed'
+                        marginLeft: '52px'
                       }}>
-                        <p style={{
-                          fontSize: '14px',
-                          color: '#657786',
-                          lineHeight: '20px',
-                          margin: 0
-                        }}>{notification.chirp.content}</p>
+                        <ChirpCard 
+                          chirp={notification.chirp}
+                          onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                        />
                       </div>
                     )}
                   </div>

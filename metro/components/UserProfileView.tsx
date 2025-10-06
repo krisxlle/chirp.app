@@ -4,6 +4,7 @@ import { DEFAULT_BANNER_URL } from '../constants/DefaultBanner';
 import { getFollowers, getFollowing, getUserById, getUserChirps } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
+import ChirpCard from './ChirpCard';
 
 interface UserProfileViewProps {
   userId: string;
@@ -221,12 +222,18 @@ export default function UserProfileView({ userId, onClose }: UserProfileViewProp
                 </View>
               ) : (
                 userChirps.map((chirp) => (
-                  <View key={chirp.id} style={styles.chirpItem}>
-                    <Text style={styles.chirpContent}>{chirp.content}</Text>
-                    <Text style={styles.chirpDate}>
-                      {new Date(chirp.created_at).toLocaleDateString()}
-                    </Text>
-                  </View>
+                  <ChirpCard 
+                    key={chirp.id} 
+                    chirp={chirp}
+                    onProfilePress={(userId) => {
+                      // Navigate to profile if different user
+                      if (userId !== userData.id) {
+                        // This would need to be handled by the parent component
+                        // For now, we'll just close this modal
+                        onClose();
+                      }
+                    }}
+                  />
                 ))
               )}
             </View>

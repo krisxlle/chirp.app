@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
+import ChirpCard from './ChirpCard';
 
 export default function ChirpInteractionsDebug() {
   const { user } = useAuth();
@@ -176,7 +177,10 @@ export default function ChirpInteractionsDebug() {
             {interactions.chirps.map((chirp) => (
               <View key={chirp.id} style={styles.item}>
                 <Text style={styles.itemTitle}>Chirp #{chirp.id}</Text>
-                <Text style={styles.itemContent}>{truncateText(chirp.content)}</Text>
+                <ChirpCard 
+                  chirp={chirp}
+                  onProfilePress={() => {}} // No navigation needed in debug
+                />
                 <Text style={styles.itemDate}>{formatDate(chirp.created_at)}</Text>
               </View>
             ))}

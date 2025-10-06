@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import UserAvatar from '../components/UserAvatar';
+import ChirpCard from '../components/ChirpCard';
 
 export default function Search() {
   const [query, setQuery] = useState("");
@@ -197,27 +198,11 @@ export default function Search() {
             ) : searchResults.length > 0 ? (
               <div className="space-y-4">
                 {searchResults.map((chirp) => (
-                  <Card key={chirp.id}>
-                    <CardContent className="p-4">
-                      <div className="flex space-x-3">
-                        <UserAvatar user={chirp.author} size="sm" />
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-gray-900">
-                              {chirp.author.firstName} {chirp.author.lastName}
-                            </span>
-                            <span className="text-gray-500">@{chirp.author.handle}</span>
-                          </div>
-                          <p className="text-gray-900 mt-1">{chirp.content}</p>
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <span>{chirp.likes} likes</span>
-                            <span>{chirp.replies} replies</span>
-                            <span>{chirp.reposts} reposts</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ChirpCard 
+                    key={chirp.id} 
+                    chirp={chirp}
+                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
+                  />
                 ))}
               </div>
             ) : query ? (
