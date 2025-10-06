@@ -1814,16 +1814,24 @@ export const uploadBannerImage = async (userId: string, imageUri: string): Promi
         return urlData.publicUrl;
       } catch (storageError) {
         console.log('Storage upload failed, using base64 fallback');
-        // Fall back to base64 storage
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-        });
-        reader.readAsDataURL(blob);
-        const base64Data = await base64Promise;
-        console.log('✅ Banner image stored as base64');
-        return base64Data;
+        // Fall back to base64 storage - React Native compatible approach
+        try {
+          // For React Native, we need to use a different approach
+          // Convert blob to array buffer first, then to base64
+          const arrayBuffer = await blob.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          let binary = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+          }
+          const base64Data = 'data:' + blob.type + ';base64,' + btoa(binary);
+          console.log('✅ Banner image stored as base64');
+          return base64Data;
+        } catch (base64Error) {
+          console.error('Error converting to base64:', base64Error);
+          // Final fallback: return the original URI
+          return imageUri;
+        }
       }
     } catch (conversionError) {
       console.error('Error uploading banner image:', conversionError);
