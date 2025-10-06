@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useResponsive } from '../hooks/useResponsive';
 import { uploadChirpImage } from '../lib/database/mobile-db-supabase';
@@ -23,6 +23,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [isPosting, setIsPosting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  
+  const textInputRef = useRef<TextInput>(null);
   
   const { user: authUser, isLoading } = useAuth();
   const { padding } = useResponsive();
@@ -176,6 +178,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         
         <View style={styles.inputContainer}>
           <TextInput
+            ref={textInputRef}
             style={styles.textInput}
             placeholder="What's on your mind?"
             placeholderTextColor="#9ca3af"
@@ -184,6 +187,26 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             multiline
             maxLength={maxLength}
             textAlignVertical="top"
+            scrollEnabled={true}
+            onContentSizeChange={(event) => {
+              // Auto-scroll to bottom when content changes to keep cursor visible
+              const { height } = event.nativeEvent.contentSize;
+              if (height > 80) { // Only scroll if content exceeds minHeight
+                setTimeout(() => {
+                  textInputRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+              }
+            }}
+            onSelectionChange={(event) => {
+              // Ensure cursor stays visible when typing
+              const { start, end } = event.nativeEvent.selection;
+              if (start === end && start === content.length) {
+                // Cursor is at the end, scroll to bottom
+                setTimeout(() => {
+                  textInputRef.current?.scrollToEnd({ animated: true });
+                }, 50);
+              }
+            }}
           />
           
           {/* Image Preview */}

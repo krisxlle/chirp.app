@@ -1,6 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Clipboard, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
@@ -16,6 +15,44 @@ import { useAuth } from './AuthContext';
 import { deleteChirp } from '../lib/database/mobile-db-supabase';
 import { CrystalService } from '../services/crystalService';
 import { notificationService } from '../services/notificationService';
+
+// Dynamic import for expo-router to avoid TypeScript issues
+let router: any = null;
+const getRouter = async () => {
+  if (!router) {
+    try {
+      const expoRouter = await import('expo-router');
+      router = expoRouter.router;
+    } catch (error) {
+      console.warn('Failed to import expo-router:', error);
+      // Fallback router object
+      router = {
+        push: (href: string) => {
+          console.log('Router push (fallback):', href);
+          if (typeof window !== 'undefined') {
+            window.location.href = href;
+          }
+        },
+        replace: (href: string) => {
+          console.log('Router replace (fallback):', href);
+          if (typeof window !== 'undefined') {
+            window.location.replace(href);
+          }
+        },
+        back: () => {
+          console.log('Router back (fallback)');
+          if (typeof window !== 'undefined') {
+            window.history.back();
+          }
+        },
+        canGoBack: () => {
+          return typeof window !== 'undefined' && window.history.length > 1;
+        }
+      };
+    }
+  }
+  return router;
+};
 
 // Temporary inline createReply function to bypass import issues
 const createReply = async (content: string, chirpId: string, userId: string): Promise<any> => {
@@ -243,6 +280,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
+  
+  const replyInputRef = useRef<any>(null);
 
   const handleReply = () => {
     setShowReplyInput(true);
@@ -732,7 +771,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
   const handleChirpPress = async () => {
     console.log('🔍 ChirpCard: Chirp tapped, navigating to ChirpScreen for ID:', chirp.id);
     // Navigate to thread view
-    router.push(`/chirp/${chirp.id}`);
+    const routerInstance = await getRouter();
+    routerInstance.push(`/chirp/${chirp.id}`);
   };
 
   // Debug logging for user data (removed to prevent infinite loops)
@@ -821,8 +861,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
                     try {
                       // Navigate to mentioned user profile
                       const handle = part.substring(1); // Remove @
-                      const { router } = await import('expo-router');
-                      router.push(`/profile/${handle}`);
+                      const routerInstance = await getRouter();
+                      routerInstance.push(`/profile/${handle}`);
                     } catch (error) {
                       console.error('Error navigating to mentioned user:', error);
                       Alert.alert('Error', 'Failed to navigate to user profile.');
@@ -836,10 +876,11 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
               return (
                 <TouchableOpacity 
                   key={index}
-                  onPress={(e) => {
+                  onPress={async (e) => {
                     e.stopPropagation();
                     const cleanHashtag = part.replace('#', '');
-                    router.push(`/hashtag/${cleanHashtag}`);
+                    const routerInstance = await getRouter();
+                    routerInstance.push(`/hashtag/${cleanHashtag}`);
                   }}
                 >
                   <Text style={styles.hashtagText}>{part}</Text>
@@ -950,12 +991,34 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           >
             <View style={styles.replyContainer}>
               <TextInput
+                ref={replyInputRef}
                 style={styles.replyInput}
                 placeholder={`Reply to ${displayName}...`}
                 value={replyText}
                 onChangeText={setReplyText}
                 multiline
                 maxLength={280}
+                scrollEnabled={true}
+                textAlignVertical="top"
+                onContentSizeChange={(event) => {
+                  // Auto-scroll to bottom when content changes to keep cursor visible
+                  const { height } = event.nativeEvent.contentSize;
+                  if (height > 60) { // Only scroll if content exceeds minHeight
+                    setTimeout(() => {
+                      replyInputRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
+                  }
+                }}
+                onSelectionChange={(event) => {
+                  // Ensure cursor stays visible when typing
+                  const { start, end } = event.nativeEvent.selection;
+                  if (start === end && start === replyText.length) {
+                    // Cursor is at the end, scroll to bottom
+                    setTimeout(() => {
+                      replyInputRef.current?.scrollToEnd({ animated: true });
+                    }, 50);
+                  }
+                }}
                 onPressIn={(e) => e.stopPropagation()}
                 onPressOut={(e) => e.stopPropagation()}
               />
@@ -999,12 +1062,34 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             onResponderRelease={() => {}}
           >
             <TextInput
+              ref={replyInputRef}
               style={styles.replyInput}
               placeholder={`Reply to ${displayName}...`}
               value={replyText}
               onChangeText={setReplyText}
               multiline
               maxLength={280}
+              scrollEnabled={true}
+              textAlignVertical="top"
+              onContentSizeChange={(event) => {
+                // Auto-scroll to bottom when content changes to keep cursor visible
+                const { height } = event.nativeEvent.contentSize;
+                if (height > 60) { // Only scroll if content exceeds minHeight
+                  setTimeout(() => {
+                    replyInputRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }
+              }}
+              onSelectionChange={(event) => {
+                // Ensure cursor stays visible when typing
+                const { start, end } = event.nativeEvent.selection;
+                if (start === end && start === replyText.length) {
+                  // Cursor is at the end, scroll to bottom
+                  setTimeout(() => {
+                    replyInputRef.current?.scrollToEnd({ animated: true });
+                  }, 50);
+                }
+              }}
               onPressIn={(e) => e.stopPropagation()}
               onPressOut={(e) => e.stopPropagation()}
             />

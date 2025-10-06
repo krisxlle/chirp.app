@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface ImageViewerModalProps {
   visible: boolean;
@@ -50,7 +50,7 @@ export default function ImageViewerModal({
     <div 
       className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center" 
       style={{ 
-        zIndex: 10, // Lower z-index to appear behind nav bar
+        zIndex: 2000, // Higher than floating compose button (1000)
         position: 'fixed',
         top: 0,
         left: 0,
