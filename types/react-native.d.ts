@@ -81,6 +81,8 @@ declare module 'react-native' {
   export const ScrollView: React.ComponentType<any>;
   export const Image: React.ComponentType<any>;
   export const Modal: React.ComponentType<ModalProps>;
+  export const ActivityIndicator: React.ComponentType<any>;
+  export const KeyboardAvoidingView: React.ComponentType<any>;
   
   export const Alert: {
     alert: (title: string, message?: string, buttons?: any[], options?: any) => void;
