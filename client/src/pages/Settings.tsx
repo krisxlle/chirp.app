@@ -240,7 +240,13 @@ export default function Settings({ onClose }: SettingsProps) {
               const imageUrl = event.target?.result as string;
               if (imageUrl) {
                 setSelectedImage(imageUrl);
-                handleUploadProfileImage(imageUrl);
+                // Use setTimeout to ensure the state update completes before calling the upload function
+                setTimeout(() => {
+                  handleUploadProfileImage(imageUrl).catch((error) => {
+                    console.error('Error in profile upload:', error);
+                    alert('Failed to upload profile image. Please try again.');
+                  });
+                }, 0);
               }
             } catch (error) {
               console.error('Error processing profile image:', error);
@@ -275,7 +281,13 @@ export default function Settings({ onClose }: SettingsProps) {
               const imageUrl = event.target?.result as string;
               if (imageUrl) {
                 setSelectedBannerImage(imageUrl);
-                handleUploadBannerImage(imageUrl);
+                // Use setTimeout to ensure the state update completes before calling the upload function
+                setTimeout(() => {
+                  handleUploadBannerImage(imageUrl).catch((error) => {
+                    console.error('Error in banner upload:', error);
+                    alert('Failed to upload banner image. Please try again.');
+                  });
+                }, 0);
               }
             } catch (error) {
               console.error('Error processing banner image:', error);
