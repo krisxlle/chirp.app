@@ -306,7 +306,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       if (!result.canceled && result.assets[0]) {
         setSelectedBannerImage(result.assets[0].uri);
         // Automatically trigger upload after banner image selection
-        await handleUploadBannerImage(result.assets[0].uri);
+        await handleBannerImageUpload(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking banner image:', error);
@@ -364,7 +364,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     }
   };
 
-  const handleUploadBannerImage = async (imageUri?: string) => {
+  const handleBannerImageUpload = async (imageUri?: string) => {
     const uriToUpload = imageUri || selectedBannerImage;
     if (!uriToUpload || !user) return;
 
