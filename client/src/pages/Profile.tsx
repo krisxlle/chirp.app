@@ -161,6 +161,29 @@ const getUserChirps = async (userId: string, userData?: any) => {
     const currentUserId = userData?.id;
     console.log('🔍 Profile getUserChirps - currentUserId:', currentUserId, 'userData:', userData);
     
+    // Use the resolved UUID from userData if available, otherwise resolve userId
+    let actualUserId = userData?.id || userId;
+    
+    // If userId is a handle and we don't have userData, resolve it
+    if (!userData?.id) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+      if (!isUUID) {
+        const { data: resolvedUserData, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .or(`custom_handle.ilike.${userId},handle.ilike.${userId}`)
+          .single();
+        
+        if (userError || !resolvedUserData) {
+          console.error('❌ User not found for handle:', userId);
+          return [];
+        }
+        
+        actualUserId = resolvedUserData.id;
+        console.log('🔍 Resolved handle to UUID in getUserChirps:', { handle: userId, uuid: actualUserId });
+      }
+    }
+    
     // Simplified query to avoid timeout - fetch chirps without user join
     const queryPromise = supabase
       .from('chirps')
@@ -175,7 +198,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
         image_width,
         image_height
       `)
-      .eq('author_id', userId)
+      .eq('author_id', actualUserId)
       .order('created_at', { ascending: false })
       .limit(10); // Reduced limit to 10 to avoid timeout
 
@@ -475,10 +498,38 @@ const getProfilePowerBreakdown = async (userId: string) => {
   console.log('🔍 getProfilePowerBreakdown called with:', { userId });
   
   try {
-    // Create Supabase client directly for web
     // Using singleton Supabase client
 
     console.log('✅ Using real Supabase client for getProfilePowerBreakdown');
+    
+    // First, resolve userId to actual user ID if it's a handle
+    let actualUserId = userId;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    
+    if (!isUUID) {
+      // Query by handle (custom_handle or handle) - case insensitive
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .or(`custom_handle.ilike.${userId},handle.ilike.${userId}`)
+        .single();
+      
+      if (userError || !userData) {
+        console.error('❌ User not found for handle:', userId);
+        return {
+          totalPower: 0,
+          likesContribution: 0,
+          commentsContribution: 0,
+          collectionContribution: 0,
+          rarityFactor: 1.0,
+          totalLikes: 0,
+          totalComments: 0
+        };
+      }
+      
+      actualUserId = userData.id;
+      console.log('🔍 Resolved handle to UUID in getProfilePowerBreakdown:', { handle: userId, uuid: actualUserId });
+    }
     
     // For now, return default breakdown since we don't have likes/comments tables yet
     // TODO: Implement real profile power calculation system
@@ -644,11 +695,7 @@ export default function Profile() {
       
       console.log('🔄 Profile: Fetching user chirps for:', user.id);
       
-      const { createClient } = await import('@supabase/supabase-js');
-      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-      
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Use the existing singleton Supabase client instead of creating a new one
       
       // Fetch user's chirps (original posts, not replies)
       const { data: chirps, error: chirpsError } = await supabase
@@ -702,11 +749,7 @@ export default function Profile() {
       
       console.log('🔄 Profile: Fetching user replies for:', user.id);
       
-      const { createClient } = await import('@supabase/supabase-js');
-      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-      
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Use the existing singleton Supabase client instead of creating a new one
       
       // Fetch user's replies (comments)
       const { data: replies, error: repliesError } = await supabase
@@ -765,12 +808,7 @@ export default function Profile() {
             // Use Supabase API for user chirps, stats, and profile power
             console.log('🔄 Profile: Fetching user data...');
             
-            // First fetch user data, then use it for chirps
-            const { createClient } = await import('@supabase/supabase-js');
-            const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-            
-            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // Use the existing singleton Supabase client instead of creating a new one
             
             // Fetch user data first - handle both UUID and handle
             let userFromDb, userError;
@@ -859,7 +897,7 @@ export default function Profile() {
             const [chirpsResult, statsResult, profilePowerResult] = await Promise.allSettled([
               getUserChirps(userId, userData),
               getUserStats(userId),
-              getProfilePowerBreakdown(userId)
+              getProfilePowerBreakdown(userData?.id || userId)
             ]);
             
             // Extract data from settled promises
