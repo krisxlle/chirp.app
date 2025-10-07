@@ -1031,7 +1031,15 @@ export default function Profile() {
         maxWidth: '600px' // Match Metro width
       }}>
         {/* Banner */}
-        <div style={{ height: '192px', width: '100%', overflow: 'hidden' }}>
+        <div style={{ 
+          height: '192px', 
+          width: '100%', 
+          overflow: 'hidden',
+          backgroundColor: '#f0f0f0', // Temporary background to see if container is visible
+          border: '2px solid red' // Temporary border to see container bounds
+        }}>
+          {console.log('🔍 Banner render - user.bannerImageUrl:', user.bannerImageUrl)}
+          {console.log('🔍 Banner render - user object:', user)}
           <img
             src={user.bannerImageUrl || 'https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png'}
             alt="Profile banner"
@@ -1041,12 +1049,16 @@ export default function Profile() {
               objectFit: 'cover',
               objectPosition: 'center'
             }}
-            onLoad={() => {
+            onLoad={(e) => {
               console.log('✅ Banner image loaded successfully:', user.bannerImageUrl);
+              console.log('✅ Image element:', e.currentTarget);
+              console.log('✅ Image natural dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
+              console.log('✅ Image display dimensions:', e.currentTarget.width, 'x', e.currentTarget.height);
             }}
             onError={(e) => {
               console.error('❌ Banner image failed to load:', user.bannerImageUrl);
               console.error('❌ Error event:', e);
+              console.error('❌ Image element:', e.currentTarget);
               // Fallback to default banner
               e.currentTarget.src = 'https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png';
             }}
