@@ -316,9 +316,17 @@ export default function Settings({ onClose }: SettingsProps) {
                 .eq('id', user.id);
 
               if (!error) {
-                await updateUser({
-                  bannerImageUrl: uploadedImageUrl
-                });
+                // Update the user context
+                console.log('Updating user context with banner URL');
+                if (typeof updateUser === 'function') {
+                  await updateUser({
+                    bannerImageUrl: uploadedImageUrl
+                  });
+                  console.log('User context updated successfully');
+                } else {
+                  console.error('updateUser is not a function:', typeof updateUser);
+                  // Don't throw error here since database update succeeded
+                }
                 alert('Profile banner updated successfully!');
                 setSelectedBannerImage(null);
                 URL.revokeObjectURL(imageUrl);
