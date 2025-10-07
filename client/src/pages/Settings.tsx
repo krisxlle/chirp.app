@@ -290,6 +290,9 @@ export default function Settings({ onClose }: SettingsProps) {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file && user) {
+        // Store the original file for upload
+        const originalFile = file;
+        
         // Validate image dimensions
         const img = new Image();
         img.onload = () => {
@@ -302,7 +305,7 @@ export default function Settings({ onClose }: SettingsProps) {
           }
           
           // Check maximum file size (10MB)
-          if (file.size > 10 * 1024 * 1024) {
+          if (originalFile.size > 10 * 1024 * 1024) {
             alert('Banner image is too large. Please use an image smaller than 10MB.');
             return;
           }
@@ -310,7 +313,7 @@ export default function Settings({ onClose }: SettingsProps) {
           console.log('✅ Banner image validation passed');
           
           // Create preview URL
-          const imageUrl = URL.createObjectURL(file);
+          const imageUrl = URL.createObjectURL(originalFile);
           setSelectedBannerImage(imageUrl);
         
           // Upload directly with inline function to avoid context issues
@@ -319,15 +322,70 @@ export default function Settings({ onClose }: SettingsProps) {
             try {
               const fileName = `banner-${user.id}.jpg`;
               
-              const { data, error: uploadError } = await supabase.storage
-                .from('banners')
-                .upload(fileName, file, {
-                  contentType: file.type || 'image/jpeg',
-                  upsert: true,
-                });
+              console.log('🔍 Uploading file:', {
+                name: originalFile.name,
+                size: originalFile.size,
+                type: originalFile.type,
+                lastModified: originalFile.lastModified
+              });
+              
+              // Try uploading to banners bucket first, then fallback to banner-images
+              let uploadResult;
+              let uploadError;
+              
+              try {
+                uploadResult = await supabase.storage
+                  .from('banners')
+                  .upload(fileName, originalFile, {
+                    contentType: originalFile.type || 'image/jpeg',
+                    upsert: true,
+                    cacheControl: '3600',
+                  });
+                uploadError = uploadResult.error;
+              } catch (bucketError) {
+                console.log('Banners bucket failed, trying banner-images bucket:', bucketError);
+                uploadResult = await supabase.storage
+                  .from('banner-images')
+                  .upload(fileName, originalFile, {
+                    contentType: originalFile.type || 'image/jpeg',
+                    upsert: true,
+                    cacheControl: '3600',
+                  });
+                uploadError = uploadResult.error;
+              }
+              
+              const { data } = uploadResult;
 
               if (!uploadError && data) {
-                const uploadedImageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/banners/${data.path}`;
+                // Generate URL based on which bucket was used
+                let uploadedImageUrl;
+                try {
+                  const { data: urlData } = supabase.storage
+                    .from('banners')
+                    .getPublicUrl(data.path);
+                  uploadedImageUrl = urlData.publicUrl;
+                } catch {
+                  const { data: urlData } = supabase.storage
+                    .from('banner-images')
+                    .getPublicUrl(data.path);
+                  uploadedImageUrl = urlData.publicUrl;
+                }
+                
+                console.log('✅ Upload successful:', {
+                  data,
+                  uploadedImageUrl,
+                  uploadError
+                });
+                
+                // Verify the uploaded image by creating a test image element
+                const testImg = new Image();
+                testImg.onload = () => {
+                  console.log('🔍 Uploaded image verification - dimensions:', testImg.naturalWidth, 'x', testImg.naturalHeight);
+                };
+                testImg.onerror = () => {
+                  console.error('❌ Uploaded image verification failed');
+                };
+                testImg.src = uploadedImageUrl;
                 
                 const { error } = await supabase
                   .from('users')
