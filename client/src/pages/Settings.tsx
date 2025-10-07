@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
-import { supabase } from '../lib/supabase';
 import UserAvatar from '../components/UserAvatar';
+import { supabase } from '../lib/supabase';
 
 // Inline API functions to avoid import issues in production
 const getUserStats = async (userId: string) => {
@@ -186,8 +186,7 @@ export default function Settings({ onClose }: SettingsProps) {
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   
   // Profile form state
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [displayName, setDisplayName] = useState(user?.firstName || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [linkInBio, setLinkInBio] = useState(user?.linkInBio || '');
   
@@ -218,8 +217,7 @@ export default function Settings({ onClose }: SettingsProps) {
   // Update form state when user changes
   useEffect(() => {
     if (user) {
-      setFirstName(user.firstName || '');
-      setLastName(user.lastName || '');
+      setDisplayName(user.firstName || '');
       setBio(user.bio || '');
       setLinkInBio(user.linkInBio || '');
     }
@@ -320,52 +318,108 @@ export default function Settings({ onClose }: SettingsProps) {
 
   const handleUploadBannerImage = async (imageDataUrl?: string) => {
     const imageToUpload = imageDataUrl || selectedBannerImage;
-    if (!imageToUpload || !user) return;
+    if (!imageToUpload || !user) {
+      console.log('Missing image or user data:', { imageToUpload: !!imageToUpload, user: !!user });
+      return;
+    }
 
     setIsUploadingBannerImage(true);
     try {
+      console.log('Starting banner upload for user:', user.id);
+      
       // Convert data URL to blob
       const response = await fetch(imageToUpload);
-      const blob = await response.blob();
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
       
-      // Create form data
-      const formData = new FormData();
-      formData.append('file', blob, `banner-${user.id}.jpg`);
+      const blob = await response.blob();
+      console.log('Image blob created:', { size: blob.size, type: blob.type });
       
       // Upload to Supabase storage using client
       const fileName = `banner-${user.id}.jpg`;
       
-      const { data, error: uploadError } = await supabase.storage
-        .from('banners')
-        .upload(fileName, blob, {
-          contentType: blob.type || 'image/jpeg',
-          upsert: true, // Allow overwriting existing files
-        });
+      // Try 'banners' bucket first, fallback to 'banner-images' if needed
+      let uploadResult;
+      let uploadError;
+      
+      try {
+        uploadResult = await supabase.storage
+          .from('banners')
+          .upload(fileName, blob, {
+            contentType: blob.type || 'image/jpeg',
+            upsert: true, // Allow overwriting existing files
+          });
+        uploadError = uploadResult.error;
+      } catch (bucketError) {
+        console.log('Banners bucket not available, trying banner-images bucket');
+        uploadResult = await supabase.storage
+          .from('banner-images')
+          .upload(fileName, blob, {
+            contentType: blob.type || 'image/jpeg',
+            upsert: true, // Allow overwriting existing files
+          });
+        uploadError = uploadResult.error;
+      }
+      
+      const { data } = uploadResult;
 
-      if (!uploadError && data) {
-        const imageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/banners/${data.path}`;
+      if (uploadError) {
+        console.error('Supabase upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      if (data) {
+        // Determine which bucket was used based on the path or try both
+        let imageUrl;
+        try {
+          // Try banners bucket first
+          const { data: urlData } = supabase.storage
+            .from('banners')
+            .getPublicUrl(data.path);
+          imageUrl = urlData.publicUrl;
+        } catch {
+          // Fallback to banner-images bucket
+          const { data: urlData } = supabase.storage
+            .from('banner-images')
+            .getPublicUrl(data.path);
+          imageUrl = urlData.publicUrl;
+        }
+        
+        console.log('Image uploaded successfully, URL:', imageUrl);
         
         // Update user profile with new banner URL
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('users')
           .update({ banner_image_url: imageUrl })
           .eq('id', user.id);
 
-        if (!error) {
+        if (updateError) {
+          console.error('Database update error:', updateError);
+          throw new Error(`Failed to update banner in database: ${updateError.message}`);
+        }
+
+        // Update the user context
+        console.log('Updating user context with banner URL');
+        if (typeof updateUser === 'function') {
           await updateUser({
             bannerImageUrl: imageUrl
           });
-          alert('Profile banner updated successfully!');
-          setSelectedBannerImage(null);
+          console.log('User context updated successfully');
         } else {
-          throw new Error('Failed to update banner');
+          console.error('updateUser is not a function:', typeof updateUser);
+          throw new Error('updateUser function is not available');
         }
+        
+        alert('Profile banner updated successfully!');
+        setSelectedBannerImage(null);
       } else {
-        throw new Error('Failed to upload banner image');
+        throw new Error('No data returned from upload');
       }
     } catch (error) {
       console.error('Error uploading banner image:', error);
-      alert(`Failed to upload banner image: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to upload banner image: ${errorMessage}`);
     } finally {
       setIsUploadingBannerImage(false);
     }
@@ -430,15 +484,47 @@ export default function Settings({ onClose }: SettingsProps) {
   const handleSaveProfile = async () => {
     setIsUpdating(true);
     try {
-      await updateUser({
-        firstName,
-        lastName,
-        bio,
-        linkInBio
-      });
+      console.log('Starting profile update with data:', { displayName, bio, linkInBio });
+      
+      if (!user?.id) {
+        throw new Error('User ID not available');
+      }
+      
+      // Update user profile in database first
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ 
+          first_name: displayName,
+          bio: bio,
+          link_in_bio: linkInBio
+        })
+        .eq('id', user.id);
+
+      if (dbError) {
+        console.error('Database update error:', dbError);
+        throw new Error(`Failed to update profile in database: ${dbError.message}`);
+      }
+      
+      // Then update the user context
+      console.log('Updating user context with profile data');
+      if (typeof updateUser === 'function') {
+        await updateUser({
+          firstName: displayName,
+          bio,
+          linkInBio
+        });
+        console.log('User context updated successfully');
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser);
+        // Don't throw error here since database update succeeded
+      }
+      
       console.log('✅ Profile updated successfully');
+      alert('Profile updated successfully!');
     } catch (error) {
       console.error('❌ Failed to update profile:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to update profile: ${errorMessage}`);
     } finally {
       setIsUpdating(false);
     }
@@ -459,7 +545,7 @@ export default function Settings({ onClose }: SettingsProps) {
       style={{
         padding: '8px 12px',
         borderRadius: '8px',
-        backgroundColor: active ? '#7c3aed' : 'transparent',
+        background: active ? 'linear-gradient(135deg, #7c3aed, #ec4899)' : 'transparent',
         color: active ? '#ffffff' : '#657786',
         fontSize: '12px',
         fontWeight: '600',
@@ -680,12 +766,12 @@ export default function Settings({ onClose }: SettingsProps) {
             color: '#374151',
             marginBottom: '6px'
           }}>
-            First Name
+            Display Name
           </label>
           <input
             type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
             style={{
               width: '100%',
               padding: '12px',
@@ -695,34 +781,7 @@ export default function Settings({ onClose }: SettingsProps) {
               outline: 'none',
               transition: 'border-color 0.2s'
             }}
-            placeholder="Enter your first name"
-          />
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{
-            display: 'block',
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#374151',
-            marginBottom: '6px'
-          }}>
-            Last Name
-          </label>
-          <input
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '14px',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
-            placeholder="Enter your last name"
+            placeholder="Enter your display name"
           />
         </div>
 
@@ -1064,70 +1123,43 @@ export default function Settings({ onClose }: SettingsProps) {
           </div>
         </div>
 
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{
-            fontSize: '12px',
-            color: '#6b7280',
-            marginBottom: '4px'
-          }}>
-            Account Type
-          </div>
-          <div style={{
-            fontSize: '14px',
-            color: '#111827',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}>
-            {user?.isChirpPlus ? (
-              <>
-                <span style={{ color: '#7c3aed' }}>👑</span>
-                Chirp+ Member
-              </>
-            ) : (
-              'Free Account'
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* Danger Zone */}
+      {/* Sign Out */}
       <div style={{
         backgroundColor: '#ffffff',
         borderRadius: '12px',
         padding: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-        border: '1px solid #fecaca'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
       }}>
-        <h4 style={{
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#dc2626',
-          marginBottom: '16px'
-        }}>
-          Danger Zone
-        </h4>
-        
         <button
           onClick={handleSignOut}
           style={{
             width: '100%',
             padding: '12px',
-            backgroundColor: '#ef4444',
-            color: '#ffffff',
-            border: 'none',
+            backgroundColor: '#f8fafc',
+            color: '#374151',
+            border: '1px solid #e2e8f0',
             borderRadius: '8px',
             fontSize: '14px',
             fontWeight: '600',
             cursor: 'pointer',
-            transition: 'background-color 0.2s',
+            transition: 'all 0.2s',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px'
           }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f1f5f9';
+            e.currentTarget.style.borderColor = '#cbd5e1';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#f8fafc';
+            e.currentTarget.style.borderColor = '#e2e8f0';
+          }}
         >
-          <LogOutIcon size={16} color="#ffffff" />
+          <LogOutIcon size={16} color="#374151" />
           Sign Out
         </button>
       </div>

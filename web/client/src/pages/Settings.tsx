@@ -113,12 +113,12 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="displayName">Display Name</Label>
                   <Input
-                    id="firstName"
+                    id="displayName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Enter your first name"
+                    placeholder="Enter your display name"
                   />
                 </div>
 

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface ImageViewerModalProps {
   visible: boolean;
@@ -50,7 +50,7 @@ export default function ImageViewerModal({
     <div 
       className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center" 
       style={{ 
-        zIndex: 10, // Lower z-index to appear behind nav bar
+        zIndex: 40, // Appear behind header/nav but above content
         position: 'fixed',
         top: 0,
         left: 0,
@@ -78,7 +78,7 @@ export default function ImageViewerModal({
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          zIndex: 20
+          zIndex: 50
         }}
       >
         <X className="h-6 w-6" style={{ color: 'black' }} />
@@ -92,7 +92,8 @@ export default function ImageViewerModal({
           width: '100vw',
           height: '100vh',
           maxWidth: '100vw',
-          maxHeight: '100vh'
+          maxHeight: '100vh',
+          position: 'relative'
         }}
       >
         <img
@@ -100,12 +101,13 @@ export default function ImageViewerModal({
           alt={imageAltText || 'Chirp image'}
           className="object-contain"
           style={{
-            maxWidth: '100vw',
-            maxHeight: '100vh',
+            maxWidth: 'calc(100vw - 2rem)',
+            maxHeight: 'calc(100vh - 2rem)',
             width: 'auto',
             height: 'auto',
             display: 'block',
-            margin: 'auto'
+            margin: 'auto',
+            objectFit: 'contain'
           }}
           draggable={false}
         />

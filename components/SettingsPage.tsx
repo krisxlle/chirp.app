@@ -635,12 +635,12 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
           </Text>
           
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>First Name</Text>
+            <Text style={styles.inputLabel}>Display Name</Text>
             <TextInput
               style={styles.textInput}
               value={firstName}
               onChangeText={setFirstName}
-              placeholder="Enter your first name"
+              placeholder="Enter your display name"
               placeholderTextColor="#9ca3af"
             />
           </View>

@@ -107,21 +107,34 @@ export default function ImageViewerModal({
   const WebImage = () => {
     if (Platform.OS === 'web') {
       return (
-        <img
-          src={imageUrl}
-          alt={imageAltText || 'Chirp image'}
-          style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            objectFit: 'contain',
-            transform: `scale(${scale}) translate(${translateX}px, ${translateY}px)`,
-            transition: 'transform 0.1s ease-out',
-            cursor: scale > 1 ? 'grab' : 'pointer'
-          }}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          onClick={scale === 1 ? handleClose : undefined}
-        />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%',
+          position: 'relative'
+        }}>
+          <img
+            src={imageUrl}
+            alt={imageAltText || 'Chirp image'}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              width: 'auto',
+              height: 'auto',
+              objectFit: 'contain',
+              transform: `scale(${scale}) translate(${translateX}px, ${translateY}px)`,
+              transition: 'transform 0.1s ease-out',
+              cursor: scale > 1 ? 'grab' : 'pointer',
+              display: 'block',
+              margin: 'auto'
+            }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            onClick={scale === 1 ? handleClose : undefined}
+          />
+        </div>
       );
     }
     return null;
@@ -235,7 +248,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     right: 20,
-    zIndex: 10,
+    zIndex: 1000,
     borderRadius: 20,
     overflow: 'hidden',
   },
