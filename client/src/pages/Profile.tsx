@@ -541,6 +541,14 @@ export default function Profile() {
     }
   }, [user?.id, authUser?.id]);
 
+  // Refresh user data when authUser banner URL changes (for own profile)
+  useEffect(() => {
+    if (authUser?.id === userId && authUser?.bannerImageUrl !== user?.bannerImageUrl) {
+      console.log('🔄 Profile: Banner URL updated, refreshing user data');
+      loadUserProfile();
+    }
+  }, [authUser?.bannerImageUrl, userId, user?.bannerImageUrl]);
+
   const loadEquippedFrame = async () => {
     try {
       const frame = await getUserEquippedFrame(user!.id);
@@ -747,7 +755,8 @@ export default function Profile() {
                 handle: userFromDb.handle,
                 profileImageUrl: userFromDb.profile_image_url,
                 avatarUrl: userFromDb.avatar_url,
-                bannerImageUrl: userFromDb.banner_image_url,
+                // Use auth context banner URL if available (more up-to-date), otherwise fallback to database
+                bannerImageUrl: authUser?.bannerImageUrl || userFromDb.banner_image_url,
                 bio: userFromDb.bio,
                 linkInBio: userFromDb.link_in_bio,
                 joinedAt: userFromDb.created_at || '2024-01-15T00:00:00Z',
@@ -766,7 +775,7 @@ export default function Profile() {
                 handle: undefined,
                 profileImageUrl: undefined,
                 avatarUrl: undefined,
-                bannerImageUrl: undefined,
+                bannerImageUrl: authUser?.bannerImageUrl,
                 bio: undefined,
                 linkInBio: undefined,
                 joinedAt: '2024-01-15T00:00:00Z',
