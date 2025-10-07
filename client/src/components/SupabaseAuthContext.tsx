@@ -11,6 +11,7 @@ interface TransformedUser {
   handle?: string;
   name?: string;
   profileImageUrl?: string;
+  bannerImageUrl?: string;
   bio?: string;
   crystalBalance?: number;
   createdAt?: string;
@@ -23,6 +24,7 @@ interface SupabaseAuthContextType {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, name: string, customHandle?: string) => Promise<{ success: boolean; error?: string; message?: string }>;
   signOut: () => Promise<void>;
+  updateUser: (updates: Partial<TransformedUser>) => Promise<void>;
   isAuthenticated: boolean;
   isEmailVerified: boolean;
   resendVerificationEmail: () => Promise<{ success: boolean; error?: string }>;
@@ -46,6 +48,7 @@ const transformSupabaseUser = (supabaseUser: User | null): TransformedUser | nul
     handle: metadata.handle || '',
     name: metadata.name || `${metadata.first_name || ''} ${metadata.last_name || ''}`.trim(),
     profileImageUrl: metadata.profile_image_url || metadata.avatar_url || '',
+    bannerImageUrl: metadata.banner_image_url || '',
     bio: metadata.bio || '',
     crystalBalance: metadata.crystal_balance || 100,
     createdAt: supabaseUser.created_at
@@ -276,6 +279,48 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     }
   };
 
+  const updateUser = async (updates: Partial<TransformedUser>): Promise<void> => {
+    try {
+      if (!user?.id) {
+        throw new Error('No user ID available');
+      }
+
+      console.log('🔄 Updating user context with:', updates);
+
+      // Update the local user state
+      setUser(prevUser => {
+        if (!prevUser) return null;
+        return { ...prevUser, ...updates };
+      });
+
+      // Update user metadata in Supabase Auth
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          first_name: updates.firstName,
+          last_name: updates.lastName,
+          custom_handle: updates.customHandle,
+          handle: updates.handle,
+          profile_image_url: updates.profileImageUrl,
+          banner_image_url: updates.bannerImageUrl,
+          bio: updates.bio,
+          crystal_balance: updates.crystalBalance
+        }
+      });
+
+      if (authError) {
+        console.error('❌ Error updating user auth metadata:', authError);
+        // Don't throw error here, just log it
+      } else {
+        console.log('✅ User auth metadata updated successfully');
+      }
+
+      console.log('✅ User context updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating user:', error);
+      throw error;
+    }
+  };
+
   const value: SupabaseAuthContextType = {
     user,
     session,
@@ -283,6 +328,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     signIn,
     signUp,
     signOut,
+    updateUser,
     isAuthenticated: !!user,
     isEmailVerified,
     resendVerificationEmail,
