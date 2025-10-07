@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import ChirpCard from '../components/ChirpCard';
+import FollowersFollowingModal from '../components/FollowersFollowingModal';
 import ProfileFrame from '../components/ProfileFrame';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
@@ -504,6 +505,8 @@ export default function Profile() {
   const [equippedFrame, setEquippedFrame] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
 
   console.log('🔍 Profile: State initialized, location:', location, 'authUser:', authUser?.id);
 
@@ -1351,11 +1354,14 @@ export default function Profile() {
             alignItems: 'center',
             marginTop: '16px'
           }}>
-            <div style={{ 
-              flex: 1, 
-              textAlign: 'center',
-              cursor: 'pointer'
-            }}>
+            <div 
+              style={{ 
+                flex: 1, 
+                textAlign: 'center',
+                cursor: 'pointer'
+              }}
+              onClick={() => setShowFollowingModal(true)}
+            >
               <div style={{
                 fontSize: '18px',
                 fontWeight: 'bold',
@@ -1367,11 +1373,14 @@ export default function Profile() {
                 marginTop: '2px'
               }}>Following</div>
             </div>
-            <div style={{ 
-              flex: 1, 
-              textAlign: 'center',
-              cursor: 'pointer'
-            }}>
+            <div 
+              style={{ 
+                flex: 1, 
+                textAlign: 'center',
+                cursor: 'pointer'
+              }}
+              onClick={() => setShowFollowersModal(true)}
+            >
               <div style={{
                 fontSize: '18px',
                 fontWeight: 'bold',
@@ -1491,6 +1500,23 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* Followers/Following Modals */}
+      <FollowersFollowingModal
+        visible={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        userId={user?.id || ''}
+        type="followers"
+        title="Followers"
+      />
+
+      <FollowersFollowingModal
+        visible={showFollowingModal}
+        onClose={() => setShowFollowingModal(false)}
+        userId={user?.id || ''}
+        type="following"
+        title="Following"
+      />
     </div>
   );
 }
