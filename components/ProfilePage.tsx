@@ -53,7 +53,7 @@ interface ProfilePageProps {
 export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNavigateToProfile }, ref) {
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
+  const [activeTab, setActiveTab] = useState<'chirps' | 'collection'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
   const [userReplies, setUserReplies] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -347,14 +347,14 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
 
       {/* Profile Tabs */}
       <View style={styles.tabsContainer}>
-        {(['chirps', 'comments', 'collection'] as const).map((tab) => (
+        {(['chirps', 'collection'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab === 'chirps' ? 'Chirps' : tab === 'comments' ? 'Comments' : 'Showcase'}
+              {tab === 'chirps' ? 'Chirps' : 'Showcase'}
             </Text>
           </TouchableOpacity>
         ))}
@@ -385,28 +385,6 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
           </View>
         )}
         
-        {activeTab === 'comments' && (
-          <View style={styles.repliesContainer}>
-            {userReplies.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyIcon}>💬</Text>
-                <Text style={styles.emptyTitle}>No comments yet</Text>
-                <Text style={styles.emptySubtext}>Your comments will appear here</Text>
-              </View>
-            ) : (
-              userReplies.map((reply) => (
-                <ChirpCard 
-                  key={reply.id} 
-                  chirp={reply} 
-                  onLikeUpdate={handleChirpLikeUpdate}
-                  onDeleteSuccess={fetchUserChirps}
-                  onReplyPosted={handleChirpReplyUpdate}
-                  onProfilePress={(userId) => router.push(`/profile/${userId}`)}
-                />
-              ))
-            )}
-          </View>
-        )}
 
         {activeTab === 'collection' && (
           <View style={styles.collectionContainer}>

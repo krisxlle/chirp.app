@@ -475,7 +475,7 @@ export default function Profile() {
   const { updateLike } = useLike();
   const [location, setLocation] = useLocation();
   const [user, setUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'chirps' | 'comments' | 'collection'>('chirps');
+  const [activeTab, setActiveTab] = useState<'chirps' | 'collection'>('chirps');
   const [userChirps, setUserChirps] = useState<any[]>([]);
   const [userReplies, setUserReplies] = useState<any[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
@@ -1408,23 +1408,6 @@ export default function Profile() {
               paddingTop: '8px',
               paddingBottom: '8px',
               borderRadius: '9px',
-              backgroundColor: activeTab === 'comments' ? '#ffffff' : 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: activeTab === 'comments' ? '#111827' : '#6b7280'
-            }}
-            onClick={() => setActiveTab('comments')}
-          >
-            Comments
-          </button>
-          <button
-            style={{
-              flex: 1,
-              paddingTop: '8px',
-              paddingBottom: '8px',
-              borderRadius: '9px',
               backgroundColor: activeTab === 'collection' ? '#ffffff' : 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -1471,37 +1454,6 @@ export default function Profile() {
           </div>
         )}
         
-        {activeTab === 'comments' && (
-          <div style={{ marginTop: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {userReplies.length > 0 ? (
-                userReplies.map((reply) => (
-                  <ChirpCard 
-                    key={reply.id} 
-                    chirp={reply} 
-                    onLikeUpdate={handleChirpLikeUpdate}
-                    onProfilePress={(userId) => setLocation(`/profile/${userId}`)}
-                  />
-                ))
-              ) : (
-                <div style={{ textAlign: 'center', paddingTop: '32px', paddingBottom: '32px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#111827',
-                    marginBottom: '8px',
-                    margin: 0
-                  }}>No comments yet</h3>
-                  <p style={{
-                    color: '#6b7280',
-                    margin: 0
-                  }}>This user hasn't made any comments yet.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
         
         {activeTab === 'collection' && (
           <div style={{ marginTop: '16px' }}>
