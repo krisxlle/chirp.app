@@ -320,7 +320,9 @@ export default function Settings({ onClose }: SettingsProps) {
           (async () => {
             setIsUploadingBannerImage(true);
             try {
-              const fileName = `banner-${user.id}.jpg`;
+              // Preserve original file extension
+              const fileExtension = originalFile.name.split('.').pop() || 'jpg';
+              const fileName = `banner-${user.id}.${fileExtension}`;
               
               console.log('🔍 Uploading file:', {
                 name: originalFile.name,
@@ -337,7 +339,7 @@ export default function Settings({ onClose }: SettingsProps) {
                 uploadResult = await supabase.storage
                   .from('banners')
                   .upload(fileName, originalFile, {
-                    contentType: originalFile.type || 'image/jpeg',
+                    contentType: originalFile.type,
                     upsert: true,
                     cacheControl: '3600',
                   });
@@ -347,7 +349,7 @@ export default function Settings({ onClose }: SettingsProps) {
                 uploadResult = await supabase.storage
                   .from('banner-images')
                   .upload(fileName, originalFile, {
-                    contentType: originalFile.type || 'image/jpeg',
+                    contentType: originalFile.type,
                     upsert: true,
                     cacheControl: '3600',
                   });
