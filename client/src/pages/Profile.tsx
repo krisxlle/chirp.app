@@ -390,10 +390,27 @@ const getUserStats = async (userId: string) => {
       followersCount = Math.floor(Math.random() * 200) + 50; // Random between 50-250
     }
     
-    // Calculate profile power based on activity (more realistic calculation)
-    const profilePower = Math.floor(totalChirps * 20 + followersCount * 2); // Include followers in power calculation
+    // Get total comments on user's chirps (replies to their chirps)
+    let totalComments = 0;
+    if (chirpsResult.count && chirpsResult.count > 0) {
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('chirps')
+        .select('id')
+        .not('reply_to_id', 'is', null)
+        .in('reply_to_id', chirpsResult.data?.map(chirp => chirp.id) || []);
+
+      if (commentsError) {
+        console.error('❌ Error fetching comments:', commentsError);
+      } else {
+        totalComments = commentsData?.length || 0;
+      }
+    }
+
+    // Calculate profile power based on engagement only (likes + comments * 2)
+    // Profile power should NOT include points for just posting chirps
+    const profilePower = Math.floor(totalLikes + (totalComments * 2));
     
-    console.log('📊 Calculated stats:', { totalChirps, totalLikes, profilePower, followingCount, followersCount });
+    console.log('📊 Calculated stats:', { totalChirps, totalLikes, totalComments, profilePower, followingCount, followersCount });
     
     const result = {
       following: followingCount,
