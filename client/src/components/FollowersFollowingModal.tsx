@@ -68,10 +68,10 @@ export default function FollowersFollowingModal({
   const getFollowers = async (userId: string): Promise<User[]> => {
     try {
       const { data, error } = await supabase
-        .from('relationships')
+        .from('follows')
         .select(`
           follower_id,
-          users!relationships_follower_id_fkey (
+          users!follows_follower_id_fkey (
             id,
             first_name,
             last_name,
@@ -113,10 +113,10 @@ export default function FollowersFollowingModal({
   const getFollowing = async (userId: string): Promise<User[]> => {
     try {
       const { data, error } = await supabase
-        .from('relationships')
+        .from('follows')
         .select(`
           following_id,
-          users!relationships_following_id_fkey (
+          users!follows_following_id_fkey (
             id,
             first_name,
             last_name,

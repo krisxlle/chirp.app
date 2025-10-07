@@ -53,7 +53,7 @@ const addSampleRelationships = async () => {
     
     if (relationships.length > 0) {
       const { data, error } = await supabase
-        .from('relationships')
+        .from('follows')
         .insert(relationships);
       
       if (error) {
@@ -76,7 +76,7 @@ const followUser = async (followerId: string, followingId: string) => {
   try {
     
     const { data, error } = await supabase
-      .from('relationships')
+      .from('follows')
       .insert([
         { follower_id: followerId, following_id: followingId }
       ]);
@@ -101,7 +101,7 @@ const unfollowUser = async (followerId: string, followingId: string) => {
     // Using singleton Supabase client
     
     const { error } = await supabase
-      .from('relationships')
+      .from('follows')
       .delete()
       .eq('follower_id', followerId)
       .eq('following_id', followingId);
@@ -126,7 +126,7 @@ const checkFollowStatus = async (followerId: string, followingId: string) => {
     // Using singleton Supabase client
     
     const { data, error } = await supabase
-      .from('relationships')
+      .from('follows')
       .select('id')
       .eq('follower_id', followerId)
       .eq('following_id', followingId)
@@ -304,11 +304,38 @@ const getUserStats = async (userId: string) => {
 
     console.log('✅ Using real Supabase client for getUserStats');
     
+    // First, resolve userId to actual user ID if it's a handle
+    let actualUserId = userId;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    
+    if (!isUUID) {
+      // Query by handle (custom_handle or handle) - case insensitive
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .or(`custom_handle.ilike.${userId},handle.ilike.${userId}`)
+        .single();
+      
+      if (userError || !userData) {
+        console.error('❌ User not found for handle:', userId);
+        return {
+          following: 0,
+          followers: 0,
+          profilePower: 0,
+          totalChirps: 0,
+          totalLikes: 0
+        };
+      }
+      
+      actualUserId = userData.id;
+      console.log('🔍 Resolved handle to UUID:', { handle: userId, uuid: actualUserId });
+    }
+    
     // Calculate real stats from database
     const chirpsResult = await supabase
       .from('chirps')
       .select('id', { count: 'exact', head: true })
-      .eq('author_id', userId);
+      .eq('author_id', actualUserId);
 
     console.log('🔍 getUserStats chirpsResult:', chirpsResult);
 
@@ -329,17 +356,17 @@ const getUserStats = async (userId: string) => {
       
       // Get following count (users this person follows)
       const followingResult = await supabase
-        .from('relationships')
+        .from('follows')
         .select('id', { count: 'exact', head: true })
-        .eq('follower_id', userId);
+        .eq('follower_id', actualUserId);
       
       console.log('📊 Following query result:', followingResult);
       
       // Get followers count (users who follow this person)
       const followersResult = await supabase
-        .from('relationships')
+        .from('follows')
         .select('id', { count: 'exact', head: true })
-        .eq('following_id', userId);
+        .eq('following_id', actualUserId);
       
       console.log('📊 Followers query result:', followersResult);
       
@@ -366,14 +393,14 @@ const getUserStats = async (userId: string) => {
         
         // Try to fetch again after adding sample data
         const retryFollowingResult = await supabase
-          .from('relationships')
+          .from('follows')
           .select('id', { count: 'exact', head: true })
-          .eq('follower_id', userId);
+          .eq('follower_id', actualUserId);
         
         const retryFollowersResult = await supabase
-          .from('relationships')
+          .from('follows')
           .select('id', { count: 'exact', head: true })
-          .eq('following_id', userId);
+          .eq('following_id', actualUserId);
         
         if (!retryFollowingResult.error) {
           followingCount = retryFollowingResult.count || 0;
@@ -394,16 +421,24 @@ const getUserStats = async (userId: string) => {
     // Get total comments on user's chirps (replies to their chirps)
     let totalComments = 0;
     if (chirpsResult.count && chirpsResult.count > 0) {
-      const { data: commentsData, error: commentsError } = await supabase
+      // Get user's chirp IDs first
+      const { data: userChirps, error: chirpsError } = await supabase
         .from('chirps')
         .select('id')
-        .not('reply_to_id', 'is', null)
-        .in('reply_to_id', chirpsResult.data?.map(chirp => chirp.id) || []);
+        .eq('author_id', actualUserId);
+      
+      if (!chirpsError && userChirps && userChirps.length > 0) {
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('chirps')
+          .select('id')
+          .not('reply_to_id', 'is', null)
+          .in('reply_to_id', userChirps.map(chirp => chirp.id));
 
-      if (commentsError) {
-        console.error('❌ Error fetching comments:', commentsError);
-      } else {
-        totalComments = commentsData?.length || 0;
+        if (commentsError) {
+          console.error('❌ Error fetching comments:', commentsError);
+        } else {
+          totalComments = commentsData?.length || 0;
+        }
       }
     }
 
