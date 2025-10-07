@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Clipboard, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ChirpImage from './ChirpImage';
 import ChirpLikesModal from './ChirpLikesModal';
@@ -243,6 +243,8 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
 
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
+  
+  const replyInputRef = useRef<TextInput>(null);
 
   const handleReply = () => {
     setShowReplyInput(true);
@@ -944,12 +946,34 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           >
             <View style={styles.replyContainer}>
               <TextInput
+                ref={replyInputRef}
                 style={styles.replyInput}
                 placeholder={`Reply to ${displayName}...`}
                 value={replyText}
                 onChangeText={setReplyText}
                 multiline
                 maxLength={280}
+                scrollEnabled={true}
+                textAlignVertical="top"
+                onContentSizeChange={(event) => {
+                  // Auto-scroll to bottom when content changes to keep cursor visible
+                  const { height } = event.nativeEvent.contentSize;
+                  if (height > 60) { // Only scroll if content exceeds minHeight
+                    setTimeout(() => {
+                      replyInputRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
+                  }
+                }}
+                onSelectionChange={(event) => {
+                  // Ensure cursor stays visible when typing
+                  const { start, end } = event.nativeEvent.selection;
+                  if (start === end && start === replyText.length) {
+                    // Cursor is at the end, scroll to bottom
+                    setTimeout(() => {
+                      replyInputRef.current?.scrollToEnd({ animated: true });
+                    }, 50);
+                  }
+                }}
                 onPressIn={(e) => e.stopPropagation()}
                 onPressOut={(e) => e.stopPropagation()}
               />
@@ -993,12 +1017,34 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             onResponderRelease={() => {}}
           >
             <TextInput
+              ref={replyInputRef}
               style={styles.replyInput}
               placeholder={`Reply to ${displayName}...`}
               value={replyText}
               onChangeText={setReplyText}
               multiline
               maxLength={280}
+              scrollEnabled={true}
+              textAlignVertical="top"
+              onContentSizeChange={(event) => {
+                // Auto-scroll to bottom when content changes to keep cursor visible
+                const { height } = event.nativeEvent.contentSize;
+                if (height > 60) { // Only scroll if content exceeds minHeight
+                  setTimeout(() => {
+                    replyInputRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }
+              }}
+              onSelectionChange={(event) => {
+                // Ensure cursor stays visible when typing
+                const { start, end } = event.nativeEvent.selection;
+                if (start === end && start === replyText.length) {
+                  // Cursor is at the end, scroll to bottom
+                  setTimeout(() => {
+                    replyInputRef.current?.scrollToEnd({ animated: true });
+                  }, 50);
+                }
+              }}
               onPressIn={(e) => e.stopPropagation()}
               onPressOut={(e) => e.stopPropagation()}
             />

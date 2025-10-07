@@ -1378,14 +1378,19 @@ export const uploadChirpImage = async (imageUri: string, userId: string): Promis
   }
 };
 
-// Helper function to convert blob to base64
-const blobToBase64 = (blob: Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+// Helper function to convert blob to base64 - React Native compatible
+const blobToBase64 = async (blob: Blob): Promise<string> => {
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    return 'data:' + blob.type + ';base64,' + btoa(binary);
+  } catch (error) {
+    throw new Error('Failed to convert blob to base64');
+  }
 };
 
 // Helper function to compress images using Expo ImageManipulator
@@ -1725,16 +1730,15 @@ export const uploadProfileImage = async (userId: string, imageUri: string): Prom
         return urlData.publicUrl;
       } catch (storageError) {
         console.log('Storage upload failed, using base64 fallback');
-        // Fall back to base64 storage
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-        });
-        reader.readAsDataURL(blob);
-        const base64Data = await base64Promise;
-        console.log('✅ Profile image stored as base64');
-        return base64Data;
+        // Fall back to base64 storage - React Native compatible
+        try {
+          const base64Data = await blobToBase64(blob);
+          console.log('✅ Profile image stored as base64');
+          return base64Data;
+        } catch (base64Error) {
+          console.error('Error converting to base64:', base64Error);
+          return imageUri;
+        }
       }
     } catch (conversionError) {
       console.error('Error uploading profile image:', conversionError);
@@ -1797,16 +1801,15 @@ export const uploadBannerImage = async (userId: string, imageUri: string): Promi
         return urlData.publicUrl;
       } catch (storageError) {
         console.log('Storage upload failed, using base64 fallback');
-        // Fall back to base64 storage
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-        });
-        reader.readAsDataURL(blob);
-        const base64Data = await base64Promise;
-        console.log('✅ Banner image stored as base64');
-        return base64Data;
+        // Fall back to base64 storage - React Native compatible
+        try {
+          const base64Data = await blobToBase64(blob);
+          console.log('✅ Banner image stored as base64');
+          return base64Data;
+        } catch (base64Error) {
+          console.error('Error converting to base64:', base64Error);
+          return imageUri;
+        }
       }
     } catch (conversionError) {
       console.error('Error uploading banner image:', conversionError);

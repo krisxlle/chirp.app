@@ -1,20 +1,19 @@
 import { router } from 'expo-router';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  ImageBackground,
-  Linking,
-  Platform,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    Dimensions,
+    ImageBackground,
+    Linking,
+    Platform,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { DEFAULT_BANNER_URL } from '../constants/DefaultBanner';
-import { determineUserRarity } from '../utils/rarityUtils';
 import { useAuth } from './AuthContext';
 import ChirpCard from './ChirpCard';
 import FollowersFollowingModal from './FollowersFollowingModal';
@@ -166,6 +165,23 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
           : chirp
       )
     );
+  }, []);
+
+  // Function to update chirp like count
+  const handleChirpLikeUpdate = useCallback((chirpId: string, newLikeCount: number, isLiked: boolean) => {
+    const updateChirp = (prevChirps: any[]) => 
+      prevChirps.map(chirp => 
+        chirp.id === chirpId 
+          ? { 
+              ...chirp,
+              likeCount: newLikeCount,
+              isLiked: isLiked
+            }
+          : chirp
+      );
+    
+    setUserChirps(updateChirp);
+    setUserReplies(updateChirp);
   }, []);
 
   const displayName = user?.firstName || user?.customHandle || user?.handle || 'User';
@@ -391,6 +407,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
                 <ChirpCard 
                   key={chirp.id} 
                   chirp={chirp} 
+                  onLikeUpdate={handleChirpLikeUpdate}
                   onDeleteSuccess={fetchUserChirps}
                   onReplyPosted={handleChirpReplyUpdate}
                   onProfilePress={(userId) => router.push(`/profile/${userId}`)}
@@ -413,6 +430,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
                 <ChirpCard 
                   key={reply.id} 
                   chirp={reply} 
+                  onLikeUpdate={handleChirpLikeUpdate}
                   onDeleteSuccess={fetchUserChirps}
                   onReplyPosted={handleChirpReplyUpdate}
                   onProfilePress={(userId) => router.push(`/profile/${userId}`)}

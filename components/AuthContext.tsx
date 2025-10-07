@@ -47,6 +47,7 @@ interface User {
   avatarUrl?: string;
   bannerImageUrl?: string;
   bio?: string;
+  linkInBio?: string;
   crystalBalance?: number;
 }
 

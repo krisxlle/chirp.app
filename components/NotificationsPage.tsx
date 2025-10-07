@@ -15,6 +15,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import type { Notification } from '../types/notifications';
 import { useAuth } from './AuthContext';
 import UserAvatar from './UserAvatar';
+import ChirpCard from './ChirpCard';
 import FollowIcon from './icons/FollowIcon';
 import HeartIcon from './icons/HeartIcon';
 import MentionIcon from './icons/MentionIcon';
@@ -224,9 +225,10 @@ export default function NotificationsPage() {
           
           {notification.chirp && (
             <View style={styles.chirpPreview}>
-              <Text style={styles.chirpText} numberOfLines={2}>
-                {notification.chirp.content}
-              </Text>
+              <ChirpCard 
+                chirp={notification.chirp}
+                onProfilePress={(userId) => router.push(`/profile/${userId}`)}
+              />
             </View>
           )}
         </View>

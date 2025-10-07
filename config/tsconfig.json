@@ -43,7 +43,6 @@
     "constants/**/*",
     "services/**/*",
     "mobile-*.ts",
-    ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
@@ -51,6 +50,5 @@
     "dist",
     "ios",
     "android"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }

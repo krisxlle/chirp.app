@@ -3,17 +3,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -306,7 +306,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       if (!result.canceled && result.assets[0]) {
         setSelectedBannerImage(result.assets[0].uri);
         // Automatically trigger upload after banner image selection
-        await handleUploadBannerImage(result.assets[0].uri);
+        await handleBannerImageUpload(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking banner image:', error);
@@ -349,10 +349,15 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the new profile image
-      await updateUser({
-        profileImageUrl: imageUrl,
-        avatarUrl: imageUrl
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          profileImageUrl: imageUrl,
+          avatarUrl: imageUrl
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Profile picture updated successfully!');
       setSelectedImage(null);
@@ -364,7 +369,7 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
     }
   };
 
-  const handleUploadBannerImage = async (imageUri?: string) => {
+  const handleBannerImageUpload = async (imageUri?: string) => {
     const uriToUpload = imageUri || selectedBannerImage;
     if (!uriToUpload || !user) return;
 
@@ -392,9 +397,14 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the new banner image
-      await updateUser({
-        bannerImageUrl: imageUrl
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          bannerImageUrl: imageUrl
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Profile banner updated successfully!');
       setSelectedBannerImage(null);
@@ -417,9 +427,14 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the name change
-      await updateUser({
-        firstName: firstName,
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          firstName: firstName,
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Name updated successfully!');
     } catch (error) {
@@ -443,11 +458,16 @@ export default function SettingsPage({ onClose }: SettingsPageProps) {
       });
       
       // Update the user data in AuthContext to reflect the changes
-      await updateUser({
-        firstName: firstName,
-        bio: bio,
-        linkInBio: linkInBio
-      });
+      if (updateUser && typeof updateUser === 'function') {
+        await updateUser({
+          firstName: firstName,
+          bio: bio,
+          linkInBio: linkInBio
+        });
+      } else {
+        console.error('updateUser is not a function:', typeof updateUser, updateUser);
+        throw new Error('updateUser function is not available');
+      }
       
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {

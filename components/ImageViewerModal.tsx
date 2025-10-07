@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     Dimensions,
     Image,
@@ -243,6 +243,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 2000, // Higher than floating compose button (1000)
   },
   closeButton: {
     position: 'absolute',
