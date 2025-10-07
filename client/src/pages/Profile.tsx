@@ -737,6 +737,8 @@ export default function Profile() {
             
             let userData;
             if (userFromDb && !userError) {
+              console.log('🔍 Profile: Raw user data from database:', userFromDb);
+              console.log('🔍 Profile: Banner image URL from database:', userFromDb.banner_image_url);
               userData = {
                 id: userFromDb.id,
                 firstName: userFromDb.first_name,
@@ -754,6 +756,7 @@ export default function Profile() {
                 isChirpPlus: userFromDb.is_chirp_plus || false,
                 showChirpPlusBadge: userFromDb.show_chirp_plus_badge || false
               };
+              console.log('🔍 Profile: Processed user data:', userData);
             } else {
               // Fallback to authUser data if not found in database
               userData = authUser ? {
@@ -1028,17 +1031,27 @@ export default function Profile() {
         maxWidth: '600px' // Match Metro width
       }}>
         {/* Banner */}
-        <div 
-          style={{
-            height: '192px',
-            background: user.bannerImageUrl 
-              ? `url(${user.bannerImageUrl})` 
-              : 'url(https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            width: '100%'
-          }}
-        />
+        <div style={{ height: '192px', width: '100%', overflow: 'hidden' }}>
+          <img
+            src={user.bannerImageUrl || 'https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png'}
+            alt="Profile banner"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center'
+            }}
+            onLoad={() => {
+              console.log('✅ Banner image loaded successfully:', user.bannerImageUrl);
+            }}
+            onError={(e) => {
+              console.error('❌ Banner image failed to load:', user.bannerImageUrl);
+              console.error('❌ Error event:', e);
+              // Fallback to default banner
+              e.currentTarget.src = 'https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png';
+            }}
+          />
+        </div>
         
         {/* Profile Avatar - Top half overlapping banner, above profile info */}
         <div style={{
