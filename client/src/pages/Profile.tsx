@@ -1269,7 +1269,9 @@ export default function Profile() {
               )}
               {user.linkInBio && user.linkInBio.trim() !== '' && (
                 <a 
-                  href={user.linkInBio} 
+                  href={user.linkInBio.startsWith('http://') || user.linkInBio.startsWith('https://') 
+                    ? user.linkInBio 
+                    : `https://${user.linkInBio}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   style={{
