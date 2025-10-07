@@ -737,8 +737,6 @@ export default function Profile() {
             
             let userData;
             if (userFromDb && !userError) {
-              console.log('🔍 Profile: Raw user data from database:', userFromDb);
-              console.log('🔍 Profile: Banner image URL from database:', userFromDb.banner_image_url);
               userData = {
                 id: userFromDb.id,
                 firstName: userFromDb.first_name,
@@ -756,7 +754,6 @@ export default function Profile() {
                 isChirpPlus: userFromDb.is_chirp_plus || false,
                 showChirpPlusBadge: userFromDb.show_chirp_plus_badge || false
               };
-              console.log('🔍 Profile: Processed user data:', userData);
             } else {
               // Fallback to authUser data if not found in database
               userData = authUser ? {
@@ -1034,12 +1031,8 @@ export default function Profile() {
         <div style={{ 
           height: '192px', 
           width: '100%', 
-          overflow: 'hidden',
-          backgroundColor: '#f0f0f0', // Temporary background to see if container is visible
-          border: '2px solid red' // Temporary border to see container bounds
+          overflow: 'hidden'
         }}>
-          {console.log('🔍 Banner render - user.bannerImageUrl:', user.bannerImageUrl)}
-          {console.log('🔍 Banner render - user object:', user)}
           <img
             src={user.bannerImageUrl || 'https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/assets/chirp-banner-default.png'}
             alt="Profile banner"

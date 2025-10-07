@@ -290,60 +290,87 @@ export default function Settings({ onClose }: SettingsProps) {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file && user) {
-        // Create preview URL
-        const imageUrl = URL.createObjectURL(file);
-        setSelectedBannerImage(imageUrl);
-        
-        // Upload directly with inline function to avoid context issues
-        (async () => {
-          setIsUploadingBannerImage(true);
-          try {
-            const fileName = `banner-${user.id}.jpg`;
-            
-            const { data, error: uploadError } = await supabase.storage
-              .from('banners')
-              .upload(fileName, file, {
-                contentType: file.type || 'image/jpeg',
-                upsert: true,
-              });
-
-            if (!uploadError && data) {
-              const uploadedImageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/banners/${data.path}`;
-              
-              const { error } = await supabase
-                .from('users')
-                .update({ banner_image_url: uploadedImageUrl })
-                .eq('id', user.id);
-
-              if (!error) {
-                // Update the user context
-                console.log('Updating user context with banner URL');
-                if (typeof updateUser === 'function') {
-                  await updateUser({
-                    bannerImageUrl: uploadedImageUrl
-                  });
-                  console.log('User context updated successfully');
-                } else {
-                  console.error('updateUser is not a function:', typeof updateUser);
-                  // Don't throw error here since database update succeeded
-                }
-                alert('Profile banner updated successfully!');
-                setSelectedBannerImage(null);
-                URL.revokeObjectURL(imageUrl);
-              } else {
-                throw new Error('Failed to update banner');
-              }
-            } else {
-              throw new Error('Failed to upload banner image');
-            }
-          } catch (error) {
-            console.error('Error uploading banner image:', error);
-            alert('Failed to upload banner image. Please try again.');
-            URL.revokeObjectURL(imageUrl);
-          } finally {
-            setIsUploadingBannerImage(false);
+        // Validate image dimensions
+        const img = new Image();
+        img.onload = () => {
+          console.log('🔍 Banner image validation - dimensions:', img.naturalWidth, 'x', img.naturalHeight);
+          
+          // Check minimum dimensions for banner (should be at least 400x200)
+          if (img.naturalWidth < 400 || img.naturalHeight < 200) {
+            alert(`Banner image is too small. Please use an image that is at least 400x200 pixels. Your image is ${img.naturalWidth}x${img.naturalHeight} pixels.`);
+            return;
           }
-        })();
+          
+          // Check maximum file size (10MB)
+          if (file.size > 10 * 1024 * 1024) {
+            alert('Banner image is too large. Please use an image smaller than 10MB.');
+            return;
+          }
+          
+          console.log('✅ Banner image validation passed');
+          
+          // Create preview URL
+          const imageUrl = URL.createObjectURL(file);
+          setSelectedBannerImage(imageUrl);
+        
+          // Upload directly with inline function to avoid context issues
+          (async () => {
+            setIsUploadingBannerImage(true);
+            try {
+              const fileName = `banner-${user.id}.jpg`;
+              
+              const { data, error: uploadError } = await supabase.storage
+                .from('banners')
+                .upload(fileName, file, {
+                  contentType: file.type || 'image/jpeg',
+                  upsert: true,
+                });
+
+              if (!uploadError && data) {
+                const uploadedImageUrl = `https://qrzbtituxxilnbgocdge.supabase.co/storage/v1/object/public/banners/${data.path}`;
+                
+                const { error } = await supabase
+                  .from('users')
+                  .update({ banner_image_url: uploadedImageUrl })
+                  .eq('id', user.id);
+
+                if (!error) {
+                  // Update the user context
+                  console.log('Updating user context with banner URL');
+                  if (typeof updateUser === 'function') {
+                    await updateUser({
+                      bannerImageUrl: uploadedImageUrl
+                    });
+                    console.log('User context updated successfully');
+                  } else {
+                    console.error('updateUser is not a function:', typeof updateUser);
+                    // Don't throw error here since database update succeeded
+                  }
+                  alert('Profile banner updated successfully!');
+                  setSelectedBannerImage(null);
+                  URL.revokeObjectURL(imageUrl);
+                } else {
+                  throw new Error('Failed to update banner');
+                }
+              } else {
+                throw new Error('Failed to upload banner image');
+              }
+            } catch (error) {
+              console.error('Error uploading banner image:', error);
+              alert('Failed to upload banner image. Please try again.');
+              URL.revokeObjectURL(imageUrl);
+            } finally {
+              setIsUploadingBannerImage(false);
+            }
+          })();
+        };
+        
+        img.onerror = () => {
+          console.error('❌ Failed to load image for validation');
+          alert('Invalid image file. Please select a valid image.');
+        };
+        
+        img.src = URL.createObjectURL(file);
       }
     };
     input.click();
