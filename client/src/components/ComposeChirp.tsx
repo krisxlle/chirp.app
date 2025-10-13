@@ -239,6 +239,19 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     }
   };
 
+  // Auto-resize textarea based on content
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+    }
+  };
+
+  // Adjust height when content changes
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [content]);
+
   // Normal compose mode
   return (
     <div style={{
@@ -280,7 +293,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             style={{
               fontSize: 18,
               lineHeight: 24,
-              minHeight: 30,
+              height: 30,
               maxHeight: 120,
               padding: '8px 0',
               color: '#1a1a1a',
@@ -289,7 +302,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               border: 'none',
               outline: 'none',
               backgroundColor: 'transparent',
-              overflow: 'hidden',
+              overflow: 'auto',
               cursor: 'text',
               fontFamily: 'inherit',
               position: 'relative',
