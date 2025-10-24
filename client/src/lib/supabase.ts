@@ -9,6 +9,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // Add redirect URL configuration
+    redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
     storage: {
       getItem: (key: string) => {
         if (typeof window !== 'undefined') {

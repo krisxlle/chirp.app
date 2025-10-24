@@ -700,35 +700,45 @@ export default function Gacha() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'linear-gradient(135deg, #C671FF, #FF61A6, #f5a5e0)',
-            opacity: 0.9,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '16px'
           }}>
+            <video
+              autoPlay
+              loop={false}
+              muted
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '16px'
+              }}
+              onEnded={() => setIsRolling(false)}
+            >
+              <source src="/assets/gacha-opening-animation.mp4" type="video/mp4" />
+            </video>
+            {/* Loading Text Overlay */}
             <div style={{
+              position: 'absolute',
+              bottom: '30%',
+              left: '50%',
+              transform: 'translateX(-50%)',
               textAlign: 'center',
               color: 'white'
             }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                border: '4px solid white',
-                borderTop: '4px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-                margin: '0 auto 16px'
-              }}></div>
               <h2 style={{
                 fontSize: '24px',
                 fontWeight: 'bold',
                 marginBottom: '8px',
-                margin: 0
+                margin: 0,
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
               }}>Drawing capsules...</h2>
               <p style={{
                 fontSize: '16px',
-                margin: 0
+                margin: 0,
+                textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
               }}>Please wait</p>
             </div>
           </div>

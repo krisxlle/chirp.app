@@ -178,6 +178,8 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             name,
             custom_handle: customHandle,
           },
+          // Add redirect URL for email confirmation
+          emailRedirectTo: `${window.location.origin}/auth/confirm`,
         },
       });
 

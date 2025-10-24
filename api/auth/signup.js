@@ -101,7 +101,9 @@ export default async function handler(req, res) {
           name: name,
           custom_handle: customHandle,
           handle: finalHandle
-        }
+        },
+        // Add redirect URL for email confirmation
+        emailRedirectTo: `${req.headers.origin || 'http://localhost:3000'}/auth/confirm`,
       }
     });
 

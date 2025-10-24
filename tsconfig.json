@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
-    "typeRoots": ["./types", "./node_modules/@types"],
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ],
     "target": "ES2022",
     "lib": [
       "DOM",
@@ -21,8 +24,12 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
+      "@/*": [
+        "./client/src/*"
+      ],
+      "@shared/*": [
+        "./shared/*"
+      ]
     },
     "noImplicitAny": false,
     "noImplicitReturns": false,
@@ -30,7 +37,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "ignoreDeprecations": "5.0",
-    "types": ["react-native"]
+    "types": [
+      "react-native"
+    ]
   },
   "include": [
     "client/src/**/*",
@@ -41,7 +50,6 @@
     "constants/**/*",
     "services/**/*",
     "mobile-*.ts",
-    "expo-env.d.ts",
     "types/**/*.d.ts"
   ],
   "exclude": [
@@ -49,5 +57,6 @@
     "dist",
     "ios",
     "android"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

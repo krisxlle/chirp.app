@@ -61,6 +61,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // Add redirect URL configuration
+    redirectTo: Platform.OS === 'web' ? window.location.origin : undefined,
   },
   global: {
     headers: {
@@ -1205,7 +1207,9 @@ export const signUp = async (email: string, password: string, name: string, cust
         data: {
           name: name,
           custom_handle: customHandle,
-        }
+        },
+        // Add redirect URL for email confirmation
+        emailRedirectTo: Platform.OS === 'web' ? `${window.location.origin}/auth/confirm` : undefined,
       }
     });
 

@@ -13,6 +13,7 @@ import { LikeProvider } from "./contexts/LikeContext";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminInfluencerCodes from "./pages/AdminInfluencerCodes";
 import Auth from "./pages/Auth";
+import AuthConfirm from "./pages/AuthConfirm";
 import ChirpDetail from "./pages/ChirpDetail";
 import CollectionPage from "./pages/CollectionPage";
 import Gacha from "./pages/Gacha";
@@ -84,6 +85,7 @@ function Router() {
         ) : (
           <>
             <Route path="/auth" component={Auth} />
+            <Route path="/auth/confirm" component={AuthConfirm} />
             <Route path="/" component={Auth} />
           </>
         )}
