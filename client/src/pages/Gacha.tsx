@@ -717,7 +717,7 @@ export default function Gacha() {
               }}
               onEnded={() => setIsRolling(false)}
             >
-              <source src="/assets/gacha-opening-animation.mp4" type="video/mp4" />
+              <source src="/public/assets/gacha-opening-animation.mp4" type="video/mp4" />
             </video>
             {/* Loading Text Overlay */}
             <div style={{
