@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { supabase } from '../lib/supabase';
 
 export default function AuthConfirm() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-  const location = useLocation();
+  const [location] = useLocation();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
         // Get the URL parameters
-        const urlParams = new URLSearchParams(location.search);
+        const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
         const type = urlParams.get('type');
 
