@@ -71,8 +71,8 @@ BEGIN
   
   -- Check if user already has this frame
   SELECT COUNT(*) INTO existing_collection_count
-  FROM user_frame_collections
-  WHERE user_id = user_uuid AND frame_id = selected_frame_id;
+  FROM user_frame_collections ufc
+  WHERE ufc.user_id = user_uuid AND ufc.frame_id = selected_frame_id;
   
   -- Set is_new flag
   is_new_frame := (existing_collection_count = 0);
@@ -80,9 +80,9 @@ BEGIN
   -- Add or update collection
   IF existing_collection_count > 0 THEN
     -- Update existing collection
-    UPDATE user_frame_collections 
-    SET quantity = quantity + 1, obtained_at = NOW()
-    WHERE user_id = user_uuid AND frame_id = selected_frame_id;
+    UPDATE user_frame_collections ufc
+    SET quantity = ufc.quantity + 1, obtained_at = NOW()
+    WHERE ufc.user_id = user_uuid AND ufc.frame_id = selected_frame_id;
   ELSE
     -- Add new collection entry
     INSERT INTO user_frame_collections (user_id, frame_id, quantity, obtained_at)

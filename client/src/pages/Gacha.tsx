@@ -519,11 +519,24 @@ export default function Gacha() {
               },
             });
 
-            // Deduct crystal balance directly
+            // Deduct crystal balance directly (using proper method for web client)
+            const { data: currentUser } = await supabase
+              .from('users')
+              .select('crystal_balance')
+              .eq('id', user.id)
+              .single();
+            
+            if (!currentUser) {
+              throw new Error('User not found');
+            }
+            
+            const newBalance = currentUser.crystal_balance - cost;
+            
             const { error } = await supabase
               .from('users')
               .update({ 
-                crystal_balance: supabase.raw(`crystal_balance - ${cost}`)
+                crystal_balance: newBalance,
+                updated_at: new Date().toISOString()
               })
               .eq('id', user.id);
             

@@ -1,10 +1,29 @@
--- Fix roll_profile_frame function to resolve ambiguous column reference
--- This fixes the "column reference 'frame_id' is ambiguous" error
+#!/usr/bin/env node
 
+/**
+ * Execute the fixed roll_profile_frame function SQL
+ * This script will run the SQL fix in Supabase
+ */
+
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase configuration
+const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+
+// Create Supabase client
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function executeSQLFix() {
+  try {
+    console.log('🔧 Executing roll_profile_frame function fix...');
+    
+    // The fixed SQL with explicit table aliases
+    const fixedSQL = `
 -- Drop the existing function
 DROP FUNCTION IF EXISTS roll_profile_frame(UUID);
 
--- Create the fixed function with explicit column aliases
+-- Create the fixed function with explicit table aliases
 CREATE OR REPLACE FUNCTION roll_profile_frame(user_uuid UUID)
 RETURNS TABLE (
   frame_id INTEGER,
@@ -64,7 +83,7 @@ BEGIN
     LIMIT 1;
   END IF;
   
-  -- Check if user already has this frame
+  -- Check if user already has this frame (with explicit table alias)
   SELECT COUNT(*) INTO existing_collection_count
   FROM user_frame_collections ufc
   WHERE ufc.user_id = user_uuid AND ufc.frame_id = selected_frame_id;
@@ -72,7 +91,7 @@ BEGIN
   -- Set is_new flag
   is_new_frame := (existing_collection_count = 0);
   
-  -- Add or update collection
+  -- Add or update collection (with explicit table aliases)
   IF existing_collection_count > 0 THEN
     -- Update existing collection
     UPDATE user_frame_collections ufc
@@ -93,6 +112,34 @@ BEGIN
     is_new_frame as is_new;
 END;
 $$ LANGUAGE plpgsql;
+    `;
+    
+    console.log('📝 Executing SQL fix...');
+    
+    // Try to execute the SQL using a direct approach
+    // Since we can't execute arbitrary SQL through the client, we'll provide instructions
+    console.log('⚠️  Cannot execute SQL directly through Supabase client.');
+    console.log('📋 Please run the following SQL in your Supabase SQL Editor:');
+    console.log('');
+    console.log('='.repeat(80));
+    console.log(fixedSQL);
+    console.log('='.repeat(80));
+    console.log('');
+    console.log('🧪 After running the SQL, test the function with:');
+    console.log("SELECT * FROM roll_profile_frame('cd73fb98-bad1-4c4c-a5f2-5c3d6e9811d8'::UUID);");
+    
+  } catch (error) {
+    console.error('❌ Error:', error);
+  }
+}
 
--- Test the function to make sure it works
--- SELECT * FROM roll_profile_frame('cd73fb98-bad1-4c4c-a5f2-5c3d6e9811d8'::UUID);
+// Run the script
+executeSQLFix()
+  .then(() => {
+    console.log('🎉 Instructions provided!');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('💥 Script failed:', error);
+    process.exit(1);
+  });

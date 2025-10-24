@@ -4476,16 +4476,21 @@ export const deductCrystalBalance = async (userId: string, amount: number): Prom
       return false;
     }
 
+    // Calculate new balance and update directly (avoiding supabase.raw which doesn't exist in web client)
+    const newBalance = currentBalance - amount;
+    
     const { error } = await supabase
       .from('users')
       .update({ 
-        crystal_balance: supabase.raw(`crystal_balance - ${amount}`)
+        crystal_balance: newBalance,
+        updated_at: new Date().toISOString()
       })
       .eq('id', userId);
     
     if (error) throw error;
     
     console.log(`💎 Deducted ${amount} crystals from user:`, userId.substring(0, 8) + '...');
+    console.log(`💎 New balance: ${newBalance} crystals`);
     return true;
   } catch (error) {
     console.error('❌ Error deducting crystals:', error);
