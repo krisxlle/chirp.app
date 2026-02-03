@@ -27,6 +27,7 @@ import SettingsPage from "./pages/Settings";
 import Subscribe from "./pages/Subscribe";
 import Support from "./pages/Support";
 import TermsOfService from "./pages/TermsOfService";
+import './debug-chirps';
 
 // Create queryClient directly here to avoid import issues
 const queryClient = new QueryClient({

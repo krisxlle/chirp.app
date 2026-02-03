@@ -11,6 +11,7 @@ import ShareIcon from '../components/icons/ShareIcon';
 import SpeechBubbleIcon from '../components/icons/SpeechBubbleIcon';
 import { useLike } from '../contexts/LikeContext';
 import { useToast } from '../hooks/use-toast';
+import { supabase } from '../lib/supabase';
 
 interface User {
   id: string;
@@ -361,21 +362,23 @@ export default function ChirpCard({
       
       console.log('🗑️ Deleting chirp:', chirpIdStr, 'by user:', userIdStr);
       
-      const response = await apiRequest(`/api/chirps/${chirpIdStr}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userIdStr })
-      });
+      // Use Supabase directly instead of API
+      const { error } = await supabase
+        .from('chirps')
+        .delete()
+        .eq('id', chirpIdStr)
+        .eq('author_id', userIdStr);
 
-      if (response.success) {
-        console.log('✅ Chirp deleted successfully');
-        
-        // Notify parent component
-        if (onDeleteSuccess) {
-          onDeleteSuccess(chirpIdStr);
-        }
-      } else {
-        throw new Error(response.error || 'Failed to delete chirp');
+      if (error) {
+        console.error('❌ Error deleting chirp:', error);
+        throw error;
+      }
+      
+      console.log('✅ Chirp deleted successfully');
+      
+      // Notify parent component
+      if (onDeleteSuccess) {
+        onDeleteSuccess(chirpIdStr);
       }
     } catch (error) {
       console.error('Error deleting chirp:', error);
