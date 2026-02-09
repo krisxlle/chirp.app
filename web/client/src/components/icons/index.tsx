@@ -62,14 +62,10 @@ export const CollectionIcon = ({ size = 24, color = "#6b7280" }: IconProps) => (
 );
 
 export const GachaIcon = ({ size = 24, color = "#6b7280" }: IconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-    <path d="M9 9h6v6H9z"/>
-    <circle cx="7" cy="7" r="1"/>
-    <circle cx="17" cy="7" r="1"/>
-    <circle cx="7" cy="17" r="1"/>
-    <circle cx="17" cy="17" r="1"/>
-    <circle cx="12" cy="12" r="1"/>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12"/>
+    <path d="M17 5 L17 6.5 M17 7.5 L17 9 M15 7 L16.5 7 M17.5 7 L19 7"/>
+    <circle cx="18" cy="16" r="1.5" strokeWidth="1.2"/>
   </svg>
 );
 

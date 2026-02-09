@@ -7,33 +7,26 @@ interface GachaIconProps {
   color?: string;
 }
 
-export default function GachaIcon({ size = 24, color = '#000000' }: GachaIconProps) {
+export default function GachaIcon({ size = 24, color = '#6b7280' }: GachaIconProps) {
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-        {/* Gacha capsule shape */}
+        {/* Main four-pointed sparkle (rounded points via strokeLinecap) */}
         <Path
-          d="M12 2C8.13 2 5 5.13 5 9v6c0 3.87 3.13 7 7 7s7-3.13 7-7V9c0-3.87-3.13-7-7-7z"
-          stroke={color}
-          strokeWidth={1.5}
-          fill="none"
-        />
-        {/* Capsule opening line */}
-        <Path
-          d="M5 9h14"
+          d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12"
           stroke={color}
           strokeWidth={1.5}
           strokeLinecap="round"
         />
-        {/* Sparkle effects */}
-        <Circle cx="8" cy="6" r="1" fill={color} />
-        <Circle cx="16" cy="6" r="1" fill={color} />
-        <Circle cx="12" cy="18" r="1" fill={color} />
-        {/* Star shape for gacha effect */}
+        {/* Small sparkle upper right */}
         <Path
-          d="M12 12l1.5 1.5L12 15l-1.5-1.5L12 12z"
-          fill={color}
+          d="M17 5 L17 6.5 M17 7.5 L17 9 M15 7 L16.5 7 M17.5 7 L19 7"
+          stroke={color}
+          strokeWidth={1.2}
+          strokeLinecap="round"
         />
+        {/* Small circle lower right */}
+        <Circle cx="18" cy="16" r="1.5" stroke={color} strokeWidth={1.2} fill="none" />
       </Svg>
     </View>
   );
