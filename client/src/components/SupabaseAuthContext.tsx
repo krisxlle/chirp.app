@@ -110,7 +110,37 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
         if (profileError) {
           console.error('❌ Error fetching user profile:', profileError);
-          // Don't fail sign in if profile doesn't exist yet
+          
+          // Create profile if it doesn't exist (safety net for old signups)
+          if (profileError.code === 'PGRST116') {
+            console.log('📝 Creating missing user profile...');
+            
+            const userName = data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User';
+            const customHandle = data.user.user_metadata?.custom_handle || data.user.email?.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            const { error: createError } = await supabase
+              .from('users')
+              .insert({
+                id: data.user.id,
+                email: data.user.email,
+                first_name: userName.split(' ')[0] || userName,
+                last_name: userName.split(' ').slice(1).join(' ') || '',
+                custom_handle: customHandle,
+                handle: customHandle || `user_${data.user.id.substring(0, 8)}`,
+                bio: '',
+                profile_image_url: null,
+                banner_image_url: null,
+                crystal_balance: 100,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+            
+            if (createError) {
+              console.error('❌ Error creating profile:', createError);
+            } else {
+              console.log('✅ User profile created successfully on sign in');
+            }
+          }
         } else {
           console.log('✅ User profile fetched successfully');
           
