@@ -16,6 +16,7 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
       req.path.startsWith('/api/support') ||
       req.path.startsWith('/api/notifications') ||
       req.path.startsWith('/api/feedback') ||
+      req.path.startsWith('/api/chirps') ||
       req.path.startsWith('/api/bot/')) {
     return next();
   }

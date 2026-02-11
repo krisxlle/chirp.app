@@ -14,8 +14,10 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5000',
+      'http://localhost:5001',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5000',
+      'http://127.0.0.1:5001',
       'https://www.joinchirp.org',
       'https://joinchirp.org'
     ];
@@ -349,6 +351,44 @@ export async function registerRoutesSafe(app: Express): Promise<Server> {
       } catch (error) {
         console.error('❌ Error in users search endpoint:', error);
         res.status(500).json({ success: false, error: 'Failed to search users' });
+      }
+    });
+    
+    // Create chirp/reply endpoint
+    app.post('/api/chirps', async (req, res) => {
+      try {
+        const { content, author_id, reply_to_id } = req.body;
+        
+        if (!content || !content.trim()) {
+          return res.status(400).json({ success: false, error: 'Content is required' });
+        }
+        
+        if (!author_id) {
+          return res.status(400).json({ success: false, error: 'Author ID is required' });
+        }
+        
+        // Insert the chirp/reply
+        const { data: chirp, error } = await supabase
+          .from('chirps')
+          .insert({
+            content: content.trim(),
+            author_id: author_id,
+            reply_to_id: reply_to_id || null,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.log('❌ Error creating chirp/reply:', error);
+          return res.status(500).json({ success: false, error: 'Failed to create chirp/reply' });
+        }
+        
+        console.log('✅ Chirp/reply created successfully:', chirp.id);
+        res.json({ success: true, chirp });
+      } catch (error) {
+        console.error('❌ Error in chirps POST endpoint:', error);
+        res.status(500).json({ success: false, error: 'Failed to create chirp/reply' });
       }
     });
     

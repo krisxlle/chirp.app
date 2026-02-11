@@ -11,12 +11,13 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:5000';
+      // Use the current origin (Vite dev server with proxy)
+      return window.location.origin;
     }
     // Use the same domain for production API
     return `${window.location.protocol}//${window.location.host}`;
   }
-  return 'http://localhost:5000';
+  return 'http://localhost:5001';
 };
 
 export async function apiRequest(

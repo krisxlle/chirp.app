@@ -255,34 +255,53 @@ export default function ChirpCard({
         replyToId: chirpIdStr
       });
       
-      // Create reply via API
-      const response = await apiRequest('/api/chirps', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: replyText.trim(),
-          author_id: userIdStr,
-          reply_to_id: chirpIdStr
-        })
+      // Create reply directly via Supabase
+      const { createClient } = await import('@supabase/supabase-js');
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          storage: {
+            getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+            setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+            removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+          },
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+        },
       });
 
-      console.log('📨 Reply API response:', response);
+      const { data: reply, error } = await supabase
+        .from('chirps')
+        .insert({
+          content: replyText.trim(),
+          author_id: userIdStr,
+          reply_to_id: chirpIdStr,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-      if (response.success) {
-        // Update local state
-        setReplies(prev => prev + 1);
-        setReplyText('');
-        setShowReplyInput(false);
-        
-        // Notify parent component to refresh replies
-        if (onReplyPosted) {
-          onReplyPosted(chirpIdStr);
-        }
-        
-        console.log('✅ Reply posted successfully');
-      } else {
-        throw new Error(response.error || 'Failed to post reply');
+      if (error) {
+        console.error('❌ Error creating reply:', error);
+        throw new Error(error.message || 'Failed to post reply');
       }
+
+      console.log('✅ Reply created successfully:', reply.id);
+
+      // Update local state
+      setReplies(prev => prev + 1);
+      setReplyText('');
+      setShowReplyInput(false);
+      
+      // Notify parent component to refresh replies
+      if (onReplyPosted) {
+        onReplyPosted(chirpIdStr);
+      }
+      
+      console.log('✅ Reply posted successfully');
     } catch (error) {
       console.error('❌ Error posting reply:', error);
       toast({
