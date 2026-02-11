@@ -134,6 +134,16 @@ export default function ContactsIntegration({ isOpen, onClose, isSignup = false 
   // Check for registered users among contacts
   const { data: registeredContacts } = useQuery({
     queryKey: ["/api/contacts/registered"],
+    queryFn: async () => {
+      if (contacts.length === 0) return [];
+      const phones = contacts.map(c => c.phone).filter(Boolean);
+      const emails = contacts.map(c => c.email).filter(Boolean);
+      return apiRequest('/api/contacts/registered', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phones, emails })
+      });
+    },
     enabled: contacts.length > 0,
   });
 

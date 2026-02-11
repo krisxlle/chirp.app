@@ -131,15 +131,11 @@ export default async function handler(req, res) {
         id: authData.user.id, // Use the same ID from Supabase Auth
         first_name: name.split(' ')[0],
         last_name: name.split(' ').slice(1).join(' ') || '',
-        display_name: name,
         email: email,
         handle: finalHandle,
         custom_handle: customHandle || finalHandle,
-        bio: 'New to Chirp! 🐦',
-        crystal_balance: 100, // Give new users some starting crystals
-        is_chirp_plus: false,
-        show_chirp_plus_badge: false,
-        created_at: new Date().toISOString()
+        bio: 'New to Chirp!',
+        crystal_balance: 100 // Give new users some starting crystals
       })
       .select()
       .single();
@@ -160,7 +156,6 @@ export default async function handler(req, res) {
       email: newUser.email,
       first_name: newUser.first_name,
       last_name: newUser.last_name,
-      display_name: newUser.display_name,
       custom_handle: newUser.custom_handle,
       handle: newUser.handle,
       profile_image_url: newUser.profile_image_url,
@@ -169,8 +164,6 @@ export default async function handler(req, res) {
       link_in_bio: newUser.link_in_bio,
       created_at: newUser.created_at,
       crystal_balance: newUser.crystal_balance || 100,
-      is_chirp_plus: newUser.is_chirp_plus || false,
-      show_chirp_plus_badge: newUser.show_chirp_plus_badge || false,
       email_confirmed: !!authData.user.email_confirmed_at,
       requires_email_confirmation: !authData.user.email_confirmed_at
     };

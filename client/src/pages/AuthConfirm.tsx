@@ -53,11 +53,7 @@ export default function AuthConfirm() {
                   custom_handle: customHandle,
                   handle: customHandle || `user_${data.user.id.substring(0, 8)}`,
                   bio: '',
-                  profile_image_url: null,
-                  banner_image_url: null,
-                  crystal_balance: 100,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
+                  crystal_balance: 100
                 });
               
               if (profileError) {

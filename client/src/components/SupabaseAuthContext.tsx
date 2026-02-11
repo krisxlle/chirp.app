@@ -221,17 +221,8 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       if (data.user) {
         console.log('✅ User created successfully:', data.user.id);
         
-        // Check if email confirmation is required
-        if (!data.user.email_confirmed_at) {
-          console.log('📧 Email confirmation required for:', data.user.email);
-          return { 
-            success: true, 
-            error: 'EMAIL_CONFIRMATION_REQUIRED',
-            message: 'Please check your email and click the confirmation link to complete your registration.'
-          };
-        }
-        
-        // Create user profile in users table
+        // Create user profile in users table FIRST (before checking email confirmation)
+        // This ensures the profile exists even if email confirmation is required
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -241,7 +232,6 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             last_name: name.split(' ').slice(1).join(' ') || '',
             custom_handle: customHandle,
             handle: customHandle || `user_${data.user.id.substring(0, 8)}`,
-            display_name: name,
             bio: '',
             profile_image_url: null,
             banner_image_url: null,
@@ -256,6 +246,17 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         }
 
         console.log('✅ User profile created successfully');
+        
+        // Check if email confirmation is required
+        if (!data.user.email_confirmed_at) {
+          console.log('📧 Email confirmation required for:', data.user.email);
+          return { 
+            success: true, 
+            error: 'EMAIL_CONFIRMATION_REQUIRED',
+            message: 'Please check your email and click the confirmation link to complete your registration.'
+          };
+        }
+        
         return { success: true };
       }
 

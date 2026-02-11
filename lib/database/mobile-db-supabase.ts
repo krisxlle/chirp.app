@@ -1237,13 +1237,8 @@ export const signUp = async (email: string, password: string, name: string, cust
         last_name: name.split(' ').slice(1).join(' ') || '',
         custom_handle: customHandle,
         handle: finalHandle,
-        display_name: name,
         bio: '',
-        profile_image_url: null,
-        banner_image_url: null,
-        crystal_balance: 100,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        crystal_balance: 100
       })
       .select()
       .single();
