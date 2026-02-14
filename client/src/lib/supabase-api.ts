@@ -22,6 +22,7 @@ export const getForYouChirps = async (limit: number = 20, offset: number = 0, us
   
   try {
     // Fetch main chirps (non-replies only) with author data
+    // CRITICAL: Only fetch parent chirps where reply_to_id IS NULL
     const { data: chirps, error } = await supabase
       .from('chirps')
       .select(`
@@ -37,13 +38,22 @@ export const getForYouChirps = async (limit: number = 20, offset: number = 0, us
           avatar_url
         )
       `)
-      .is('reply_to_id', null)
+      .filter('reply_to_id', 'is', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('❌ Error fetching chirps:', error);
       return [];
+    }
+
+    // Log to verify we're only getting parent chirps
+    console.log(`✅ Fetched ${chirps?.length || 0} parent chirps (reply_to_id is null)`);
+    if (chirps && chirps.length > 0) {
+      const hasReplies = chirps.some(c => c.reply_to_id !== null);
+      if (hasReplies) {
+        console.error('⚠️ WARNING: Some chirps have reply_to_id set! Filter not working correctly!');
+      }
     }
 
     // For each chirp, fetch its replies
@@ -180,6 +190,7 @@ export const getCollectionFeedChirps = async (userId: string, limit: number = 10
     }
 
     // Fetch chirps from followed users (non-replies only) with author data
+    // CRITICAL: Only fetch parent chirps where reply_to_id IS NULL
     const { data: chirps, error } = await supabase
       .from('chirps')
       .select(`
@@ -196,7 +207,7 @@ export const getCollectionFeedChirps = async (userId: string, limit: number = 10
         )
       `)
       .in('author_id', followingIds)
-      .is('reply_to_id', null)
+      .filter('reply_to_id', 'is', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
