@@ -1,112 +1,314 @@
 // Supabase API functions for web client
-// Mock implementations for web compatibility
+import { createClient } from '@supabase/supabase-js';
 
-// Note: Real database functions are not imported to avoid React Native dependencies in web build
+const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
 
-export const getForYouChirps = async (limit: number = 20, offset: number = 0) => {
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: {
+      getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+      setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+      removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+    },
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});
+
+export const getForYouChirps = async (limit: number = 20, offset: number = 0, user?: any) => {
   console.log('🔍 getForYouChirps called with:', { limit, offset });
   
-  // Return mock data for now to avoid connection errors
-  return [
-    {
-      id: '1',
-      content: 'Welcome to Chirp! This is a sample chirp to get you started. 🐦',
-      createdAt: new Date().toISOString(),
-      author: {
-        id: '1',
-        firstName: 'Chirp',
-        lastName: 'Team',
-        email: 'team@chirp.com',
-        handle: 'chirpteam',
-        customHandle: 'chirpteam',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
-      },
-      likes: 5,
-      replies: 2,
-      reposts: 1,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
-    },
-    {
-      id: '2',
-      content: 'The connection errors have been fixed! The app now works without needing a backend server. 🎉',
-      createdAt: new Date(Date.now() - 60000).toISOString(),
-      author: {
-        id: '2',
-        firstName: 'Dev',
-        lastName: 'Helper',
-        email: 'dev@chirp.com',
-        handle: 'devhelper',
-        customHandle: 'devhelper',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
-      },
-      likes: 3,
-      replies: 0,
-      reposts: 0,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
+  try {
+    // Fetch main chirps (non-replies only) with author data
+    const { data: chirps, error } = await supabase
+      .from('chirps')
+      .select(`
+        *,
+        author:users!chirps_author_id_fkey (
+          id,
+          first_name,
+          last_name,
+          email,
+          handle,
+          custom_handle,
+          profile_image_url,
+          avatar_url
+        )
+      `)
+      .is('reply_to_id', null)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error('❌ Error fetching chirps:', error);
+      return [];
     }
-  ];
+
+    // For each chirp, fetch its replies
+    const chirpsWithReplies = await Promise.all(
+      (chirps || []).map(async (chirp: any) => {
+        // Fetch replies for this chirp
+        const { data: replies, error: repliesError } = await supabase
+          .from('chirps')
+          .select(`
+            *,
+            author:users!chirps_author_id_fkey (
+              id,
+              first_name,
+              last_name,
+              email,
+              handle,
+              custom_handle,
+              profile_image_url,
+              avatar_url
+            )
+          `)
+          .eq('reply_to_id', chirp.id)
+          .order('created_at', { ascending: true });
+
+        // Get reaction count
+        const { count: reactionCount } = await supabase
+          .from('reactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('chirp_id', chirp.id);
+
+        // Check if user has liked
+        let userHasLiked = false;
+        if (user?.id) {
+          const { data: userReaction } = await supabase
+            .from('reactions')
+            .select('id')
+            .eq('chirp_id', chirp.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          userHasLiked = !!userReaction;
+        }
+
+        // Transform replies
+        const transformedReplies = (replies || []).map((reply: any) => ({
+          id: String(reply.id),
+          content: reply.content,
+          createdAt: reply.created_at,
+          replyToId: String(reply.reply_to_id),
+          author: {
+            id: reply.author.id,
+            firstName: reply.author.first_name,
+            lastName: reply.author.last_name,
+            email: reply.author.email,
+            handle: reply.author.handle,
+            customHandle: reply.author.custom_handle,
+            profileImageUrl: reply.author.profile_image_url,
+            avatarUrl: reply.author.avatar_url,
+            isChirpPlus: false,
+            showChirpPlusBadge: false
+          },
+          replyCount: 0,
+          reactionCount: 0,
+          userHasLiked: false,
+          isWeeklySummary: false,
+          imageUrl: reply.image_url,
+          imageAltText: reply.image_alt_text,
+          imageWidth: reply.image_width,
+          imageHeight: reply.image_height,
+          isDirectReply: true,
+          isNestedReply: false,
+          isThreadedChirp: false
+        }));
+
+        return {
+          id: String(chirp.id),
+          content: chirp.content,
+          createdAt: chirp.created_at,
+          replyToId: chirp.reply_to_id,
+          author: {
+            id: chirp.author.id,
+            firstName: chirp.author.first_name,
+            lastName: chirp.author.last_name,
+            email: chirp.author.email,
+            handle: chirp.author.handle,
+            customHandle: chirp.author.custom_handle,
+            profileImageUrl: chirp.author.profile_image_url,
+            avatarUrl: chirp.author.avatar_url,
+            isChirpPlus: false,
+            showChirpPlusBadge: false
+          },
+          replyCount: transformedReplies.length,
+          reactionCount: reactionCount || 0,
+          userHasLiked,
+          isWeeklySummary: false,
+          imageUrl: chirp.image_url,
+          imageAltText: chirp.image_alt_text,
+          imageWidth: chirp.image_width,
+          imageHeight: chirp.image_height,
+          repliesList: transformedReplies, // Add replies list for threading
+          isThreadedChirp: transformedReplies.length > 0
+        };
+      })
+    );
+
+    console.log(`✅ Fetched ${chirpsWithReplies.length} chirps with replies`);
+    return chirpsWithReplies;
+  } catch (error) {
+    console.error('❌ Error in getForYouChirps:', error);
+    return [];
+  }
 };
 
 export const getCollectionFeedChirps = async (userId: string, limit: number = 10, offset: number = 0) => {
   console.log('🔍 getCollectionFeedChirps called with:', { userId, limit, offset });
   
-  // Return mock data for collection feed
-  return [
-    {
-      id: '3',
-      content: 'This is a collection feed chirp! 📚',
-      createdAt: new Date(Date.now() - 120000).toISOString(),
-      author: {
-        id: '3',
-        firstName: 'Collection',
-        lastName: 'Curator',
-        email: 'curator@chirp.com',
-        handle: 'curator',
-        customHandle: 'curator',
-        profileImageUrl: null,
-        avatarUrl: null,
-        isChirpPlus: false,
-        showChirpPlusBadge: false
-      },
-      likes: 7,
-      replies: 1,
-      reposts: 2,
-      isLiked: false,
-      isReposted: false,
-      reactionCounts: {},
-      userReaction: null,
-      repostOf: null,
-      isAiGenerated: false,
-      isWeeklySummary: false,
-      threadId: null,
-      threadOrder: null,
-      isThreadStarter: true
+  try {
+    // Get users that this user follows
+    const { data: following, error: followingError } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', userId);
+
+    if (followingError) {
+      console.error('❌ Error fetching following list:', followingError);
+      return [];
     }
-  ];
+
+    const followingIds = (following || []).map(f => f.following_id);
+    
+    // If not following anyone, return empty array
+    if (followingIds.length === 0) {
+      console.log('ℹ️ User is not following anyone');
+      return [];
+    }
+
+    // Fetch chirps from followed users (non-replies only) with author data
+    const { data: chirps, error } = await supabase
+      .from('chirps')
+      .select(`
+        *,
+        author:users!chirps_author_id_fkey (
+          id,
+          first_name,
+          last_name,
+          email,
+          handle,
+          custom_handle,
+          profile_image_url,
+          avatar_url
+        )
+      `)
+      .in('author_id', followingIds)
+      .is('reply_to_id', null)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error('❌ Error fetching collection feed chirps:', error);
+      return [];
+    }
+
+    // For each chirp, fetch its replies
+    const chirpsWithReplies = await Promise.all(
+      (chirps || []).map(async (chirp: any) => {
+        // Fetch replies for this chirp
+        const { data: replies, error: repliesError } = await supabase
+          .from('chirps')
+          .select(`
+            *,
+            author:users!chirps_author_id_fkey (
+              id,
+              first_name,
+              last_name,
+              email,
+              handle,
+              custom_handle,
+              profile_image_url,
+              avatar_url
+            )
+          `)
+          .eq('reply_to_id', chirp.id)
+          .order('created_at', { ascending: true });
+
+        // Get reaction count
+        const { count: reactionCount } = await supabase
+          .from('reactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('chirp_id', chirp.id);
+
+        // Check if user has liked
+        const { data: userReaction } = await supabase
+          .from('reactions')
+          .select('id')
+          .eq('chirp_id', chirp.id)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        // Transform replies
+        const transformedReplies = (replies || []).map((reply: any) => ({
+          id: String(reply.id),
+          content: reply.content,
+          createdAt: reply.created_at,
+          replyToId: String(reply.reply_to_id),
+          author: {
+            id: reply.author.id,
+            firstName: reply.author.first_name,
+            lastName: reply.author.last_name,
+            email: reply.author.email,
+            handle: reply.author.handle,
+            customHandle: reply.author.custom_handle,
+            profileImageUrl: reply.author.profile_image_url,
+            avatarUrl: reply.author.avatar_url,
+            isChirpPlus: false,
+            showChirpPlusBadge: false
+          },
+          replyCount: 0,
+          reactionCount: 0,
+          userHasLiked: false,
+          isWeeklySummary: false,
+          imageUrl: reply.image_url,
+          imageAltText: reply.image_alt_text,
+          imageWidth: reply.image_width,
+          imageHeight: reply.image_height,
+          isDirectReply: true,
+          isNestedReply: false,
+          isThreadedChirp: false
+        }));
+
+        return {
+          id: String(chirp.id),
+          content: chirp.content,
+          createdAt: chirp.created_at,
+          replyToId: chirp.reply_to_id,
+          author: {
+            id: chirp.author.id,
+            firstName: chirp.author.first_name,
+            lastName: chirp.author.last_name,
+            email: chirp.author.email,
+            handle: chirp.author.handle,
+            customHandle: chirp.author.custom_handle,
+            profileImageUrl: chirp.author.profile_image_url,
+            avatarUrl: chirp.author.avatar_url,
+            isChirpPlus: false,
+            showChirpPlusBadge: false
+          },
+          replyCount: transformedReplies.length,
+          reactionCount: reactionCount || 0,
+          userHasLiked: !!userReaction,
+          isWeeklySummary: false,
+          imageUrl: chirp.image_url,
+          imageAltText: chirp.image_alt_text,
+          imageWidth: chirp.image_width,
+          imageHeight: chirp.image_height,
+          repliesList: transformedReplies, // Add replies list for threading
+          isThreadedChirp: transformedReplies.length > 0
+        };
+      })
+    );
+
+    console.log(`✅ Fetched ${chirpsWithReplies.length} collection feed chirps with replies`);
+    return chirpsWithReplies;
+  } catch (error) {
+    console.error('❌ Error in getCollectionFeedChirps:', error);
+    return [];
+  }
 };
 
 export const getUserChirps = async (userId: string) => {

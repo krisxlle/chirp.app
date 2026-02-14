@@ -587,18 +587,98 @@ export default function HomePage() {
     }
   }, [feedType]);
 
-  const handleChirpReplyUpdate = useCallback((chirpId: string) => {
-    const updateChirp = (prevChirps: any[]) => 
-      prevChirps.map(chirp => 
-        chirp.id === chirpId 
-          ? { ...chirp, replies: (chirp.replies || 0) + 1 }
-          : chirp
-      );
-    
-    if (feedType === 'forYou') {
-      setForYouChirps(updateChirp);
-    } else {
-      setCollectionChirps(updateChirp);
+  const handleChirpReplyUpdate = useCallback(async (chirpId: string) => {
+    // Refetch the chirp with its updated replies
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+      
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Fetch updated replies for this chirp
+      const { data: replies } = await supabase
+        .from('chirps')
+        .select(`
+          *,
+          author:users!chirps_author_id_fkey (
+            id,
+            first_name,
+            last_name,
+            email,
+            handle,
+            custom_handle,
+            profile_image_url,
+            avatar_url
+          )
+        `)
+        .eq('reply_to_id', chirpId)
+        .order('created_at', { ascending: true });
+
+      // Transform replies
+      const transformedReplies = (replies || []).map((reply: any) => ({
+        id: String(reply.id),
+        content: reply.content,
+        createdAt: reply.created_at,
+        replyToId: String(reply.reply_to_id),
+        author: {
+          id: reply.author.id,
+          firstName: reply.author.first_name,
+          lastName: reply.author.last_name,
+          email: reply.author.email,
+          handle: reply.author.handle,
+          customHandle: reply.author.custom_handle,
+          profileImageUrl: reply.author.profile_image_url,
+          avatarUrl: reply.author.avatar_url,
+          isChirpPlus: false,
+          showChirpPlusBadge: false
+        },
+        replyCount: 0,
+        reactionCount: 0,
+        userHasLiked: false,
+        isWeeklySummary: false,
+        imageUrl: reply.image_url,
+        imageAltText: reply.image_alt_text,
+        imageWidth: reply.image_width,
+        imageHeight: reply.image_height,
+        isDirectReply: true,
+        isNestedReply: false,
+        isThreadedChirp: false
+      }));
+
+      // Update the chirp with new replies
+      const updateChirp = (prevChirps: any[]) => 
+        prevChirps.map(chirp => 
+          chirp.id === chirpId 
+            ? { 
+                ...chirp, 
+                replyCount: transformedReplies.length,
+                repliesList: transformedReplies,
+                isThreadedChirp: transformedReplies.length > 0
+              }
+            : chirp
+        );
+      
+      if (feedType === 'forYou') {
+        setForYouChirps(updateChirp);
+      } else {
+        setCollectionChirps(updateChirp);
+      }
+    } catch (error) {
+      console.error('❌ Error updating chirp replies:', error);
+      // Fallback to simple count increment
+      const updateChirp = (prevChirps: any[]) => 
+        prevChirps.map(chirp => 
+          chirp.id === chirpId 
+            ? { ...chirp, replyCount: (chirp.replyCount || 0) + 1 }
+            : chirp
+        );
+      
+      if (feedType === 'forYou') {
+        setForYouChirps(updateChirp);
+      } else {
+        setCollectionChirps(updateChirp);
+      }
     }
   }, [feedType]);
   
