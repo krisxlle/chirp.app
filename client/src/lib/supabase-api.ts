@@ -47,12 +47,19 @@ export const getForYouChirps = async (limit: number = 20, offset: number = 0, us
       return [];
     }
 
-    // Log to verify we're only getting parent chirps
-    console.log(`✅ Fetched ${chirps?.length || 0} parent chirps (reply_to_id is null)`);
+    // CRITICAL: Verify and log which chirps we got from database
+    console.log(`📊 Raw database query returned ${chirps?.length || 0} chirps`);
     if (chirps && chirps.length > 0) {
-      const hasReplies = chirps.some(c => c.reply_to_id !== null);
-      if (hasReplies) {
-        console.error('⚠️ WARNING: Some chirps have reply_to_id set! Filter not working correctly!');
+      chirps.forEach(c => {
+        console.log(`  - Chirp ${c.id}: reply_to_id=${c.reply_to_id} (${c.reply_to_id === null ? 'NULL ✅' : 'HAS PARENT ❌'})`);
+      });
+      
+      const repliesInResults = chirps.filter(c => c.reply_to_id !== null && c.reply_to_id !== undefined);
+      if (repliesInResults.length > 0) {
+        console.error('🚨 CRITICAL: Database filter FAILED! Found', repliesInResults.length, 'replies with parent IDs:', 
+          repliesInResults.map(r => `${r.id}→${r.reply_to_id}`));
+      } else {
+        console.log('✅ Database filter working: All chirps have reply_to_id=null');
       }
     }
 
