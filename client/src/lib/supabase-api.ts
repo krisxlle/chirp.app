@@ -159,6 +159,17 @@ export const getForYouChirps = async (limit: number = 20, offset: number = 0, us
     );
 
     console.log(`✅ Fetched ${chirpsWithReplies.length} chirps with replies`);
+    
+    // Debug: Log each chirp to verify reply_to_id is null
+    chirpsWithReplies.forEach((chirp, idx) => {
+      console.log(`📋 Chirp ${idx + 1}:`, {
+        id: chirp.id,
+        content: chirp.content.substring(0, 50) + '...',
+        reply_to_id: chirp.replyToId || 'null',
+        hasReplies: chirp.repliesList?.length || 0
+      });
+    });
+    
     return chirpsWithReplies;
   } catch (error) {
     console.error('❌ Error in getForYouChirps:', error);

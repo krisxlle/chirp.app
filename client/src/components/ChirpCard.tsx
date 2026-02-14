@@ -273,14 +273,18 @@ export default function ChirpCard({
         },
       });
 
+      const replyData = {
+        content: replyText.trim(),
+        author_id: userIdStr,
+        reply_to_id: parseInt(chirpIdStr), // Convert to integer for database
+        created_at: new Date().toISOString()
+      };
+      
+      console.log('📝 Inserting reply with data:', replyData);
+      
       const { data: reply, error } = await supabase
         .from('chirps')
-        .insert({
-          content: replyText.trim(),
-          author_id: userIdStr,
-          reply_to_id: chirpIdStr,
-          created_at: new Date().toISOString()
-        })
+        .insert(replyData)
         .select()
         .single();
 
@@ -289,7 +293,12 @@ export default function ChirpCard({
         throw new Error(error.message || 'Failed to post reply');
       }
 
-      console.log('✅ Reply created successfully:', reply.id);
+      console.log('✅ Reply created successfully:', {
+        id: reply.id,
+        content: reply.content.substring(0, 30) + '...',
+        reply_to_id: reply.reply_to_id,
+        parent_chirp_id: chirpIdStr
+      });
 
       // Update local state
       setReplies(prev => prev + 1);
