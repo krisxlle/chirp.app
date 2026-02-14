@@ -1087,7 +1087,7 @@ export default function Profile() {
             color: '#14171a',
             margin: 0
           }}>
-            Profile
+            Thread
           </h1>
           <p style={{
             fontSize: '13px',

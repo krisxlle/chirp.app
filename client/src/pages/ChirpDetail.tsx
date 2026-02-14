@@ -7,8 +7,26 @@ export default function ChirpDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const [chirp, setChirp] = useState(null);
-  const [replies, setReplies] = useState([]);
+  const [replies, setReplies] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Detect if user came from a profile page
+  const [previousPage, setPreviousPage] = useState<{ path: string; label: string }>({ 
+    path: '/', 
+    label: 'Thread' 
+  });
+  
+  useEffect(() => {
+    // Check if we came from a profile page
+    const referrer = document.referrer;
+    if (referrer && referrer.includes('/profile/')) {
+      const profileId = referrer.split('/profile/')[1];
+      setPreviousPage({ 
+        path: `/profile/${profileId}`, 
+        label: 'Profile' 
+      });
+    }
+  }, []);
 
   // Fetch chirp and replies using Supabase
   useEffect(() => {
@@ -478,7 +496,7 @@ export default function ChirpDetail() {
           gap: '12px'
         }}>
           <button
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation(previousPage.path)}
             style={{
               padding: '8px',
               backgroundColor: 'transparent',
@@ -497,7 +515,7 @@ export default function ChirpDetail() {
             fontWeight: 'bold',
             color: '#333',
             margin: 0
-          }}>Thread</h1>
+          }}>{previousPage.label}</h1>
         </div>
       </header>
 
