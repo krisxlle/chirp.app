@@ -185,6 +185,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
     }
     
     // Simplified query to avoid timeout - fetch chirps without user join
+    // CRITICAL: Only fetch parent chirps (not replies) for profile display
     const queryPromise = supabase
       .from('chirps')
       .select(`
@@ -199,6 +200,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
         image_height
       `)
       .eq('author_id', actualUserId)
+      .filter('reply_to_id', 'is', null) // Only get parent chirps, not replies
       .order('created_at', { ascending: false })
       .limit(10); // Reduced limit to 10 to avoid timeout
 

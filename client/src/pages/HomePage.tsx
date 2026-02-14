@@ -530,6 +530,29 @@ export default function HomePage() {
     setHasMoreCollectionChirps(true);
     setLastRefresh(0);
   }, [user?.id]);
+
+  // Debug: Log when chirps change and check for replies that shouldn't be there
+  useEffect(() => {
+    if (forYouChirps.length > 0) {
+      const repliesInFeed = forYouChirps.filter(c => c.replyToId || c.reply_to_id);
+      if (repliesInFeed.length > 0) {
+        console.error('⚠️ WARNING: Found', repliesInFeed.length, 'replies in ForYou feed!', repliesInFeed);
+      } else {
+        console.log('✅ ForYou feed clean: No replies detected');
+      }
+    }
+  }, [forYouChirps]);
+
+  useEffect(() => {
+    if (collectionChirps.length > 0) {
+      const repliesInFeed = collectionChirps.filter(c => c.replyToId || c.reply_to_id);
+      if (repliesInFeed.length > 0) {
+        console.error('⚠️ WARNING: Found', repliesInFeed.length, 'replies in Collection feed!', repliesInFeed);
+      } else {
+        console.log('✅ Collection feed clean: No replies detected');
+      }
+    }
+  }, [collectionChirps]);
   
   // Function to refresh chirps
   const refreshChirps = useCallback(async () => {
@@ -960,7 +983,9 @@ export default function HomePage() {
                 </div>
               ) : (
                 <>
-                  {forYouChirps.map((chirp, index) => (
+                  {forYouChirps
+                    .filter(chirp => !chirp.replyToId && !chirp.reply_to_id) // CRITICAL: Filter out replies client-side as backup
+                    .map((chirp, index) => (
                     <ChirpCard 
                       key={`${chirp.id}-${index}`} 
                       chirp={chirp} 
@@ -1048,7 +1073,9 @@ export default function HomePage() {
               </div>
             ) : (
               <>
-                {collectionChirps.map((chirp, index) => (
+                {collectionChirps
+                  .filter(chirp => !chirp.replyToId && !chirp.reply_to_id) // CRITICAL: Filter out replies client-side as backup
+                  .map((chirp, index) => (
                   <ChirpCard 
                     key={`${chirp.id}-${index}`} 
                     chirp={chirp} 
