@@ -200,7 +200,7 @@ const getUserChirps = async (userId: string, userData?: any) => {
         image_height
       `)
       .eq('author_id', actualUserId)
-      .filter('reply_to_id', 'is', null) // Only get parent chirps, not replies
+      .is('reply_to_id', null) // FIXED: Use .is() instead of .filter()
       .order('created_at', { ascending: false })
       .limit(10); // Reduced limit to 10 to avoid timeout
 

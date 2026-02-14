@@ -300,6 +300,26 @@ export default function ChirpCard({
         parent_chirp_id: chirpIdStr
       });
 
+      // CRITICAL: Verify what was actually saved in database
+      console.log('🔍 Verifying database entry for chirp', reply.id);
+      const { data: verification, error: verifyError } = await supabase
+        .from('chirps')
+        .select('id, reply_to_id, content')
+        .eq('id', reply.id)
+        .single();
+      
+      if (verifyError) {
+        console.error('❌ Verification query failed:', verifyError);
+      } else {
+        console.log('🔍 Database verification result:', verification);
+        if (verification.reply_to_id !== parseInt(chirpIdStr)) {
+          console.error('🚨 CRITICAL BUG: Database has reply_to_id=' + verification.reply_to_id + 
+            ' but we expected ' + parseInt(chirpIdStr));
+        } else {
+          console.log('✅ Database verification passed: reply_to_id is correctly set to', verification.reply_to_id);
+        }
+      }
+
       // Update local state
       setReplies(prev => prev + 1);
       setReplyText('');

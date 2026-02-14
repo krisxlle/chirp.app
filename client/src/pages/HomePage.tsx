@@ -534,6 +534,11 @@ export default function HomePage() {
   // Debug: Log when chirps change and check for replies that shouldn't be there
   useEffect(() => {
     if (forYouChirps.length > 0) {
+      console.log('🔍 DIAGNOSTIC: Checking all chirps in feed:');
+      forYouChirps.forEach(c => {
+        console.log(`  - Chirp ${c.id}: replyToId=${c.replyToId}, reply_to_id=${c.reply_to_id} | ${c.replyToId || c.reply_to_id ? '❌ IS REPLY' : '✅ PARENT'}`);
+      });
+      
       const repliesInFeed = forYouChirps.filter(c => c.replyToId || c.reply_to_id);
       if (repliesInFeed.length > 0) {
         console.error('⚠️ WARNING: Found', repliesInFeed.length, 'replies in ForYou feed!', repliesInFeed);

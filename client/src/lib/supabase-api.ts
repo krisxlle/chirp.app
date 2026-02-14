@@ -38,7 +38,7 @@ export const getForYouChirps = async (limit: number = 20, offset: number = 0, us
           avatar_url
         )
       `)
-      .filter('reply_to_id', 'is', null)
+      .is('reply_to_id', null)  // FIXED: Use .is() instead of .filter()
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -225,7 +225,7 @@ export const getCollectionFeedChirps = async (userId: string, limit: number = 10
         )
       `)
       .in('author_id', followingIds)
-      .filter('reply_to_id', 'is', null)
+      .is('reply_to_id', null)  // FIXED: Use .is() instead of .filter()
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
