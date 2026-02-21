@@ -184,9 +184,18 @@ export default function Settings({ onClose }: SettingsProps) {
   const [activeTab, setActiveTab] = useState('profile');
   
   // Privacy settings state
-  const [isDiscoverable, setIsDiscoverable] = useState(true);
-  const [aiOptOut, setAiOptOut] = useState(false);
-  const [analyticsOptOut, setAnalyticsOptOut] = useState(false);
+  const [isDiscoverable, setIsDiscoverable] = useState(() => {
+    const stored = localStorage.getItem('privacy_discoverable');
+    return stored ? stored === 'true' : true;
+  });
+  const [aiOptOut, setAiOptOut] = useState(() => {
+    const stored = localStorage.getItem('privacy_ai_opt_out');
+    return stored ? stored === 'true' : false;
+  });
+  const [analyticsOptOut, setAnalyticsOptOut] = useState(() => {
+    const stored = localStorage.getItem('privacy_analytics_opt_out');
+    return stored ? stored === 'true' : false;
+  });
   
   // Account deletion state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -814,6 +823,8 @@ export default function Settings({ onClose }: SettingsProps) {
   
   const handlePrivacySettingsUpdate = async (setting: string, value: boolean) => {
     try {
+      console.log(`🔐 Updating privacy setting: ${setting} = ${value}`);
+      
       // Update privacy settings in database
       const { error } = await supabase
         .from('users')
@@ -824,14 +835,23 @@ export default function Settings({ onClose }: SettingsProps) {
         .eq('id', user?.id);
       
       if (error) {
-        console.error('Error updating privacy settings:', error);
-        alert('Failed to update privacy settings');
+        console.error('❌ Error updating privacy settings:', error);
+        
+        // Check if it's a column missing error
+        if (error.message?.includes('column') || error.code === '42703') {
+          alert(`Privacy settings columns not yet added to database. Please run the migration:\n\nmigrations/add_privacy_columns.sql\n\nYour preference has been saved locally but won't persist.`);
+          // Store in localStorage as fallback
+          localStorage.setItem(`privacy_${setting}`, String(value));
+          console.log(`✅ Saved privacy_${setting} to localStorage as fallback`);
+        } else {
+          alert(`Failed to update privacy settings: ${error.message}`);
+        }
       } else {
-        console.log(`Privacy setting ${setting} updated to ${value}`);
+        console.log(`✅ Privacy setting ${setting} updated to ${value} in database`);
       }
     } catch (error) {
-      console.error('Error updating privacy settings:', error);
-      alert('Failed to update privacy settings');
+      console.error('❌ Error updating privacy settings:', error);
+      alert('Failed to update privacy settings. Check console for details.');
     }
   };
   
