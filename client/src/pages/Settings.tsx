@@ -182,6 +182,16 @@ export default function Settings({ onClose }: SettingsProps) {
   const { user, signOut, updateUser } = useSupabaseAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('profile');
+  
+  // Privacy settings state
+  const [isDiscoverable, setIsDiscoverable] = useState(true);
+  const [aiOptOut, setAiOptOut] = useState(false);
+  const [analyticsOptOut, setAnalyticsOptOut] = useState(false);
+  
+  // Account deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   
@@ -801,6 +811,62 @@ export default function Settings({ onClose }: SettingsProps) {
       console.error('Failed to sign out:', error);
     }
   };
+  
+  const handlePrivacySettingsUpdate = async (setting: string, value: boolean) => {
+    try {
+      // Update privacy settings in database
+      const { error } = await supabase
+        .from('users')
+        .update({
+          [`privacy_${setting}`]: value,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user?.id);
+      
+      if (error) {
+        console.error('Error updating privacy settings:', error);
+        alert('Failed to update privacy settings');
+      } else {
+        console.log(`Privacy setting ${setting} updated to ${value}`);
+      }
+    } catch (error) {
+      console.error('Error updating privacy settings:', error);
+      alert('Failed to update privacy settings');
+    }
+  };
+  
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      alert('Please type DELETE to confirm account deletion');
+      return;
+    }
+    
+    setIsDeletingAccount(true);
+    
+    try {
+      // Delete user data from database
+      const { error: deleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', user?.id);
+      
+      if (deleteError) {
+        console.error('Error deleting user data:', deleteError);
+        alert('Failed to delete account. Please contact support.');
+        setIsDeletingAccount(false);
+        return;
+      }
+      
+      // Sign out and redirect to auth page
+      await signOut();
+      alert('Your account has been successfully deleted.');
+      setLocation('/auth');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert('Failed to delete account. Please contact support.');
+      setIsDeletingAccount(false);
+    }
+  };
 
   const TabButton = ({ id, title, active }: { id: string; title: string; active: boolean }) => (
     <button
@@ -1386,6 +1452,305 @@ export default function Settings({ onClose }: SettingsProps) {
           </div>
         </div>
 
+      </div>
+
+      {/* Privacy Settings */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      }}>
+        <h4 style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#111827',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <ShieldIcon size={20} color="#7c3aed" />
+          Privacy Settings
+        </h4>
+        
+        {/* Account Discoverability */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 0',
+          borderBottom: '1px solid #f3f4f6'
+        }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
+              Account Discoverability
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+              Let others find your account by email or phone
+            </div>
+          </div>
+          <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
+            <input
+              type="checkbox"
+              checked={isDiscoverable}
+              onChange={(e) => {
+                setIsDiscoverable(e.target.checked);
+                handlePrivacySettingsUpdate('discoverable', e.target.checked);
+              }}
+              style={{ opacity: 0, width: 0, height: 0 }}
+            />
+            <span style={{
+              position: 'absolute',
+              cursor: 'pointer',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: isDiscoverable ? '#7c3aed' : '#cbd5e1',
+              transition: '0.3s',
+              borderRadius: '24px'
+            }}>
+              <span style={{
+                position: 'absolute',
+                content: '',
+                height: '18px',
+                width: '18px',
+                left: isDiscoverable ? '26px' : '3px',
+                bottom: '3px',
+                backgroundColor: 'white',
+                transition: '0.3s',
+                borderRadius: '50%'
+              }} />
+            </span>
+          </label>
+        </div>
+
+        {/* AI Opt-Out */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 0',
+          borderBottom: '1px solid #f3f4f6'
+        }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
+              Opt Out of AI Features
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+              Disable AI-powered content generation and analysis
+            </div>
+          </div>
+          <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
+            <input
+              type="checkbox"
+              checked={aiOptOut}
+              onChange={(e) => {
+                setAiOptOut(e.target.checked);
+                handlePrivacySettingsUpdate('ai_opt_out', e.target.checked);
+              }}
+              style={{ opacity: 0, width: 0, height: 0 }}
+            />
+            <span style={{
+              position: 'absolute',
+              cursor: 'pointer',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: aiOptOut ? '#7c3aed' : '#cbd5e1',
+              transition: '0.3s',
+              borderRadius: '24px'
+            }}>
+              <span style={{
+                position: 'absolute',
+                content: '',
+                height: '18px',
+                width: '18px',
+                left: aiOptOut ? '26px' : '3px',
+                bottom: '3px',
+                backgroundColor: 'white',
+                transition: '0.3s',
+                borderRadius: '50%'
+              }} />
+            </span>
+          </label>
+        </div>
+
+        {/* Analytics Opt-Out */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 0'
+        }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>
+              Opt Out of Analytics
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+              Stop sharing usage data for analytics
+            </div>
+          </div>
+          <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
+            <input
+              type="checkbox"
+              checked={analyticsOptOut}
+              onChange={(e) => {
+                setAnalyticsOptOut(e.target.checked);
+                handlePrivacySettingsUpdate('analytics_opt_out', e.target.checked);
+              }}
+              style={{ opacity: 0, width: 0, height: 0 }}
+            />
+            <span style={{
+              position: 'absolute',
+              cursor: 'pointer',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: analyticsOptOut ? '#7c3aed' : '#cbd5e1',
+              transition: '0.3s',
+              borderRadius: '24px'
+            }}>
+              <span style={{
+                position: 'absolute',
+                content: '',
+                height: '18px',
+                width: '18px',
+                left: analyticsOptOut ? '26px' : '3px',
+                bottom: '3px',
+                backgroundColor: 'white',
+                transition: '0.3s',
+                borderRadius: '50%'
+              }} />
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {/* Delete Account */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+        border: '2px solid #fef2f2'
+      }}>
+        <h4 style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#dc2626',
+          marginBottom: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          ⚠️ Delete Account
+        </h4>
+        <p style={{
+          fontSize: '13px',
+          color: '#6b7280',
+          marginBottom: '16px',
+          lineHeight: '1.6'
+        }}>
+          Once you delete your account, there is no going back. All your chirps, likes, and profile data will be permanently removed.
+        </p>
+        
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#fef2f2',
+              color: '#dc2626',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#fee2e2';
+              e.currentTarget.style.borderColor = '#fca5a5';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#fef2f2';
+              e.currentTarget.style.borderColor = '#fecaca';
+            }}
+          >
+            Delete My Account
+          </button>
+        ) : (
+          <div>
+            <p style={{
+              fontSize: '13px',
+              color: '#374151',
+              marginBottom: '12px',
+              fontWeight: '500'
+            }}>
+              Type <strong>DELETE</strong> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '14px',
+                marginBottom: '12px'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteConfirmText('');
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  backgroundColor: '#f8fafc',
+                  color: '#374151',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeletingAccount || deleteConfirmText !== 'DELETE'}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  backgroundColor: isDeletingAccount || deleteConfirmText !== 'DELETE' ? '#fca5a5' : '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: isDeletingAccount || deleteConfirmText !== 'DELETE' ? 'not-allowed' : 'pointer',
+                  opacity: isDeletingAccount || deleteConfirmText !== 'DELETE' ? 0.5 : 1
+                }}
+              >
+                {isDeletingAccount ? 'Deleting...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Sign Out */}
