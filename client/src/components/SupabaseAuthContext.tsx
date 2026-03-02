@@ -22,7 +22,7 @@ interface SupabaseAuthContextType {
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, name: string, customHandle?: string) => Promise<{ success: boolean; error?: string; message?: string }>;
+  signUp: (email: string, password: string, name: string, customHandle?: string, dateOfBirth?: string) => Promise<{ success: boolean; error?: string; message?: string }>;
   signOut: () => Promise<void>;
   updateUser: (updates: Partial<TransformedUser>) => Promise<void>;
   isAuthenticated: boolean;
@@ -180,7 +180,8 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     email: string, 
     password: string, 
     name: string, 
-    customHandle?: string
+    customHandle?: string,
+    dateOfBirth?: string
   ): Promise<{ success: boolean; error?: string; message?: string }> => {
     try {
       setIsLoading(true);
@@ -207,6 +208,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
           data: {
             name,
             custom_handle: customHandle,
+            date_of_birth: dateOfBirth,
           },
           // Add redirect URL for email confirmation
           emailRedirectTo: `${window.location.origin}/auth/confirm`,
@@ -232,6 +234,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             last_name: name.split(' ').slice(1).join(' ') || '',
             custom_handle: customHandle,
             handle: customHandle || `user_${data.user.id.substring(0, 8)}`,
+            date_of_birth: dateOfBirth || null,
             bio: '',
             profile_image_url: null,
             banner_image_url: null,

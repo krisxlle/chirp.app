@@ -81,6 +81,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [customHandle, setCustomHandle] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -104,12 +105,30 @@ export default function Auth() {
     try {
       if (isSignUp) {
         // Handle sign up
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !dateOfBirth) {
           alert('Please fill in all required fields');
+          setIsLoading(false);
           return;
         }
         
-        const result = await signUp(email, password, name, customHandle || undefined);
+        // Calculate age from date of birth
+        const birthDate = new Date(dateOfBirth);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        // Verify user is at least 13 years old
+        if (age < 13) {
+          alert('You must be at least 13 years old to create a Chirp account');
+          setIsLoading(false);
+          return;
+        }
+        
+        const result = await signUp(email, password, name, customHandle || undefined, dateOfBirth);
         
         if (result.success) {
           if (result.error === 'EMAIL_CONFIRMATION_REQUIRED') {
@@ -439,6 +458,34 @@ export default function Auth() {
                   placeholder="Full Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '16px', 
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                  required
+                />
+              </div>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ 
+                  display: 'block',
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  marginBottom: '8px',
+                  fontWeight: '500'
+                }}>
+                  Date of Birth (must be 13 or older)
+                </label>
+                <input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  max={new Date(new Date().setFullYear(new Date().getFullYear() - 13)).toISOString().split('T')[0]}
                   style={{ 
                     width: '100%', 
                     padding: '16px', 
