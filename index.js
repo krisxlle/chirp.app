@@ -1,12 +1,15 @@
 import { registerRootComponent } from 'expo';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './components/AuthContext';
 import ChirpApp from './components/ChirpApp';
 
 function App() {
   return (
-    <AuthProvider>
-      <ChirpApp />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <ChirpApp />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 
