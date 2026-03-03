@@ -1,6 +1,7 @@
 import { Session, User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { associateDeviceWithUser, trackAnonymousSession } from '../lib/deviceTracking';
 
 interface TransformedUser {
   id: string;
@@ -62,12 +63,23 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   useEffect(() => {
+    // Track anonymous session on app load
+    const hasSession = localStorage.getItem('chirp_device_id');
+    if (!hasSession) {
+      trackAnonymousSession();
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(transformSupabaseUser(session?.user ?? null));
       setIsEmailVerified(!!session?.user?.email_confirmed_at);
       setIsLoading(false);
+      
+      // Associate device with user if authenticated
+      if (session?.user?.id) {
+        associateDeviceWithUser(session.user.id, supabase);
+      }
     });
 
     // Listen for auth changes
@@ -78,6 +90,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       setUser(transformSupabaseUser(session?.user ?? null));
       setIsEmailVerified(!!session?.user?.email_confirmed_at);
       setIsLoading(false);
+      
+      // Associate device with user when they sign in
+      if (session?.user?.id) {
+        associateDeviceWithUser(session.user.id, supabase);
+      }
     });
 
     return () => subscription.unsubscribe();

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import BottomNavigation from "./components/BottomNavigation";
+import CookieConsent from "./components/CookieConsent";
 import EmailVerificationBanner from "./components/EmailVerificationBanner";
 import SignupContactsPrompt from "./components/SignupContactsPrompt";
 import { SupabaseAuthProvider, useSupabaseAuth } from "./components/SupabaseAuthContext";
@@ -100,6 +101,7 @@ function Router() {
       {isAuthenticated && <BottomNavigation />}
       {isAuthenticated && <SignupContactsPrompt />}
       <FloatingFeedback />
+      <CookieConsent />
     </div>
   );
 }

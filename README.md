@@ -26,6 +26,10 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 - **Search & Discovery**: Find users and content through search functionality
 - **Push Notifications**: Stay updated with real-time notifications
 - **Cross-platform**: Works on iOS, Android, and Web
+- **Privacy Controls**: Comprehensive privacy settings and data management
+- **Cookie Consent**: GDPR-compliant cookie consent banner
+- **Data Export**: Download all your data in portable JSON format
+- **Device Tracking**: View connected devices for security
 
 ## 🏗️ Architecture
 
@@ -111,6 +115,9 @@ chirp.app/
 
 4. **Database Setup**
    - Run the SQL migrations in `supabase-setup.sql`
+   - Run privacy compliance migrations:
+     - `migrations/add_privacy_columns.sql`
+     - `migrations/add_device_tracking.sql`
    - Set up Supabase Storage buckets for `profile-images` and `banner-images`
 
 5. **Start the development server**
@@ -149,7 +156,13 @@ chirp.app/
 - **Authentication**: Secure user authentication via Supabase
 - **Data Protection**: Row Level Security (RLS) policies
 - **Image Storage**: Secure cloud storage with access controls
-- **Privacy Controls**: User-controlled data sharing
+- **Privacy Controls**: User-controlled data sharing and privacy settings
+- **Age Verification**: COPPA-compliant minimum age of 13
+- **Cookie Consent**: GDPR-compliant consent management
+- **Data Export**: Full data portability in JSON format
+- **Account Deletion**: Permanent account and data removal
+- **Device Tracking**: Inferred identity monitoring for security
+- **Privacy Settings**: Granular controls for discoverability, AI, and analytics
 
 ## 🚀 Deployment
 

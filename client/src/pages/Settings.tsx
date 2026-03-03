@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import { supabase } from '../lib/supabase';
+import { getUserDevices } from '../lib/deviceTracking';
 
 // Inline API functions to avoid import issues in production
 const getUserStats = async (userId: string) => {
@@ -201,6 +202,12 @@ export default function Settings({ onClose }: SettingsProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  
+  // Data export state
+  const [isExportingData, setIsExportingData] = useState(false);
+  
+  // Device tracking state
+  const [userDevices, setUserDevices] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   
@@ -763,6 +770,20 @@ export default function Settings({ onClose }: SettingsProps) {
     loadAnalyticsData();
   }, [user?.id]);
 
+  // Load user devices for inferred identity tracking
+  useEffect(() => {
+    const loadDevices = async () => {
+      if (!user?.id) return;
+      
+      console.log('🔍 Loading devices for user:', user.id);
+      const devices = await getUserDevices(user.id, supabase);
+      setUserDevices(devices);
+      console.log('✅ Loaded', devices.length, 'devices');
+    };
+    
+    loadDevices();
+  }, [user?.id]);
+
   const handleSaveProfile = async () => {
     setIsUpdating(true);
     try {
@@ -855,6 +876,123 @@ export default function Settings({ onClose }: SettingsProps) {
     }
   };
   
+  const handleExportData = async () => {
+    setIsExportingData(true);
+    
+    try {
+      console.log('📦 Exporting user data...');
+      
+      // Collect all user data
+      const exportData: any = {
+        exportDate: new Date().toISOString(),
+        exportType: 'Full Data Export',
+        userData: {
+          id: user?.id,
+          email: user?.email,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          name: user?.name,
+          handle: user?.handle,
+          customHandle: user?.customHandle,
+          bio: user?.bio,
+          createdAt: user?.createdAt,
+          crystalBalance: user?.crystalBalance,
+        }
+      };
+
+      // Fetch user's chirps
+      const { data: chirps, error: chirpsError } = await supabase
+        .from('chirps')
+        .select('*')
+        .eq('author_id', user?.id)
+        .order('created_at', { ascending: false });
+      
+      if (!chirpsError) {
+        exportData.chirps = chirps;
+        exportData.chirpsCount = chirps?.length || 0;
+      }
+
+      // Fetch user's likes
+      const { data: likes, error: likesError } = await supabase
+        .from('likes')
+        .select('chirp_id, created_at')
+        .eq('user_id', user?.id);
+      
+      if (!likesError) {
+        exportData.likes = likes;
+        exportData.likesCount = likes?.length || 0;
+      }
+
+      // Fetch user's follows
+      const { data: following, error: followingError } = await supabase
+        .from('follows')
+        .select('following_id, created_at')
+        .eq('follower_id', user?.id);
+      
+      if (!followingError) {
+        exportData.following = following;
+        exportData.followingCount = following?.length || 0;
+      }
+
+      // Fetch user's followers
+      const { data: followers, error: followersError } = await supabase
+        .from('follows')
+        .select('follower_id, created_at')
+        .eq('following_id', user?.id);
+      
+      if (!followersError) {
+        exportData.followers = followers;
+        exportData.followersCount = followers?.length || 0;
+      }
+
+      // Fetch user's collections
+      const { data: collections, error: collectionsError } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('user_id', user?.id);
+      
+      if (!collectionsError) {
+        exportData.collections = collections;
+      }
+
+      // Fetch user's devices
+      const devices = await getUserDevices(user?.id || '', supabase);
+      exportData.devices = devices;
+      exportData.devicesCount = devices.length;
+
+      // Include privacy settings
+      exportData.privacySettings = {
+        isDiscoverable,
+        aiOptOut,
+        analyticsOptOut,
+        cookieConsent: localStorage.getItem('chirp_cookie_consent')
+      };
+
+      // Create downloadable JSON file
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `chirp_data_export_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('✅ Data export completed successfully');
+      alert('Your data has been downloaded successfully!');
+      
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setIsExportingData(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') {
       alert('Please type DELETE to confirm account deletion');
@@ -1649,6 +1787,173 @@ export default function Settings({ onClose }: SettingsProps) {
             </span>
           </label>
         </div>
+      </div>
+
+      {/* Data Export */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      }}>
+        <h4 style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#111827',
+          marginBottom: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          📥 Data Export
+        </h4>
+        <p style={{
+          fontSize: '13px',
+          color: '#6b7280',
+          marginBottom: '16px',
+          lineHeight: '1.6'
+        }}>
+          Download a copy of all your data including your profile, chirps, likes, follows, and collections. 
+          This is provided in JSON format for data portability.
+        </p>
+        
+        <button
+          onClick={handleExportData}
+          disabled={isExportingData}
+          style={{
+            width: '100%',
+            padding: '12px',
+            backgroundColor: isExportingData ? '#e5e7eb' : '#f8fafc',
+            color: isExportingData ? '#9ca3af' : '#7c3aed',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: isExportingData ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+          onMouseEnter={(e) => {
+            if (!isExportingData) {
+              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.borderColor = '#cbd5e1';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isExportingData) {
+              e.currentTarget.style.backgroundColor = '#f8fafc';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }
+          }}
+        >
+          {isExportingData ? '📦 Preparing Download...' : '📥 Download My Data'}
+        </button>
+      </div>
+
+      {/* Connected Devices */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      }}>
+        <h4 style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#111827',
+          marginBottom: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          📱 Connected Devices
+        </h4>
+        <p style={{
+          fontSize: '13px',
+          color: '#6b7280',
+          marginBottom: '16px',
+          lineHeight: '1.6'
+        }}>
+          Devices and browsers that have been used to access your account. This helps us provide security and prevent unauthorized access.
+        </p>
+        
+        {userDevices.length === 0 ? (
+          <p style={{
+            fontSize: '13px',
+            color: '#9ca3af',
+            fontStyle: 'italic',
+            textAlign: 'center',
+            padding: '16px'
+          }}>
+            No devices tracked yet. Run the device tracking migration to enable this feature.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {userDevices.map((device, index) => (
+              <div
+                key={device.id || index}
+                style={{
+                  padding: '12px',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb'
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'start',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      marginBottom: '4px'
+                    }}>
+                      {device.platform || 'Unknown Platform'}
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#6b7280',
+                      marginBottom: '4px',
+                      maxWidth: '300px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {device.user_agent?.substring(0, 50)}...
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#9ca3af'
+                    }}>
+                      Last active: {new Date(device.last_seen).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {device.is_active && (
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '4px 8px',
+                      backgroundColor: '#dcfce7',
+                      color: '#166534',
+                      borderRadius: '12px',
+                      fontWeight: '600'
+                    }}>
+                      Active
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Delete Account */}

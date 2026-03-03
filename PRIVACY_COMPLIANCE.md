@@ -47,6 +47,48 @@ Added three privacy controls:
 - Changes saved immediately to database
 - Settings stored with `privacy_` prefix in users table
 
+### 4. Cookie Consent Banner
+**Location:** `client/src/components/CookieConsent.tsx`
+
+- Display cookie consent banner on first visit
+- User can accept, decline, or manage cookie settings
+- Consent preference stored in localStorage
+- Link to privacy policy for more details
+
+**How it works:**
+- Banner appears at bottom of screen on first visit
+- Checks localStorage for existing consent
+- Records consent date and preference
+- Dismisses after user action
+
+### 5. Data Export/Portability
+**Location:** `client/src/pages/Settings.tsx`
+
+- "Download My Data" button in Settings > Account tab
+- Exports all user data as JSON file
+- Includes: profile, chirps, likes, follows, collections, devices, privacy settings
+- Timestamped filename for organization
+
+**How it works:**
+- User clicks "Download My Data" in Settings
+- System queries all tables for user's data
+- Generates JSON file with complete export
+- Automatically downloads to user's device
+
+### 6. Inferred Identity Tracking
+**Location:** `client/src/lib/deviceTracking.ts`, `client/src/components/SupabaseAuthContext.tsx`
+
+- Tracks devices/browsers associated with user account
+- Device fingerprinting based on browser characteristics
+- Anonymous session tracking before sign-in
+- Device list visible in Settings > Account tab
+
+**How it works:**
+- Generates device fingerprint from browser characteristics
+- Associates device with user on sign-in
+- Updates last_seen timestamp on each session
+- Stores in user_devices table (requires migration)
+
 ---
 
 ## 🔧 Database Changes Required
@@ -55,7 +97,11 @@ Run the migration SQL to add required columns:
 
 ```bash
 # Execute in Supabase SQL Editor or via CLI:
+# 1. Privacy settings columns:
 psql -f migrations/add_privacy_columns.sql
+
+# 2. Device tracking table:
+psql -f migrations/add_device_tracking.sql
 ```
 
 **Required Columns:**
@@ -66,45 +112,35 @@ users.privacy_ai_opt_out         BOOLEAN (default: FALSE)
 users.privacy_analytics_opt_out  BOOLEAN (default: FALSE)
 ```
 
+**Required Tables:**
+```sql
+user_devices                     (device tracking for inferred identity)
+```
+
 ---
 
 ## ⚠️ Remaining Compliance Gaps
 
 ### High Priority (Still Missing):
 
-1. **Cookie Consent Banner**
-   - Need to add cookie consent popup on first visit
-   - Store consent preference in localStorage
-   - Link to cookie policy
-
-2. **Data Export Feature**
-   - Add "Download My Data" button in Settings
-   - Generate JSON export of all user data
-   - Include chirps, profile, interactions
-
-3. **Third-Party Analytics Integration**
+1. **Third-Party Analytics Integration**
    - Respect `privacy_analytics_opt_out` setting
    - Add conditional analytics tracking code
    - Document which analytics services are used
 
-4. **AI Feature Opt-Out Implementation**
+2. **AI Feature Opt-Out Implementation**
    - Check `privacy_ai_opt_out` before AI processing
    - Skip AI features when user has opted out
    - Add to weekly analytics, profile generation, etc.
 
-5. **Legal Request Handling Process**
+3. **Legal Request Handling Process**
    - Create admin endpoint for legal data requests
    - Document process for law enforcement requests
    - Add logging for data access requests
 
 ### Medium Priority:
 
-6. **Enhanced Device/Browser Tracking**
-   - Store device fingerprints (if policy requires)
-   - Track browser/device associations
-   - Respect user privacy settings
-
-7. **Push Notification Granular Controls**
+4. **Push Notification Granular Controls**
    - Add per-category notification toggles
    - Implement in Settings page
    - Store preferences in database
@@ -139,6 +175,26 @@ users.privacy_analytics_opt_out  BOOLEAN (default: FALSE)
 3. Check browser console for success messages
 4. Refresh page and verify settings persist
 
+### Test Cookie Consent:
+1. Open app in new browser or clear localStorage
+2. Cookie consent banner should appear at bottom
+3. Click "Accept All", "Decline", or "Cookie Settings"
+4. Banner should dismiss and preference stored
+5. Refresh page - banner should not reappear
+
+### Test Data Export:
+1. Login and go to Settings > Account tab
+2. Click "Download My Data"
+3. JSON file should download with all user data
+4. Open file and verify it contains: profile, chirps, likes, follows, devices, privacy settings
+
+### Test Device Tracking:
+1. Login from different browsers/devices
+2. Go to Settings > Account tab
+3. Scroll to "Connected Devices" section
+4. Should see list of devices with platform, user agent, last active date
+5. Note: Requires `add_device_tracking.sql` migration
+
 ---
 
 ## 📋 Compliance Checklist
@@ -148,8 +204,9 @@ users.privacy_analytics_opt_out  BOOLEAN (default: FALSE)
 | Age verification | ✅ Implemented | Enforces 13+ requirement |
 | Account deletion | ✅ Implemented | Full deletion with confirmation |
 | Privacy settings | ✅ Implemented | 3 core privacy toggles |
-| Data export | ❌ Missing | Need "Download My Data" feature |
-| Cookie consent | ❌ Missing | Need consent banner |
+| Data export | ✅ Implemented | Download My Data feature |
+| Cookie consent | ✅ Implemented | Banner with accept/decline options |
+| Device tracking | ✅ Implemented | Inferred identity monitoring |
 | Ad opt-out | ❌ N/A | No advertising system exists |
 | Analytics respect opt-out | ⚠️ Partial | Setting exists, not enforced in code |
 | AI opt-out enforcement | ⚠️ Partial | Setting exists, not enforced in code |
@@ -159,16 +216,20 @@ users.privacy_analytics_opt_out  BOOLEAN (default: FALSE)
 
 ## 🚀 Deployment Steps
 
-1. **Run database migration:**
+1. **Run database migrations:**
    ```sql
    -- In Supabase SQL Editor:
-   -- Copy contents of migrations/add_privacy_columns.sql
+   -- 1. Copy contents of migrations/add_privacy_columns.sql
+   -- 2. Copy contents of migrations/add_device_tracking.sql
    ```
 
 2. **Test in development:**
    - Test signup with age validation
    - Test account deletion flow
    - Test privacy settings toggles
+   - Test cookie consent banner
+   - Test data export download
+   - Test device tracking in Settings
 
 3. **Update Privacy Policy page:**
    - Replace content with official policy
@@ -178,6 +239,7 @@ users.privacy_analytics_opt_out  BOOLEAN (default: FALSE)
    - Check analytics respects opt-out
    - Verify AI features respect opt-out
    - Test data deletion completeness
+   - Monitor cookie consent rates
 
 ---
 

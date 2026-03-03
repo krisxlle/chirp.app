@@ -109,6 +109,12 @@ Chirp implements the following security measures:
 - User data anonymization where possible
 - Secure data deletion capabilities
 - Privacy-by-design architecture
+- COPPA-compliant age verification (minimum 13 years old)
+- GDPR-compliant cookie consent management
+- Full data portability (export user data in JSON format)
+- Granular privacy controls (discoverability, AI opt-out, analytics opt-out)
+- Device tracking for inferred identity and security monitoring
+- Permanent account deletion with confirmation
 
 ### Security Best Practices for Users
 
