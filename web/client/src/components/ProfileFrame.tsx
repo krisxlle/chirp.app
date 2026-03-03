@@ -17,43 +17,44 @@ const rarityFrameImages = {
   common: '/assets/Season 1/Simple Gray Frame Common.png',
 };
 
+const FRAME_FILL_SCALE_BY_RARITY: Record<string, number> = {
+  common: 1.36,
+  uncommon: 1.42,
+  rare: 1.42,
+  epic: 1.42,
+  legendary: 1.44,
+  mythic: 1.42,
+};
+
 export default function ProfileFrame({ rarity, size = 60, profilePictureSize, children, className = '' }: ProfileFrameProps) {
   const frameImage = rarityFrameImages[rarity];
-  
-  // Calculate proper sizing for frame and profile picture
-  // Use profilePictureSize if provided, otherwise fall back to size prop for backward compatibility
+  const scale = FRAME_FILL_SCALE_BY_RARITY[rarity] ?? 1.48;
   const baseSize = profilePictureSize || size;
-  const frameSize = baseSize * 1.8; // Frame is 80% larger than the profile picture size
-  const profileSize = baseSize; // Profile picture size matches the passed size
-  
-  console.log('🎯 WEB ProfileFrame render:', { rarity, frameImage, frameSize, profileSize, size });
-  
+  const effectiveScale = baseSize >= 100 ? scale * 0.90 : scale;
+  const containerMultiplier = rarity === 'rare' ? 2.3 : 1.8;
+  const containerSize = Math.round(baseSize * containerMultiplier);
+  const profileSize = Math.round(baseSize * effectiveScale);
+  const offset = rarity === 'rare' ? { x: 0, y: Math.max(1, Math.round(baseSize * 0.06)) } : { x: 0, y: 0 };
+  const left = (containerSize - profileSize) / 2 + offset.x;
+  const top = (containerSize - profileSize) / 2 + offset.y;
+
   return (
-    <div 
-      className={`relative flex items-center justify-center border-4 border-red-500 ${className}`}
-      style={{ width: frameSize, height: frameSize }}
-    >
-      {/* Profile Picture Container */}
-      <div 
-        className="absolute flex items-center justify-center border-2 border-blue-500"
-        style={{ 
-          width: profileSize, 
-          height: profileSize,
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)'
-        }}
-      >
-        {children}
+    <div className={`relative flex items-center justify-center ${className}`} style={{ width: containerSize, height: containerSize }}>
+      <div className="absolute flex items-center justify-center overflow-hidden rounded-full" style={{ width: profileSize, height: profileSize, left, top }}>
+        <div className="flex items-center justify-center" style={{ width: baseSize, height: baseSize, transform: `scale(${effectiveScale})`, transformOrigin: 'center center' }}>
+          {children}
+        </div>
       </div>
-      
-      {/* Frame Overlay */}
       <img
         src={frameImage}
         alt={`${rarity} frame`}
-        className="absolute inset-0 w-full h-full object-contain border-2 border-green-500"
-        style={{ width: frameSize, height: frameSize }}
-        onLoad={() => console.log('Frame image loaded:', frameImage)}
+        className="absolute w-full h-full object-contain"
+        style={{
+          width: containerSize,
+          height: containerSize,
+          left: 0,
+          top: rarity === 'rare' ? -2 : 0,
+        }}
         onError={(e) => console.error('Frame image failed to load:', frameImage, e)}
       />
     </div>

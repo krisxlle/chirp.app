@@ -227,7 +227,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       </div>
     );
 
-    if (equippedFrame) {
+    if (equippedFrame && showFrame) {
       console.log('🖼️ UserAvatar equipped frame debug:', {
         userId: user.id,
         userHandle: user.handle,
@@ -269,7 +269,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     </div>
   );
 
-  if (equippedFrame) {
+  if (equippedFrame && showFrame) {
     console.log('🖼️ UserAvatar equipped frame debug (fallback):', {
       userId: user.id,
       userHandle: user.handle,

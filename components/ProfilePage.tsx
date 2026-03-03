@@ -251,7 +251,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
         <View style={styles.avatarContainer}>
           <ProfileFrame 
             rarity={determineUserRarity(user)}
-            size={Platform.OS === 'web' ? 108 : 120}
+            profilePictureSize={Platform.OS === 'web' ? 108 : 120}
           >
             <UserAvatar 
               user={{
@@ -261,7 +261,7 @@ export default forwardRef<any, ProfilePageProps>(function ProfilePage({ onNaviga
                 email: user.email || '',
                 profileImageUrl: user.profileImageUrl || undefined
               }} 
-              size="xl" 
+              size={Platform.OS === 'web' ? 108 : 120}
             />
           </ProfileFrame>
         </View>

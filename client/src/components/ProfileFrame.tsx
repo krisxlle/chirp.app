@@ -58,92 +58,87 @@ export default function ProfileFrame({ rarity, size = 60, profilePictureSize, ch
     imageLoaded
   });
   
-  // Calculate proper sizing for frame and profile picture
-  // Use profilePictureSize if provided, otherwise fall back to size prop for backward compatibility
+  const FRAME_FILL_SCALE_BY_RARITY: Record<string, number> = {
+    common: 1.36,
+    uncommon: 1.42,
+    rare: 1.42,
+    epic: 1.42,
+    legendary: 1.44,
+    mythic: 1.42,
+  };
+  const scale = FRAME_FILL_SCALE_BY_RARITY[rarity] ?? 1.42;
   const baseSize = profilePictureSize || size;
-  const frameSize = baseSize * 1.8; // Frame is 80% larger than the profile picture size
-  const profileSize = baseSize; // Profile picture size matches the passed size
-  
-  // Debug logging for profile page
-  if (profilePictureSize === 80) {
-    console.log('🔍 ProfileFrame debug:', {
-      profilePictureSize,
-      baseSize,
-      frameSize,
-      profileSize,
-      rarity
-    });
-  }
-  
+  // At large sizes (profile header), the assets' inner openings don't scale perfectly.
+  // Slightly reduce the effective scale so the photo doesn't exceed the frame.
+  const effectiveScale = baseSize >= 100 ? scale * 0.90 : scale;
+  const containerMultiplier = rarity === 'rare' ? 2.3 : 1.8;
+  const containerSize = Math.round(baseSize * containerMultiplier);
+  const profileSize = Math.round(baseSize * effectiveScale);
+  const offset = rarity === 'rare' ? { x: 0, y: Math.max(1, Math.round(baseSize * 0.06)) } : { x: 0, y: 0 };
+  const left = (containerSize - profileSize) / 2 + offset.x;
+  const top = (containerSize - profileSize) / 2 + offset.y;
+
   return (
     <div style={{
       position: 'relative',
-      width: frameSize,
-      height: frameSize,
+      width: containerSize,
+      height: containerSize,
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      overflow: 'visible', // Ensure frame is not clipped
-      // Don't override parent positioning
+      overflow: 'visible',
       ...style
     }}>
-      {/* Profile Picture Container */}
       <div style={{
         position: 'absolute',
         width: profileSize,
         height: profileSize,
+        borderRadius: '50%',
+        overflow: 'hidden',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        top: '50%', // Centered vertically in the frame
-        left: '50%', // Centered horizontally in the frame
-        transform: 'translate(-50%, -50%)', // Center both horizontally and vertically
+        left,
+        top,
         zIndex: 0
       }}>
-        {children}
+        <div style={{
+          width: baseSize,
+          height: baseSize,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          transform: `scale(${effectiveScale})`,
+          transformOrigin: 'center center'
+        }}>
+          {children}
+        </div>
       </div>
-      
-      {/* Frame Overlay */}
       {!imageError && (
         <img
           src={frameImage}
           alt={`${rarity} frame`}
           onError={(e) => {
-            console.error('❌ ProfileFrame image failed to load:', {
-              src: frameImage,
-              rarity,
-              error: e
-            });
+            console.error('❌ ProfileFrame image failed to load:', { src: frameImage, rarity, error: e });
             setImageError(true);
           }}
           style={{
             position: 'absolute',
-            width: frameSize,
-            height: frameSize,
+            width: containerSize,
+            height: containerSize,
+            top: rarity === 'rare' ? -2 : 0,
             objectFit: 'contain',
             zIndex: 1,
             pointerEvents: 'none'
           }}
-          onLoad={() => {
-            console.log('✅ ProfileFrame image loaded successfully:', frameImage);
-            if (profilePictureSize === 80) {
-              console.log('🔍 Frame image size debug:', {
-                frameSize,
-                imageElement: 'loaded',
-                rarity
-              });
-            }
-            setImageLoaded(true);
-          }}
+          onLoad={() => setImageLoaded(true)}
         />
       )}
-      
-      {/* Fallback: Show a colored border if image fails to load */}
       {imageError && (
         <div style={{
           position: 'absolute',
-          width: frameSize,
-          height: frameSize,
+          width: containerSize,
+          height: containerSize,
           border: `3px solid ${getRarityColor(rarity)}`,
           borderRadius: '50%',
           zIndex: 1,
