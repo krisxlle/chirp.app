@@ -1,9 +1,9 @@
+/* Import Metro-specific styles */
+@import './styles/metro-styles.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import Metro-specific styles */
-@import './styles/metro-styles.css';
 
 :root {
   --background: hsl(0, 0%, 100%);
