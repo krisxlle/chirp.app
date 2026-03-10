@@ -259,7 +259,7 @@ export default function Gacha() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 pb-48">
       {/* Header */}
       <div className="flex justify-between items-center p-6 pt-12">
         <h1 className="text-3xl font-bold text-gray-900">Chirp Blind Boxes</h1>
@@ -376,12 +376,12 @@ export default function Gacha() {
         </Card>
       </div>
 
-      {/* Gacha Banner - Full Page */}
-      <div className="relative w-full h-screen">
+      {/* Gacha Banner - main visual */}
+      <div className="relative w-full" style={{ height: '70vh', minHeight: 400 }}>
         <img
           src="/assets/Gacha banner.png"
           alt="Gacha Banner"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
         
         {/* Loading Animation Overlay */}
@@ -394,9 +394,14 @@ export default function Gacha() {
             </div>
           </div>
         )}
-        
-        {/* Capsule Buttons Overlay */}
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-4">
+      </div>
+
+      {/* Extra white space below banner so you can scroll the image fully above the bottom bar */}
+      <div className="w-full h-24 bg-white" />
+
+      {/* Capsule Buttons - remain below the extra white space */}
+      <div className="flex justify-center px-6 pt-6 pb-32">
+        <div className="flex flex-wrap justify-center gap-4">
           <Button
             onClick={() => rollForProfile()}
             disabled={isRolling || getCurrentCrystalBalance() < 100}

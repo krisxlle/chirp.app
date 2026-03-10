@@ -82,6 +82,15 @@
   --ring: hsl(240, 4.9%, 83.9%);
 }
 
+/* App layout: fill viewport so scroll container gets bounded height */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+#root {
+  height: 100%;
+  min-height: 100vh;
+}
 body {
   font-family: system-ui, -apple-system, sans-serif;
   background-color: var(--background);

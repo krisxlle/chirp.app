@@ -3,6 +3,9 @@ import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
 import { supabase } from '../lib/supabase';
 
+// Flag for testing; keep false in production
+const FREE_PULLS = false;
+
 // Profile Frame Gacha System Functions - Inline to avoid import issues
 const rollProfileFrame = async (userId: string) => {
   console.log('🎲 rollProfileFrame called with:', { userId });
@@ -443,13 +446,14 @@ export default function Gacha() {
 
   const rollForFrame = async (rollCount: number = 1) => {
     if (isRolling) return;
-    
+
     const cost = rollCount === 10 ? 950 : 100;
-    
-    // Check if user has enough crystals
+    const effectiveCost = FREE_PULLS ? 0 : cost;
+
+    // Check if user has enough crystals (unless FREE_PULLS is true)
     const currentBalance = getCurrentCrystalBalance();
-    
-    if (currentBalance < cost) {
+
+    if (!FREE_PULLS && currentBalance < effectiveCost) {
       toast({
         title: "Insufficient Crystals",
         description: `You need ${cost} crystals to open a capsule. Like chirps (+1) or comment (+5) to earn crystals!`,
@@ -499,69 +503,72 @@ export default function Gacha() {
       if (results.length > 0) {
           console.log('✅ Successfully rolled frames, deducting crystals...');
           // Deduct crystal balance from database
-          try {
-            console.log('💎 Deducting crystals from database...');
-            
-            // Use direct Supabase client for web
-            const { createClient } = await import('@supabase/supabase-js');
-            const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
-            
-            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-              auth: {
-                storage: {
-                  getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
-                  setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
-                  removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+          // Deduct crystals only when pulls are not free
+          if (!FREE_PULLS && effectiveCost > 0) {
+            try {
+              console.log('💎 Deducting crystals from database...');
+              
+              // Use direct Supabase client for web
+              const { createClient } = await import('@supabase/supabase-js');
+              const SUPABASE_URL = 'https://qrzbtituxxilnbgocdge.supabase.co';
+              const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyemJ0aXR1eHhpbG5iZ29jZGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDcxNDMsImV4cCI6MjA2NzgyMzE0M30.P-o5ND8qoiIpA1W-9WkM7RUOaGTjRtkEmPbCXGbrEI8';
+              
+              const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                  storage: {
+                    getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+                    setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+                    removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key))
+                  },
+                  autoRefreshToken: true,
+                  persistSession: true,
+                  detectSessionInUrl: false,
                 },
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: false,
-              },
-            });
+              });
 
-            // Deduct crystal balance directly (using proper method for web client)
-            const { data: currentUser } = await supabase
-              .from('users')
-              .select('crystal_balance')
-              .eq('id', user.id)
-              .single();
-            
-            if (!currentUser) {
-              throw new Error('User not found');
-            }
-            
-            const newBalance = currentUser.crystal_balance - cost;
-            
-            const { error } = await supabase
-              .from('users')
-              .update({ 
-                crystal_balance: newBalance,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', user.id);
-            
-            const success = !error;
-            
-            if (success) {
-              // Refresh crystal balance from database to update UI
-              await refreshCrystalBalance();
-              console.log('💎 Crystal balance updated successfully');
-            } else {
-              console.error('Failed to deduct crystal balance');
-              // If database deduction fails, still update local state as fallback
+              // Deduct crystal balance directly (using proper method for web client)
+              const { data: currentUser } = await supabase
+                .from('users')
+                .select('crystal_balance')
+                .eq('id', user.id)
+                .single();
+              
+              if (!currentUser) {
+                throw new Error('User not found');
+              }
+              
+              const newBalance = currentUser.crystal_balance - effectiveCost;
+              
+              const { error } = await supabase
+                .from('users')
+                .update({ 
+                  crystal_balance: newBalance,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id);
+              
+              const success = !error;
+              
+              if (success) {
+                // Refresh crystal balance from database to update UI
+                await refreshCrystalBalance();
+                console.log('💎 Crystal balance updated successfully');
+              } else {
+                console.error('Failed to deduct crystal balance');
+                // If database deduction fails, still update local state as fallback
+                const currentBalance = getCurrentCrystalBalance();
+                const newBalance = currentBalance - effectiveCost;
+                await updateUser({ crystalBalance: newBalance });
+                console.log('💎 Fallback: Updated crystal balance in AuthContext');
+              }
+            } catch (error) {
+              console.error('Error deducting crystal balance:', error);
+              // Fallback to local state update if database fails
               const currentBalance = getCurrentCrystalBalance();
-              const newBalance = currentBalance - cost;
+              const newBalance = currentBalance - effectiveCost;
               await updateUser({ crystalBalance: newBalance });
               console.log('💎 Fallback: Updated crystal balance in AuthContext');
             }
-          } catch (error) {
-            console.error('Error deducting crystal balance:', error);
-            // Fallback to local state update if database fails
-            const currentBalance = getCurrentCrystalBalance();
-            const newBalance = currentBalance - cost;
-            await updateUser({ crystalBalance: newBalance });
-            console.log('💎 Fallback: Updated crystal balance in AuthContext');
           }
           
           // Show different modals based on roll count
@@ -595,13 +602,16 @@ export default function Gacha() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f8fafc',
-      paddingBottom: '80px' // Space for bottom navigation
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#f8fafc'
+      }}
+    >
       {/* Header */}
       <div style={{
+        flexShrink: 0,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -644,6 +654,7 @@ export default function Gacha() {
 
       {/* Crystal Balance */}
       <div style={{
+        flexShrink: 0,
         paddingLeft: '20px',
         paddingRight: '20px',
         marginBottom: '20px'
@@ -688,7 +699,7 @@ export default function Gacha() {
         marginLeft: '-150px',
         marginRight: '-150px',
         width: 'calc(100vw + 300px)',
-        height: '500px',
+        maxWidth: 'calc(100vw + 300px)',
         alignSelf: 'center',
         position: 'relative',
         display: 'flex',
@@ -757,22 +768,31 @@ export default function Gacha() {
             </div>
           </div>
         )}
-        
-        {/* Capsule Buttons Overlay */}
+      </div>
+
+      {/* Extra white space directly below banner so it can scroll above bottom nav */}
+      <div style={{ height: '120px', backgroundColor: '#f8fafc', flexShrink: 0 }} />
+
+      {/* Capsule Buttons */}
+      <div style={{
+        flexShrink: 0,
+        marginTop: '16px',
+        display: 'flex',
+        justifyContent: 'center',
+        paddingLeft: '24px',
+        paddingRight: '24px',
+        paddingBottom: '16px'
+      }}>
         <div style={{
-          position: 'absolute',
-          bottom: '50px',
-          left: '150px',
-          right: '150px',
           display: 'flex',
           justifyContent: 'center',
-          paddingLeft: '10px',
-          paddingRight: '10px',
-          gap: '20px'
+          gap: '20px',
+          maxWidth: '500px',
+          width: '100%'
         }}>
           <button
             onClick={() => rollForFrame(1)}
-            disabled={isRolling || getCurrentCrystalBalance() < 100}
+            disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 100)}
             style={{
               borderRadius: '25px',
               paddingTop: '12px',
@@ -783,15 +803,15 @@ export default function Gacha() {
               background: 'linear-gradient(135deg, #6b7280, #4b5563)',
               color: 'white',
               border: 'none',
-              cursor: getCurrentCrystalBalance() >= 100 ? 'pointer' : 'not-allowed',
-              opacity: getCurrentCrystalBalance() >= 100 ? 1 : 0.6,
+              cursor: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'pointer' : 'not-allowed',
+              opacity: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 1 : 0.6,
               transition: 'all 0.2s',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center'
             }}
             onMouseEnter={(e) => {
-              if (getCurrentCrystalBalance() >= 100) {
+              if (FREE_PULLS || getCurrentCrystalBalance() >= 100) {
                 e.currentTarget.style.transform = 'scale(1.05)';
               }
             }}
@@ -820,7 +840,7 @@ export default function Gacha() {
                   fontSize: '14px',
                   fontWeight: 'bold',
                   marginLeft: '4px',
-                  color: getCurrentCrystalBalance() >= 100 ? 'white' : '#fca5a5'
+                  color: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'white' : '#fca5a5'
                 }}>100</span>
               </div>
             </div>
@@ -828,7 +848,7 @@ export default function Gacha() {
           
           <button
             onClick={() => rollForFrame(10)}
-            disabled={isRolling || getCurrentCrystalBalance() < 950}
+            disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 950)}
             style={{
               borderRadius: '25px',
               paddingTop: '12px',
@@ -839,15 +859,15 @@ export default function Gacha() {
               background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
               color: 'white',
               border: 'none',
-              cursor: getCurrentCrystalBalance() >= 950 ? 'pointer' : 'not-allowed',
-              opacity: getCurrentCrystalBalance() >= 950 ? 1 : 0.6,
+              cursor: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'pointer' : 'not-allowed',
+              opacity: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 1 : 0.6,
               transition: 'all 0.2s',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center'
             }}
             onMouseEnter={(e) => {
-              if (getCurrentCrystalBalance() >= 950) {
+              if (FREE_PULLS || getCurrentCrystalBalance() >= 950) {
                 e.currentTarget.style.transform = 'scale(1.05)';
               }
             }}
@@ -876,13 +896,16 @@ export default function Gacha() {
                   fontSize: '14px',
                   fontWeight: 'bold',
                   marginLeft: '4px',
-                  color: getCurrentCrystalBalance() >= 950 ? 'white' : '#fca5a5'
+                  color: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'white' : '#fca5a5'
                 }}>950</span>
               </div>
             </div>
           </button>
         </div>
       </div>
+
+      {/* Spacer so content can scroll above fixed bottom nav */}
+      <div style={{ height: '120px', flexShrink: 0 }} />
 
       {/* Help Modal */}
       {showHelpModal && (

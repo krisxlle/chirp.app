@@ -68,9 +68,19 @@ function Router() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white dark:bg-gray-900 min-h-screen relative">
+    <div
+      className="max-w-md mx-auto bg-white dark:bg-gray-900 relative flex flex-col"
+      style={{ minHeight: '100vh' }}
+    >
       {isAuthenticated && <EmailVerificationBanner />}
-      <Switch>
+      <div
+        className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
+        style={{
+          paddingBottom: '88px', // reserve space so content can scroll above bottom nav
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
+        <Switch>
         {isAuthenticated ? (
           <>
             <Route path="/" component={HomePage} />
@@ -97,6 +107,7 @@ function Router() {
         <Route path="/support" component={Support} />
         <Route component={NotFound} />
       </Switch>
+      </div>
       
       {isAuthenticated && <BottomNavigation />}
       {isAuthenticated && <SignupContactsPrompt />}

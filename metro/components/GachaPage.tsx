@@ -14,6 +14,9 @@ import HeartIcon from './icons/HeartIcon';
 import PhotocardProfileModal from './PhotocardProfileModal';
 import ProfileFrame from './ProfileFrame';
 
+// Flag for testing; keep false in production
+const FREE_PULLS = false;
+
 interface ProfileCard {
   id: string;
   name: string;
@@ -464,14 +467,17 @@ export default function GachaPage() {
 
   const rollForProfile = async (rollCount: number = 1) => {
     if (isRolling) return;
-    
+
     const cost = rollCount === 10 ? 950 : 100;
-    
-    // Check if user has enough crystals
+    const effectiveCost = FREE_PULLS ? 0 : cost;
+
+    // Check if user has enough crystals (unless FREE_PULLS is true)
     const currentBalance = getCurrentCrystalBalance();
-    
-    if (currentBalance < cost) {
-      Alert.alert('Insufficient Crystals', `You need ${cost} crystals to open a capsule. Like chirps (+1) or comment (+5) to earn crystals!`);
+    if (!FREE_PULLS && currentBalance < effectiveCost) {
+      Alert.alert(
+        'Insufficient Crystals',
+        `You need ${cost} crystals to open a capsule. Like chirps (+1) or comment (+5) to earn crystals!`
+      );
       return;
     }
 
@@ -542,32 +548,31 @@ export default function GachaPage() {
             console.log(`📊 Roll Results: ${newProfilesAdded} new profiles, ${duplicateProfiles} quantity increases`);
           }
           
-          try {
-            // Deduct crystal balance from database
-            console.log('💎 Deducting crystals from database...');
-            
-            const { deductCrystalBalance } = await import('../lib/database/mobile-db-supabase');
-            const success = await deductCrystalBalance(user.id, cost);
-            
-            if (success) {
-              // Refresh crystal balance from database to update UI
-              await refreshCrystalBalance();
-              console.log('💎 Crystal balance updated successfully');
-            } else {
-              console.error('Failed to deduct crystal balance');
-              // If database deduction fails, still update local state as fallback
+          // Deduct crystals only when pulls are not free
+          if (!FREE_PULLS && effectiveCost > 0 && user?.id) {
+            try {
+              console.log('💎 Deducting crystals from database...');
+              
+              const { deductCrystalBalance } = await import('../lib/database/mobile-db-supabase');
+              const success = await deductCrystalBalance(user.id, effectiveCost);
+              
+              if (success) {
+                await refreshCrystalBalance();
+                console.log('💎 Crystal balance updated successfully');
+              } else {
+                console.error('Failed to deduct crystal balance');
+                const currentBalance = getCurrentCrystalBalance();
+                const newBalance = currentBalance - effectiveCost;
+                await updateUser({ crystalBalance: newBalance });
+                console.log('💎 Fallback: Updated crystal balance in AuthContext');
+              }
+            } catch (error) {
+              console.error('Error deducting crystal balance:', error);
               const currentBalance = getCurrentCrystalBalance();
-              const newBalance = currentBalance - cost;
+              const newBalance = currentBalance - effectiveCost;
               await updateUser({ crystalBalance: newBalance });
               console.log('💎 Fallback: Updated crystal balance in AuthContext');
             }
-          } catch (error) {
-            console.error('Error deducting crystal balance:', error);
-            // Fallback to local state update if database fails
-            const currentBalance = getCurrentCrystalBalance();
-            const newBalance = currentBalance - cost;
-            await updateUser({ crystalBalance: newBalance });
-            console.log('💎 Fallback: Updated crystal balance in AuthContext');
           }
         }
         
@@ -587,7 +592,10 @@ export default function GachaPage() {
 
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 160 }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Chirp Gacha</Text>
@@ -732,7 +740,7 @@ export default function GachaPage() {
             <TouchableOpacity
               style={styles.buttonContent}
               onPress={() => rollForProfile()}
-              disabled={isRolling || getCurrentCrystalBalance() < 100}
+              disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 100)}
               activeOpacity={0.7}
             >
               <Text style={styles.openOneText}>Open 1</Text>
@@ -740,7 +748,7 @@ export default function GachaPage() {
                 <ChirpCrystalIcon size={16} />
                 <Text style={[
                   styles.crystalCostText,
-                  { color: getCurrentCrystalBalance() >= 100 ? 'white' : '#ef4444' }
+                  { color: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'white' : '#ef4444' }
                 ]}>100</Text>
               </View>
             </TouchableOpacity>
@@ -753,7 +761,7 @@ export default function GachaPage() {
             <TouchableOpacity
               style={styles.buttonContent}
               onPress={() => rollForProfile(10)}
-              disabled={isRolling || getCurrentCrystalBalance() < 950}
+              disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 950)}
               activeOpacity={0.7}
             >
               <Text style={styles.openTenText}>Open 10</Text>
@@ -761,7 +769,7 @@ export default function GachaPage() {
                 <ChirpCrystalIcon size={16} />
                 <Text style={[
                   styles.crystalCostText,
-                  { color: getCurrentCrystalBalance() >= 950 ? 'white' : '#ef4444' }
+                  { color: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'white' : '#ef4444' }
                 ]}>950</Text>
               </View>
             </TouchableOpacity>

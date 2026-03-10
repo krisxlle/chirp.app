@@ -715,6 +715,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
+    paddingBottom: 60, // extra space so content can scroll above bottom nav without too much whitespace
   },
   header: {
     flexDirection: 'row',
