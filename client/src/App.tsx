@@ -15,10 +15,13 @@ import AdminFeedback from "./pages/AdminFeedback";
 import AdminInfluencerCodes from "./pages/AdminInfluencerCodes";
 import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
+import ChatConversation from "./pages/ChatConversation";
 import ChirpDetail from "./pages/ChirpDetail";
 import CollectionPage from "./pages/CollectionPage";
 import Gacha from "./pages/Gacha";
 import HomePage from "./pages/HomePage";
+import Inbox from "./pages/Inbox";
+import NewMessage from "./pages/NewMessage";
 import NotFound from "./pages/not-found";
 import Notifications from "./pages/Notifications";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -85,6 +88,9 @@ function Router() {
           <>
             <Route path="/" component={HomePage} />
             <Route path="/search" component={Search} />
+            <Route path="/messages" component={Inbox} />
+            <Route path="/messages/new" component={NewMessage} />
+            <Route path="/messages/:conversationId" component={ChatConversation} />
             <Route path="/notifications" component={Notifications} />
             <Route path="/profile/:userId?" component={Profile} />
             <Route path="/collection" component={CollectionPage} />

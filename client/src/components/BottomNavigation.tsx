@@ -3,7 +3,7 @@ import React from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { supabase } from '../lib/supabase';
-import { CollectionIcon, GachaIcon, HomeIcon, NotificationIcon, ProfileIcon } from './icons';
+import { CollectionIcon, GachaIcon, HomeIcon, MessageIcon, NotificationIcon, ProfileIcon } from './icons';
 
 interface BottomNavigationProps {
   activeTab?: string;
@@ -22,9 +22,6 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       if (!user?.id) return { count: 0 };
       
       try {
-        // Using singleton Supabase client
-
-        // Try to fetch unread notifications count
         const { count, error } = await supabase
           .from('notifications')
           .select('*', { count: 'exact', head: true })
@@ -32,22 +29,52 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
           .eq('read', false);
 
         if (error) {
-          console.log('📱 Notifications table not available, using fallback count:', error.message);
           return { count: 0 };
         }
 
-        console.log('📱 Fetched unread count from Supabase:', count);
         return { count: count || 0 };
       } catch (error) {
-        console.log('📱 Error fetching unread count from Supabase, using fallback:', error);
         return { count: 0 };
       }
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
-    enabled: !!user, // Only fetch if user is logged in
+    refetchInterval: 30000,
+    enabled: !!user,
+  });
+
+  // Get unread DM count
+  const { data: dmData } = useQuery({
+    queryKey: ["dm-unread-count", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { count: 0 };
+      try {
+        // Get conversations where user is participant
+        const { data: convos } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`);
+
+        if (!convos || convos.length === 0) return { count: 0 };
+
+        const convoIds = convos.map(c => c.id);
+        const { count, error } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .in('conversation_id', convoIds)
+          .neq('sender_id', user.id)
+          .is('read_at', null);
+
+        if (error) return { count: 0 };
+        return { count: count || 0 };
+      } catch {
+        return { count: 0 };
+      }
+    },
+    refetchInterval: 15000,
+    enabled: !!user,
   });
 
   const actualUnreadCount = unreadCount ?? notificationData?.count ?? 0;
+  const dmUnreadCount = dmData?.count ?? 0;
 
   const navItems = [
     {
@@ -55,6 +82,13 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       isActive: activeTab === "home" || location === "/",
       component: HomeIcon,
       path: "/",
+    },
+    {
+      key: "messages",
+      isActive: activeTab === "messages" || location.startsWith("/messages"),
+      badge: dmUnreadCount > 0 ? dmUnreadCount : null,
+      component: MessageIcon,
+      path: "/messages",
     },
     {
       key: "notifications",
@@ -68,12 +102,6 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       isActive: activeTab === "profile" || location.startsWith("/profile"),
       component: ProfileIcon,
       path: `/profile/${user?.id}`,
-    },
-    {
-      key: "collection",
-      isActive: activeTab === "collection" || location === "/collection",
-      component: CollectionIcon,
-      path: "/collection",
     },
     {
       key: "gacha",

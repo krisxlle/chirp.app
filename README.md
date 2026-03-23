@@ -25,6 +25,7 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 - **Follow System**: Follow other users and see their content in your feed
 - **Search & Discovery**: Find users and content through search functionality
 - **Push Notifications**: Stay updated with real-time notifications
+- **Direct Messages**: Secure 1:1 real-time messaging with read receipts
 - **Cross-platform**: Works on iOS, Android, and Web
 - **Privacy Controls**: Comprehensive privacy settings and data management
 - **Cookie Consent**: GDPR-compliant cookie consent banner
@@ -118,6 +119,7 @@ chirp.app/
    - Run privacy compliance migrations:
      - `migrations/add_privacy_columns.sql`
      - `migrations/add_device_tracking.sql`
+     - `migrations/add_direct_messages.sql`
    - Set up Supabase Storage buckets for `profile-images` and `banner-images`
 
 5. **Start the development server**

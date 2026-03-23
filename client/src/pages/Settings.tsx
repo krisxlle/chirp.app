@@ -960,6 +960,25 @@ export default function Settings({ onClose }: SettingsProps) {
       exportData.devices = devices;
       exportData.devicesCount = devices.length;
 
+      // Fetch user's DM conversations and messages
+      const { data: conversations } = await supabase
+        .from('conversations')
+        .select('*')
+        .or(`participant_1.eq.${user?.id},participant_2.eq.${user?.id}`);
+
+      if (conversations && conversations.length > 0) {
+        const convoIds = conversations.map(c => c.id);
+        const { data: allMessages } = await supabase
+          .from('messages')
+          .select('*')
+          .in('conversation_id', convoIds)
+          .order('created_at', { ascending: true });
+
+        exportData.conversations = conversations;
+        exportData.messages = allMessages;
+        exportData.messagesCount = allMessages?.length || 0;
+      }
+
       // Include privacy settings
       exportData.privacySettings = {
         isDiscoverable,

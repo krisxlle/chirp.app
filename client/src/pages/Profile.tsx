@@ -6,6 +6,7 @@ import ProfileFrame from '../components/ProfileFrame';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import GearIcon from '../components/icons/GearIcon';
+import { getOrCreateConversation } from '../lib/dm-api';
 import LinkIcon from '../components/icons/LinkIcon';
 import { useLike } from '../contexts/LikeContext';
 import { supabase } from '../lib/supabase';
@@ -1271,54 +1272,92 @@ export default function Profile() {
                   </button>
                 )}
 
-                {/* Follow Button - Inline with name */}
+                {/* Follow + Message Buttons */}
                 {!isOwnProfile && (
-                  <button
-                    onClick={handleFollowToggle}
-                    disabled={isLoadingFollow}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: isFollowing ? 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)' : 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                      paddingTop: '10px',
-                      paddingBottom: '10px',
-                      borderRadius: '20px',
-                      border: 'none',
-                      cursor: isLoadingFollow ? 'not-allowed' : 'pointer',
-                      boxShadow: '0 2px 8px rgba(198, 113, 255, 0.3)',
-                      transition: 'all 0.2s',
-                      height: '40px',
-                      color: '#ffffff',
-                      fontWeight: '600',
-                      opacity: isLoadingFollow ? 0.7 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isLoadingFollow) {
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      onClick={handleFollowToggle}
+                      disabled={isLoadingFollow}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)',
+                        paddingLeft: '16px',
+                        paddingRight: '16px',
+                        paddingTop: '10px',
+                        paddingBottom: '10px',
+                        borderRadius: '20px',
+                        border: 'none',
+                        cursor: isLoadingFollow ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 2px 8px rgba(198, 113, 255, 0.3)',
+                        transition: 'all 0.2s',
+                        height: '40px',
+                        color: '#ffffff',
+                        fontWeight: '600',
+                        opacity: isLoadingFollow ? 0.7 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isLoadingFollow) {
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLoadingFollow) {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
+                        }
+                      }}
+                    >
+                      <span style={{ fontSize: '16px' }}>
+                        {isLoadingFollow ? '...' : (isFollowing ? '✓' : '+')}
+                      </span>
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#ffffff'
+                      }}>
+                        {isLoadingFollow ? '...' : (isFollowing ? 'Following' : 'Follow')}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (!authUser?.id || !user?.id) return;
+                        const convoId = await getOrCreateConversation(authUser.id, user.id);
+                        if (convoId) {
+                          setLocation(`/messages/${convoId}`);
+                        } else {
+                          alert('Unable to message this user.');
+                        }
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        border: '2px solid #C671FF',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#faf5ff';
                         e.currentTarget.style.transform = 'translateY(-1px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isLoadingFollow) {
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
                         e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
-                      }
-                    }}
-                  >
-                    <span style={{ fontSize: '16px' }}>
-                      {isLoadingFollow ? '...' : (isFollowing ? '✓' : '+')}
-                    </span>
-                    <span style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#ffffff'
-                    }}>
-                      {isLoadingFollow ? '...' : (isFollowing ? 'Following' : 'Follow')}
-                    </span>
-                  </button>
+                      }}
+                    >
+                      <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#C671FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                      </svg>
+                    </button>
+                  </div>
                 )}
               </div>
               <p style={{
