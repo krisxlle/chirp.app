@@ -225,8 +225,13 @@ export async function sendMessage(
 
 /**
  * Mark all messages in a conversation as read (messages not sent by current user).
+ * Respects the user's read receipts setting.
  */
 export async function markConversationRead(conversationId: string, userId: string): Promise<void> {
+  // Check if user has read receipts enabled
+  const readReceiptsEnabled = localStorage.getItem('chirp_read_receipts');
+  if (readReceiptsEnabled === 'false') return;
+
   const { error } = await supabase
     .from('messages')
     .update({ read_at: new Date().toISOString() })
@@ -269,11 +274,12 @@ export async function getTotalUnreadCount(userId: string): Promise<number> {
 }
 
 /**
- * Subscribe to new messages in a conversation via Supabase Realtime.
+ * Subscribe to new messages and read receipt updates in a conversation.
  */
 export function subscribeToMessages(
   conversationId: string,
-  onNewMessage: (message: Message) => void
+  onNewMessage: (message: Message) => void,
+  onMessageUpdated?: (message: Message) => void
 ) {
   const channel = supabase
     .channel(`messages:${conversationId}`)
@@ -287,6 +293,20 @@ export function subscribeToMessages(
       },
       (payload) => {
         onNewMessage(payload.new as Message);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      },
+      (payload) => {
+        if (onMessageUpdated) {
+          onMessageUpdated(payload.new as Message);
+        }
       }
     )
     .subscribe();

@@ -98,17 +98,40 @@ export default function ChatConversation() {
   useEffect(() => {
     if (!conversationId || !user?.id) return;
 
-    const unsubscribe = subscribeToMessages(conversationId, (newMsg) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === newMsg.id)) return prev;
-        return [...prev, newMsg];
-      });
+    const unsubscribe = subscribeToMessages(
+      conversationId,
+      // On new message (INSERT)
+      (newMsg) => {
+        // Skip our own messages -- they're already shown via optimistic update
+        if (newMsg.sender_id === user.id) {
+          setMessages((prev) => {
+            const hasTemp = prev.some((m) => m.id.startsWith('temp_') && m.content === newMsg.content);
+            if (hasTemp) {
+              return prev.map((m) =>
+                m.id.startsWith('temp_') && m.content === newMsg.content ? newMsg : m
+              );
+            }
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return prev;
+          });
+          return;
+        }
 
-      // Mark incoming messages as read
-      if (newMsg.sender_id !== user.id) {
+        // Incoming message from the other person
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
+
         markConversationRead(conversationId, user.id);
+      },
+      // On message updated (UPDATE) -- handles read receipts
+      (updatedMsg) => {
+        setMessages((prev) =>
+          prev.map((m) => m.id === updatedMsg.id ? { ...m, read_at: updatedMsg.read_at } : m)
+        );
       }
-    });
+    );
 
     return unsubscribe;
   }, [conversationId, user?.id]);
@@ -181,8 +204,16 @@ export default function ChatConversation() {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: '100vh',
+      height: '100dvh',
+      maxHeight: '100dvh',
+      overflow: 'hidden',
       backgroundColor: '#f9fafb',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 100,
     }}>
       {/* Header */}
       <div style={{
@@ -239,6 +270,8 @@ export default function ChatConversation() {
       <div style={{
         flex: 1,
         overflowY: 'auto',
+        overflowX: 'hidden',
+        minHeight: 0,
         padding: '16px',
         display: 'flex',
         flexDirection: 'column',
