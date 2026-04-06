@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_conversations_participant_1 ON conversations(participant_1);
+CREATE INDEX IF NOT EXISTS idx_conversations_participant_1 ON conversations(participant_1);i
 CREATE INDEX IF NOT EXISTS idx_conversations_participant_2 ON conversations(participant_2);
 CREATE INDEX IF NOT EXISTS idx_conversations_last_message ON conversations(last_message_at DESC);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at DESC);

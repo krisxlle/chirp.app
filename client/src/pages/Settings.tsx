@@ -2047,6 +2047,30 @@ export default function Settings({ onClose }: SettingsProps) {
             </span>
           </label>
         </div>
+
+        <div style={{
+          paddingTop: '12px',
+          borderTop: '1px solid #f3f4f6',
+          marginTop: '4px',
+        }}>
+          <a
+            href="https://docs.google.com/document/d/1vpYC7hjhOJTlrdf19THWCsxc-ghpTNg1l64Bpw7-m2c/edit?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: '13px',
+              color: '#7c3aed',
+              textDecoration: 'none',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            View Privacy Policy
+            <span style={{ fontSize: '11px' }}>&#8599;</span>
+          </a>
+        </div>
       </div>
 
       {/* Data Export */}

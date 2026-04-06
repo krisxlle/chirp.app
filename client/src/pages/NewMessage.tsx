@@ -181,9 +181,14 @@ export default function NewMessage() {
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
             >
               <UserAvatar
-                userId={userResult.id}
+                user={{
+                  id: userResult.id,
+                  firstName: userResult.first_name,
+                  lastName: userResult.last_name,
+                  email: '',
+                  profileImageUrl: userResult.profile_image_url || undefined,
+                }}
                 size={44}
-                imageUrl={userResult.profile_image_url || undefined}
               />
               <div>
                 <div style={{ fontSize: '15px', fontWeight: '600', color: '#111827' }}>

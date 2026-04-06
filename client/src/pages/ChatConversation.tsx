@@ -13,17 +13,22 @@ import { supabase } from '../lib/supabase';
 
 function formatMessageTime(dateStr: string): string {
   const date = new Date(dateStr);
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function formatDateSeparator(dateStr: string): string {
+  const date = new Date(dateStr);
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   const isYesterday = date.toDateString() === yesterday.toDateString();
 
-  const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
-  if (isToday) return time;
-  if (isYesterday) return `Yesterday ${time}`;
-  return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${time}`;
+  if (isToday) return 'Today';
+  if (isYesterday) return 'Yesterday';
+  const sameYear = date.getFullYear() === now.getFullYear();
+  if (sameYear) return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 export default function ChatConversation() {
@@ -39,7 +44,7 @@ export default function ChatConversation() {
   const [otherUser, setOtherUser] = useState<any>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -146,6 +151,7 @@ export default function ChatConversation() {
 
     const content = newMessage.trim();
     setNewMessage('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
     setIsSending(true);
 
     // Optimistic update
@@ -176,13 +182,6 @@ export default function ChatConversation() {
 
     setIsSending(false);
     inputRef.current?.focus();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
   };
 
   // Group messages by date for date separators
@@ -248,9 +247,14 @@ export default function ChatConversation() {
             onClick={() => setLocation(`/profile/${otherUser.id}`)}
           >
             <UserAvatar
-              userId={otherUser.id}
+              user={{
+                id: otherUser.id,
+                firstName: otherUser.first_name,
+                lastName: otherUser.last_name,
+                email: '',
+                profileImageUrl: otherUser.profile_image_url || undefined,
+              }}
               size={36}
-              imageUrl={otherUser.profile_image_url || undefined}
             />
             <div>
               <div style={{ fontSize: '15px', fontWeight: '600', color: '#111827' }}>
@@ -300,9 +304,14 @@ export default function ChatConversation() {
           }}>
             {otherUser && (
               <UserAvatar
-                userId={otherUser.id}
+                user={{
+                  id: otherUser.id,
+                  firstName: otherUser.first_name,
+                  lastName: otherUser.last_name,
+                  email: '',
+                  profileImageUrl: otherUser.profile_image_url || undefined,
+                }}
                 size={64}
-                imageUrl={otherUser.profile_image_url || undefined}
               />
             )}
             <p style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginTop: '16px' }}>
@@ -329,7 +338,7 @@ export default function ChatConversation() {
                     borderRadius: '12px',
                     fontWeight: '500',
                   }}>
-                    {group.date === new Date().toLocaleDateString() ? 'Today' : group.date}
+                    {formatDateSeparator(group.messages[0].created_at)}
                   </span>
                 </div>
 
@@ -356,9 +365,14 @@ export default function ChatConversation() {
                         <div style={{ width: '28px', flexShrink: 0 }}>
                           {showAvatar && otherUser && (
                             <UserAvatar
-                              userId={otherUser.id}
+                              user={{
+                                id: otherUser.id,
+                                firstName: otherUser.first_name,
+                                lastName: otherUser.last_name,
+                                email: '',
+                                profileImageUrl: otherUser.profile_image_url || undefined,
+                              }}
                               size={28}
-                              imageUrl={otherUser.profile_image_url || undefined}
                             />
                           )}
                         </div>
@@ -420,17 +434,27 @@ export default function ChatConversation() {
         padding: '12px 16px',
         paddingBottom: '28px',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         gap: '10px',
         flexShrink: 0,
       }}>
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(e) => {
+            setNewMessage(e.target.value);
+            e.target.style.height = 'auto';
+            const maxH = Math.round(window.innerHeight * 0.25);
+            e.target.style.height = Math.min(e.target.scrollHeight, maxH) + 'px';
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           placeholder="Type a message..."
+          rows={1}
           style={{
             flex: 1,
             padding: '12px 16px',
@@ -440,6 +464,11 @@ export default function ChatConversation() {
             fontSize: '14px',
             outline: 'none',
             transition: 'border-color 0.2s',
+            resize: 'none',
+            lineHeight: '1.4',
+            maxHeight: '25dvh',
+            overflowY: 'auto',
+            fontFamily: 'inherit',
           }}
           onFocus={(e) => e.currentTarget.style.borderColor = '#C671FF'}
           onBlur={(e) => e.currentTarget.style.borderColor = 'transparent'}

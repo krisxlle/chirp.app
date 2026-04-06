@@ -172,9 +172,14 @@ export default function Inbox() {
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = convo.unread_count && convo.unread_count > 0 ? '#faf5ff' : '#ffffff'}
             >
               <UserAvatar
-                userId={convo.other_user?.id || ''}
+                user={{
+                  id: convo.other_user?.id || '',
+                  firstName: convo.other_user?.first_name,
+                  lastName: convo.other_user?.last_name,
+                  email: '',
+                  profileImageUrl: convo.other_user?.profile_image_url || undefined,
+                }}
                 size={48}
-                imageUrl={convo.other_user?.profile_image_url || undefined}
               />
 
               <div style={{ flex: 1, minWidth: 0 }}>
