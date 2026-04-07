@@ -63,7 +63,7 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 
 #### Authentication
 - `AuthContext.tsx` - Global authentication state
-- `SignInScreen.tsx` - User login interface
+- `SignInScreen.tsx` - User login interface (smooth diagonal sky with widened `#9D8CD9` band; logo `assets/chirp-mark.png`; Vite: `client/src/pages/Auth.tsx` + `client/public/chirp-mark.png`, mirrored in `web/client/src/pages/Auth.tsx` + `web/client/public/chirp-mark.png`)
 - `SignInScreenNew.tsx` - Updated sign-in experience
 
 ## 📁 Project Structure

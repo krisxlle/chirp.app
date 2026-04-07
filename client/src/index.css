@@ -1,5 +1,10 @@
 /* Import Metro-specific styles */
 @import './styles/metro-styles.css';
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500&display=swap');
+
+h1, h2, h3, h4, h5, h6 {
+  color: inherit;
+}
 
 @tailwind base;
 @tailwind components;

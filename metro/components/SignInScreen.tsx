@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
+import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts } from 'expo-font';
 import { useState } from 'react';
 import {
     ActivityIndicator,
@@ -10,11 +13,69 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    type ViewStyle,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { checkHandleAvailability, signInWithSupabase, signUp } from '../lib/database/mobile-db-supabase';
 import { useAuth } from './AuthContext';
+
+/** Chirp color guide (aligned with web Auth) */
+const C = {
+  deepPurple: '#6A4C92',
+  vibrantPurple: '#A240D1',
+  magentaPink: '#D94CC2',
+  mediumLavender: '#9D8CD9',
+  lightBlueGrey: '#BEC6EB',
+  paleLavender: '#E2DAFF',
+  softPeach: '#FDEADF',
+  dustyRose: '#E1A0C3',
+} as const;
+
+const TYPO = {
+  heading: { fontFamily: 'Montserrat_700Bold' },
+  body: { fontFamily: 'Inter_400Regular' },
+  bodyMedium: { fontFamily: 'Inter_500Medium' },
+} as const;
+
+const SKY_GRADIENT = [
+  '#5d4f78',
+  '#66558c',
+  '#6A4C92',
+  '#7460a6',
+  '#826fb6',
+  '#8f7fc6',
+  '#9D8CD9',
+  '#9D8CD9',
+  '#9588ce',
+  '#7d68aa',
+  '#5d4f78',
+] as const;
+const SKY_LOCATIONS = [0, 0.11, 0.22, 0.33, 0.44, 0.52, 0.6, 0.66, 0.72, 0.82, 1] as const;
+const SKY_START = { x: 0, y: 0 } as const;
+const SKY_END = { x: 1, y: 1 } as const;
+
+const CLOUD_PATH =
+  'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z';
+
+function SolidCloudMark({
+  size,
+  opacity = 0.14,
+  style,
+}: {
+  size: number;
+  opacity?: number;
+  style?: ViewStyle | ViewStyle[];
+}) {
+  const h = size * 0.65;
+  return (
+    <View style={[{ width: size, height: h }, style]} pointerEvents="none">
+      <Svg width={size} height={h} viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet">
+        <Path fill="#ffffff" fillOpacity={opacity} d={CLOUD_PATH} />
+      </Svg>
+    </View>
+  );
+}
 
 // Custom Icon Components
 const SparklesIcon = ({ size = 24, color = "#7c3aed" }) => (
@@ -84,6 +145,12 @@ export default function SignInScreen() {
   } | null>(null);
   const [isValidatingHandle, setIsValidatingHandle] = useState(false);
   const { signIn } = useAuth();
+
+  const [fontsLoaded] = useFonts({
+    Montserrat_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+  });
 
   // Validate handle availability in real-time
   const validateHandle = async (handle: string) => {
@@ -288,65 +355,102 @@ export default function SignInScreen() {
     }
   };
 
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={[...SKY_GRADIENT]}
+          locations={[...SKY_LOCATIONS]}
+          start={SKY_START}
+          end={SKY_END}
+          style={styles.backgroundGradient}
+        />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator color={C.softPeach} size="large" />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* Background Gradient */}
       <LinearGradient
-        colors={['#7c3aed', '#ec4899']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={[...SKY_GRADIENT]}
+        locations={[...SKY_LOCATIONS]}
+        start={SKY_START}
+        end={SKY_END}
         style={styles.backgroundGradient}
       />
-      
-      <ScrollView 
+      <LinearGradient
+        colors={[
+          'rgba(90, 74, 114, 0.08)',
+          'rgba(255, 255, 255, 0.03)',
+          'rgba(62, 44, 98, 0.08)',
+        ]}
+        locations={[0, 0.5, 1]}
+        start={SKY_START}
+        end={SKY_END}
+        style={styles.atmosphereGradient}
+        pointerEvents="none"
+      />
+
+      <View style={styles.cloudLayer} pointerEvents="none">
+        <SolidCloudMark size={200} opacity={0.12} style={{ position: 'absolute', top: '5%', left: '-6%' }} />
+        <SolidCloudMark size={160} opacity={0.11} style={{ position: 'absolute', top: '16%', right: '-4%' }} />
+        <SolidCloudMark size={240} opacity={0.1} style={{ position: 'absolute', bottom: '14%', left: '4%' }} />
+        <SolidCloudMark size={130} opacity={0.11} style={{ position: 'absolute', bottom: '26%', right: '12%' }} />
+        <SolidCloudMark size={175} opacity={0.1} style={{ position: 'absolute', top: '3%', left: '38%' }} />
+        <SolidCloudMark size={145} opacity={0.1} style={{ position: 'absolute', bottom: '8%', right: '-6%' }} />
+        <SolidCloudMark size={115} opacity={0.11} style={{ position: 'absolute', top: '40%', left: '22%' }} />
+      </View>
+
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-        {/* Logo */}
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../assets/icon.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <View style={styles.logoClip}>
+            <Image
+              source={require('../assets/chirp-mark.png')}
+              style={styles.logoImage}
+              resizeMode="cover"
+            />
+          </View>
+          <Text style={styles.tagline}>Find Your Flock ✦</Text>
           <Text style={styles.appName}>Chirp</Text>
-          <Text style={styles.tagline}>The social media gacha app.</Text>
         </View>
 
-        {/* Features */}
         <View style={styles.featuresContainer}>
-          <View style={styles.feature}>
-            <SparklesIcon size={24} color="#ffffff" />
-            <Text style={styles.featureText}>Pull for your friends from the gacha</Text>
+          <View style={[styles.feature, styles.featurePill1]}>
+            <SparklesIcon size={24} color={C.paleLavender} />
+            <Text style={styles.featureText}>Pull from the gacha</Text>
           </View>
-          
-          <View style={styles.feature}>
-            <HeartIcon size={24} color="#ffffff" />
+
+          <View style={[styles.feature, styles.featurePill2]}>
+            <HeartIcon size={24} color={C.softPeach} />
             <Text style={styles.featureText}>Engage with posts to earn crystals</Text>
           </View>
-          
-          <View style={styles.feature}>
-            <BotIcon size={24} color="#ffffff" />
+
+          <View style={[styles.feature, styles.featurePill3]}>
+            <BotIcon size={24} color={C.lightBlueGrey} />
             <Text style={styles.featureText}>Raise your profile power and get more views</Text>
           </View>
         </View>
 
-        {/* Sign In Form */}
         <View style={styles.signInContainer}>
           <Text style={styles.signInTitle}>
-            {isSignUp ? 'Create Account' : 'Welcome back'}
+            {isSignUp ? 'Join Chirp' : 'Welcome back'}
           </Text>
           <Text style={styles.signInSubtitle}>
-            {isSignUp ? 'Sign up to join Chirp' : 'Sign in to continue to Chirp'}
+            {isSignUp ? 'Create your account to get started' : 'Sign in to continue to Chirp'}
           </Text>
-          
+
           <TextInput
             style={styles.emailInput}
             placeholder="Enter your email"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={C.mediumLavender}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -357,7 +461,7 @@ export default function SignInScreen() {
           <TextInput
             style={styles.emailInput}
             placeholder="Enter your password"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={C.mediumLavender}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={true}
@@ -380,7 +484,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.emailInput}
                 placeholder="Full name"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={C.mediumLavender}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
@@ -390,7 +494,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.emailInput}
                 placeholder="Custom handle (e.g., @username)"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={C.mediumLavender}
                 value={customHandle}
                 onChangeText={(text) => {
                   setCustomHandle(text);
@@ -408,7 +512,7 @@ export default function SignInScreen() {
               {handleValidation && (
                 <View style={styles.validationContainer}>
                   {isValidatingHandle ? (
-                    <ActivityIndicator size="small" color="#7c3aed" />
+                    <ActivityIndicator size="small" color={C.vibrantPurple} />
                   ) : (
                     <Text style={[
                       styles.validationText,
@@ -423,26 +527,37 @@ export default function SignInScreen() {
           )}
           
           <TouchableOpacity
-            style={styles.signInButton}
             onPress={isSignUp ? handleSignUp : handleSignIn}
             disabled={isLoading}
+            activeOpacity={0.85}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#ffffff" size="small" />
-            ) : (
-              <Text style={styles.signInButtonText}>
-                {isSignUp ? 'Create Account' : 'Sign In'}
-              </Text>
-            )}
+            <LinearGradient
+              colors={
+                isLoading
+                  ? [C.lightBlueGrey, C.lightBlueGrey]
+                  : [C.mediumLavender, C.mediumLavender]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.signInButton}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={C.deepPurple} size="small" />
+              ) : (
+                <Text style={styles.signInButtonText}>
+                  {isSignUp ? 'Create Account' : 'Sign In'}
+                </Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.switchModeButton}
             onPress={() => setIsSignUp(!isSignUp)}
             disabled={isLoading}
           >
             <Text style={styles.switchModeText}>
-              {isSignUp ? 'Already have an account? Sign In' : 'New to Chirp? Create Account'}
+              {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
             </Text>
           </TouchableOpacity>
           
@@ -460,7 +575,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.emailInput}
                 placeholder="Enter your email"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={C.mediumLavender}
                 value={forgotPasswordEmail}
                 onChangeText={setForgotPasswordEmail}
                 keyboardType="email-address"
@@ -490,15 +605,27 @@ export default function SignInScreen() {
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={styles.modalSubmitButton}
                   onPress={handleForgotPassword}
                   disabled={isForgotPasswordLoading}
+                  activeOpacity={0.85}
+                  style={{ flex: 1, marginLeft: 8 }}
                 >
-                  {isForgotPasswordLoading ? (
-                    <ActivityIndicator color="#ffffff" size="small" />
-                  ) : (
-                    <Text style={styles.modalSubmitText}>Send Reset Email</Text>
-                  )}
+                  <LinearGradient
+                    colors={
+                      isForgotPasswordLoading
+                        ? [C.lightBlueGrey, C.lightBlueGrey]
+                        : [C.mediumLavender, C.mediumLavender]
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.modalSubmitButton}
+                  >
+                    {isForgotPasswordLoading ? (
+                      <ActivityIndicator color={C.deepPurple} size="small" />
+                    ) : (
+                      <Text style={styles.modalSubmitText}>Send Reset Email</Text>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
@@ -526,6 +653,15 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
+  atmosphereGradient: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  cloudLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+    overflow: 'hidden',
+  },
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -535,6 +671,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    zIndex: 1,
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -544,74 +681,115 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 16,
-    borderRadius: 20,
+  logoClip: {
+    width: 88,
+    height: 88,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 4,
+    backgroundColor: '#6A4C92',
+    shadowColor: '#1a0f2e',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  logoImage: {
+    width: 88,
+    height: 92,
+    marginTop: -2,
   },
   appName: {
     fontSize: 32,
-    fontWeight: '700',
     color: '#ffffff',
     marginBottom: 8,
+    ...TYPO.heading,
   },
   tagline: {
-    fontSize: 16,
-    color: '#ffffff',
-    opacity: 0.9,
+    fontSize: 15,
+    color: C.softPeach,
     textAlign: 'center',
+    marginBottom: 10,
+    ...TYPO.heading,
   },
   featuresContainer: {
     marginBottom: 40,
-    alignItems: 'center', // Center the features container
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    justifyContent: 'center', // Center each feature horizontally
-    maxWidth: 300, // Limit width for better centering
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: 16,
+  },
+  featurePill1: {
+    backgroundColor: 'rgba(253, 234, 223, 0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(190, 198, 235, 0.5)',
+  },
+  featurePill2: {
+    backgroundColor: 'rgba(226, 218, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(157, 140, 217, 0.45)',
+  },
+  featurePill3: {
+    backgroundColor: 'rgba(225, 160, 195, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(253, 234, 223, 0.45)',
   },
   featureText: {
+    flex: 1,
     fontSize: 16,
     color: '#ffffff',
     marginLeft: 12,
-    opacity: 0.9,
+    ...TYPO.bodyMedium,
   },
   signInContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 20,
     padding: 24,
     marginBottom: 20,
-    maxWidth: 400, // Add max width for web responsiveness
-    alignSelf: 'center', // Center the container
-    width: '100%', // Full width up to max width
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '100%',
+    borderWidth: 1,
+    borderColor: C.lightBlueGrey,
+    backgroundColor: C.softPeach,
+    shadowColor: C.deepPurple,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 8,
   },
   signInTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#1a1a1a',
+    color: C.deepPurple,
     textAlign: 'center',
     marginBottom: 8,
+    ...TYPO.heading,
   },
   signInSubtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: C.mediumLavender,
     textAlign: 'center',
     marginBottom: 24,
+    ...TYPO.body,
   },
   emailInput: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderWidth: 2,
+    borderColor: C.lightBlueGrey,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#1a1a1a',
-    backgroundColor: '#ffffff',
+    color: C.deepPurple,
+    backgroundColor: 'rgba(226, 218, 255, 0.45)',
     marginBottom: 16,
+    ...TYPO.body,
   },
   validationContainer: {
     flexDirection: 'row',
@@ -622,10 +800,9 @@ const styles = StyleSheet.create({
   validationText: {
     fontSize: 14,
     marginLeft: 8,
-    fontWeight: '500',
+    ...TYPO.bodyMedium,
   },
   signInButton: {
-    backgroundColor: '#7c3aed',
     borderRadius: 12,
     height: 48,
     alignItems: 'center',
@@ -633,27 +810,34 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   signInButtonText: {
-    color: '#ffffff',
+    color: C.deepPurple,
     fontSize: 16,
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
   },
   switchModeButton: {
-    marginTop: 16,
+    marginTop: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.mediumLavender,
+    backgroundColor: 'transparent',
   },
   switchModeText: {
-    color: '#7c3aed',
+    color: C.deepPurple,
     fontSize: 16,
-    fontWeight: '500',
-    textDecorationLine: 'underline',
+    textAlign: 'center',
+    ...TYPO.bodyMedium,
   },
   footerText: {
     fontSize: 14,
     color: '#ffffff',
     textAlign: 'center',
-    opacity: 0.8,
+    opacity: 0.9,
     lineHeight: 20,
+    ...TYPO.body,
   },
   // Forgot Password Styles
   forgotPasswordButton: {
@@ -661,9 +845,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   forgotPasswordText: {
-    color: '#7c3aed',
+    color: C.mediumLavender,
     fontSize: 14,
-    fontWeight: '500',
+    ...TYPO.bodyMedium,
   },
   // Modal Styles
   modalOverlay: {
@@ -678,26 +862,29 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   modalContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFCFA',
     borderRadius: 20,
     padding: 24,
     margin: 20,
     maxWidth: 400,
     width: '90%',
+    borderWidth: 1,
+    borderColor: C.lightBlueGrey,
   },
   modalTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#1a1a1a',
+    color: C.deepPurple,
     textAlign: 'center',
     marginBottom: 8,
+    ...TYPO.heading,
   },
   modalSubtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: C.mediumLavender,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
+    ...TYPO.body,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -711,27 +898,28 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: C.vibrantPurple,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   modalCancelText: {
-    color: '#6b7280',
+    color: C.vibrantPurple,
     fontSize: 16,
-    fontWeight: '500',
+    ...TYPO.bodyMedium,
   },
   modalSubmitButton: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    marginLeft: 8,
     borderRadius: 12,
-    backgroundColor: '#7c3aed',
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
   },
   modalSubmitText: {
-    color: '#ffffff',
+    color: C.deepPurple,
     fontSize: 16,
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
   },
   forgotPasswordMessage: {
     fontSize: 14,

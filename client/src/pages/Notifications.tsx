@@ -4,6 +4,34 @@ import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import ChirpCard from '../components/ChirpCard';
 
+/** Chirp marketing UI tokens (matches tailwind `chirp.*`) */
+const CHIRP_PRIMARY = '#6A4C92';
+const CHIRP_BRIGHT = '#A240D1';
+const CHIRP_LAVENDER = '#E2DAFF';
+const CHIRP_SUBTITLE = '#9D8CD9';
+
+const fontMontserratBold: React.CSSProperties = {
+  fontFamily: '"Montserrat", system-ui, sans-serif',
+  fontWeight: 700,
+};
+const fontInter: React.CSSProperties = {
+  fontFamily: '"Inter", system-ui, sans-serif',
+};
+
+function unknownErrorDetails(error: unknown): { message: string; code?: string } {
+  if (error instanceof Error) {
+    const code =
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code: unknown }).code != null
+        ? String((error as { code: unknown }).code)
+        : undefined;
+    return { message: error.message, code };
+  }
+  return { message: String(error) };
+}
+
 // Bell Icon Component
 const BellIcon = ({ size = 20, color = "#7c3aed" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -33,11 +61,23 @@ interface Notification {
     firstName: string;
     lastName: string;
     handle: string;
+    email: string;
     profileImageUrl?: string;
   };
   chirp?: {
     id: string;
     content: string;
+    createdAt: string;
+    author: {
+      id: string;
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      handle?: string;
+      profileImageUrl?: string;
+    };
+    replyCount: number;
+    reactionCount: number;
   };
   timestamp: string;
   isRead: boolean;
@@ -47,7 +87,7 @@ interface Notification {
 
 export default function Notifications() {
   const { user } = useSupabaseAuth();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -116,22 +156,47 @@ export default function Notifications() {
           // Transform the data to match expected format (simplified to avoid timeout)
           const transformedNotifications = notificationsData.map((notification: any) => {
             const fromUser = notification.users;
-            
+            const actor = fromUser
+              ? {
+                  id: fromUser.id,
+                  firstName: fromUser.first_name || 'User',
+                  lastName: fromUser.last_name || '',
+                  handle: fromUser.handle || fromUser.custom_handle,
+                  profileImageUrl: fromUser.profile_image_url || fromUser.avatar_url,
+                  email: '',
+                }
+              : undefined;
+            const authorFallback = {
+              id: '',
+              email: '',
+              firstName: 'User',
+              lastName: '',
+            };
+
             return {
               id: notification.id.toString(),
               type: notification.type,
               message: getNotificationMessage(notification.type),
-              user: fromUser ? {
-                id: fromUser.id,
-                firstName: fromUser.first_name || 'User',
-                lastName: fromUser.last_name || '',
-                handle: fromUser.handle || fromUser.custom_handle,
-                profileImageUrl: fromUser.profile_image_url || fromUser.avatar_url
-              } : undefined,
-              chirp: notification.chirp_id ? {
-                id: notification.chirp_id.toString(),
-                content: 'Chirp content' // Simplified to avoid chirp join timeout
-              } : undefined,
+              user: actor,
+              chirp: notification.chirp_id
+                ? {
+                    id: notification.chirp_id.toString(),
+                    content: 'Chirp content',
+                    createdAt: notification.created_at ?? new Date().toISOString(),
+                    author: actor
+                      ? {
+                          id: actor.id,
+                          email: actor.email,
+                          firstName: actor.firstName,
+                          lastName: actor.lastName,
+                          handle: actor.handle,
+                          profileImageUrl: actor.profileImageUrl,
+                        }
+                      : authorFallback,
+                    replyCount: 0,
+                    reactionCount: 0,
+                  }
+                : undefined,
               timestamp: notification.created_at,
               isRead: notification.read,
               chirp_id: notification.chirp_id?.toString(),
@@ -145,13 +210,14 @@ export default function Notifications() {
           console.log('📭 No notifications found in database');
           setNotifications([]);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('❌ Error fetching real notifications from Supabase:', error);
+        const { message, code } = unknownErrorDetails(error);
         console.error('❌ Supabase connection details:', {
           url: 'https://qrzbtituxxilnbgocdge.supabase.co',
           hasKey: true,
-          errorMessage: error.message,
-          errorCode: error.code
+          errorMessage: message,
+          errorCode: code,
         });
         
         // Instead of falling back to mock data, show empty state
@@ -349,7 +415,7 @@ export default function Notifications() {
         <div style={{
           width: '32px',
           height: '32px',
-          border: '2px solid #7c3aed',
+          border: `2px solid ${CHIRP_BRIGHT}`,
           borderTop: '2px solid transparent',
           borderRadius: '50%',
           animation: 'spin 1s linear infinite'
@@ -386,12 +452,12 @@ export default function Notifications() {
             alignItems: 'center',
             gap: '8px'
           }}>
-            <BellIcon size={24} color="#7c3aed" />
+            <BellIcon size={24} color={CHIRP_BRIGHT} />
             <h1 style={{
               fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#14171A',
-              margin: 0
+              margin: 0,
+              color: CHIRP_PRIMARY,
+              ...fontMontserratBold,
             }}>Notifications</h1>
             {unreadCount > 0 && (
               <div style={{
@@ -552,25 +618,55 @@ export default function Notifications() {
             ))}
           </div>
         ) : (
-          <div style={{
-            textAlign: 'center',
-            paddingTop: '48px',
-            paddingBottom: '48px'
-          }}>
-            <BellIcon size={64} color="#9ca3af" />
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#14171A',
-              marginBottom: '8px',
-              margin: 0,
-              marginTop: '16px'
-            }}>No notifications yet</h3>
-            <p style={{
-              color: '#657786',
-              margin: 0
-            }}>
-              When people interact with your chirps or follow you, you'll see it here.
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '40px 24px 36px',
+              backgroundColor: CHIRP_LAVENDER,
+              borderRadius: '20px',
+              maxWidth: '400px',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+          >
+            <BellIcon size={64} color={CHIRP_BRIGHT} />
+            <h3
+              style={{
+                fontSize: '18px',
+                color: CHIRP_PRIMARY,
+                margin: 0,
+                marginTop: '16px',
+                marginBottom: '8px',
+                ...fontMontserratBold,
+              }}
+            >
+              No notifications yet
+            </h3>
+            <p
+              style={{
+                color: CHIRP_SUBTITLE,
+                margin: 0,
+                fontSize: '15px',
+                lineHeight: 1.5,
+                ...fontInter,
+              }}
+            >
+              When people interact with your chirps or follow you, you&apos;ll see it here.
+            </p>
+            <p
+              style={{
+                margin: 0,
+                marginTop: '20px',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: CHIRP_PRIMARY,
+                ...fontInter,
+              }}
+            >
+              Every Chirp Counts{' '}
+              <span style={{ opacity: 0.95 }} aria-hidden>
+                {'\u2726'}
+              </span>
             </p>
           </div>
         )}

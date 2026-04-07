@@ -15,6 +15,7 @@ interface Notification {
     firstName: string;
     lastName: string;
     handle: string;
+    email: string;
     profileImageUrl?: string;
   };
   chirp?: {
@@ -48,7 +49,7 @@ export default function Notifications() {
             firstName: 'Chirp',
             lastName: 'Team',
             handle: 'chirpteam',
-            profileImageUrl: null
+            email: 'team@chirp.app',
           },
           timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
           isRead: false
@@ -62,7 +63,7 @@ export default function Notifications() {
             firstName: 'Alex',
             lastName: 'Johnson',
             handle: 'alexj',
-            profileImageUrl: null
+            email: 'alex@example.com',
           },
           timestamp: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
           isRead: false
@@ -76,7 +77,7 @@ export default function Notifications() {
             firstName: 'Sarah',
             lastName: 'Wilson',
             handle: 'sarahw',
-            profileImageUrl: null
+            email: 'sarah@example.com',
           },
           timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
           isRead: true
@@ -90,6 +91,7 @@ export default function Notifications() {
             firstName: 'Mike',
             lastName: 'Chen',
             handle: 'mikec',
+            email: 'mike@example.com',
             profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
           },
           timestamp: new Date(Date.now() - 2400000).toISOString(), // 40 minutes ago
@@ -104,6 +106,7 @@ export default function Notifications() {
             firstName: 'Emma',
             lastName: 'Davis',
             handle: 'emmad',
+            email: 'emma@example.com',
             profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
           },
           timestamp: new Date(Date.now() - 3000000).toISOString(), // 50 minutes ago
@@ -119,7 +122,7 @@ export default function Notifications() {
       ];
 
       setNotifications(mockNotifications);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load notifications:', error);
     } finally {
       setIsLoading(false);
@@ -279,11 +282,23 @@ export default function Notifications() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications yet</h3>
-            <p className="text-gray-500">
-              When people interact with your chirps or follow you, you'll see it here.
+          <div className="mx-auto max-w-[400px] rounded-[20px] bg-chirp-lavender px-6 py-10 text-center">
+            <Bell
+              className="mx-auto h-16 w-16 text-chirp-bright"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <h3 className="font-montserrat mt-4 text-lg font-bold text-chirp-primary">
+              No notifications yet
+            </h3>
+            <p className="font-inter mt-2 text-[15px] leading-relaxed text-chirp-subtitle">
+              When people interact with your chirps or follow you, you&apos;ll see it here.
+            </p>
+            <p className="font-inter mt-5 text-sm font-semibold text-chirp-primary">
+              Every Chirp Counts{' '}
+              <span className="opacity-95" aria-hidden>
+                {'\u2726'}
+              </span>
             </p>
           </div>
         )}

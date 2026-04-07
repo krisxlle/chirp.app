@@ -61,6 +61,18 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        chirp: {
+          primary: "#6A4C92",
+          bright: "#A240D1",
+          pink: "#D94CC2",
+          lavender: "#E2DAFF",
+          cream: "#FDEADF",
+          subtitle: "#9D8CD9",
+        },
+      },
+      fontFamily: {
+        montserrat: ["Montserrat", "system-ui", "sans-serif"],
+        inter: ["Inter", "system-ui", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

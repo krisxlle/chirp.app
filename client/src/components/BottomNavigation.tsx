@@ -111,6 +111,33 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     },
   ];
 
+  const NOTIFICATIONS_ACTIVE_COLOR = '#A240D1';
+
+  const getNavButtonStyle = (key: string, isActive: boolean): React.CSSProperties => {
+    if (!isActive) {
+      return {
+        background: 'transparent',
+        boxShadow: 'none',
+      };
+    }
+    if (key === 'notifications') {
+      return {
+        background: 'rgba(162, 64, 209, 0.14)',
+        boxShadow: 'none',
+      };
+    }
+    return {
+      background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+      boxShadow: '0 4px 8px rgba(124, 58, 237, 0.3)',
+    };
+  };
+
+  const getNavIconColor = (key: string, isActive: boolean): string => {
+    if (!isActive) return '#6b7280';
+    if (key === 'notifications') return NOTIFICATIONS_ACTIVE_COLOR;
+    return '#ffffff';
+  };
+
   const handleTabChange = (tab: string, path: string) => {
     console.log(`🔄 Navigation: Switching from ${activeTab || location} to ${tab}`);
     const startTime = Date.now();
@@ -162,13 +189,8 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
               minWidth: '56px',
               border: 'none',
               cursor: 'pointer',
-              background: item.isActive 
-                ? 'linear-gradient(135deg, #7c3aed, #ec4899)' 
-                : 'transparent',
-              boxShadow: item.isActive 
-                ? '0 4px 8px rgba(124, 58, 237, 0.3)' 
-                : 'none',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              ...getNavButtonStyle(item.key, item.isActive),
             }}
             onClick={() => handleTabChange(item.key, item.path)}
           >
@@ -180,7 +202,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
             }}>
               <item.component
                 size={22}
-                color={item.isActive ? '#ffffff' : '#6b7280'}
+                color={getNavIconColor(item.key, item.isActive)}
               />
               
               {/* Notification badge */}
