@@ -6,6 +6,7 @@ import { useAuth } from './AuthContext';
 import ImagePickerButton from './ImagePickerButton';
 import { Button } from './ui/button';
 import UserAvatar from './UserAvatar';
+import { brandGradient, C, font } from '../lib/chirpBrand';
 import { uploadChirpImage } from '../../../lib/database/mobile-db-supabase';
 
 interface ComposeChirpProps {
@@ -178,10 +179,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     }
   };
 
-  const getCharCountColor = () => {
-    if (remainingChars < 0) return 'text-red-500';
-    if (remainingChars < 20) return 'text-yellow-500';
-    return 'text-gray-500';
+  const getCharCountStyle = (): React.CSSProperties => {
+    if (remainingChars < 0) return { color: '#ef4444' };
+    if (remainingChars < 20) return { color: '#f59e0b' };
+    return { color: C.mediumLavender, ...font.bodyMedium };
   };
 
   // Normal compose mode
@@ -193,15 +194,15 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         <div className="flex-1">
           <textarea
             ref={textareaRef}
-            className="w-full min-h-[80px] resize-none border-none outline-none bg-transparent text-gray-900 dark:text-white text-lg leading-6 placeholder-gray-500 dark:placeholder-gray-400"
+            className="w-full min-h-[80px] resize-none border-none outline-none bg-transparent text-lg leading-6 dark:text-white placeholder:text-[#9D8CD9]"
             style={{
               fontSize: '18px',
               lineHeight: '24px',
               minHeight: '80px',
               padding: '12px',
-              fontFamily: 'inherit',
-              color: '#1a1a1a',
-              textAlign: 'start'
+              color: C.deepPurple,
+              textAlign: 'start',
+              ...font.body,
             }}
             placeholder="What's on your mind?"
             value={content}
@@ -243,10 +244,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 onImageSelected={handleImageSelected}
                 disabled={isPosting}
                 size={20}
-                color="#7c3aed"
+                color={C.vibrantPurple}
               />
               
-              <span className={`text-sm ${getCharCountColor()}`}>
+              <span className="text-sm" style={getCharCountStyle()}>
                 {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
               </span>
             </div>
@@ -254,7 +255,12 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             <Button
               onClick={handleSubmit}
               disabled={(!content.trim() && !selectedImage) || content.length > maxLength || isPosting}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className="text-white border-none shadow-md hover:opacity-95"
+              style={{
+                background: brandGradient,
+                boxShadow: '0 3px 8px rgba(162, 64, 209, 0.35)',
+                ...font.bodyMedium,
+              }}
             >
               {isPosting ? "Posting..." : "Chirp"}
             </Button>

@@ -432,7 +432,7 @@ export default function ChirpCard({
               <Button
                 variant="ghost"
                 onClick={() => setShowReplyModal(false)}
-                className="text-purple-600"
+                className="text-[#A240D1]"
               >
                 Cancel
               </Button>
@@ -440,7 +440,11 @@ export default function ChirpCard({
               <Button
                 onClick={handleReply}
                 disabled={!replyContent.trim() || isPostingReply}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="text-white border-none hover:opacity-95"
+                style={{
+                  background: 'linear-gradient(135deg, #9D8CD9, #D94CC2)',
+                  boxShadow: '0 2px 8px rgba(162, 64, 209, 0.35)',
+                }}
               >
                 {isPostingReply ? 'Posting...' : 'Reply'}
               </Button>

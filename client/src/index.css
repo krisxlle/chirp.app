@@ -39,20 +39,20 @@ h1, h2, h3, h4, h5, h6 {
   --purple-dark: hsl(271, 81%, 56%);
   
   /* Metro-specific colors to match React Native StyleSheet */
-  --metro-background: #fafafa;
+  --metro-background: #E2DAFF;
   --metro-white: #ffffff;
   --metro-card: #ffffff;
-  --metro-border: #e5e7eb;
-  --metro-border-light: #e1e8ed;
-  --metro-border-muted: #f0f0f0;
-  --metro-text: #1a1a1a;
-  --metro-text-muted: #657786;
-  --metro-text-secondary: #374151;
-  --metro-purple: #7c3aed;
-  --metro-purple-light: #f8f4ff;
-  --metro-purple-gradient-start: #C671FF;
-  --metro-purple-gradient-end: #FF61A6;
-  --metro-purple-accent: #f5a5e0;
+  --metro-border: #BEC6EB;
+  --metro-border-light: #BEC6EB;
+  --metro-border-muted: #E2DAFF;
+  --metro-text: #6A4C92;
+  --metro-text-muted: #9D8CD9;
+  --metro-text-secondary: #6A4C92;
+  --metro-purple: #A240D1;
+  --metro-purple-light: #E2DAFF;
+  --metro-purple-gradient-start: #9D8CD9;
+  --metro-purple-gradient-end: #D94CC2;
+  --metro-purple-accent: #E1A0C3;
   --metro-gray-50: #f7f9fa;
   --metro-gray-100: #f0f0f0;
   --metro-gray-200: #e5e7eb;
@@ -97,7 +97,7 @@ html, body {
   min-height: 100vh;
 }
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--background);
   color: var(--foreground);
 }
@@ -110,21 +110,21 @@ body {
 
 /* ComposeChirp textarea placeholder styling */
 .compose-textarea::placeholder {
-  color: #657786 !important;
+  color: #9D8CD9 !important;
   opacity: 1 !important;
 }
 
 .compose-textarea::-webkit-input-placeholder {
-  color: #657786 !important;
+  color: #9D8CD9 !important;
   opacity: 1 !important;
 }
 
 .compose-textarea::-moz-placeholder {
-  color: #657786 !important;
+  color: #9D8CD9 !important;
   opacity: 1 !important;
 }
 
 .compose-textarea:-ms-input-placeholder {
-  color: #657786 !important;
+  color: #9D8CD9 !important;
   opacity: 1 !important;
 }

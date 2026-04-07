@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
+import { brandGradient, C, font } from '../lib/chirpBrand';
 import { supabase } from '../lib/supabase';
 
 // Use real Supabase client to fetch actual database chirps
@@ -806,12 +807,13 @@ export default function HomePage() {
       display: 'flex', 
       flexDirection: 'column', 
       height: '100vh', 
-      backgroundColor: '#fafafa' 
+      backgroundColor: C.paleLavender,
+      ...font.body,
     }}>
       {/* Header */}
       <div style={{
         backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
+        borderBottom: `1px solid ${C.lightBlueGrey}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -822,8 +824,8 @@ export default function HomePage() {
       }}>
         <h1 style={{ 
           fontSize: '24px', 
-          fontWeight: 'bold', 
-          color: '#333' 
+          color: C.deepPurple,
+          ...font.heading,
         }}>
           Home
         </h1>
@@ -842,7 +844,7 @@ export default function HomePage() {
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="#657786" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke={C.deepPurple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </div>
@@ -860,7 +862,7 @@ export default function HomePage() {
         <div style={{
           paddingTop: '8px',
           paddingBottom: '8px',
-          backgroundColor: '#fafafa',
+          backgroundColor: C.paleLavender,
           display: 'flex',
           justifyContent: 'center'
         }}>
@@ -885,15 +887,16 @@ export default function HomePage() {
               width: '40px',
               height: '40px',
               border: '3px solid #f3f3f3',
-              borderTop: '3px solid #7c3aed',
+              borderTop: `3px solid ${C.vibrantPurple}`,
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
               marginBottom: '16px'
             }}></div>
             <span style={{
               fontSize: '16px',
-              color: '#657786',
-              fontWeight: '500'
+              color: C.mediumLavender,
+              fontWeight: '500',
+              ...font.bodyMedium,
             }}>
               Loading chirps...
             </span>
@@ -973,16 +976,18 @@ export default function HomePage() {
                   paddingBottom: '50px',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '50px', marginBottom: '10px' }}>💬</div>
+                  <svg width="50" height="50" viewBox="0 0 24 24" fill="none" style={{ margin: '0 auto 10px', display: 'block' }} aria-hidden>
+                    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 2.98.97 4.29L2 22l5.91-1.29C9.02 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" stroke={C.vibrantPurple} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                   <h3 style={{ 
                     fontSize: '20px', 
-                    fontWeight: 'bold', 
-                    color: '#333',
-                    marginBottom: '5px'
+                    color: C.deepPurple,
+                    marginBottom: '5px',
+                    ...font.heading,
                   }}>
                     No chirps yet
                   </h3>
-                  <p style={{ fontSize: '16px', color: '#657786' }}>
+                  <p style={{ fontSize: '16px', color: C.mediumLavender, ...font.body }}>
                     Be the first to chirp!
                   </p>
                 </div>
@@ -1014,12 +1019,12 @@ export default function HomePage() {
                     <div style={{
                       width: '16px',
                       height: '16px',
-                      border: '2px solid #7c3aed',
+                      border: `2px solid ${C.vibrantPurple}`,
                       borderTop: '2px solid transparent',
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }}></div>
-                    <span style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: '14px', color: C.mediumLavender, fontStyle: 'italic', ...font.body }}>
                       Loading more chirps...
                     </span>
                   </div>
@@ -1036,8 +1041,8 @@ export default function HomePage() {
                     paddingRight: '20px',
                     textAlign: 'center'
                   }}>
-                    <p style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
-                      You've reached the end! 🎉
+                    <p style={{ fontSize: '14px', color: C.mediumLavender, fontStyle: 'italic', ...font.body }}>
+                      You've reached the end.
                     </p>
                   </div>
                 )}
@@ -1062,17 +1067,17 @@ export default function HomePage() {
                 textAlign: 'center'
               }}>
                 <svg width="50" height="50" viewBox="0 0 24 24" fill="none" style={{ margin: '0 auto 10px' }}>
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke={C.vibrantPurple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 <h3 style={{ 
                   fontSize: '20px', 
-                  fontWeight: 'bold', 
-                  color: '#333',
-                  marginBottom: '5px'
+                  color: C.deepPurple,
+                  marginBottom: '5px',
+                  ...font.heading,
                 }}>
                   No Collection Chirps
                 </h3>
-                <p style={{ fontSize: '16px', color: '#657786' }}>
+                <p style={{ fontSize: '16px', color: C.mediumLavender, ...font.body }}>
                   Chirps from your gacha collection profiles will appear here
                 </p>
               </div>
@@ -1103,12 +1108,12 @@ export default function HomePage() {
                     <div style={{
                       width: '16px',
                       height: '16px',
-                      border: '2px solid #7c3aed',
+                      border: `2px solid ${C.vibrantPurple}`,
                       borderTop: '2px solid transparent',
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }}></div>
-                    <span style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: '14px', color: C.mediumLavender, fontStyle: 'italic', ...font.body }}>
                       Loading more chirps...
                     </span>
                   </div>
@@ -1125,8 +1130,8 @@ export default function HomePage() {
                     paddingRight: '20px',
                     textAlign: 'center'
                   }}>
-                    <p style={{ fontSize: '14px', color: '#657786', fontStyle: 'italic' }}>
-                      You've reached the end! 🎉
+                    <p style={{ fontSize: '14px', color: C.mediumLavender, fontStyle: 'italic', ...font.body }}>
+                      You've reached the end.
                     </p>
                   </div>
                 )}
@@ -1146,11 +1151,11 @@ export default function HomePage() {
           width: '56px',
           height: '56px',
           borderRadius: '28px',
-          background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+          background: brandGradient,
           color: 'white',
           border: 'none',
           cursor: 'pointer',
-          boxShadow: '0 4px 8px rgba(124, 58, 237, 0.3)',
+          boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)',
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
@@ -1191,16 +1196,16 @@ export default function HomePage() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '16px',
-              borderBottom: '1px solid #e5e7eb'
+              borderBottom: `1px solid ${C.lightBlueGrey}`
             }}>
               <button
                 style={{
-                  color: '#7c3aed',
-                  fontWeight: '600',
+                  color: C.vibrantPurple,
                   backgroundColor: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '8px 12px'
+                  padding: '8px 12px',
+                  ...font.bodyMedium,
                 }}
                 onClick={() => setShowComposeModal(false)}
               >
@@ -1208,14 +1213,21 @@ export default function HomePage() {
               </button>
               <h2 style={{ 
                 fontSize: '18px', 
-                fontWeight: 'bold', 
-                color: '#333' 
+                color: C.deepPurple,
+                ...font.heading,
               }}>
                 Compose Chirp
               </h2>
               <div style={{ width: '60px' }}></div>
             </div>
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div
+              style={{
+                flex: 1,
+                overflow: 'auto',
+                paddingTop: 14,
+                backgroundColor: C.paleLavender,
+              }}
+            >
               <ComposeChirp 
                 onPost={async (content, imageData) => {
                   await handleNewChirp(content, imageData);

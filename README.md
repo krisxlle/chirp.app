@@ -52,7 +52,8 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 #### Core Components
 - `ChirpCard.tsx` - Displays individual chirps with interactions
 - `ComposeChirp.tsx` - Create new chirps and replies
-- `HomePage.tsx` - Main feed displaying user's timeline
+- `HomePage.tsx` (root `components/`, used by Expo `index.js`) - Main feed with Chirp style guide colors; shell background `#E2DAFF` (pale lavender), cards white, warm `#FDEADF` reserved for nested reply accents. Montserrat + Inter via `ChirpApp` + `ChirpCard` / `ComposeChirp` / `BottomNavigation`. Parallel copy under `metro/components/`; **Expo dev uses `components/`.**
+- **Vite web:** `client/src/lib/chirpBrand.ts` holds the same palette + gradient + `font` helpers; `HomePage.tsx`, `ChirpCard.tsx`, `ComposeChirp.tsx`, `BottomNavigation.tsx`, and `App.tsx` mirror the feed shell. Second tree: `web/client/src/` (same `chirpBrand` + home components when that bundle is used).
 - `ProfilePage.tsx` - User profile management
 - `SearchPage.tsx` - Search users and content
 
@@ -63,7 +64,7 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 
 #### Authentication
 - `AuthContext.tsx` - Global authentication state
-- `SignInScreen.tsx` - User login interface (smooth diagonal sky with widened `#9D8CD9` band; logo `assets/chirp-mark.png`; Vite: `client/src/pages/Auth.tsx` + `client/public/chirp-mark.png`, mirrored in `web/client/src/pages/Auth.tsx` + `web/client/public/chirp-mark.png`)
+- `SignInScreen.tsx` - User login interface (smooth diagonal sky with widened `#9D8CD9` band; logo raster `assets/chirp-mark.png` = white bird on `#6A4C92` only—no tagline in image; Vite: `client/public/chirp-mark.png`, `web/client/public/chirp-mark.png`)
 - `SignInScreenNew.tsx` - Updated sign-in experience
 
 ## 📁 Project Structure

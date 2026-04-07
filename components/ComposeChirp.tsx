@@ -8,6 +8,22 @@ import ChirpImage from './ChirpImage';
 import ImagePickerButton from './ImagePickerButton';
 import UserAvatar from './UserAvatar';
 
+const C = {
+  deepPurple: '#6A4C92',
+  vibrantPurple: '#A240D1',
+  magentaPink: '#D94CC2',
+  mediumLavender: '#9D8CD9',
+  lightBlueGrey: '#BEC6EB',
+} as const;
+
+const BRAND_GRADIENT: [string, string] = [C.mediumLavender, C.magentaPink];
+
+const TYPO = {
+  body: { fontFamily: 'Inter_400Regular' as const },
+  bodyMedium: { fontFamily: 'Inter_500Medium' as const },
+  button: { fontFamily: 'Inter_500Medium' as const },
+} as const;
+
 interface ComposeChirpProps {
   onPost?: (content: string, imageData?: {
     imageUrl?: string;
@@ -167,7 +183,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const getCharCountColor = () => {
     if (remainingChars < 0) return '#ef4444'; // red
     if (remainingChars < 20) return '#f59e0b'; // yellow
-    return '#6b7280'; // gray
+    return C.mediumLavender;
   };
 
   // Normal compose mode
@@ -181,7 +197,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             ref={textInputRef}
             style={styles.textInput}
             placeholder="What's on your mind?"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={C.mediumLavender}
             value={content}
             onChangeText={setContent}
             multiline
@@ -230,7 +246,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 onImageSelected={handleImageSelected}
                 disabled={isPosting}
                 size={20}
-                color="#7c3aed"
+                color={C.vibrantPurple}
               />
               
               <Text style={[styles.charCount, { color: getCharCountColor() }]}>
@@ -243,7 +259,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               disabled={(!content.trim() && !selectedImage) || content.length > maxLength || isPosting}
             >
               <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
+                colors={BRAND_GRADIENT}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[
@@ -271,7 +287,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 16, // Use hardcoded value instead of padding.screen.horizontal
-    boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+    boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
     elevation: 3,
     maxWidth: 600, // Max width for web responsiveness
     alignSelf: 'center', // Center the component horizontally
@@ -291,7 +307,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     minHeight: 80,
     padding: 0,
-    color: '#1a1a1a',
+    ...TYPO.body,
+    color: C.deepPurple,
     textAlignVertical: 'top',
   },
   imagePreviewContainer: {
@@ -312,7 +329,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: 14,
-    fontWeight: '500',
+    ...TYPO.bodyMedium,
   },
   postButton: {
     paddingHorizontal: 20,
@@ -320,26 +337,26 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 3px 8px rgba(124, 58, 237, 0.3)',
+    boxShadow: '0 3px 8px rgba(162, 64, 209, 0.35)',
     elevation: 5,
   },
   postButtonDisabled: {
-    backgroundColor: '#d1d5db',
+    backgroundColor: C.lightBlueGrey,
   },
   postButtonText: {
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '700',
+    ...TYPO.button,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#E2DAFF',
   },
   loadingText: {
     fontSize: 18,
-    color: '#6b7280',
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
+    color: C.mediumLavender,
   },
 });

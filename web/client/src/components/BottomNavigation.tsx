@@ -3,6 +3,7 @@ import React from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from './AuthContext';
 import { apiRequest } from './api';
+import { brandGradient, C } from '../lib/chirpBrand';
 import { CollectionIcon, GachaIcon, HomeIcon, NotificationIcon, ProfileIcon } from './icons';
 
 interface BottomNavigationProps {
@@ -94,12 +95,15 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-1.5 py-1 pb-5 z-50">
+    <div
+      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 px-1.5 py-1 pb-5 z-50"
+      style={{ borderTop: `1px solid ${C.lightBlueGrey}` }}
+    >
       <div className="flex justify-around items-center">
         {navItems.map((item) => {
           const notificationsActive = item.key === "notifications" && item.isActive;
           const iconColor = !item.isActive
-            ? "#6b7280"
+            ? C.deepPurple
             : notificationsActive
               ? "#A240D1"
               : "#ffffff";
@@ -110,9 +114,14 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
               notificationsActive
                 ? "bg-[rgba(162,64,209,0.14)]"
                 : item.isActive
-                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/25"
+                  ? "text-white shadow-lg"
                   : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             }`}
+            style={
+              item.isActive && !notificationsActive
+                ? { background: brandGradient, boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)' }
+                : undefined
+            }
             onClick={() => handleTabChange(item.key, item.path)}
           >
             <div className="relative">

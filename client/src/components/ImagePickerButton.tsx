@@ -13,7 +13,7 @@ export default function ImagePickerButton({
   onImageSelected, 
   disabled = false, 
   size = 20, 
-  color = "#7c3aed" 
+  color = "#A240D1" 
 }: ImagePickerButtonProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 

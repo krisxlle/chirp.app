@@ -7,6 +7,9 @@ import HomeIcon from './icons/HomeIcon';
 import NotificationIcon from './icons/NotificationIcon';
 import ProfileIcon from './icons/ProfileIcon';
 
+const BRAND_GRADIENT: [string, string] = ['#9D8CD9', '#D94CC2'];
+const C = { deepPurple: '#6A4C92', vibrantPurple: '#A240D1' } as const;
+
 interface BottomNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -68,7 +71,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
           >
             {item.isActive ? (
               <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
+                colors={BRAND_GRADIENT}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.activeNavItem}
@@ -93,7 +96,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
               <View style={styles.iconContainer}>
                 <item.component
                   size={22} // Increased from 18 to 22 for larger icons to match taller nav bar
-                  color='#6b7280'
+                  color={C.deepPurple}
                 />
                 
                 {/* Notification badge */}
@@ -121,7 +124,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#BEC6EB',
     paddingHorizontal: 1.5,
     paddingVertical: 4, // Reduced from 8 to 4 (50% reduction in white space)
     paddingBottom: 20, // Add bottom padding to avoid iPhone home indicator
@@ -146,7 +149,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, // Keep horizontal padding the same
     borderRadius: 12, // Keep border radius the same
     minWidth: 56, // Keep minimum width the same
-    shadowColor: '#7c3aed',
+    shadowColor: C.vibrantPurple,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -166,7 +169,7 @@ const styles = StyleSheet.create({
   },
   navLabel: {
     fontSize: 10,
-    color: '#6b7280',
+    color: C.deepPurple,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     right: -6,
     backgroundColor: '#ffffff',
     borderWidth: 1.5,
-    borderColor: '#7c3aed',
+    borderColor: C.vibrantPurple,
     borderRadius: 8,
     minWidth: 16,
     height: 14,
@@ -189,7 +192,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#7c3aed',
+    color: C.vibrantPurple,
     fontSize: 9,
     fontWeight: '700',
     textAlign: 'center',

@@ -11,6 +11,7 @@ import ShareIcon from '../components/icons/ShareIcon';
 import SpeechBubbleIcon from '../components/icons/SpeechBubbleIcon';
 import { useLike } from '../contexts/LikeContext';
 import { useToast } from '../hooks/use-toast';
+import { brandGradient, C, font } from '../lib/chirpBrand';
 import { supabase } from '../lib/supabase';
 
 interface User {
@@ -88,7 +89,7 @@ export default function ChirpCard({
         paddingRight: '16px',
         paddingTop: '10px',
         paddingBottom: '10px',
-        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+        boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
         maxWidth: '600px',
         alignSelf: 'center',
         width: '100%',
@@ -98,7 +99,7 @@ export default function ChirpCard({
         backgroundColor: '#f0f0f0',
         padding: '20px'
       }}>
-        <span style={{ fontSize: '14px', color: '#657786' }}>Loading...</span>
+        <span style={{ fontSize: '14px', color: '#9D8CD9' }}>Loading...</span>
       </div>
     );
   }
@@ -582,7 +583,7 @@ export default function ChirpCard({
         paddingRight: '16px',
         paddingTop: '10px',
         paddingBottom: '10px',
-        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+        boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
         maxWidth: '600px',
         alignSelf: 'center',
         width: '100%',
@@ -598,14 +599,14 @@ export default function ChirpCard({
         <div style={{ flex: 1, marginLeft: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <div onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }} style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ fontSize: '15px', fontWeight: '600', color: '#14171a', lineHeight: '20px' }}>{displayName}</span>
+              <span style={{ fontSize: '15px', color: '#6A4C92', lineHeight: '20px', ...font.heading }}>{displayName}</span>
             </div>
-            <span style={{ fontSize: '14px', color: '#657786', marginLeft: '8px' }}>{formatDate(chirp.createdAt)}</span>
+            <span style={{ fontSize: '14px', color: '#9D8CD9', marginLeft: '8px', ...font.body }}>{formatDate(chirp.createdAt)}</span>
           </div>
           
           {/* Show handle under the display name */}
           <div onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }} style={{ marginTop: '2px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '400', color: '#a78bfa', lineHeight: '18px' }}>
+            <span style={{ fontSize: '13px', color: '#A240D1', lineHeight: '18px', ...font.body }}>
               @{chirp.author?.customHandle || chirp.author?.handle || 'user'}
             </span>
           </div>
@@ -619,12 +620,12 @@ export default function ChirpCard({
             handleMoreOptions();
           }}
         >
-          <span style={{ fontSize: '16px', color: '#657786', transform: 'rotate(90deg)', display: 'inline-block' }}>⋯</span>
+          <span style={{ fontSize: '16px', color: '#9D8CD9', transform: 'rotate(90deg)', display: 'inline-block' }}>⋯</span>
         </div>
       </div>
 
       {chirp.content.trim() && (
-        <div style={{ fontSize: '15px', lineHeight: '22px', color: '#14171a', marginLeft: '20px', marginBottom: '8px' }}>
+        <div style={{ fontSize: '15px', lineHeight: '22px', color: '#6A4C92', marginLeft: '20px', marginBottom: '8px', ...font.body }}>
           {chirp.content.split(/(@\w+|#\w+|\*\*[^*]+\*\*)/).filter(part => part.trim()).map((part, index) => {
             if (part.startsWith('@')) {
               return (
@@ -636,7 +637,7 @@ export default function ChirpCard({
                     const handle = part.substring(1); // Remove @
                     setLocation(`/profile/${handle}`);
                   }}
-                  style={{ color: '#7c3aed', fontSize: '15px', cursor: 'pointer' }}
+                  style={{ color: '#A240D1', fontSize: '15px', cursor: 'pointer' }}
                 >
                   {part}
                 </span>
@@ -650,7 +651,7 @@ export default function ChirpCard({
                     const cleanHashtag = part.replace('#', '');
                     setLocation(`/hashtag/${cleanHashtag}`);
                   }}
-                  style={{ color: '#7c3aed', cursor: 'pointer' }}
+                  style={{ color: '#A240D1', cursor: 'pointer' }}
                 >
                   {part}
                 </span>
@@ -658,7 +659,7 @@ export default function ChirpCard({
             } else if (part.startsWith('**') && part.endsWith('**')) {
               // Bold text formatting
               const boldText = part.slice(2, -2);
-              return <span key={index} style={{ fontWeight: '700', color: '#14171a' }}>{boldText}</span>;
+              return <span key={index} style={{ fontWeight: '700', color: '#6A4C92' }}>{boldText}</span>;
             }
             return <span key={index}>{part}</span>;
           })}
@@ -713,9 +714,9 @@ export default function ChirpCard({
           marginLeft: '20px',
           marginRight: '8px',
           padding: '12px',
-          backgroundColor: '#f8f9fa',
+          backgroundColor: C.softPeach,
           borderRadius: '12px',
-          border: '1px solid #e5e7eb'
+          border: `1px solid ${C.lightBlueGrey}`
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
             <UserAvatar 
@@ -763,7 +764,7 @@ export default function ChirpCard({
                     border: '1px solid #d1d5db',
                     borderRadius: '6px',
                     fontSize: '14px',
-                    color: '#657786',
+                    color: '#9D8CD9',
                     cursor: 'pointer'
                   }}
                 >
@@ -777,25 +778,25 @@ export default function ChirpCard({
                   disabled={!replyText.trim()}
                   style={{
                     padding: '6px 12px',
-                    background: replyText.trim() ? 'linear-gradient(135deg, #C671FF 0%, #FF61A6 100%)' : '#d1d5db',
+                    background: replyText.trim() ? brandGradient : '#BEC6EB',
                     border: 'none',
                     borderRadius: '6px',
                     fontSize: '14px',
                     color: replyText.trim() ? '#ffffff' : '#9ca3af',
                     cursor: replyText.trim() ? 'pointer' : 'not-allowed',
-                    boxShadow: replyText.trim() ? '0 2px 8px rgba(198, 113, 255, 0.3)' : 'none',
+                    boxShadow: replyText.trim() ? '0 2px 8px rgba(162, 64, 209, 0.35)' : 'none',
                     transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
                     if (replyText.trim()) {
                       e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(198, 113, 255, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(217, 76, 194, 0.35)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (replyText.trim()) {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 113, 255, 0.3)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(162, 64, 209, 0.35)';
                     }
                   }}
                 >
@@ -815,8 +816,8 @@ export default function ChirpCard({
             handleReply();
           }}
         >
-          <SpeechBubbleIcon size={18} color="#657786" />
-          <span style={{ fontSize: '14px', color: '#657786', fontWeight: '500', marginLeft: '8px' }}>{replies}</span>
+          <SpeechBubbleIcon size={18} color="#9D8CD9" />
+          <span style={{ fontSize: '14px', color: '#9D8CD9', fontWeight: '500', marginLeft: '8px' }}>{replies}</span>
         </div>
 
         <div 
@@ -828,7 +829,7 @@ export default function ChirpCard({
         >
           <HeartIcon 
             size={18} 
-            color={userHasLiked ? "#7c3aed" : "#657786"}
+            color={userHasLiked ? "#A240D1" : "#9D8CD9"}
             filled={userHasLiked}
           />
           <div 
@@ -838,7 +839,7 @@ export default function ChirpCard({
             }}
             style={{ marginLeft: '8px', paddingLeft: '4px', paddingRight: '4px', paddingTop: '2px', paddingBottom: '2px', minWidth: '24px' }}
           >
-            <span style={{ fontSize: '14px', color: userHasLiked ? "#7c3aed" : '#657786', fontWeight: '500' }}>
+            <span style={{ fontSize: '14px', color: userHasLiked ? "#A240D1" : '#9D8CD9', fontWeight: '500' }}>
               {likes}
             </span>
           </div>
@@ -852,7 +853,7 @@ export default function ChirpCard({
               handleShare();
             }}
           >
-            <ShareIcon size={18} color="#657786" />
+            <ShareIcon size={18} color="#9D8CD9" />
           </div>
         </div>
       </div>
@@ -862,7 +863,7 @@ export default function ChirpCard({
         <div style={{
           marginTop: '8px',
           marginLeft: '20px',
-          borderLeft: '2px solid #e5e7eb',
+          borderLeft: `2px solid ${C.lightBlueGrey}`,
           paddingLeft: '12px'
         }}>
           {chirp.repliesList.map((reply, index) => (
@@ -916,7 +917,7 @@ export default function ChirpCard({
             <h3 style={{
               fontSize: '18px',
               fontWeight: '600',
-              color: '#14171a',
+              color: '#6A4C92',
               marginBottom: '16px',
               textAlign: 'center'
             }}>
@@ -959,7 +960,7 @@ export default function ChirpCard({
                   style={{
                     width: '100%',
                     padding: '12px',
-                    backgroundColor: '#7c3aed',
+                    backgroundColor: '#A240D1',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '8px',
@@ -1001,7 +1002,7 @@ export default function ChirpCard({
                 width: '100%',
                 padding: '12px',
                 backgroundColor: 'transparent',
-                color: '#657786',
+                color: '#9D8CD9',
                 border: '1px solid #d1d5db',
                 borderRadius: '8px',
                 fontSize: '16px',

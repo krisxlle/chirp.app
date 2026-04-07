@@ -1,5 +1,8 @@
+import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
+import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
+import { useFonts } from 'expo-font';
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from './AuthContext';
 
@@ -16,6 +19,11 @@ export default function ChirpApp() {
   const [activeTab, setActiveTab] = useState('home');
   const profilePageRef = useRef<any>(null);
   const { counts } = useNotifications(user?.id);
+  const [fontsLoaded] = useFonts({
+    Montserrat_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+  });
 
   // Check if user is authenticated
   const isAuthenticated = !!user;
@@ -32,7 +40,7 @@ export default function ChirpApp() {
     console.log('ChirpApp: Auth is loading, showing loading state');
     return (
       <View style={styles.loadingContainer}>
-        <Text style={{ fontSize: 16, color: '#657786' }}>Loading...</Text>
+        <Text style={{ fontSize: 16, color: '#9D8CD9', fontFamily: 'Inter_400Regular' }}>Loading...</Text>
       </View>
     );
   }
@@ -44,6 +52,14 @@ export default function ChirpApp() {
   }
 
   console.log('ChirpApp: User authenticated, rendering main app - user ID:', user?.id);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#9D8CD9" />
+      </View>
+    );
+  }
 
   // Handle tab changes
   const handleTabChange = (tab: string) => {
@@ -107,16 +123,16 @@ export default function ChirpApp() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#E2DAFF',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#E2DAFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#E2DAFF',
   },
 });

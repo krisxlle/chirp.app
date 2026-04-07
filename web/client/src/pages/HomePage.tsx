@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, Search } from 'lucide-react';
+﻿import { Plus, RefreshCw, Search } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../components/AuthContext';
@@ -6,6 +6,8 @@ import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
 import { Button } from '../components/ui/button';
 import { useToast } from '../hooks/use-toast';
+import { brandGradient, C, font } from '../lib/chirpBrand';
+import { BirdIcon } from '../components/icons';
 import { apiRequest } from './api';
 
 export default function HomePage() {
@@ -260,13 +262,18 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen" style={{ backgroundColor: C.paleLavender, ...font.body }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 flex justify-between items-center py-3 px-4">
-        <h1 className="text-2xl font-bold text-gray-900">Home</h1>
+      <header
+        className="bg-white flex justify-between items-center py-3 px-4"
+        style={{ borderBottom: `1px solid ${C.lightBlueGrey}` }}
+      >
+        <h1 className="text-2xl" style={{ color: C.deepPurple, ...font.heading }}>
+          Home
+        </h1>
         <div className="flex items-center space-x-3">
           <Button variant="ghost" size="icon" onClick={handleSearchPress}>
-            <Search className="h-5 w-5 text-gray-600" />
+            <Search className="h-5 w-5" style={{ color: C.deepPurple }} />
           </Button>
         </div>
       </header>
@@ -278,16 +285,18 @@ export default function HomePage() {
         onScroll={handleScroll}
       >
         {/* Compose Chirp - Now scrolls with feed */}
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div className="p-4" style={{ backgroundColor: C.paleLavender }}>
           <ComposeChirp onPost={handleNewChirp} />
         </div>
 
         <div className="px-4">
           {chirps.length === 0 && !isLoading ? (
-            <div className="py-8 text-center">
-              <div className="text-4xl mb-4">💬</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No chirps yet</h3>
-              <p className="text-gray-500">Be the first to chirp!</p>
+            <div className="py-8 text-center flex flex-col items-center gap-2">
+              <BirdIcon size={50} color={C.vibrantPurple} />
+              <h3 className="text-lg mb-2" style={{ color: C.deepPurple, ...font.heading }}>
+                No chirps yet
+              </h3>
+              <p style={{ color: C.mediumLavender, ...font.body }}>Be the first to chirp!</p>
             </div>
           ) : (
             <>
@@ -305,15 +314,19 @@ export default function HomePage() {
               {/* Loading more indicator */}
               {isLoadingMore && (
                 <div className="flex items-center justify-center py-4">
-                  <RefreshCw className="h-4 w-4 animate-spin text-purple-600 mr-2" />
-                  <span className="text-sm text-gray-500">Loading more chirps...</span>
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" style={{ color: C.vibrantPurple }} />
+                  <span className="text-sm italic" style={{ color: C.mediumLavender, ...font.body }}>
+                    Loading more chirps...
+                  </span>
                 </div>
               )}
               
               {/* End of feed indicator */}
               {!hasMoreChirps && chirps.length > 0 && (
                 <div className="py-4 text-center">
-                  <p className="text-sm text-gray-500">You've reached the end! 🎉</p>
+                  <p className="text-sm italic" style={{ color: C.mediumLavender, ...font.body }}>
+                    You've reached the end.
+                  </p>
                 </div>
               )}
             </>
@@ -323,7 +336,8 @@ export default function HomePage() {
 
       {/* Floating Compose Button */}
       <button
-        className="fixed bottom-20 right-4 w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-50"
+        className="fixed bottom-20 right-4 w-14 h-14 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-50"
+        style={{ background: brandGradient, boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)' }}
         onClick={() => setShowComposeModal(true)}
       >
         <Plus className="h-6 w-6" />
@@ -333,22 +347,33 @@ export default function HomePage() {
       {showComposeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
           <div className="bg-white w-full max-w-md rounded-t-lg">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div
+              className="flex items-center justify-between p-4"
+              style={{ borderBottom: `1px solid ${C.lightBlueGrey}` }}
+            >
               <button
-                className="text-purple-600 font-semibold"
+                style={{ color: C.vibrantPurple, ...font.bodyMedium }}
+                className="bg-transparent border-none cursor-pointer"
                 onClick={() => setShowComposeModal(false)}
               >
                 Cancel
               </button>
-              <h2 className="text-lg font-bold text-gray-900">Compose Chirp</h2>
+              <h2 className="text-lg" style={{ color: C.deepPurple, ...font.heading }}>
+                Compose Chirp
+              </h2>
               <div className="w-16"></div>
             </div>
-            <ComposeChirp 
-              onPost={async (content, imageData) => {
-                await handleNewChirp(content, imageData);
-                setShowComposeModal(false);
-              }} 
-            />
+            <div
+              className="pt-3.5"
+              style={{ backgroundColor: C.paleLavender }}
+            >
+              <ComposeChirp 
+                onPost={async (content, imageData) => {
+                  await handleNewChirp(content, imageData);
+                  setShowComposeModal(false);
+                }} 
+              />
+            </div>
           </div>
         </div>
       )}

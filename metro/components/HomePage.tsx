@@ -1,4 +1,4 @@
-import { LinearGradient } from 'expo-linear-gradient';
+﻿import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,6 +12,26 @@ import ComposeChirp from './ComposeChirp';
 import ProfileModal from './ProfileModal';
 import BirdIcon from './icons/BirdIcon';
 import SearchIcon from './icons/SearchIcon';
+
+/** Brand feed shell (style guide) */
+const C = {
+  deepPurple: '#6A4C92',
+  vibrantPurple: '#A240D1',
+  magentaPink: '#D94CC2',
+  mediumLavender: '#9D8CD9',
+  lightBlueGrey: '#BEC6EB',
+  paleLavender: '#E2DAFF',
+  /** Warm accent (e.g. nested reply strip in cards), not main shell */
+  softPeach: '#FDEADF',
+} as const;
+
+const BRAND_GRADIENT: [string, string] = [C.mediumLavender, C.magentaPink];
+
+const TYPO = {
+  heading: { fontFamily: 'Montserrat_700Bold' as const },
+  body: { fontFamily: 'Inter_400Regular' as const },
+  bodyMedium: { fontFamily: 'Inter_500Medium' as const },
+} as const;
 
 export default function HomePage() {
   // Get user from AuthContext
@@ -343,7 +363,7 @@ export default function HomePage() {
             style={styles.searchButton} 
             onPress={handleSearchPress}
           >
-            <SearchIcon size={20} color="#657786" />
+            <SearchIcon size={20} color={C.deepPurple} />
           </TouchableOpacity>
         </View>
       </View>
@@ -357,7 +377,7 @@ export default function HomePage() {
           >
             {feedType === 'forYou' ? (
               <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
+                colors={BRAND_GRADIENT}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.activeTabButton}
@@ -378,7 +398,7 @@ export default function HomePage() {
           >
             {feedType === 'collection' ? (
               <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
+                colors={BRAND_GRADIENT}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.activeTabButton}
@@ -405,10 +425,10 @@ export default function HomePage() {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={refreshChirps}
-            colors={['#7c3aed', '#ec4899']}
-            tintColor="#7c3aed"
+            colors={[C.vibrantPurple, C.magentaPink]}
+            tintColor={C.vibrantPurple}
             title="Pull to refresh"
-            titleColor="#657786"
+            titleColor={C.mediumLavender}
           />
         }
         onScroll={({ nativeEvent }) => {
@@ -432,7 +452,7 @@ export default function HomePage() {
           <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
             {forYouChirps.length === 0 && !isLoading ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyIcon}>💬</Text>
+                <BirdIcon size={50} color={C.vibrantPurple} />
                 <Text style={styles.emptyTitle}>No chirps yet</Text>
                 <Text style={styles.emptySubtext}>Be the first to chirp!</Text>
               </View>
@@ -452,7 +472,7 @@ export default function HomePage() {
                 {/* Loading more indicator */}
                 {isLoadingMore && (
                   <View style={styles.loadingMoreContainer}>
-                    <ActivityIndicator size="small" color="#7c3aed" />
+                    <ActivityIndicator size="small" color={C.vibrantPurple} />
                     <Text style={styles.loadingMoreText}>Loading more chirps...</Text>
                   </View>
                 )}
@@ -460,7 +480,7 @@ export default function HomePage() {
                 {/* End of feed indicator */}
                 {!hasMoreChirps && forYouChirps.length > 0 && (
                   <View style={styles.endOfFeedContainer}>
-                    <Text style={styles.endOfFeedText}>You've reached the end! 🎉</Text>
+                    <Text style={styles.endOfFeedText}>You've reached the end.</Text>
                   </View>
                 )}
               </>
@@ -471,7 +491,7 @@ export default function HomePage() {
            <View style={[styles.chirpsContainer, { paddingHorizontal: padding.screen.horizontal }]}>
              {collectionChirps.length === 0 && !isLoading ? (
                <View style={styles.emptyState}>
-                 <BirdIcon size={50} color="#7c3aed" />
+                 <BirdIcon size={50} color={C.vibrantPurple} />
                  <Text style={styles.emptyTitle}>No Collection Chirps</Text>
                  <Text style={styles.emptySubtext}>Chirps from your gacha collection profiles will appear here</Text>
                </View>
@@ -494,7 +514,7 @@ export default function HomePage() {
                      disabled={isLoadingMore}
                    >
                      {isLoadingMore ? (
-                       <ActivityIndicator color="#7c3aed" size="small" />
+                       <ActivityIndicator color={C.vibrantPurple} size="small" />
                      ) : (
                        <Text style={styles.loadMoreText}>Load More Collection Chirps</Text>
                      )}
@@ -513,7 +533,7 @@ export default function HomePage() {
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={['#7c3aed', '#ec4899']}
+          colors={BRAND_GRADIENT}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.floatingButtonGradient}
@@ -542,12 +562,14 @@ export default function HomePage() {
             <Text style={styles.composeModalTitle}>Compose Chirp</Text>
             <View style={styles.composeModalSpacer} />
           </View>
-          <ComposeChirp 
-            onPost={async (content, imageData) => {
-              await handleNewChirp(content, imageData);
-              setShowComposeModal(false);
-            }} 
-          />
+          <View style={styles.composeModalBody}>
+            <ComposeChirp 
+              onPost={async (content, imageData) => {
+                await handleNewChirp(content, imageData);
+                setShowComposeModal(false);
+              }} 
+            />
+          </View>
         </View>
       </Modal>
 
@@ -560,16 +582,16 @@ export default function HomePage() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: C.paleLavender,
   },
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: C.paleLavender,
   },
   header: {
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: C.lightBlueGrey,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -577,8 +599,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    ...TYPO.heading,
+    color: C.deepPurple,
   },
   headerActions: {
     flexDirection: 'row',
@@ -592,12 +614,12 @@ const styles = StyleSheet.create({
   tabsContainer: {
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
+    borderBottomColor: C.lightBlueGrey,
     paddingVertical: 12,
   },
   tabsButtonContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f7f9fa',
+    backgroundColor: C.paleLavender,
     borderRadius: 12,
     padding: 3,
   },
@@ -619,17 +641,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
-    boxShadow: '0 2px 6px rgba(124, 58, 237, 0.3)',
+    boxShadow: '0 2px 6px rgba(162, 64, 209, 0.28)',
     elevation: 4,
   },
   tabButtonText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#657786',
+    ...TYPO.bodyMedium,
+    color: C.deepPurple,
   },
   activeTabButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
     color: '#ffffff',
   },
   feed: {
@@ -638,7 +660,7 @@ const styles = StyleSheet.create({
   composeContainer: {
     paddingTop: 8,
     paddingBottom: 8,
-    backgroundColor: '#fafafa', // Match the main container background
+    backgroundColor: C.paleLavender,
   },
   chirpsContainer: {
     paddingBottom: Platform.OS === 'web' ? 200 : 120, // Extra padding to clear navigation bar and show compose button (much more for web)
@@ -646,20 +668,20 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: 50,
-  },
-  emptyIcon: {
-    fontSize: 50,
-    marginBottom: 10,
+    gap: 10,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    ...TYPO.heading,
+    color: C.deepPurple,
     marginBottom: 5,
   },
   emptySubtext: {
     fontSize: 16,
-    color: '#657786',
+    ...TYPO.body,
+    color: C.mediumLavender,
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
   // New styles for infinite scroll
   loadingMoreContainer: {
@@ -671,23 +693,24 @@ const styles = StyleSheet.create({
   },
   loadingMoreText: {
     fontSize: 14,
-    color: '#657786',
+    ...TYPO.body,
+    color: C.mediumLavender,
     fontStyle: 'italic',
   },
   loadMoreButton: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: C.paleLavender,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
     marginVertical: 16,
     borderWidth: 1,
-    borderColor: '#e1e8ed',
+    borderColor: C.lightBlueGrey,
   },
   loadMoreText: {
     fontSize: 14,
-    color: '#7c3aed',
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
+    color: C.vibrantPurple,
   },
   endOfFeedContainer: {
     alignItems: 'center',
@@ -697,7 +720,8 @@ const styles = StyleSheet.create({
   },
   endOfFeedText: {
     fontSize: 14,
-    color: '#657786',
+    ...TYPO.body,
+    color: C.mediumLavender,
     textAlign: 'center',
     fontStyle: 'italic',
   },
@@ -709,7 +733,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    boxShadow: '0 4px 8px rgba(124, 58, 237, 0.3)',
+    boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)',
     elevation: 8,
     zIndex: 1000,
   },
@@ -738,7 +762,7 @@ const styles = StyleSheet.create({
   // Compose Modal Styles
   composeModalContainer: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: C.paleLavender,
   },
   composeModalHeader: {
     flexDirection: 'row',
@@ -746,7 +770,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: C.lightBlueGrey,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
@@ -756,15 +780,20 @@ const styles = StyleSheet.create({
   },
   composeModalCloseText: {
     fontSize: 16,
-    color: '#7c3aed',
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
+    color: C.vibrantPurple,
   },
   composeModalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    ...TYPO.heading,
+    color: C.deepPurple,
   },
   composeModalSpacer: {
     width: 60, // Same width as close button to center the title
+  },
+  composeModalBody: {
+    flex: 1,
+    paddingTop: 14,
+    backgroundColor: C.paleLavender,
   },
 });

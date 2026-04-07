@@ -69,7 +69,7 @@ function Router() {
 
   console.log('🔍 Router: Rendering main content...');
   return (
-    <div className="max-w-md mx-auto bg-white dark:bg-gray-900 min-h-screen relative">
+    <div className="max-w-md mx-auto min-h-screen relative bg-[#E2DAFF] dark:bg-gray-900">
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Debug App</h1>

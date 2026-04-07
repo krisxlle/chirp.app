@@ -3,6 +3,7 @@ import React from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { supabase } from '../lib/supabase';
+import { brandGradient, C } from '../lib/chirpBrand';
 import { CollectionIcon, GachaIcon, HomeIcon, MessageIcon, NotificationIcon, ProfileIcon } from './icons';
 
 interface BottomNavigationProps {
@@ -127,13 +128,13 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       };
     }
     return {
-      background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
-      boxShadow: '0 4px 8px rgba(124, 58, 237, 0.3)',
+      background: brandGradient,
+      boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)',
     };
   };
 
   const getNavIconColor = (key: string, isActive: boolean): string => {
-    if (!isActive) return '#6b7280';
+    if (!isActive) return C.deepPurple;
     if (key === 'notifications') return NOTIFICATIONS_ACTIVE_COLOR;
     return '#ffffff';
   };
@@ -162,7 +163,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
       left: 0,
       right: 0,
       backgroundColor: '#ffffff',
-      borderTop: '1px solid #e5e7eb',
+      borderTop: `1px solid ${C.lightBlueGrey}`,
       paddingLeft: '6px',
       paddingRight: '6px',
       paddingTop: '4px',
@@ -212,7 +213,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
                   top: '-3px',
                   right: '-6px',
                   backgroundColor: '#ffffff',
-                  border: '1.5px solid #7c3aed',
+                  border: `1.5px solid ${C.vibrantPurple}`,
                   borderRadius: '8px',
                   minWidth: '16px',
                   height: '14px',
@@ -223,7 +224,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
                   display: 'flex'
                 }}>
                   <span style={{
-                    color: '#7c3aed',
+                    color: C.vibrantPurple,
                     fontSize: '9px',
                     fontWeight: '700',
                     textAlign: 'center',

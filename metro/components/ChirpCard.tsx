@@ -12,6 +12,12 @@ import UserAvatar from './UserAvatar';
 // Removed UserProfileModal import - using page navigation instead
 import { useAuth } from './AuthContext';
 
+const TYPO = {
+  heading: { fontFamily: 'Montserrat_700Bold' as const },
+  body: { fontFamily: 'Inter_400Regular' as const },
+  bodyMedium: { fontFamily: 'Inter_500Medium' as const },
+} as const;
+
 // Import real Supabase functions
 import { deleteChirp } from '../lib/database/mobile-db-supabase';
 import { CrystalService } from '../services/crystalService';
@@ -773,7 +779,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           {chirp.isWeeklySummary && (
             <View style={styles.weeklySummaryRow}>
               <LinearGradient
-                colors={['#7c3aed', '#ec4899']}
+                colors={['#9D8CD9', '#D94CC2']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.weeklySummaryBadge}
@@ -879,7 +885,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             handleReply();
           }}
         >
-          <SpeechBubbleIcon size={18} color="#657786" />
+          <SpeechBubbleIcon size={18} color="#9D8CD9" />
           <Text style={styles.actionText}>{replies}</Text>
         </TouchableOpacity>
 
@@ -900,7 +906,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
             color={
               String(chirp.id).startsWith('temp_') 
                 ? "#ccc" 
-                : userHasLiked ? "#7c3aed" : "#657786"
+                : userHasLiked ? "#A240D1" : "#9D8CD9"
             } 
             filled={userHasLiked}
           />
@@ -914,7 +920,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
           >
             <Text style={[
               styles.actionText, 
-              userHasLiked && { color: "#7c3aed" },
+              userHasLiked && { color: "#A240D1" },
               String(chirp.id).startsWith('temp_') && { color: "#ccc" }
             ]}>
               {likes}
@@ -930,7 +936,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
               handleShare();
             }}
           >
-            <ShareIcon size={18} color="#657786" />
+            <ShareIcon size={18} color="#9D8CD9" />
           </TouchableOpacity>
         </View>
       </View>
@@ -997,7 +1003,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
                 disabled={!replyText.trim()}
               >
                 <LinearGradient
-                  colors={['#7c3aed', '#ec4899']}
+                  colors={['#9D8CD9', '#D94CC2']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.submitButton}
@@ -1067,7 +1073,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
                 disabled={!replyText.trim()}
               >
                 <LinearGradient
-                  colors={['#7c3aed', '#ec4899']}
+                  colors={['#9D8CD9', '#D94CC2']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.submitButton}
@@ -1125,7 +1131,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
                   handleFollowToggle();
                 }}>
                   <LinearGradient
-                    colors={['#7c3aed', '#ec4899']}
+                    colors={['#9D8CD9', '#D94CC2']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.modalOptionGradientBorder}
@@ -1143,7 +1149,7 @@ export default function ChirpCard({ chirp, onDeleteSuccess, onProfilePress, onLi
                   handleCopyUserProfile();
                 }}>
                   <LinearGradient
-                    colors={['#7c3aed', '#ec4899']}
+                    colors={['#9D8CD9', '#D94CC2']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.modalOptionGradientBorder}
@@ -1204,7 +1210,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+    boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
     elevation: 3,
     maxWidth: 600, // Max width for web responsiveness
     alignSelf: 'center', // Center the card horizontally
@@ -1223,9 +1229,9 @@ const styles = StyleSheet.create({
     width: '90%',              // Use 90% width to prevent overflow
   },
   weeklySummaryContainer: {
-    backgroundColor: '#f8f4ff',
+    backgroundColor: '#E2DAFF',
     borderRadius: 16,
-    boxShadow: '0 4px 12px rgba(217, 70, 239, 0.15)',
+    boxShadow: '0 4px 12px rgba(217, 76, 194, 0.18)',
     elevation: 6,
   },
   highlightedContainer: {
@@ -1238,14 +1244,14 @@ const styles = StyleSheet.create({
   replyContainer: {
     marginLeft: 32,
     borderLeftWidth: 2,
-    borderLeftColor: '#7c3aed',
+    borderLeftColor: '#A240D1',
     paddingLeft: 20,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#FDEADF',
   },
   threadedChirpContainer: {
-    backgroundColor: '#f0f9ff',
+    backgroundColor: '#E2DAFF',
     borderLeftWidth: 3,
-    borderLeftColor: '#7c3aed',
+    borderLeftColor: '#A240D1',
     marginLeft: 8,
     borderRadius: 8,
   },
@@ -1264,8 +1270,8 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#14171a',
+    ...TYPO.heading,
+    color: '#6A4C92',
     lineHeight: 20, // Added line height for better spacing
   },
   handleContainer: {
@@ -1273,8 +1279,8 @@ const styles = StyleSheet.create({
   },
   handle: {
     fontSize: 13,
-    fontWeight: '400',
-    color: '#a78bfa',
+    ...TYPO.body,
+    color: '#A240D1',
     lineHeight: 18, // Added line height for better spacing
   },
   crownIcon: {
@@ -1283,7 +1289,8 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 14,
-    color: '#657786',
+    ...TYPO.body,
+    color: '#9D8CD9',
     marginLeft: 8,
   },
   weeklySummaryRow: {
@@ -1299,17 +1306,18 @@ const styles = StyleSheet.create({
   summaryBadgeText: {
     color: '#ffffff',
     fontSize: 12,
-    fontWeight: '500',
+    ...TYPO.bodyMedium,
   },
   summaryDate: {
     fontSize: 12,
-    color: '#657786',
+    ...TYPO.body,
+    color: '#9D8CD9',
     marginLeft: 8,
   },
   weeklySummaryTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#14171a',
+    ...TYPO.bodyMedium,
+    color: '#6A4C92',
     marginBottom: 8,
     marginLeft: 52, // Align with content below avatar
   },
@@ -1318,13 +1326,15 @@ const styles = StyleSheet.create({
   },
   moreText: {
     fontSize: 16,
-    color: '#657786',
+    ...TYPO.body,
+    color: '#9D8CD9',
     transform: [{ rotate: '90deg' }],
   },
   content: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#14171a',
+    ...TYPO.body,
+    color: '#6A4C92',
     marginLeft: 20, // Moved further left (reduced from 40)
     marginBottom: 8, // Added padding between content and image
   },
@@ -1353,8 +1363,8 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 14, // Increased from 12
-    color: '#657786',
-    fontWeight: '500',
+    ...TYPO.bodyMedium,
+    color: '#9D8CD9',
     marginLeft: 8, // Increased from 4
   },
   likeButton: {
@@ -1385,13 +1395,14 @@ const styles = StyleSheet.create({
     height: 24,
     flexShrink: 0,
     borderRadius: 6, // Smaller rounded square
-    backgroundColor: '#f8f9ff',
+    backgroundColor: '#E2DAFF',
     borderWidth: 1,
-    borderColor: '#e1e8ff',
+    borderColor: '#BEC6EB',
   },
   addReactionText: {
     fontSize: 14, // Slightly smaller and thinner
-    color: '#7c3aed',
+    ...TYPO.body,
+    color: '#A240D1',
     fontWeight: '300', // Much thinner weight
     textAlign: 'center',
     lineHeight: 14, // Match fontSize for perfect centering
@@ -1404,11 +1415,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    color: '#14171a',
+    ...TYPO.body,
+    color: '#6A4C92',
     minHeight: 60,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#e1e8ed',
+    borderColor: '#BEC6EB',
   },
   replyButtons: {
     flexDirection: 'row',
@@ -1421,11 +1433,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#e1e8ed',
+    borderColor: '#BEC6EB',
   },
   cancelButtonText: {
-    color: '#657786',
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
+    color: '#9D8CD9',
   },
   submitButtonContainer: {
     borderRadius: 20,
@@ -1438,11 +1450,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: '#e1e8ed',
+    backgroundColor: '#BEC6EB',
   },
   submitButtonText: {
     color: '#ffffff',
-    fontWeight: '600',
+    ...TYPO.bodyMedium,
   },
   nameContainer: {
     flexDirection: 'row',
@@ -1460,22 +1472,25 @@ const styles = StyleSheet.create({
     marginLeft: 0,
   },
   mentionText: {
-    color: '#7c3aed',
+    ...TYPO.body,
+    color: '#A240D1',
     fontSize: 15,
   },
   hashtagText: {
-    color: '#7c3aed',
+    ...TYPO.body,
+    color: '#A240D1',
   },
   reactionCountText: {
     fontSize: 13,
-    color: '#657786',
+    ...TYPO.bodyMedium,
+    color: '#9D8CD9',
     marginLeft: 8,
     alignSelf: 'center',
-    fontWeight: '500',
   },
   boldText: {
     fontWeight: '700',
-    color: '#14171a',
+    ...TYPO.body,
+    color: '#6A4C92',
   },
   repliesContainer: {
     marginTop: 12,
@@ -1490,7 +1505,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 2,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#A240D1',
     zIndex: 1,
   },
   replyWrapper: {
@@ -1510,7 +1525,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 2,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#A240D1',
     zIndex: 1,
   },
   nestedReplyWrapper: {
@@ -1521,13 +1536,15 @@ const styles = StyleSheet.create({
 
   loadingText: {
     fontSize: 14,
-    color: '#657786',
+    ...TYPO.body,
+    color: '#9D8CD9',
     textAlign: 'center',
     padding: 16,
   },
   noRepliesText: {
     fontSize: 14,
-    color: '#657786',
+    ...TYPO.body,
+    color: '#9D8CD9',
     textAlign: 'center',
     fontStyle: 'italic',
     padding: 16,
@@ -1541,9 +1558,9 @@ const styles = StyleSheet.create({
   },
   totalReactionsText: {
     fontSize: 12,
-    color: '#657786',
+    ...TYPO.bodyMedium,
+    color: '#9D8CD9',
     textAlign: 'center',
-    fontWeight: '500',
   },
   // Modal styles
   modalOverlay: {
@@ -1563,8 +1580,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#14171a',
+    ...TYPO.heading,
+    color: '#6A4C92',
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -1583,9 +1600,9 @@ const styles = StyleSheet.create({
   },
   modalOptionText: {
     fontSize: 16,
-    color: '#14171a',
+    ...TYPO.bodyMedium,
+    color: '#6A4C92',
     textAlign: 'center',
-    fontWeight: '600',
   },
   destructiveText: {
     color: '#dc2626',
@@ -1593,14 +1610,14 @@ const styles = StyleSheet.create({
   cancelOption: {
     marginTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e1e8ed',
+    borderTopColor: '#BEC6EB',
     paddingTop: 16,
   },
   cancelText: {
     fontSize: 16,
-    color: '#657786',
+    ...TYPO.bodyMedium,
+    color: '#9D8CD9',
     textAlign: 'center',
-    fontWeight: '500',
   },
   loadingContainer: {
     flex: 1,

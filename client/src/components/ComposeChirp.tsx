@@ -4,6 +4,7 @@ import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
 import { supabase } from '../lib/supabase';
 import ImagePickerButton from './ImagePickerButton';
+import { brandGradient, C, font } from '../lib/chirpBrand';
 import UserAvatar from './UserAvatar';
 
 interface ComposeChirpProps {
@@ -59,7 +60,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         paddingBottom: 4,
         paddingLeft: 16,
         paddingRight: 16,
-        boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+        boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
         maxWidth: 600,
         alignSelf: 'center',
         width: '100%'
@@ -73,8 +74,8 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         }}>
           <p style={{
             fontSize: 18,
-            color: '#6b7280',
-            fontWeight: '600'
+            color: C.mediumLavender,
+            ...font.bodyMedium,
           }}>Loading compose...</p>
         </div>
       </div>
@@ -227,7 +228,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const getCharCountColor = () => {
     if (remainingChars < 0) return '#ef4444'; // red
     if (remainingChars < 20) return '#f59e0b'; // yellow
-    return '#6b7280'; // gray
+    return C.mediumLavender;
   };
 
   const handleTextareaClick = () => {
@@ -263,7 +264,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       paddingBottom: isMobile ? 8 : 4,
       paddingLeft: 16,
       paddingRight: 16,
-      boxShadow: '0 2px 8px rgba(124, 58, 237, 0.08)',
+      boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
       maxWidth: '600px',
       alignSelf: 'center',
       width: '100%'
@@ -296,7 +297,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               height: 30,
               maxHeight: 120,
               padding: '8px 0',
-              color: '#1a1a1a',
+              color: C.deepPurple,
               width: '100%',
               resize: 'none',
               border: 'none',
@@ -304,10 +305,10 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               backgroundColor: 'transparent',
               overflow: 'auto',
               cursor: 'text',
-              fontFamily: 'inherit',
+              ...font.body,
               position: 'relative',
               zIndex: 2,
-              caretColor: '#1a1a1a'
+              caretColor: C.deepPurple
             }}
             placeholder="What's on your mind?"
             value={content}
@@ -390,7 +391,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 onImageSelected={handleImageSelected}
                 disabled={isPosting}
                 size={20}
-                color="#7c3aed"
+                color={C.vibrantPurple}
               />
               
               <span style={{
@@ -405,7 +406,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             
             <button
               style={{
-                background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+                background: brandGradient,
                 paddingLeft: 20,
                 paddingRight: 20,
                 paddingTop: 12,
@@ -413,7 +414,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                 borderRadius: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 3px 8px rgba(124, 58, 237, 0.3)',
+                boxShadow: '0 3px 8px rgba(162, 64, 209, 0.35)',
                 cursor: 'pointer',
                 opacity: ((!content.trim() && !selectedImage) || content.length > maxLength || isPosting) ? 0.5 : 1,
                 border: 'none'
@@ -424,7 +425,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               <span style={{
                 color: '#ffffff',
                 fontSize: 14,
-                fontWeight: '700'
+                ...font.bodyMedium,
               }}>
                 {isPosting ? "Posting..." : "Chirp"}
               </span>

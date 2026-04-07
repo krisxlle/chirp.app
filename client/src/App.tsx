@@ -72,7 +72,7 @@ function Router() {
 
   return (
     <div
-      className="max-w-md mx-auto bg-white dark:bg-gray-900 relative flex flex-col"
+      className="max-w-md mx-auto relative flex flex-col bg-[#E2DAFF] dark:bg-gray-900"
       style={{ minHeight: '100vh' }}
     >
       {isAuthenticated && <EmailVerificationBanner />}
