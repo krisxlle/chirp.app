@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
+import { getGroupUnreadCount } from '../lib/group-api';
 import { supabase } from '../lib/supabase';
 import { brandGradient, C } from '../lib/chirpBrand';
 import { CollectionIcon, GachaIcon, HomeIcon, MessageIcon, NotificationIcon, ProfileIcon } from './icons';
@@ -48,7 +49,6 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     queryFn: async () => {
       if (!user?.id) return { count: 0 };
       try {
-        // Get conversations where user is participant
         const { data: convos } = await supabase
           .from('conversations')
           .select('id')
@@ -65,17 +65,35 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
           .is('read_at', null);
 
         if (error) return { count: 0 };
+        console.log('📬 BottomNav DM unread count:', count);
         return { count: count || 0 };
       } catch {
         return { count: 0 };
       }
     },
     refetchInterval: 15000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    enabled: !!user,
+  });
+
+  const { data: groupData } = useQuery({
+    queryKey: ["group-unread-count", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { count: 0 };
+      try {
+        const count = await getGroupUnreadCount(user.id);
+        return { count };
+      } catch { return { count: 0 }; }
+    },
+    refetchInterval: 15000,
+    staleTime: 0,
+    refetchOnMount: 'always',
     enabled: !!user,
   });
 
   const actualUnreadCount = unreadCount ?? notificationData?.count ?? 0;
-  const dmUnreadCount = dmData?.count ?? 0;
+  const dmUnreadCount = (dmData?.count ?? 0) + (groupData?.count ?? 0);
 
   const navItems = [
     {
@@ -86,7 +104,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     },
     {
       key: "messages",
-      isActive: activeTab === "messages" || location.startsWith("/messages"),
+      isActive: activeTab === "messages" || location.startsWith("/messages") || location.startsWith("/group"),
       badge: dmUnreadCount > 0 ? dmUnreadCount : null,
       component: MessageIcon,
       path: "/messages",

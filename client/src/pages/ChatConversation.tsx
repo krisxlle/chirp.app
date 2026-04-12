@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocation, useRoute } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
@@ -33,6 +34,7 @@ function formatDateSeparator(dateStr: string): string {
 
 export default function ChatConversation() {
   const { user } = useSupabaseAuth();
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [, params] = useRoute('/messages/:conversationId');
   const conversationId = params?.conversationId || '';
@@ -90,9 +92,12 @@ export default function ChatConversation() {
       setMessages(data);
       setIsLoading(false);
 
-      // Mark as read
+      // Mark as read and update badge counts
       if (user?.id) {
-        markConversationRead(conversationId, user.id);
+        const marked = await markConversationRead(conversationId, user.id);
+        if (marked) {
+          await queryClient.refetchQueries({ queryKey: ['dm-unread-count'] });
+        }
       }
     };
 
@@ -128,7 +133,11 @@ export default function ChatConversation() {
           return [...prev, newMsg];
         });
 
-        markConversationRead(conversationId, user.id);
+        markConversationRead(conversationId, user.id).then((marked) => {
+          if (marked) {
+            queryClient.refetchQueries({ queryKey: ['dm-unread-count'] });
+          }
+        });
       },
       // On message updated (UPDATE) -- handles read receipts
       (updatedMsg) => {

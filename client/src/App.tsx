@@ -19,8 +19,10 @@ import ChatConversation from "./pages/ChatConversation";
 import ChirpDetail from "./pages/ChirpDetail";
 import CollectionPage from "./pages/CollectionPage";
 import Gacha from "./pages/Gacha";
+import GroupChat from "./pages/GroupChat";
 import HomePage from "./pages/HomePage";
 import Inbox from "./pages/Inbox";
+import NewGroupChat from "./pages/NewGroupChat";
 import NewMessage from "./pages/NewMessage";
 import NotFound from "./pages/not-found";
 import Notifications from "./pages/Notifications";
@@ -91,6 +93,8 @@ function Router() {
             <Route path="/messages" component={Inbox} />
             <Route path="/messages/new" component={NewMessage} />
             <Route path="/messages/:conversationId" component={ChatConversation} />
+            <Route path="/group/new" component={NewGroupChat} />
+            <Route path="/group/:groupId" component={GroupChat} />
             <Route path="/notifications" component={Notifications} />
             <Route path="/profile/:userId?" component={Profile} />
             <Route path="/collection" component={CollectionPage} />

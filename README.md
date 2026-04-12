@@ -26,6 +26,7 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 - **Search & Discovery**: Find users and content through search functionality
 - **Push Notifications**: Stay updated with real-time notifications
 - **Direct Messages**: Secure 1:1 real-time messaging with read receipts
+- **Group Chats**: Create named group conversations with multiple users
 - **Cross-platform**: Works on iOS, Android, and Web
 - **Privacy Controls**: Comprehensive privacy settings and data management
 - **Cookie Consent**: GDPR-compliant cookie consent banner
@@ -121,6 +122,8 @@ chirp.app/
      - `migrations/add_privacy_columns.sql`
      - `migrations/add_device_tracking.sql`
      - `migrations/add_direct_messages.sql`
+     - `migrations/add_handle_and_read_receipts.sql`
+    - `migrations/add_group_chats.sql`
    - Set up Supabase Storage buckets for `profile-images` and `banner-images`
 
 5. **Start the development server**

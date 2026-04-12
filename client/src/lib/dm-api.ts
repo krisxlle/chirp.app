@@ -227,21 +227,38 @@ export async function sendMessage(
  * Mark all messages in a conversation as read (messages not sent by current user).
  * Respects the user's read receipts setting.
  */
-export async function markConversationRead(conversationId: string, userId: string): Promise<void> {
+export async function markConversationRead(conversationId: string, userId: string): Promise<boolean> {
   // Check if user has read receipts enabled
   const readReceiptsEnabled = localStorage.getItem('chirp_read_receipts');
-  if (readReceiptsEnabled === 'false') return;
+  if (readReceiptsEnabled === 'false') return false;
 
-  const { error } = await supabase
+  // First check how many unread messages exist
+  const { count: unreadBefore } = await supabase
     .from('messages')
-    .update({ read_at: new Date().toISOString() })
+    .select('*', { count: 'exact', head: true })
     .eq('conversation_id', conversationId)
     .neq('sender_id', userId)
     .is('read_at', null);
 
+  console.log(`📬 markConversationRead: ${unreadBefore} unread messages in ${conversationId}`);
+
+  if (!unreadBefore || unreadBefore === 0) return false;
+
+  const { data, error } = await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .neq('sender_id', userId)
+    .is('read_at', null)
+    .select();
+
   if (error) {
     console.error('Error marking messages as read:', error);
+    return false;
   }
+
+  console.log(`✅ markConversationRead: marked ${data?.length ?? 0} messages as read`);
+  return (data?.length ?? 0) > 0;
 }
 
 /**
