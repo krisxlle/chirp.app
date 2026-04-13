@@ -579,6 +579,7 @@ export default function ChirpCard({
         marginTop: '3px',
         marginBottom: '3px',
         borderRadius: '16px',
+        border: `1px solid ${C.lightBlueGrey}`,
         paddingLeft: '16px',
         paddingRight: '16px',
         paddingTop: '10px',
@@ -588,12 +589,16 @@ export default function ChirpCard({
         alignSelf: 'center',
         width: '100%',
         cursor: 'pointer',
-        transition: 'background-color 0.2s'
+        transition: 'background-color 0.2s',
+        overflow: 'visible',
       }}
       onClick={handleChirpPress}
     >
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2px' }}>
-        <div onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }} style={{ marginLeft: '0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2px', overflow: 'visible' }}>
+        <div
+          onClick={(e) => { e.stopPropagation(); handleAvatarPress(); }}
+          style={{ marginLeft: '6px', marginRight: '4px', flexShrink: 0, overflow: 'visible' }}
+        >
           <UserAvatar user={chirp.author} size="md" showFrame={true} />
         </div>
         <div style={{ flex: 1, marginLeft: '12px' }}>

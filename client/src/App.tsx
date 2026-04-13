@@ -75,14 +75,15 @@ function Router() {
   return (
     <div
       className="max-w-md mx-auto relative flex flex-col bg-[#E2DAFF] dark:bg-gray-900"
-      style={{ minHeight: '100vh' }}
+      style={{ minHeight: '100dvh' }}
     >
       {isAuthenticated && <EmailVerificationBanner />}
       <div
-        className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
+        className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden bg-[#E2DAFF] dark:bg-gray-900"
         style={{
           paddingBottom: '88px', // reserve space so content can scroll above bottom nav
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorY: 'contain',
         }}
       >
         <Switch>

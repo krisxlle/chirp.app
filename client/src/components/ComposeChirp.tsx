@@ -1,5 +1,5 @@
 import { uploadChirpImage } from '@/lib/imageUpload';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
 import { supabase } from '../lib/supabase';
@@ -16,6 +16,12 @@ interface ComposeChirpProps {
   }) => Promise<void> | void;
 }
 
+/** Taller compose area; fixed empty height keeps placeholder at top (not vertically centered). */
+const COMPOSE_MIN_HEIGHT_PX = 116;
+const COMPOSE_MAX_HEIGHT_PX = 456;
+const AVATAR_COLUMN_PX = 45;
+const AVATAR_TEXT_GAP_PX = 10;
+const TOOLBAR_INDENT_PX = AVATAR_COLUMN_PX + AVATAR_TEXT_GAP_PX;
 
 export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [content, setContent] = useState("");
@@ -23,7 +29,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [, setIsUploadingImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+  const [composeHeight, setComposeHeight] = useState(COMPOSE_MIN_HEIGHT_PX);
+  const [composeScrolls, setComposeScrolls] = useState(false);
+
   // Refs for textarea focus handling
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -41,6 +49,22 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Lock empty state to a short height (React `style.height` must match — DOM-only height gets reset).
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    if (!content.trim()) {
+      setComposeHeight(COMPOSE_MIN_HEIGHT_PX);
+      setComposeScrolls(false);
+      return;
+    }
+    el.style.height = 'auto';
+    const sh = el.scrollHeight;
+    const next = Math.min(Math.max(sh, COMPOSE_MIN_HEIGHT_PX), COMPOSE_MAX_HEIGHT_PX);
+    setComposeHeight(next);
+    setComposeScrolls(sh > COMPOSE_MAX_HEIGHT_PX);
+  }, [content, authUser?.id]);
   
   const maxLength = 280;
   const remainingChars = maxLength - content.length;
@@ -61,8 +85,9 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         paddingLeft: 16,
         paddingRight: 16,
         boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
+        border: `1px solid ${C.lightBlueGrey}`,
         maxWidth: 600,
-        alignSelf: 'center',
+        alignSelf: 'stretch',
         width: '100%'
       }}>
         <div style={{
@@ -240,19 +265,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
     }
   };
 
-  // Auto-resize textarea based on content
-  const adjustTextareaHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
-    }
-  };
-
-  // Adjust height when content changes
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [content]);
-
   // Normal compose mode
   return (
     <div style={{
@@ -260,55 +272,70 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
       marginTop: 3,
       marginBottom: 3,
       borderRadius: 16,
-      paddingTop: isMobile ? 8 : 4,
-      paddingBottom: isMobile ? 8 : 4,
+      border: `1px solid ${C.lightBlueGrey}`,
+      paddingTop: isMobile ? 14 : 12,
+      paddingBottom: isMobile ? 18 : 16,
       paddingLeft: 16,
-      paddingRight: 16,
+      paddingRight: 22,
       boxShadow: '0 2px 8px rgba(162, 64, 209, 0.1)',
       maxWidth: '600px',
-      alignSelf: 'center',
-      width: '100%'
+      alignSelf: 'stretch',
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'stretch',
     }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'flex-start'
-      }}>
-        <UserAvatar user={user} size="md" showFrame={true} />
-        
-        <div style={{
-          flex: 1,
-          marginLeft: 8,
-          overflow: 'hidden',
-          cursor: 'text',
-          position: 'relative',
-          zIndex: 1,
-          minHeight: 'auto',
-          paddingTop: isMobile ? '12px' : '8px'
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: `${AVATAR_TEXT_GAP_PX}px`,
+          flexShrink: 0,
+          overflow: 'visible',
         }}
-        onClick={handleTextareaClick}
+      >
+        <div style={{ flexShrink: 0, overflow: 'visible', marginLeft: 4, marginRight: 2 }}>
+          <UserAvatar user={user} size="md" showFrame={true} />
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            cursor: 'text',
+            position: 'relative',
+            zIndex: 1,
+            paddingTop: 1,
+          }}
+          onClick={handleTextareaClick}
         >
           <textarea
             ref={textareaRef}
             className="compose-textarea"
             style={{
-              fontSize: 18,
-              lineHeight: 24,
-              height: 30,
-              maxHeight: 120,
-              padding: '8px 0',
+              fontSize: 17,
+              lineHeight: '22px',
+              height: composeHeight,
+              minHeight: COMPOSE_MIN_HEIGHT_PX,
+              maxHeight: COMPOSE_MAX_HEIGHT_PX,
+              padding: '4px 0 0 0',
+              margin: 0,
+              boxSizing: 'border-box',
               color: C.deepPurple,
               width: '100%',
               resize: 'none',
               border: 'none',
               outline: 'none',
               backgroundColor: 'transparent',
-              overflow: 'auto',
+              overflowY: composeScrolls ? 'auto' : 'hidden',
               cursor: 'text',
+              textAlign: 'left',
+              display: 'block',
               ...font.body,
               position: 'relative',
               zIndex: 2,
-              caretColor: C.deepPurple
+              caretColor: C.deepPurple,
             }}
             placeholder="What's on your mind?"
             value={content}
@@ -318,7 +345,6 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               handleTextareaClick();
             }}
             onFocus={() => {
-              // Ensure cursor is at the end when focused
               setTimeout(() => {
                 if (textareaRef.current) {
                   const length = textareaRef.current.value.length;
@@ -328,31 +354,32 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             }}
             maxLength={maxLength}
           />
-          
-          {/* Image Preview */}
+
           {selectedImage && (
-            <div style={{
-              marginTop: 12,
-              marginBottom: 8,
-              overflow: 'hidden',
-              borderRadius: 12
-            }}>
+            <div
+              style={{
+                marginTop: 8,
+                marginBottom: 6,
+                overflow: 'hidden',
+                borderRadius: 12,
+              }}
+            >
               <div style={{ position: 'relative' }}>
                 <img
                   src={selectedImage}
                   alt="Selected image"
                   style={{
                     maxWidth: '100%',
-                    maxHeight: 200,
+                    maxHeight: 160,
                     borderRadius: 12,
-                    objectFit: 'cover'
+                    objectFit: 'cover',
                   }}
                   onError={(e) => {
-                    // Prevent XSS by ensuring src is safe
                     e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIEVycm9yPC90ZXh0Pjwvc3ZnPg==';
                   }}
                 />
                 <button
+                  type="button"
                   style={{
                     position: 'absolute',
                     top: 4,
@@ -365,7 +392,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
                   }}
                   onClick={handleRemoveImage}
                 >
@@ -374,64 +401,77 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
               </div>
             </div>
           )}
-          
-          <div style={{
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 8,
+          paddingLeft: TOOLBAR_INDENT_PX,
+          paddingRight: 4,
+          flexShrink: 0,
+        }}
+      >
+        <div
+          style={{
             display: 'flex',
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: 4
-          }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center'
-            }}>
-              <ImagePickerButton
-                onImageSelected={handleImageSelected}
-                disabled={isPosting}
-                size={20}
-                color={C.vibrantPurple}
-              />
-              
-              <span style={{
-                fontSize: 14,
-                fontWeight: '500',
-                color: getCharCountColor(),
-                marginLeft: 12
-              }}>
-                {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
-              </span>
-            </div>
-            
-            <button
-              style={{
-                background: brandGradient,
-                paddingLeft: 20,
-                paddingRight: 20,
-                paddingTop: 12,
-                paddingBottom: 12,
-                borderRadius: 20,
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 3px 8px rgba(162, 64, 209, 0.35)',
-                cursor: 'pointer',
-                opacity: ((!content.trim() && !selectedImage) || content.length > maxLength || isPosting) ? 0.5 : 1,
-                border: 'none'
-              }}
-              onClick={handleSubmit}
-              disabled={(!content.trim() && !selectedImage) || content.length > maxLength || isPosting}
-            >
-              <span style={{
-                color: '#ffffff',
-                fontSize: 14,
-                ...font.bodyMedium,
-              }}>
-                {isPosting ? "Posting..." : "Chirp"}
-              </span>
-            </button>
-          </div>
+          }}
+        >
+          <ImagePickerButton
+            onImageSelected={handleImageSelected}
+            disabled={isPosting}
+            size={18}
+            color={C.vibrantPurple}
+          />
+
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: '500',
+              color: getCharCountColor(),
+              marginLeft: 10,
+            }}
+          >
+            {remainingChars < 0 ? `${Math.abs(remainingChars)} over` : `${remainingChars}`}
+          </span>
         </div>
+
+        <button
+          type="button"
+          style={{
+            background: brandGradient,
+            paddingLeft: 16,
+            paddingRight: 16,
+            paddingTop: 10,
+            paddingBottom: 10,
+            borderRadius: 18,
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 3px 8px rgba(162, 64, 209, 0.35)',
+            cursor: 'pointer',
+            opacity:
+              (!content.trim() && !selectedImage) || content.length > maxLength || isPosting ? 0.5 : 1,
+            border: 'none',
+          }}
+          onClick={handleSubmit}
+          disabled={(!content.trim() && !selectedImage) || content.length > maxLength || isPosting}
+        >
+          <span
+            style={{
+              color: '#ffffff',
+              fontSize: 13,
+              ...font.bodyMedium,
+            }}
+          >
+            {isPosting ? 'Posting...' : 'Chirp'}
+          </span>
+        </button>
       </div>
     </div>
   );

@@ -42,39 +42,34 @@ const getRarityFrameImage = (rarity: string) => {
 
 export default function ProfileFrame({ rarity, size = 60, profilePictureSize, children, style, customFrameImage }: ProfileFrameProps) {
   const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   
   // Use custom frame image if provided, otherwise use rarity-based image
   const frameImage = customFrameImage || getRarityFrameImage(rarity);
-  
-  // Debug logging for asset loading
-  console.log('🖼️ ProfileFrame debug:', {
-    rarity,
-    frameImage,
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
-    protocol: typeof window !== 'undefined' ? window.location.protocol : 'server',
-    fullUrl: typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}${frameImage}` : 'server',
-    imageError,
-    imageLoaded
-  });
-  
+
   const FRAME_FILL_SCALE_BY_RARITY: Record<string, number> = {
-    common: 1.36,
-    uncommon: 1.42,
-    rare: 1.42,
-    epic: 1.42,
-    legendary: 1.44,
-    mythic: 1.42,
+    common: 1.30,
+    uncommon: 1.36,
+    rare: 1.38,
+    epic: 1.36,
+    legendary: 1.38,
+    // Same fill + slot as common so ornate mythic art scales into the same feed footprint (no clipping).
+    mythic: 1.30,
   };
   const scale = FRAME_FILL_SCALE_BY_RARITY[rarity] ?? 1.42;
   const baseSize = profilePictureSize || size;
   // At large sizes (profile header), the assets' inner openings don't scale perfectly.
   // Slightly reduce the effective scale so the photo doesn't exceed the frame.
   const effectiveScale = baseSize >= 100 ? scale * 0.90 : scale;
-  const containerMultiplier = rarity === 'rare' ? 2.3 : 1.8;
+  // One layout slot for all non-rare frames in the feed: mythic PNG scales down inside the same box as common.
+  const containerMultiplier = rarity === 'rare' ? 2.3 : 1.92;
   const containerSize = Math.round(baseSize * containerMultiplier);
   const profileSize = Math.round(baseSize * effectiveScale);
-  const offset = rarity === 'rare' ? { x: 0, y: Math.max(1, Math.round(baseSize * 0.06)) } : { x: 0, y: 0 };
+  // Season 1 holes sit slightly left of center — same horizontal bias for every tier (including mythic).
+  const leftBias = Math.round(baseSize * 0.05);
+  const offset =
+    rarity === 'rare'
+      ? { x: 0, y: Math.max(1, Math.round(baseSize * 0.06)) }
+      : { x: -leftBias, y: 0 };
   const left = (containerSize - profileSize) / 2 + offset.x;
   const top = (containerSize - profileSize) / 2 + offset.y;
 
@@ -124,19 +119,21 @@ export default function ProfileFrame({ rarity, size = 60, profilePictureSize, ch
           }}
           style={{
             position: 'absolute',
+            left: 0,
+            top: rarity === 'rare' ? -2 : 0,
             width: containerSize,
             height: containerSize,
-            top: rarity === 'rare' ? -2 : 0,
             objectFit: 'contain',
             zIndex: 1,
             pointerEvents: 'none'
           }}
-          onLoad={() => setImageLoaded(true)}
         />
       )}
       {imageError && (
         <div style={{
           position: 'absolute',
+          left: 0,
+          top: 0,
           width: containerSize,
           height: containerSize,
           border: `3px solid ${getRarityColor(rarity)}`,

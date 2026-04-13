@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import {
-  GroupMessage,
-  getGroupMessages,
-  markGroupRead,
-  sendGroupMessage,
-  leaveGroup,
-  subscribeToGroupMessages,
+    GroupMessage,
+    getGroupMessages,
+    leaveGroup,
+    markGroupRead,
+    sendGroupMessage,
+    subscribeToGroupMessages,
 } from '../lib/group-api';
 import { supabase } from '../lib/supabase';
 
@@ -48,11 +48,27 @@ export default function GroupChat() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
+
+  const isNearBottom = () => {
+    const el = messagesScrollRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  };
+
+  const onMessagesScroll = () => {
+    stickToBottomRef.current = isNearBottom();
+  };
+
+  useEffect(() => {
+    stickToBottomRef.current = true;
+  }, [groupId]);
 
   useEffect(() => {
     if (!groupId) return;
@@ -113,7 +129,12 @@ export default function GroupChat() {
     return unsubscribe;
   }, [groupId, user?.id]);
 
-  useEffect(() => { scrollToBottom(); }, [messages]);
+  useEffect(() => {
+    if (isLoading) return;
+    if (stickToBottomRef.current) {
+      requestAnimationFrame(() => scrollToBottom('smooth'));
+    }
+  }, [messages, isLoading]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || isSending || !user?.id) return;
@@ -132,6 +153,8 @@ export default function GroupChat() {
       sender: { id: user.id, first_name: (user as any).user_metadata?.first_name || user.email?.split('@')[0] || '', last_name: '', handle: '', custom_handle: null, profile_image_url: null },
     };
     setMessages((prev) => [...prev, optimistic]);
+    stickToBottomRef.current = true;
+    requestAnimationFrame(() => scrollToBottom('auto'));
 
     const sent = await sendGroupMessage(groupId, user.id, content);
     if (sent) {
@@ -224,10 +247,15 @@ export default function GroupChat() {
       )}
 
       {/* Messages */}
-      <div style={{
+      <div
+        ref={messagesScrollRef}
+        onScroll={onMessagesScroll}
+        style={{
         flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0,
         padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px',
-      }}>
+        WebkitOverflowScrolling: 'touch',
+      }}
+      >
         {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
             <div style={{

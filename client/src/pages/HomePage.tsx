@@ -1,8 +1,8 @@
-﻿import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import ChirpCard from '../components/ChirpCard';
 import ComposeChirp from '../components/ComposeChirp';
+import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { brandGradient, C, font } from '../lib/chirpBrand';
 import { supabase } from '../lib/supabase';
 
@@ -780,33 +780,38 @@ export default function HomePage() {
     setLocation('/search');
   };
 
-  // Throttle scroll events to prevent excessive calls
-  const [lastScrollTime, setLastScrollTime] = useState(0);
-  
-  // Handle scroll for infinite loading (both feeds) with throttling
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const now = Date.now();
-    if (now - lastScrollTime < 400) return; // Throttle to 400ms like metro
-    
-    setLastScrollTime(now);
-    
-    const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200;
-    
-    // Check which feed we're in and load more accordingly
-    const isForYouFeed = feedType === 'forYou';
-    const hasMore = isForYouFeed ? hasMoreChirps : hasMoreCollectionChirps;
-    
-    if (isNearBottom && hasMore && !isLoadingMore) {
-      loadMoreChirps();
-    }
-  }, [feedType, hasMoreChirps, hasMoreCollectionChirps, isLoadingMore, loadMoreChirps, lastScrollTime]);
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  const loadMoreThrottleRef = useRef(0);
+
+  // Infinite scroll via sentinel — avoids a second scroll container (nested scroll broke the feed).
+  useEffect(() => {
+    const el = loadMoreSentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.some((e) => e.isIntersecting);
+        if (!hit) return;
+        const now = Date.now();
+        if (now - loadMoreThrottleRef.current < 400) return;
+        loadMoreThrottleRef.current = now;
+
+        const isForYouFeed = feedType === 'forYou';
+        const hasMore = isForYouFeed ? hasMoreChirps : hasMoreCollectionChirps;
+        if (hasMore && !isLoadingMore) {
+          loadMoreChirps();
+        }
+      },
+      { root: null, rootMargin: '240px', threshold: 0 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [feedType, hasMoreChirps, hasMoreCollectionChirps, isLoadingMore, loadMoreChirps]);
 
   return (
     <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100vh', 
+      width: '100%',
       backgroundColor: C.paleLavender,
       ...font.body,
     }}>
@@ -820,7 +825,8 @@ export default function HomePage() {
         paddingTop: '12px',
         paddingBottom: '12px',
         paddingLeft: '16px',
-        paddingRight: '16px'
+        paddingRight: '16px',
+        flexShrink: 0,
       }}>
         <h1 style={{ 
           fontSize: '24px', 
@@ -849,28 +855,27 @@ export default function HomePage() {
           </button>
         </div>
       </div>
-      {/* Chirps Feed with Infinite Scroll */}
-      <div 
-        style={{ 
-          flex: 1, 
-          overflowY: 'auto',
-          paddingBottom: '200px' // Extra padding to clear navigation bar and show compose button
-        }}
-        onScroll={handleScroll}
-      >
-        {/* Compose Chirp - Now scrolls with feed */}
-        <div style={{
-          paddingTop: '8px',
-          paddingBottom: '8px',
-          backgroundColor: C.paleLavender,
-          display: 'flex',
-          justifyContent: 'center'
-        }}>
-          <div style={{ maxWidth: '600px', width: '100%' }}>
-            <ComposeChirp onPost={handleNewChirp} />
-          </div>
-        </div>
 
+      {/* Compose — first in feed flow so it stays at the top (shell scrolls, no nested scroll) */}
+      <div style={{
+        paddingTop: '8px',
+        paddingBottom: '8px',
+        paddingLeft: '16px',
+        paddingRight: '16px',
+        backgroundColor: C.paleLavender,
+      }}>
+        <div style={{ maxWidth: '600px', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
+          <ComposeChirp onPost={handleNewChirp} />
+        </div>
+      </div>
+
+      {/* Chirps feed — flows in document order; App layout scrolls this page */}
+      <div
+        style={{
+          width: '100%',
+          paddingBottom: '200px', // clear bottom nav + FAB
+        }}
+      >
         {/* Initial Loading Animation */}
         {isLoading && forYouChirps.length === 0 && (
           <div style={{
@@ -1048,6 +1053,7 @@ export default function HomePage() {
                 )}
               </>
             )}
+              <div ref={loadMoreSentinelRef} style={{ height: 1, width: '100%' }} aria-hidden />
             </div>
           </div>
         ) : (
@@ -1137,6 +1143,7 @@ export default function HomePage() {
                 )}
               </>
             )}
+              <div ref={loadMoreSentinelRef} style={{ height: 1, width: '100%' }} aria-hidden />
             </div>
           </div>
         )}

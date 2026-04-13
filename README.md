@@ -51,6 +51,7 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 ### Key Components
 
 #### Core Components
+- `UserAvatar.tsx` / `ProfileFrame.tsx` — With `showFrame`, avatars always show a frame: equipped frame from Supabase when set, otherwise the common default; ornate mythic art uses the same layout slot and left bias as other feed frames so rows align and decorations are not clipped.
 - `ChirpCard.tsx` - Displays individual chirps with interactions
 - `ComposeChirp.tsx` - Create new chirps and replies
 - `HomePage.tsx` (root `components/`, used by Expo `index.js`) - Main feed with Chirp style guide colors; shell background `#E2DAFF` (pale lavender), cards white, warm `#FDEADF` reserved for nested reply accents. Montserrat + Inter via `ChirpApp` + `ChirpCard` / `ComposeChirp` / `BottomNavigation`. Parallel copy under `metro/components/`; **Expo dev uses `components/`.**

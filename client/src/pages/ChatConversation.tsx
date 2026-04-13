@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import {
-  Message,
-  getMessages,
-  markConversationRead,
-  sendMessage,
-  subscribeToMessages,
+    Message,
+    getMessages,
+    markConversationRead,
+    sendMessage,
+    subscribeToMessages,
 } from '../lib/dm-api';
 import { supabase } from '../lib/supabase';
 
@@ -46,11 +46,28 @@ export default function ChatConversation() {
   const [otherUser, setOtherUser] = useState<any>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
+
+  const isNearBottom = () => {
+    const el = messagesScrollRef.current;
+    if (!el) return true;
+    const threshold = 120;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  };
+
+  const onMessagesScroll = () => {
+    stickToBottomRef.current = isNearBottom();
+  };
+
+  useEffect(() => {
+    stickToBottomRef.current = true;
+  }, [conversationId]);
 
   // Load conversation partner info
   useEffect(() => {
@@ -150,10 +167,14 @@ export default function ChatConversation() {
     return unsubscribe;
   }, [conversationId, user?.id]);
 
-  // Scroll to bottom when messages change
+  // Only auto-scroll when the user is already near the bottom (or just finished loading).
+  // Otherwise every update (e.g. read receipts) yanks scroll and hides older messages.
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (isLoading) return;
+    if (stickToBottomRef.current) {
+      requestAnimationFrame(() => scrollToBottom('smooth'));
+    }
+  }, [messages, isLoading]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || isSending || !user?.id) return;
@@ -174,6 +195,8 @@ export default function ChatConversation() {
       created_at: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimisticMsg]);
+    stickToBottomRef.current = true;
+    requestAnimationFrame(() => scrollToBottom('auto'));
 
     const sent = await sendMessage(conversationId, user.id, content);
 
@@ -280,7 +303,10 @@ export default function ChatConversation() {
       </div>
 
       {/* Messages */}
-      <div style={{
+      <div
+        ref={messagesScrollRef}
+        onScroll={onMessagesScroll}
+        style={{
         flex: 1,
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -289,7 +315,9 @@ export default function ChatConversation() {
         display: 'flex',
         flexDirection: 'column',
         gap: '4px',
-      }}>
+        WebkitOverflowScrolling: 'touch',
+      }}
+      >
         {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
             <div style={{

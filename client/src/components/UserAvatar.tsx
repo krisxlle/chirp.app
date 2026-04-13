@@ -2,6 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useEquippedFrame } from '../contexts/EquippedFrameContext';
 import ProfileFrame from './ProfileFrame';
 
+type FrameRarity = 'mythic' | 'legendary' | 'epic' | 'rare' | 'uncommon' | 'common';
+
+function normalizeRarity(r?: string | null): FrameRarity {
+  const allowed: FrameRarity[] = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
+  const x = (r || '').toLowerCase() as FrameRarity;
+  return allowed.includes(x) ? x : 'common';
+}
+
 interface User {
   id: string;
   firstName?: string;
@@ -23,27 +31,16 @@ interface UserAvatarProps {
 
 export default function UserAvatar({ user, size = 'md', onPress, showFrame = false, style }: UserAvatarProps) {
   const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const { equippedFrames, fetchEquippedFrame } = useEquippedFrame();
-  const [equippedFrame, setEquippedFrame] = useState<any>(null);
-  
-  // Load equipped frame for the user
+
   useEffect(() => {
     if (user?.id) {
-      loadEquippedFrame();
+      void fetchEquippedFrame(user.id);
     }
+    // fetchEquippedFrame is stable enough for cache lookup; avoid re-fetch loops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const loadEquippedFrame = async () => {
-    try {
-      if (user?.id) {
-        const frame = await fetchEquippedFrame(user.id);
-        setEquippedFrame(frame);
-      }
-    } catch (error) {
-      console.error('Error loading equipped frame:', error);
-    }
-  };
   const getSizeStyles = () => {
     if (typeof size === 'number') {
       return { width: `${size}px`, height: `${size}px` };
@@ -77,6 +74,32 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
   const sizeStyles = getSizeStyles();
   const textSizeStyles = getTextSizeStyles();
 
+  const basePicturePx =
+    typeof size === 'number' ? size : parseInt(String(sizeStyles.width).replace('px', ''), 10);
+
+  const wrapWithProfileFrame = (node: React.ReactNode) => {
+    if (!showFrame) return node;
+    if (!user?.id) {
+      return (
+        <ProfileFrame rarity="common" profilePictureSize={basePicturePx}>
+          {node}
+        </ProfileFrame>
+      );
+    }
+    const equipped = equippedFrames[user.id];
+    const rarity = normalizeRarity(equipped?.rarity ?? undefined);
+    const customUrl = equipped?.imageUrl;
+    return (
+      <ProfileFrame
+        rarity={rarity}
+        profilePictureSize={basePicturePx}
+        customFrameImage={customUrl || undefined}
+      >
+        {node}
+      </ProfileFrame>
+    );
+  };
+
   if (!user) {
     const avatarContent = (
       <div style={{
@@ -98,19 +121,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       </div>
     );
 
-    if (showFrame && equippedFrame) {
-      return (
-        <ProfileFrame 
-          rarity={equippedFrame.rarity} 
-          profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
-          customFrameImage={equippedFrame.imageUrl}
-        >
-          {avatarContent}
-        </ProfileFrame>
-      );
-    }
-
-    return avatarContent;
+    return wrapWithProfileFrame(avatarContent);
   }
 
   // Generate a consistent color based on user ID
@@ -227,26 +238,7 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
       </div>
     );
 
-    if (equippedFrame && showFrame) {
-      console.log('🖼️ UserAvatar equipped frame debug:', {
-        userId: user.id,
-        userHandle: user.handle,
-        userName: user.firstName || user.customHandle,
-        equippedFrame: equippedFrame,
-        showFrame
-      });
-      return (
-        <ProfileFrame 
-          rarity={equippedFrame.rarity} 
-          profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
-          customFrameImage={equippedFrame.imageUrl}
-        >
-          {avatarContent}
-        </ProfileFrame>
-      );
-    }
-
-    return avatarContent;
+    return wrapWithProfileFrame(avatarContent);
   }
 
   const avatarContent = (
@@ -269,24 +261,5 @@ export default function UserAvatar({ user, size = 'md', onPress, showFrame = fal
     </div>
   );
 
-  if (equippedFrame && showFrame) {
-    console.log('🖼️ UserAvatar equipped frame debug (fallback):', {
-      userId: user.id,
-      userHandle: user.handle,
-      userName: user.firstName || user.customHandle,
-      equippedFrame: equippedFrame,
-      showFrame
-    });
-    return (
-      <ProfileFrame 
-        rarity={equippedFrame.rarity} 
-        profilePictureSize={typeof size === 'number' ? size : parseInt(sizeStyles.width)}
-        customFrameImage={equippedFrame.imageUrl}
-      >
-        {avatarContent}
-      </ProfileFrame>
-    );
-  }
-
-  return avatarContent;
+  return wrapWithProfileFrame(avatarContent);
 }
