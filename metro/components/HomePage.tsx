@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
   // Compose Modal Styles
   composeModalContainer: {
     flex: 1,
-    backgroundColor: C.paleLavender,
+    backgroundColor: '#ffffff',
   },
   composeModalHeader: {
     flexDirection: 'row',
@@ -794,6 +794,6 @@ const styles = StyleSheet.create({
   composeModalBody: {
     flex: 1,
     paddingTop: 14,
-    backgroundColor: C.paleLavender,
+    backgroundColor: '#ffffff',
   },
 });

@@ -182,7 +182,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const getCharCountStyle = (): React.CSSProperties => {
     if (remainingChars < 0) return { color: '#ef4444' };
     if (remainingChars < 20) return { color: '#f59e0b' };
-    return { color: C.mediumLavender, ...font.bodyMedium };
+    return { color: '#6b7280', ...font.bodyMedium };
   };
 
   // Normal compose mode
@@ -194,7 +194,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         <div className="flex-1">
           <textarea
             ref={textareaRef}
-            className="w-full min-h-[80px] resize-none border-none outline-none bg-transparent text-lg leading-6 dark:text-white placeholder:text-[#9D8CD9]"
+            className="w-full min-h-[80px] resize-none border-none outline-none bg-transparent text-lg leading-6 dark:text-white placeholder:text-gray-400"
             style={{
               fontSize: '18px',
               lineHeight: '24px',

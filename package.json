@@ -15,6 +15,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "dev": "expo start --web --port 5000",
+    "dev:vite": "vite --host",
     "build": "vite build",
     "build:production": "NODE_ENV=production vite build",
     "build:web": "vite build",

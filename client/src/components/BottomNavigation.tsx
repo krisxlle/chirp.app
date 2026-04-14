@@ -130,32 +130,23 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     },
   ];
 
-  const NOTIFICATIONS_ACTIVE_COLOR = '#A240D1';
-
-  const getNavButtonStyle = (key: string, isActive: boolean): React.CSSProperties => {
+  const getNavButtonStyle = (isActive: boolean): React.CSSProperties => {
     if (!isActive) {
       return {
         background: 'transparent',
         boxShadow: 'none',
-      };
-    }
-    if (key === 'notifications') {
-      return {
-        background: 'rgba(162, 64, 209, 0.14)',
-        boxShadow: 'none',
+        border: '1px solid transparent',
       };
     }
     return {
       background: brandGradient,
+      border: 'none',
       boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)',
     };
   };
 
-  const getNavIconColor = (key: string, isActive: boolean): string => {
-    if (!isActive) return C.deepPurple;
-    if (key === 'notifications') return NOTIFICATIONS_ACTIVE_COLOR;
-    return '#ffffff';
-  };
+  const getNavIconColor = (isActive: boolean): string =>
+    isActive ? '#ffffff' : C.deepPurple;
 
   const handleTabChange = (tab: string, path: string) => {
     console.log(`🔄 Navigation: Switching from ${activeTab || location} to ${tab}`);
@@ -206,10 +197,10 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
               paddingRight: '12px',
               borderRadius: '12px',
               minWidth: '56px',
-              border: 'none',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              ...getNavButtonStyle(item.key, item.isActive),
+              boxSizing: 'border-box',
+              ...getNavButtonStyle(item.isActive),
             }}
             onClick={() => handleTabChange(item.key, item.path)}
           >
@@ -221,7 +212,7 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
             }}>
               <item.component
                 size={22}
-                color={getNavIconColor(item.key, item.isActive)}
+                color={getNavIconColor(item.isActive)}
               />
               
               {/* Notification badge */}

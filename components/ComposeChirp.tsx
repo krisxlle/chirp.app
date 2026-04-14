@@ -183,7 +183,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const getCharCountColor = () => {
     if (remainingChars < 0) return '#ef4444'; // red
     if (remainingChars < 20) return '#f59e0b'; // yellow
-    return C.mediumLavender;
+    return '#6b7280';
   };
 
   // Normal compose mode
@@ -197,7 +197,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
             ref={textInputRef}
             style={styles.textInput}
             placeholder="What's on your mind?"
-            placeholderTextColor={C.mediumLavender}
+            placeholderTextColor="#9ca3af"
             value={content}
             onChangeText={setContent}
             multiline
@@ -352,11 +352,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E2DAFF',
+    backgroundColor: '#ffffff',
   },
   loadingText: {
     fontSize: 18,
     ...TYPO.bodyMedium,
-    color: C.mediumLavender,
+    color: '#6b7280',
   },
 });

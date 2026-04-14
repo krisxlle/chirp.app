@@ -365,7 +365,7 @@ export default function HomePage() {
             </div>
             <div
               className="pt-3.5"
-              style={{ backgroundColor: C.paleLavender }}
+              style={{ backgroundColor: '#ffffff' }}
             >
               <ComposeChirp 
                 onPost={async (content, imageData) => {

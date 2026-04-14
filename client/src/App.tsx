@@ -81,7 +81,8 @@ function Router() {
       <div
         className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden bg-[#E2DAFF] dark:bg-gray-900"
         style={{
-          paddingBottom: '88px', // reserve space so content can scroll above bottom nav
+          // Only reserve space when bottom nav is shown (logged-in shell)
+          paddingBottom: isAuthenticated ? '88px' : 0,
           WebkitOverflowScrolling: 'touch',
           overscrollBehaviorY: 'contain',
         }}

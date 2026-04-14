@@ -9,6 +9,7 @@ import GearIcon from '../components/icons/GearIcon';
 import { getOrCreateConversation } from '../lib/dm-api';
 import LinkIcon from '../components/icons/LinkIcon';
 import { useLike } from '../contexts/LikeContext';
+import { C, font } from '../lib/chirpBrand';
 import { supabase } from '../lib/supabase';
 
 // Profile Frame Functions - Inline to avoid import issues
@@ -986,7 +987,7 @@ export default function Profile() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#ffffff',
+        backgroundColor: C.paleLavender,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -1008,7 +1009,7 @@ export default function Profile() {
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#ffffff',
+        backgroundColor: C.paleLavender,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -1017,7 +1018,7 @@ export default function Profile() {
           <h2 style={{
             fontSize: '20px',
             fontWeight: '600',
-            color: '#111827',
+            color: C.deepPurple,
             marginBottom: '8px',
             margin: 0
           }}>User not found</h2>
@@ -1037,11 +1038,12 @@ export default function Profile() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#ffffff',
+      width: '100%',
+      backgroundColor: C.paleLavender,
       paddingBottom: '80px', // Space for bottom navigation
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center' // Center content like Metro
+      alignItems: 'stretch',
     }}>
       {/* Header */}
       <div style={{
@@ -1049,7 +1051,7 @@ export default function Profile() {
         top: 0,
         zIndex: 50,
         backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e1e8ed',
+        borderBottom: `1px solid ${C.lightBlueGrey}`,
         paddingLeft: '16px',
         paddingRight: '16px',
         paddingTop: '12px',
@@ -1075,7 +1077,8 @@ export default function Profile() {
         >
           <span style={{
             fontSize: '20px',
-            color: '#14171a'
+            color: C.deepPurple,
+            ...font.heading,
           }}>←</span>
         </button>
         
@@ -1083,17 +1086,18 @@ export default function Profile() {
           flex: 1
         }}>
           <h1 style={{
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: '#14171a',
-            margin: 0
+            fontSize: '24px',
+            color: C.deepPurple,
+            margin: 0,
+            ...font.heading,
           }}>
-            Thread
+            Profile
           </h1>
           <p style={{
             fontSize: '13px',
-            color: '#657786',
-            margin: 0
+            color: C.mediumLavender,
+            margin: 0,
+            ...font.body,
           }}>
             {userChirps.length} chirps
           </p>
@@ -1121,7 +1125,7 @@ export default function Profile() {
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f2f5'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <GearIcon size={16} color="#7c3aed" />
+            <GearIcon size={16} color={C.deepPurple} />
           </button>
         )}
       </div>
@@ -1130,7 +1134,8 @@ export default function Profile() {
       <div style={{ 
         position: 'relative',
         width: '100%',
-        maxWidth: '600px' // Match Metro width
+        maxWidth: '600px',
+        alignSelf: 'center',
       }}>
         {/* Banner */}
         <div style={{ 
@@ -1163,33 +1168,35 @@ export default function Profile() {
           />
         </div>
         
-        {/* Profile Avatar - Top half overlapping banner, above profile info */}
+        {/* Profile Avatar - left side, 1/4 over banner */}
         <div style={{
           position: 'absolute',
-          top: '25%', // Move up so top half overlaps banner and sits above profile info
-          left: '50%', // Center horizontally on banner
-          transform: 'translate(-50%, -50%)', // Center the element
+          top: '166px',
+          left: '16px',
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'visible' // Ensure frame is not clipped
+          overflow: 'visible'
         }}>
           {equippedFrame ? (
-            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={120} customFrameImage={equippedFrame.imageUrl}>
-              <UserAvatar user={user} size={120} />
+            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={104} customFrameImage={equippedFrame.imageUrl}>
+              <UserAvatar user={user} size={104} />
             </ProfileFrame>
           ) : (
             <div style={{
-              width: '216px',
-              height: '216px',
-              borderRadius: '108px',
+              width: '104px',
+              height: '104px',
+              borderRadius: '52px',
               overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              border: '4px solid #ffffff',
+              boxShadow: '0 4px 14px rgba(106, 76, 146, 0.28)',
+              backgroundColor: '#ffffff',
             }}>
-              <UserAvatar user={user} size={90} />
+              <UserAvatar user={user} size={104} />
             </div>
           )}
         </div>
@@ -1200,14 +1207,15 @@ export default function Profile() {
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
-          marginTop: '60px' // Reduced to remove white space between photo and info
+          marginTop: 0,
+          paddingTop: '14px',
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
             gap: '16px'
           }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, marginLeft: '120px' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1437,7 +1445,7 @@ export default function Profile() {
             paddingLeft: '16px',
             paddingRight: '16px',
             backgroundColor: '#ffffff',
-            borderBottom: '1px solid #e1e8ed',
+            borderBottom: `1px solid ${C.lightBlueGrey}`,
             marginTop: '16px'
           }}>
             <div style={{
@@ -1516,7 +1524,14 @@ export default function Profile() {
         paddingLeft: '16px', 
         paddingRight: '16px',
         width: '100%',
-        maxWidth: '600px' // Match Metro width
+        maxWidth: '600px',
+        alignSelf: 'center',
+        marginTop: '12px',
+        backgroundColor: '#ffffff',
+        borderRadius: '14px',
+        border: `1px solid ${C.lightBlueGrey}`,
+        paddingTop: '10px',
+        paddingBottom: '12px',
       }}>
         <div style={{
           display: 'flex',

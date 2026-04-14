@@ -296,16 +296,16 @@ export default function Gacha() {
       </div>
 
       {/* Crystal Balance */}
-      <div className="px-6 mb-4">
+      <div className="px-4 mb-3">
         <Card className="max-w-[600px] mx-auto border-2 border-purple-500">
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             <Dialog open={showCrystalInfoModal} onOpenChange={setShowCrystalInfoModal}>
               <DialogTrigger asChild>
-                <div className="flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-4">
-                    <Sparkles className="h-8 w-8 text-white" />
+                <div className="flex items-center justify-center cursor-pointer hover:scale-105 transition-transform gap-3">
+                  <div className="w-11 h-11 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shrink-0">
+                    <Sparkles className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-5xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                  <span className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
                     {getCurrentCrystalBalance().toLocaleString()}
                   </span>
                 </div>
@@ -376,17 +376,49 @@ export default function Gacha() {
         </Card>
       </div>
 
-      {/* Gacha Banner - main visual */}
-      <div className="relative w-full" style={{ height: '70vh', minHeight: 400 }}>
+      {/* Full banner visible (contain); frame height caps scroll */}
+      <div className="relative w-full overflow-hidden rounded-xl bg-[#E2DAFF] h-[clamp(260px,calc(100dvh-212px),680px)]">
         <img
           src="/assets/Gacha banner.png"
           alt="Gacha Banner"
-          className="w-full h-full object-contain"
+          className="absolute inset-0 h-full w-full object-contain object-center rounded-xl"
         />
-        
-        {/* Loading Animation Overlay */}
+
+        {!isRolling && (
+          <div className="absolute inset-x-0 bottom-[12%] flex justify-center gap-3 px-3 z-[2] pointer-events-none">
+            <div className="flex gap-3 pointer-events-auto flex-wrap justify-center">
+              <Button
+                onClick={() => rollForProfile()}
+                disabled={isRolling || getCurrentCrystalBalance() < 100}
+                className="shadow-lg bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-5 py-2.5 rounded-full font-bold min-w-[108px] h-auto"
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[15px]">Open 1</span>
+                  <div className="flex items-center">
+                    <Sparkles className="h-3.5 w-3.5 mr-1" />
+                    <span className={`text-[13px] ${getCurrentCrystalBalance() >= 100 ? 'text-white' : 'text-red-300'}`}>100</span>
+                  </div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => rollForProfile(10)}
+                disabled={isRolling || getCurrentCrystalBalance() < 950}
+                className="shadow-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 py-2.5 rounded-full font-bold min-w-[108px] h-auto"
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[15px]">Open 10</span>
+                  <div className="flex items-center">
+                    <Sparkles className="h-3.5 w-3.5 mr-1" />
+                    <span className={`text-[13px] ${getCurrentCrystalBalance() >= 950 ? 'text-white' : 'text-red-300'}`}>950</span>
+                  </div>
+                </div>
+              </Button>
+            </div>
+          </div>
+        )}
+
         {isRolling && (
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 opacity-90 flex items-center justify-center">
+          <div className="absolute inset-0 z-10 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 opacity-90 flex items-center justify-center rounded-xl">
             <div className="text-center text-white">
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
               <h2 className="text-3xl font-bold mb-2">Drawing capsules...</h2>
@@ -394,42 +426,6 @@ export default function Gacha() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Extra white space below banner so you can scroll the image fully above the bottom bar */}
-      <div className="w-full h-24 bg-white" />
-
-      {/* Capsule Buttons - remain below the extra white space */}
-      <div className="flex justify-center px-6 pt-6 pb-32">
-        <div className="flex flex-wrap justify-center gap-4">
-          <Button
-            onClick={() => rollForProfile()}
-            disabled={isRolling || getCurrentCrystalBalance() < 100}
-            className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-8 py-3 rounded-full font-bold text-lg min-w-[140px]"
-          >
-            <div className="flex flex-col items-center">
-              <span>Open 1</span>
-              <div className="flex items-center mt-1">
-                <Sparkles className="h-4 w-4 mr-1" />
-                <span className={getCurrentCrystalBalance() >= 100 ? 'text-white' : 'text-red-400'}>100</span>
-              </div>
-            </div>
-          </Button>
-          
-          <Button
-            onClick={() => rollForProfile(10)}
-            disabled={isRolling || getCurrentCrystalBalance() < 950}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 rounded-full font-bold text-lg min-w-[140px]"
-          >
-            <div className="flex flex-col items-center">
-              <span>Open 10</span>
-              <div className="flex items-center mt-1">
-                <Sparkles className="h-4 w-4 mr-1" />
-                <span className={getCurrentCrystalBalance() >= 950 ? 'text-white' : 'text-red-400'}>950</span>
-              </div>
-            </div>
-          </Button>
-        </div>
       </div>
 
       {/* Pulled Card Modal */}

@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     minWidth: 56, // Keep minimum width the same
     shadowColor: C.vibrantPurple,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 8,
   },

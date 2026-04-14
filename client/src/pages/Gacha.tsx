@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import { useToast } from '../hooks/use-toast';
+import { C, font } from '../lib/chirpBrand';
 import { supabase } from '../lib/supabase';
 
 // Flag for testing; keep false in production
@@ -601,31 +602,39 @@ export default function Gacha() {
     }, 2000); // 2 second animation
   };
 
+  /** Fill space between crystal row and bottom nav (~12–16px breathing room via calc). */
+  const bannerFrameHeight = 'clamp(260px, calc(100dvh - 212px), 680px)';
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#f8fafc'
+        backgroundColor: C.paleLavender,
+        ...font.body,
+        boxSizing: 'border-box',
       }}
     >
-      {/* Header */}
+      {/* Header — match HomePage */}
       <div style={{
         flexShrink: 0,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingLeft: '20px',
-        paddingRight: '20px',
-        paddingTop: '60px',
-        paddingBottom: '20px'
+        backgroundColor: '#ffffff',
+        borderBottom: `1px solid ${C.lightBlueGrey}`,
+        paddingTop: '12px',
+        paddingBottom: '12px',
+        paddingLeft: '16px',
+        paddingRight: '16px',
       }}>
         <h1 style={{
-          fontSize: '28px',
-          fontWeight: 'bold',
-          color: '#1f2937'
+          fontSize: '24px',
+          color: C.deepPurple,
+          margin: 0,
+          ...font.heading,
         }}>
-          Chirp Gacha
+          Gacha
         </h1>
         <button
           onClick={() => setShowHelpModal(true)}
@@ -655,16 +664,16 @@ export default function Gacha() {
       {/* Crystal Balance */}
       <div style={{
         flexShrink: 0,
-        paddingLeft: '20px',
-        paddingRight: '20px',
-        marginBottom: '20px'
+        paddingLeft: '16px',
+        paddingRight: '16px',
+        marginBottom: '12px'
       }}>
         <div
           onClick={() => setShowCrystalInfoModal(true)}
           style={{
-            borderRadius: '16px',
-            padding: '16px',
-            border: '2px solid #C671FF',
+            borderRadius: '12px',
+            padding: '10px 14px',
+            border: `2px solid ${C.vibrantPurple}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -680,13 +689,14 @@ export default function Gacha() {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <ChirpCrystalIcon size={60} />
+            <ChirpCrystalIcon size={36} />
             <span style={{
-              fontSize: '48px',
+              fontSize: '28px',
               fontWeight: 'bold',
-              color: '#C671FF',
-              marginLeft: '12px',
-              lineHeight: '56px'
+              color: C.vibrantPurple,
+              marginLeft: '10px',
+              lineHeight: 1.1,
+              ...font.heading,
             }}>
               {getCurrentCrystalBalance().toLocaleString()}
             </span>
@@ -694,218 +704,207 @@ export default function Gacha() {
         </div>
       </div>
 
-      {/* Gacha Banner */}
-      <div style={{
-        marginLeft: '-150px',
-        marginRight: '-150px',
-        width: 'calc(100vw + 300px)',
-        maxWidth: 'calc(100vw + 300px)',
-        alignSelf: 'center',
-        position: 'relative',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }}>
-        <img
-          src="/assets/Gacha banner.png"
-          alt="Gacha Banner"
+      {/* Gacha banner — contain shows entire asset inside frame */}
+      <div
+        style={{
+          flexShrink: 0,
+          width: '100%',
+          paddingLeft: 0,
+          paddingRight: 0,
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
           style={{
+            position: 'relative',
             width: '100%',
-            height: '100%',
-            borderRadius: '16px',
-            objectFit: 'contain'
+            height: bannerFrameHeight,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            backgroundColor: C.paleLavender,
           }}
-        />
-        
-        {/* Loading Animation Overlay */}
-        {isRolling && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '16px'
-          }}>
-            <video
-              autoPlay
-              loop={false}
-              muted
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '16px'
-              }}
-              onEnded={() => setIsRolling(false)}
-            >
-              <source src="/public/assets/gacha-opening-animation.mp4" type="video/mp4" />
-            </video>
-            {/* Loading Text Overlay */}
-            <div style={{
+        >
+          <img
+            src="/assets/Gacha banner.png"
+            alt="Open a capsule"
+            style={{
               position: 'absolute',
-              bottom: '30%',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              textAlign: 'center',
-              color: 'white'
-            }}>
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                marginBottom: '8px',
-                margin: 0,
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-              }}>Drawing capsules...</h2>
-              <p style={{
-                fontSize: '16px',
-                margin: 0,
-                textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
-              }}>Please wait</p>
-            </div>
-          </div>
-        )}
-      </div>
+              left: 0,
+              top: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              objectPosition: 'center center',
+              display: 'block',
+            }}
+          />
 
-      {/* Extra white space directly below banner so it can scroll above bottom nav */}
-      <div style={{ height: '120px', backgroundColor: '#f8fafc', flexShrink: 0 }} />
-
-      {/* Capsule Buttons */}
-      <div style={{
-        flexShrink: 0,
-        marginTop: '16px',
-        display: 'flex',
-        justifyContent: 'center',
-        paddingLeft: '24px',
-        paddingRight: '24px',
-        paddingBottom: '16px'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '20px',
-          maxWidth: '500px',
-          width: '100%'
-        }}>
-          <button
-            onClick={() => rollForFrame(1)}
-            disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 100)}
-            style={{
-              borderRadius: '25px',
-              paddingTop: '12px',
-              paddingBottom: '12px',
-              paddingLeft: '20px',
-              paddingRight: '20px',
-              minWidth: '120px',
-              background: 'linear-gradient(135deg, #6b7280, #4b5563)',
-              color: 'white',
-              border: 'none',
-              cursor: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'pointer' : 'not-allowed',
-              opacity: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 1 : 0.6,
-              transition: 'all 0.2s',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center'
-            }}
-            onMouseEnter={(e) => {
-              if (FREE_PULLS || getCurrentCrystalBalance() >= 100) {
-                e.currentTarget.style.transform = 'scale(1.05)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              width: '100%'
-            }}>
-              <span style={{
-                fontSize: '16px',
-                fontWeight: 'bold',
-                marginBottom: '4px'
-              }}>Open 1</span>
-              <div style={{
+          {!isRolling && (
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: '12%',
                 display: 'flex',
+                justifyContent: 'center',
                 alignItems: 'center',
-                marginTop: '4px'
-              }}>
-                <ChirpCrystalIcon size={16} color="white" />
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  marginLeft: '4px',
-                  color: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'white' : '#fca5a5'
-                }}>100</span>
+                gap: 'clamp(8px, 3vw, 16px)',
+                paddingLeft: '12px',
+                paddingRight: '12px',
+                zIndex: 2,
+                pointerEvents: 'none',
+              }}
+            >
+              <div style={{ display: 'flex', gap: 'clamp(8px, 3vw, 16px)', pointerEvents: 'auto' }}>
+                <button
+                  onClick={() => rollForFrame(1)}
+                  disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 100)}
+                  style={{
+                    borderRadius: '25px',
+                    paddingTop: '10px',
+                    paddingBottom: '10px',
+                    paddingLeft: '16px',
+                    paddingRight: '16px',
+                    minWidth: '108px',
+                    background: 'linear-gradient(135deg, #6b7280, #4b5563)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'pointer' : 'not-allowed',
+                    opacity: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 1 : 0.6,
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (FREE_PULLS || getCurrentCrystalBalance() >= 100) {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <span style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '2px' }}>Open 1</span>
+                  <div style={{ display: 'flex', alignItems: 'center', marginTop: '2px' }}>
+                    <ChirpCrystalIcon size={14} color="white" />
+                    <span style={{
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      marginLeft: '4px',
+                      color: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'white' : '#fca5a5',
+                    }}>100</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => rollForFrame(10)}
+                  disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 950)}
+                  style={{
+                    borderRadius: '25px',
+                    paddingTop: '10px',
+                    paddingBottom: '10px',
+                    paddingLeft: '16px',
+                    paddingRight: '16px',
+                    minWidth: '108px',
+                    background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'pointer' : 'not-allowed',
+                    opacity: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 1 : 0.6,
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    boxShadow: '0 4px 14px rgba(162, 64, 209, 0.35)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (FREE_PULLS || getCurrentCrystalBalance() >= 950) {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <span style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '2px' }}>Open 10</span>
+                  <div style={{ display: 'flex', alignItems: 'center', marginTop: '2px' }}>
+                    <ChirpCrystalIcon size={14} color="white" />
+                    <span style={{
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      marginLeft: '4px',
+                      color: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'white' : '#fca5a5',
+                    }}>950</span>
+                  </div>
+                </button>
               </div>
             </div>
-          </button>
-          
-          <button
-            onClick={() => rollForFrame(10)}
-            disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 950)}
-            style={{
-              borderRadius: '25px',
-              paddingTop: '12px',
-              paddingBottom: '12px',
-              paddingLeft: '20px',
-              paddingRight: '20px',
-              minWidth: '120px',
-              background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
-              color: 'white',
-              border: 'none',
-              cursor: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'pointer' : 'not-allowed',
-              opacity: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 1 : 0.6,
-              transition: 'all 0.2s',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center'
-            }}
-            onMouseEnter={(e) => {
-              if (FREE_PULLS || getCurrentCrystalBalance() >= 950) {
-                e.currentTarget.style.transform = 'scale(1.05)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              width: '100%'
-            }}>
-              <span style={{
-                fontSize: '16px',
-                fontWeight: 'bold',
-                marginBottom: '4px'
-              }}>Open 10</span>
-              <div style={{
+          )}
+
+          {isRolling && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
                 display: 'flex',
                 alignItems: 'center',
-                marginTop: '4px'
-              }}>
-                <ChirpCrystalIcon size={16} color="white" />
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  marginLeft: '4px',
-                  color: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'white' : '#fca5a5'
-                }}>950</span>
+                justifyContent: 'center',
+                borderRadius: '16px',
+                zIndex: 10,
+              }}
+            >
+              <video
+                autoPlay
+                loop={false}
+                muted
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  objectPosition: 'center center',
+                  backgroundColor: '#1f2937',
+                }}
+                onEnded={() => setIsRolling(false)}
+              >
+                <source src="/public/assets/gacha-opening-animation.mp4" type="video/mp4" />
+              </video>
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '18%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  textAlign: 'center',
+                  color: 'white',
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    margin: '0 0 4px 0',
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                    ...font.heading,
+                  }}
+                >
+                  Drawing capsules...
+                </h2>
+                <p
+                  style={{
+                    fontSize: '14px',
+                    margin: 0,
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  Please wait
+                </p>
               </div>
             </div>
-          </button>
+          )}
         </div>
       </div>
-
-      {/* Spacer so content can scroll above fixed bottom nav */}
-      <div style={{ height: '120px', flexShrink: 0 }} />
 
       {/* Help Modal */}
       {showHelpModal && (

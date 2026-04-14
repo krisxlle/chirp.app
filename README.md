@@ -128,9 +128,9 @@ chirp.app/
    - Set up Supabase Storage buckets for `profile-images` and `banner-images`
 
 5. **Start the development server**
-   ```bash
-   npx expo start
-   ```
+   - **Expo (mobile / Metro):** `npx expo start`
+   - **Expo web on port 5000:** `npm run dev`
+   - **Vite client (`client/`, API proxy to port 5002):** `npm run dev:vite` — binds on all interfaces (`--host`) so you can use your computer’s LAN IP on a phone browser; do not run this at the same time as `npm run dev` (both default to port 5000 unless you change one).
 
 ## 🔧 Key Technologies
 

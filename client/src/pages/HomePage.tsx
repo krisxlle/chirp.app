@@ -1232,7 +1232,7 @@ export default function HomePage() {
                 flex: 1,
                 overflow: 'auto',
                 paddingTop: 14,
-                backgroundColor: C.paleLavender,
+                backgroundColor: '#ffffff',
               }}
             >
               <ComposeChirp 

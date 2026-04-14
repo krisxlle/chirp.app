@@ -99,7 +99,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
         }}>
           <p style={{
             fontSize: 18,
-            color: C.mediumLavender,
+            color: '#6b7280',
             ...font.bodyMedium,
           }}>Loading compose...</p>
         </div>
@@ -253,7 +253,7 @@ export default function ComposeChirp({ onPost }: ComposeChirpProps) {
   const getCharCountColor = () => {
     if (remainingChars < 0) return '#ef4444'; // red
     if (remainingChars < 20) return '#f59e0b'; // yellow
-    return C.mediumLavender;
+    return '#6b7280';
   };
 
   const handleTextareaClick = () => {

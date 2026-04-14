@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
 import UserAvatar from '../components/UserAvatar';
 import ChirpCard from '../components/ChirpCard';
+import { C, font } from '../lib/chirpBrand';
 
 /** Chirp marketing UI tokens (matches tailwind `chirp.*`) */
 const CHIRP_PRIMARY = '#6A4C92';
@@ -10,10 +11,6 @@ const CHIRP_BRIGHT = '#A240D1';
 const CHIRP_LAVENDER = '#E2DAFF';
 const CHIRP_SUBTITLE = '#9D8CD9';
 
-const fontMontserratBold: React.CSSProperties = {
-  fontFamily: '"Montserrat", system-ui, sans-serif',
-  fontWeight: 700,
-};
 const fontInter: React.CSSProperties = {
   fontFamily: '"Inter", system-ui, sans-serif',
 };
@@ -436,7 +433,7 @@ export default function Notifications() {
         top: 0,
         zIndex: 50,
         backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
+        borderBottom: `1px solid ${C.lightBlueGrey}`,
         paddingLeft: '16px',
         paddingRight: '16px',
         paddingTop: '12px',
@@ -452,12 +449,12 @@ export default function Notifications() {
             alignItems: 'center',
             gap: '8px'
           }}>
-            <BellIcon size={24} color={CHIRP_BRIGHT} />
+            <BellIcon size={24} color={C.deepPurple} />
             <h1 style={{
               fontSize: '24px',
               margin: 0,
-              color: CHIRP_PRIMARY,
-              ...fontMontserratBold,
+              color: C.deepPurple,
+              ...font.heading,
             }}>Notifications</h1>
             {unreadCount > 0 && (
               <div style={{
@@ -637,7 +634,7 @@ export default function Notifications() {
                 margin: 0,
                 marginTop: '16px',
                 marginBottom: '8px',
-                ...fontMontserratBold,
+                ...font.heading,
               }}
             >
               No notifications yet

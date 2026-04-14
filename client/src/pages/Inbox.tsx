@@ -9,6 +9,7 @@ import {
   subscribeToConversationUpdates,
 } from '../lib/dm-api';
 import { GroupChat, getGroupChats } from '../lib/group-api';
+import { C, font } from '../lib/chirpBrand';
 
 function formatTimeAgo(dateStr: string): string {
   const now = Date.now();
@@ -66,21 +67,22 @@ export default function Inbox() {
   }, [user?.id]);
 
   return (
-    <div style={{ paddingBottom: '80px', backgroundColor: '#f9fafb', minHeight: '100vh' }}>
-      {/* Header */}
+    <div style={{ paddingBottom: '80px', backgroundColor: C.paleLavender, minHeight: '100vh', ...font.body }}>
+      {/* Header — match HomePage */}
       <div style={{
-        position: 'sticky', top: 0, backgroundColor: 'rgba(255,255,255,0.95)',
-        backdropFilter: 'blur(10px)', borderBottom: '1px solid #e5e7eb',
-        padding: '16px 20px', zIndex: 40,
+        position: 'sticky', top: 0, zIndex: 40,
+        backgroundColor: '#ffffff',
+        borderBottom: `1px solid ${C.lightBlueGrey}`,
+        paddingTop: '12px', paddingBottom: '12px', paddingLeft: '16px', paddingRight: '16px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => setLocation('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex' }}>
-            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={C.deepPurple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5" /><polyline points="12 19 5 12 12 5" />
             </svg>
           </button>
-          <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: 0 }}>Messages</h1>
+          <h1 style={{ fontSize: '24px', color: C.deepPurple, margin: 0, ...font.heading }}>Messages</h1>
         </div>
 
         <div style={{ position: 'relative' }}>

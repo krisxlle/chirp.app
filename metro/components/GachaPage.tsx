@@ -594,7 +594,7 @@ export default function GachaPage() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 160 }}
+      contentContainerStyle={{ paddingBottom: 100 }}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -618,7 +618,7 @@ export default function GachaPage() {
           activeOpacity={0.7}
         >
           <View style={styles.crystalBalanceContent}>
-            <ChirpCrystalIcon size={60} />
+            <ChirpCrystalIcon size={36} />
             <Text style={styles.crystalBalanceAmount}>
               {getCurrentCrystalBalance().toLocaleString()}
             </Text>
@@ -731,7 +731,7 @@ export default function GachaPage() {
           </Animated.View>
         )}
         
-        {/* Capsule Buttons Overlay */}
+        {!isRolling && (
         <View style={styles.capsuleButtonsOverlay}>
           <LinearGradient
             colors={['#9ca3af', '#6b7280']}
@@ -775,6 +775,7 @@ export default function GachaPage() {
             </TouchableOpacity>
           </LinearGradient>
         </View>
+        )}
       </View>
 
       {/* Help Modal */}
@@ -980,25 +981,34 @@ export default function GachaPage() {
   );
 }
 
-const { width } = Dimensions.get('window');
+const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
+/** Room for Gacha header, crystal bar, bottom tab bar, small gap (not flush). */
+const BANNER_VERTICAL_RESERVE = 212;
+const BANNER_FRAME_HEIGHT = Math.min(
+  680,
+  Math.max(260, windowHeight - BANNER_VERTICAL_RESERVE)
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#E2DAFF',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#BEC6EB',
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#6A4C92',
   },
   helpButton: {
     width: 40,
@@ -1014,12 +1024,13 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   crystalBalanceContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   crystalBalanceCard: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderWidth: 2,
     borderColor: '#C671FF',
     alignItems: 'center',
@@ -1031,33 +1042,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   crystalBalanceAmount: {
-    fontSize: 48,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#C671FF',
-    marginLeft: 12,
-    lineHeight: 56,
+    color: '#A240D1',
+    marginLeft: 10,
+    lineHeight: 32,
   },
   bannerContainer: {
-    marginHorizontal: -150,
-    width: width + 300,
-    height: 500,
-    alignSelf: 'center',
+    marginHorizontal: 0,
+    width: '100%',
+    height: BANNER_FRAME_HEIGHT,
+    alignSelf: 'stretch',
     position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#E2DAFF',
   },
   bannerImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 16,
+    borderRadius: 12,
   },
   capsuleButtonsOverlay: {
     position: 'absolute',
-    bottom: 50,
-    left: 150,
-    right: 150,
+    bottom: '12%',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingHorizontal: 10,
-    gap: 20,
+    paddingHorizontal: 12,
+    gap: 12,
+    zIndex: 2,
   },
   openOneButton: {
     borderRadius: 25,
@@ -1116,7 +1131,7 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: 'white',
     borderRadius: 20,
-    width: width - 40,
+    width: windowWidth - 40,
     maxHeight: '80%',
   },
   modalHeader: {

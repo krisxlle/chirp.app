@@ -101,25 +101,22 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     >
       <div className="flex justify-around items-center">
         {navItems.map((item) => {
-          const notificationsActive = item.key === "notifications" && item.isActive;
-          const iconColor = !item.isActive
-            ? C.deepPurple
-            : notificationsActive
-              ? "#A240D1"
-              : "#ffffff";
+          const iconColor = item.isActive ? '#ffffff' : C.deepPurple;
           return (
           <button
             key={item.key}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl min-w-14 transition-all duration-200 ${
-              notificationsActive
-                ? "bg-[rgba(162,64,209,0.14)]"
-                : item.isActive
-                  ? "text-white shadow-lg"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl min-w-14 transition-all duration-200 box-border ${
+              item.isActive
+                ? 'text-white'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-transparent'
             }`}
             style={
-              item.isActive && !notificationsActive
-                ? { background: brandGradient, boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)' }
+              item.isActive
+                ? {
+                    background: brandGradient,
+                    border: 'none',
+                    boxShadow: '0 4px 8px rgba(162, 64, 209, 0.35)',
+                  }
                 : undefined
             }
             onClick={() => handleTabChange(item.key, item.path)}
