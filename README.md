@@ -66,7 +66,7 @@ For detailed security information, see [SECURITY.md](docs/security/SECURITY.md).
 
 #### Authentication
 - `AuthContext.tsx` - Global authentication state
-- `SignInScreen.tsx` - User login interface (smooth diagonal sky with widened `#9D8CD9` band; logo raster `assets/chirp-mark.png` = white bird on `#6A4C92` only—no tagline in image; Vite: `client/public/chirp-mark.png`, `web/client/public/chirp-mark.png`)
+- `SignInScreen.tsx` - User login interface (form card `#FFFFFF`; smooth diagonal sky with widened `#9D8CD9` band; logo raster `assets/chirp-mark.png` = white bird on `#6A4C92` only—no tagline in image; Vite: `client/public/chirp-mark.png`, `web/client/public/chirp-mark.png`). Web auth (`client/src/pages/Auth.tsx`, `web/client/src/pages/Auth.tsx`) uses the same white form card.
 - `SignInScreenNew.tsx` - Updated sign-in experience
 
 ## 📁 Project Structure

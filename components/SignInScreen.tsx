@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     borderColor: C.lightBlueGrey,
-    backgroundColor: C.softPeach,
+    backgroundColor: '#FFFFFF',
     shadowColor: C.deepPurple,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,

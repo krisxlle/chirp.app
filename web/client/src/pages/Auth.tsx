@@ -88,7 +88,7 @@ const inputBaseStyle: React.CSSProperties = {
 };
 
 const formCardStyle: React.CSSProperties = {
-  background: c.softPeach,
+  background: '#FFFFFF',
   padding: '40px',
   borderRadius: '20px',
   border: `1px solid ${c.lightBlueGrey}`,

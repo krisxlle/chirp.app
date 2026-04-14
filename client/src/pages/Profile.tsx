@@ -1035,6 +1035,24 @@ export default function Profile() {
 
   const isOwnProfile = authUser?.id === user.id;
 
+  /** Match ProfileFrame container sizing (see ProfileFrame.tsx). */
+  const profileHeaderAvatarPx = 78;
+  const profileAvatarLeftPx = 0;
+  /** Gap after layout slot; trim pulls text left of PNG alpha padding on frame assets. */
+  const profileAvatarNameGapPx = 4;
+  const profileNameFrameOpticalTrimPx = 10;
+  const profileAvatarCenterYPx = 218; // vertical anchor for avatar + frame
+  const isRareEquippedFrame =
+    !!equippedFrame?.rarity && String(equippedFrame.rarity).toLowerCase() === 'rare';
+  const profileFrameOuterPx = Math.round(
+    profileHeaderAvatarPx * (isRareEquippedFrame ? 2.3 : 1.92)
+  );
+  const profileAvatarTopPx = profileAvatarCenterYPx - profileFrameOuterPx / 2;
+  const profileNameMarginLeftPx = Math.max(
+    profileHeaderAvatarPx + profileAvatarNameGapPx,
+    profileFrameOuterPx + profileAvatarNameGapPx - profileNameFrameOpticalTrimPx
+  );
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -1168,11 +1186,11 @@ export default function Profile() {
           />
         </div>
         
-        {/* Profile Avatar - left side, 1/4 over banner */}
+        {/* Profile avatar + frame — slot width follows ProfileFrame outer size */}
         <div style={{
           position: 'absolute',
-          top: '166px',
-          left: '16px',
+          top: `${profileAvatarTopPx}px`,
+          left: `${profileAvatarLeftPx}px`,
           zIndex: 10,
           display: 'flex',
           alignItems: 'center',
@@ -1180,42 +1198,31 @@ export default function Profile() {
           overflow: 'visible'
         }}>
           {equippedFrame ? (
-            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={104} customFrameImage={equippedFrame.imageUrl}>
-              <UserAvatar user={user} size={104} />
+            <ProfileFrame rarity={equippedFrame.rarity} profilePictureSize={profileHeaderAvatarPx} customFrameImage={equippedFrame.imageUrl}>
+              <UserAvatar user={user} size={profileHeaderAvatarPx} />
             </ProfileFrame>
           ) : (
-            <div style={{
-              width: '104px',
-              height: '104px',
-              borderRadius: '52px',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '4px solid #ffffff',
-              boxShadow: '0 4px 14px rgba(106, 76, 146, 0.28)',
-              backgroundColor: '#ffffff',
-            }}>
-              <UserAvatar user={user} size={104} />
-            </div>
+            <ProfileFrame rarity="common" profilePictureSize={profileHeaderAvatarPx}>
+              <UserAvatar user={user} size={profileHeaderAvatarPx} />
+            </ProfileFrame>
           )}
         </div>
         
-        {/* Profile Info */}
+        {/* Profile Info — horizontal padding matches avatar inset */}
         <div style={{
-          paddingLeft: '16px',
+          paddingLeft: '0px',
           paddingRight: '16px',
           paddingBottom: '16px',
           backgroundColor: '#ffffff',
           marginTop: 0,
-          paddingTop: '14px',
+          paddingTop: '8px',
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
             gap: '16px'
           }}>
-            <div style={{ flex: 1, marginLeft: '120px' }}>
+            <div style={{ flex: 1, marginLeft: `${profileNameMarginLeftPx}px` }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1624,7 +1631,7 @@ export default function Profile() {
               <p style={{
                 color: '#6b7280',
                 margin: 0
-              }}>This user hasn't collected any cards yet.</p>
+              }}>This user hasn't collected any frames yet.</p>
             </div>
           </div>
         )}

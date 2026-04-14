@@ -94,7 +94,7 @@ export default function CollectionPage() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>My Collection</Text>
-          <Text style={styles.headerSubtitle}>Your collected profile cards</Text>
+          <Text style={styles.headerSubtitle}>Your collected profile frames</Text>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity 
@@ -120,7 +120,7 @@ export default function CollectionPage() {
             </View>
           ) : collection.length === 0 ? (
             <View style={styles.emptyCollection}>
-              <Text style={styles.emptyText}>No profile cards collected yet</Text>
+              <Text style={styles.emptyText}>No profile frames collected yet</Text>
               <Text style={styles.emptySubtext}>Open some capsules to get started!</Text>
             </View>
           ) : (
