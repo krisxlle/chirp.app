@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useLocation } from 'wouter';
 import { useSupabaseAuth } from '../components/SupabaseAuthContext';
+import { getTotalUnreadCount } from '../lib/dm-api';
 import { getGroupUnreadCount } from '../lib/group-api';
 import { supabase } from '../lib/supabase';
 import { brandGradient, C } from '../lib/chirpBrand';
@@ -43,30 +44,18 @@ export default function BottomNavigation({ activeTab, onTabChange, unreadCount }
     enabled: !!user,
   });
 
-  // Get unread DM count
+  // Get unread DM count.
+  // Delegates to getTotalUnreadCount so the nav badge uses the same
+  // per-participant last_read_at logic as the inbox -- otherwise users who
+  // disable read receipts would see the badge stay stuck since messages.read_at
+  // never gets set in that mode.
   const { data: dmData } = useQuery({
     queryKey: ["dm-unread-count", user?.id],
     queryFn: async () => {
       if (!user?.id) return { count: 0 };
       try {
-        const { data: convos } = await supabase
-          .from('conversations')
-          .select('id')
-          .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`);
-
-        if (!convos || convos.length === 0) return { count: 0 };
-
-        const convoIds = convos.map(c => c.id);
-        const { count, error } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .in('conversation_id', convoIds)
-          .neq('sender_id', user.id)
-          .is('read_at', null);
-
-        if (error) return { count: 0 };
-        console.log('📬 BottomNav DM unread count:', count);
-        return { count: count || 0 };
+        const count = await getTotalUnreadCount(user.id);
+        return { count };
       } catch {
         return { count: 0 };
       }

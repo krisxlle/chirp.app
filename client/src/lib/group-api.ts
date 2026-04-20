@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 export interface GroupChat {
   id: string;
   name: string;
+  avatar_url?: string | null;
   created_by: string;
   last_message_at: string;
   created_at: string;
@@ -138,6 +139,95 @@ export async function sendGroupMessage(groupId: string, senderId: string, conten
 
 export async function markGroupRead(groupId: string, userId: string): Promise<void> {
   await supabase.from('group_members').update({ last_read_at: new Date().toISOString() }).eq('group_id', groupId).eq('user_id', userId);
+}
+
+export async function renameGroupChat(groupId: string, name: string): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, error: 'Group name cannot be empty' };
+  if (trimmed.length > 50) return { ok: false, error: 'Group name cannot exceed 50 characters' };
+
+  const { error } = await supabase.rpc('rename_group_chat', {
+    p_group_id: groupId,
+    p_name: trimmed,
+  });
+
+  if (error) {
+    console.error('Error renaming group chat:', error);
+    return { ok: false, error: error.message || 'Failed to rename group' };
+  }
+  return { ok: true };
+}
+
+export function subscribeToGroupMetaUpdates(
+  groupId: string,
+  onUpdate: (group: { id: string; name: string; avatar_url?: string | null }) => void,
+) {
+  const channel = supabase
+    .channel(`group_chat_meta:${groupId}`)
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'group_chats', filter: `id=eq.${groupId}` },
+      (payload) => {
+        onUpdate(payload.new as { id: string; name: string; avatar_url?: string | null });
+      },
+    )
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}
+
+/**
+ * Upload a new avatar for the group (or pass `null` to clear the current one).
+ * Uploads to the `group-avatars` storage bucket at `{groupId}/{timestamp}.{ext}`,
+ * then persists the public URL via the `update_group_chat_avatar` RPC which
+ * also inserts a system message into the thread.
+ */
+export async function updateGroupChatAvatar(
+  groupId: string,
+  file: File | null,
+): Promise<{ ok: boolean; avatarUrl?: string | null; error?: string }> {
+  let avatarUrl: string | null = null;
+
+  if (file) {
+    if (!file.type.startsWith('image/')) {
+      return { ok: false, error: 'Please choose an image file' };
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return { ok: false, error: 'Image must be smaller than 5MB' };
+    }
+
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    // Path must start with {groupId}/ for the bucket's RLS policy to match.
+    const path = `${groupId}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('group-avatars')
+      .upload(path, file, {
+        contentType: file.type || 'image/jpeg',
+        upsert: true,
+        cacheControl: '3600',
+      });
+
+    if (uploadError) {
+      console.error('Error uploading group avatar:', uploadError);
+      return { ok: false, error: uploadError.message || 'Failed to upload image' };
+    }
+
+    const { data: urlData } = supabase.storage.from('group-avatars').getPublicUrl(path);
+    avatarUrl = urlData.publicUrl;
+  }
+
+  const { error } = await supabase.rpc('update_group_chat_avatar', {
+    p_group_id: groupId,
+    p_avatar_url: avatarUrl,
+  });
+
+  if (error) {
+    console.error('Error updating group avatar:', error);
+    return { ok: false, error: error.message || 'Failed to update group photo' };
+  }
+
+  return { ok: true, avatarUrl };
 }
 
 export async function leaveGroup(groupId: string, userId: string): Promise<boolean> {

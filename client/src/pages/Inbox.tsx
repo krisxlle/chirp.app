@@ -210,8 +210,17 @@ export default function Inbox() {
                   width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
                   background: 'linear-gradient(135deg, #C671FF20, #FF61A620)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden',
                 }}>
-                  <GroupIcon size={24} color="#7c3aed" />
+                  {group.avatar_url ? (
+                    <img
+                      src={group.avatar_url}
+                      alt={group.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  ) : (
+                    <GroupIcon size={24} color="#7c3aed" />
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>

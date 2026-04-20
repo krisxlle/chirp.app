@@ -44,6 +44,7 @@ export default function NewGroupChat() {
   };
 
   const handleCreate = async () => {
+    if (isCreating) return;
     if (!user?.id || selected.length === 0 || !groupName.trim()) return;
     setIsCreating(true);
     const allIds = [user.id, ...selected.map((m) => m.id)];

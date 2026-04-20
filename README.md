@@ -125,6 +125,10 @@ chirp.app/
      - `migrations/add_direct_messages.sql`
      - `migrations/add_handle_and_read_receipts.sql`
     - `migrations/add_group_chats.sql`
+    - `migrations/dedupe_group_chats.sql` (removes duplicate group chats and makes `create_group_chat` idempotent)
+    - `migrations/add_dm_last_read_at.sql` (adds per-participant `last_read_at` on conversations so DM inbox badges clear on view independent of the read-receipts privacy toggle)
+    - `migrations/rename_group_chat.sql` (adds the `rename_group_chat` RPC so any member can rename a group chat, and enables realtime on `group_chats`)
+    - `migrations/add_group_chat_avatar.sql` (adds `group_chats.avatar_url` and the `update_group_chat_avatar` RPC so any member can change the group chat's profile picture)
    - Set up Supabase Storage buckets for `profile-images` and `banner-images`
 
 5. **Start the development server**

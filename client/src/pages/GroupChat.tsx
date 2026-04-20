@@ -8,9 +8,13 @@ import {
     getGroupMessages,
     leaveGroup,
     markGroupRead,
+    renameGroupChat,
     sendGroupMessage,
     subscribeToGroupMessages,
+    subscribeToGroupMetaUpdates,
+    updateGroupChatAvatar,
 } from '../lib/group-api';
+import { GroupIcon } from '../components/icons';
 import { supabase } from '../lib/supabase';
 
 function formatMessageTime(dateStr: string): string {
@@ -45,7 +49,14 @@ export default function GroupChat() {
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [groupName, setGroupName] = useState('');
+  const [groupAvatarUrl, setGroupAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showRename, setShowRename] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesScrollRef = useRef<HTMLDivElement>(null);
@@ -73,8 +84,11 @@ export default function GroupChat() {
   useEffect(() => {
     if (!groupId) return;
     (async () => {
-      const { data } = await supabase.from('group_chats').select('name').eq('id', groupId).single();
-      if (data) setGroupName(data.name);
+      const { data } = await supabase.from('group_chats').select('name, avatar_url').eq('id', groupId).single();
+      if (data) {
+        setGroupName(data.name);
+        setGroupAvatarUrl((data as any).avatar_url ?? null);
+      }
     })();
   }, [groupId]);
 
@@ -130,6 +144,15 @@ export default function GroupChat() {
   }, [groupId, user?.id]);
 
   useEffect(() => {
+    if (!groupId) return;
+    const unsubscribe = subscribeToGroupMetaUpdates(groupId, (group) => {
+      if (group?.name) setGroupName(group.name);
+      if ('avatar_url' in (group || {})) setGroupAvatarUrl(group.avatar_url ?? null);
+    });
+    return unsubscribe;
+  }, [groupId]);
+
+  useEffect(() => {
     if (isLoading) return;
     if (stickToBottomRef.current) {
       requestAnimationFrame(() => scrollToBottom('smooth'));
@@ -176,6 +199,65 @@ export default function GroupChat() {
     else alert('Failed to leave group');
   };
 
+  const openAvatarPicker = () => {
+    if (isUploadingAvatar) return;
+    avatarInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !user?.id) return;
+
+    setIsUploadingAvatar(true);
+    const result = await updateGroupChatAvatar(groupId, file);
+    setIsUploadingAvatar(false);
+
+    if (result.ok) {
+      setGroupAvatarUrl(result.avatarUrl ?? null);
+    } else {
+      alert(result.error || 'Failed to update group photo');
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (isUploadingAvatar || !groupAvatarUrl) return;
+    setIsUploadingAvatar(true);
+    const result = await updateGroupChatAvatar(groupId, null);
+    setIsUploadingAvatar(false);
+
+    if (result.ok) {
+      setGroupAvatarUrl(null);
+    } else {
+      alert(result.error || 'Failed to remove group photo');
+    }
+  };
+
+  const openEdit = () => {
+    setRenameValue(groupName);
+    setRenameError(null);
+    setShowRename(true);
+  };
+
+  const handleRename = async () => {
+    if (isRenaming) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) { setRenameError('Group name cannot be empty'); return; }
+    if (trimmed === groupName) { setShowRename(false); return; }
+
+    setIsRenaming(true);
+    setRenameError(null);
+    const result = await renameGroupChat(groupId, trimmed);
+    setIsRenaming(false);
+
+    if (result.ok) {
+      setGroupName(trimmed);
+      setShowRename(false);
+    } else {
+      setRenameError(result.error || 'Failed to rename group');
+    }
+  };
+
   const groupedMessages: { date: string; messages: GroupMessage[] }[] = [];
   let currentDate = '';
   messages.forEach((msg) => {
@@ -206,11 +288,59 @@ export default function GroupChat() {
           </svg>
         </button>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '15px', fontWeight: '600', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleAvatarFileChange}
+        />
+
+        <div
+          aria-label="Group avatar"
+          style={{
+            width: '36px', height: '36px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #C671FF20, #FF61A620)',
+            overflow: 'hidden', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {groupAvatarUrl ? (
+            <img
+              src={groupAvatarUrl}
+              alt={groupName || 'Group avatar'}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          ) : (
+            <GroupIcon size={20} color="#7c3aed" />
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0, padding: '2px 4px' }}>
+          <div style={{
+            fontSize: '15px', fontWeight: '600', color: '#111827',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
             {groupName || 'Group Chat'}
           </div>
         </div>
+
+        <button
+          onClick={openEdit}
+          title="Edit group"
+          style={{
+            background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px',
+            padding: '6px 8px', cursor: 'pointer', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9fafb')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        >
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </button>
 
         <button onClick={() => setShowLeaveConfirm(true)} style={{
           background: 'none', border: '1px solid #fca5a5', borderRadius: '8px', padding: '6px 12px',
@@ -219,6 +349,123 @@ export default function GroupChat() {
           Leave
         </button>
       </div>
+
+      {/* Rename group overlay */}
+      {showRename && (
+        <div style={{
+          position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+        }}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '360px', width: '100%',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+          }}>
+            <div style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '12px' }}>Edit Group</div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <button
+                type="button"
+                onClick={openAvatarPicker}
+                disabled={isUploadingAvatar}
+                style={{
+                  position: 'relative',
+                  width: '56px', height: '56px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #C671FF20, #FF61A620)',
+                  border: 'none', padding: 0, cursor: isUploadingAvatar ? 'default' : 'pointer',
+                  overflow: 'hidden', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {groupAvatarUrl ? (
+                  <img src={groupAvatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                ) : (
+                  <GroupIcon size={28} color="#7c3aed" />
+                )}
+                {isUploadingAvatar && (
+                  <div style={{
+                    position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.7)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <div style={{
+                      width: '18px', height: '18px', border: '2px solid #e5e7eb',
+                      borderTopColor: '#7c3aed', borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+                    }} />
+                  </div>
+                )}
+              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <button
+                  type="button"
+                  onClick={openAvatarPicker}
+                  disabled={isUploadingAvatar}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, textAlign: 'left',
+                    fontSize: '13px', fontWeight: '600', color: '#7c3aed',
+                    cursor: isUploadingAvatar ? 'default' : 'pointer',
+                  }}
+                >{groupAvatarUrl ? 'Change photo' : 'Add photo'}</button>
+                {groupAvatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    disabled={isUploadingAvatar}
+                    style={{
+                      background: 'none', border: 'none', padding: 0, textAlign: 'left',
+                      fontSize: '12px', color: '#ef4444',
+                      cursor: isUploadingAvatar ? 'default' : 'pointer',
+                    }}
+                  >Remove photo</button>
+                )}
+              </div>
+            </div>
+
+            <input
+              type="text"
+              value={renameValue}
+              onChange={(e) => { setRenameValue(e.target.value); if (renameError) setRenameError(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleRename(); } }}
+              placeholder="Enter a name..."
+              maxLength={50}
+              autoFocus
+              style={{
+                width: '100%', padding: '12px 14px', backgroundColor: '#f9fafb',
+                border: `2px solid ${renameError ? '#ef4444' : '#e5e7eb'}`, borderRadius: '12px',
+                fontSize: '15px', outline: 'none', boxSizing: 'border-box', marginBottom: '6px',
+              }}
+              onFocus={(e) => { if (!renameError) e.currentTarget.style.borderColor = '#C671FF'; }}
+              onBlur={(e) => { if (!renameError) e.currentTarget.style.borderColor = '#e5e7eb'; }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', marginBottom: '18px', minHeight: '16px' }}>
+              <span style={{ color: '#ef4444' }}>{renameError || ''}</span>
+              <span style={{ color: '#9ca3af' }}>{renameValue.length}/50</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowRename(false)}
+                disabled={isRenaming}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid #e5e7eb',
+                  backgroundColor: '#fff', fontSize: '14px', fontWeight: '500',
+                  cursor: isRenaming ? 'default' : 'pointer', color: '#374151',
+                }}
+              >Cancel</button>
+              <button
+                onClick={handleRename}
+                disabled={isRenaming || !renameValue.trim()}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: '10px', border: 'none',
+                  background: (isRenaming || !renameValue.trim())
+                    ? '#e5e7eb'
+                    : 'linear-gradient(135deg, #C671FF, #FF61A6)',
+                  color: (isRenaming || !renameValue.trim()) ? '#9ca3af' : '#fff',
+                  fontSize: '14px', fontWeight: '500',
+                  cursor: (isRenaming || !renameValue.trim()) ? 'default' : 'pointer',
+                }}
+              >{isRenaming ? 'Saving...' : 'Save'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Leave confirmation overlay */}
       {showLeaveConfirm && (

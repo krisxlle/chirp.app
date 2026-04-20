@@ -6,6 +6,8 @@ export interface Conversation {
   participant_2: string;
   last_message_at: string;
   created_at: string;
+  p1_last_read_at?: string | null;
+  p2_last_read_at?: string | null;
   other_user?: {
     id: string;
     first_name: string;
@@ -136,13 +138,27 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
         .limit(1)
         .single();
 
-      // Count unread messages
-      const { count: unreadCount } = await supabase
+      // Count unread messages using the viewer's per-participant last_read_at.
+      // This is independent of the read-receipts privacy toggle, which only
+      // controls whether the other user can see a "Read" label on their end.
+      const myLastReadAt = convo.participant_1 === userId
+        ? convo.p1_last_read_at
+        : convo.p2_last_read_at;
+
+      let unreadQuery = supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('conversation_id', convo.id)
-        .neq('sender_id', userId)
-        .is('read_at', null);
+        .neq('sender_id', userId);
+
+      if (myLastReadAt) {
+        unreadQuery = unreadQuery.gt('created_at', myLastReadAt);
+      } else {
+        // Fallback for rows that predate the migration.
+        unreadQuery = unreadQuery.is('read_at', null);
+      }
+
+      const { count: unreadCount } = await unreadQuery;
 
       return {
         ...convo,
@@ -224,29 +240,59 @@ export async function sendMessage(
 }
 
 /**
- * Mark all messages in a conversation as read (messages not sent by current user).
- * Respects the user's read receipts setting.
+ * Mark a conversation as caught-up for the current user.
+ *
+ * This always bumps the viewer's per-participant last_read_at on the
+ * conversation row (drives the inbox unread badge), regardless of the
+ * read-receipts privacy toggle. If the viewer has opted in to read receipts,
+ * it also stamps messages.read_at so the sender sees a "Read" label.
+ *
+ * Returns true if any state changed (so callers can refresh unread counts).
  */
 export async function markConversationRead(conversationId: string, userId: string): Promise<boolean> {
-  // Check if user has read receipts enabled
+  // Need to know which participant slot the viewer occupies.
+  const { data: convo, error: convoError } = await supabase
+    .from('conversations')
+    .select('participant_1, participant_2')
+    .eq('id', conversationId)
+    .single();
+
+  if (convoError || !convo) {
+    console.error('markConversationRead: could not load conversation', convoError);
+    return false;
+  }
+
+  const isP1 = convo.participant_1 === userId;
+  const isP2 = convo.participant_2 === userId;
+  if (!isP1 && !isP2) return false;
+
+  const column = isP1 ? 'p1_last_read_at' : 'p2_last_read_at';
+  const now = new Date().toISOString();
+
+  let stateChanged = false;
+
+  // Always update the viewer's local "last read" timestamp so the inbox
+  // badge clears even when read receipts are disabled.
+  const { error: convUpdateError } = await supabase
+    .from('conversations')
+    .update({ [column]: now })
+    .eq('id', conversationId);
+
+  if (convUpdateError) {
+    console.error('Error updating conversation last_read_at:', convUpdateError);
+  } else {
+    stateChanged = true;
+  }
+
+  // Read receipts (letting the sender see "Read") are opt-in.
   const readReceiptsEnabled = localStorage.getItem('chirp_read_receipts');
-  if (readReceiptsEnabled === 'false') return false;
-
-  // First check how many unread messages exist
-  const { count: unreadBefore } = await supabase
-    .from('messages')
-    .select('*', { count: 'exact', head: true })
-    .eq('conversation_id', conversationId)
-    .neq('sender_id', userId)
-    .is('read_at', null);
-
-  console.log(`📬 markConversationRead: ${unreadBefore} unread messages in ${conversationId}`);
-
-  if (!unreadBefore || unreadBefore === 0) return false;
+  if (readReceiptsEnabled === 'false') {
+    return stateChanged;
+  }
 
   const { data, error } = await supabase
     .from('messages')
-    .update({ read_at: new Date().toISOString() })
+    .update({ read_at: now })
     .eq('conversation_id', conversationId)
     .neq('sender_id', userId)
     .is('read_at', null)
@@ -254,40 +300,54 @@ export async function markConversationRead(conversationId: string, userId: strin
 
   if (error) {
     console.error('Error marking messages as read:', error);
-    return false;
+    return stateChanged;
   }
 
-  console.log(`✅ markConversationRead: marked ${data?.length ?? 0} messages as read`);
-  return (data?.length ?? 0) > 0;
+  return stateChanged || (data?.length ?? 0) > 0;
 }
 
 /**
  * Get total unread DM count across all conversations.
+ *
+ * Uses the viewer's per-participant last_read_at so the badge reflects
+ * local read state even when read receipts are disabled.
  */
 export async function getTotalUnreadCount(userId: string): Promise<number> {
-  // Get all conversation IDs for this user
   const { data: convos } = await supabase
     .from('conversations')
-    .select('id')
+    .select('id, participant_1, participant_2, p1_last_read_at, p2_last_read_at')
     .or(`participant_1.eq.${userId},participant_2.eq.${userId}`);
 
   if (!convos || convos.length === 0) return 0;
 
-  const convoIds = convos.map(c => c.id);
+  let total = 0;
 
-  const { count, error } = await supabase
-    .from('messages')
-    .select('*', { count: 'exact', head: true })
-    .in('conversation_id', convoIds)
-    .neq('sender_id', userId)
-    .is('read_at', null);
+  for (const convo of convos) {
+    const myLastReadAt = convo.participant_1 === userId
+      ? convo.p1_last_read_at
+      : convo.p2_last_read_at;
 
-  if (error) {
-    console.error('Error fetching unread count:', error);
-    return 0;
+    let q = supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('conversation_id', convo.id)
+      .neq('sender_id', userId);
+
+    if (myLastReadAt) {
+      q = q.gt('created_at', myLastReadAt);
+    } else {
+      q = q.is('read_at', null);
+    }
+
+    const { count, error } = await q;
+    if (error) {
+      console.error('Error fetching unread count for convo', convo.id, error);
+      continue;
+    }
+    total += count || 0;
   }
 
-  return count || 0;
+  return total;
 }
 
 /**
