@@ -743,103 +743,40 @@ export default function Gacha() {
             <div
               style={{
                 position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: '12%',
+                left: '50%',
+                bottom: '3.5%',
+                transform: 'translateX(-50%)',
                 display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: 'clamp(8px, 3vw, 16px)',
-                paddingLeft: '12px',
-                paddingRight: '12px',
+                gap: 'clamp(10px, 3vw, 16px)',
                 zIndex: 2,
-                pointerEvents: 'none',
               }}
             >
-              <div style={{ display: 'flex', gap: 'clamp(8px, 3vw, 16px)', pointerEvents: 'auto' }}>
-                <button
-                  onClick={() => rollForFrame(1)}
-                  disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 100)}
-                  style={{
-                    borderRadius: '25px',
-                    paddingTop: '10px',
-                    paddingBottom: '10px',
-                    paddingLeft: '16px',
-                    paddingRight: '16px',
-                    minWidth: '108px',
-                    background: 'linear-gradient(135deg, #6b7280, #4b5563)',
-                    color: 'white',
-                    border: 'none',
-                    cursor: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'pointer' : 'not-allowed',
-                    opacity: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 1 : 0.6,
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (FREE_PULLS || getCurrentCrystalBalance() >= 100) {
-                      e.currentTarget.style.transform = 'scale(1.05)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  <span style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '2px' }}>Open 1</span>
-                  <div style={{ display: 'flex', alignItems: 'center', marginTop: '2px' }}>
-                    <ChirpCrystalIcon size={14} color="white" />
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      marginLeft: '4px',
-                      color: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'white' : '#fca5a5',
-                    }}>100</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => rollForFrame(10)}
-                  disabled={isRolling || (!FREE_PULLS && getCurrentCrystalBalance() < 950)}
-                  style={{
-                    borderRadius: '25px',
-                    paddingTop: '10px',
-                    paddingBottom: '10px',
-                    paddingLeft: '16px',
-                    paddingRight: '16px',
-                    minWidth: '108px',
-                    background: 'linear-gradient(135deg, #C671FF, #FF61A6)',
-                    color: 'white',
-                    border: 'none',
-                    cursor: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'pointer' : 'not-allowed',
-                    opacity: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 1 : 0.6,
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    boxShadow: '0 4px 14px rgba(162, 64, 209, 0.35)',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (FREE_PULLS || getCurrentCrystalBalance() >= 950) {
-                      e.currentTarget.style.transform = 'scale(1.05)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  <span style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '2px' }}>Open 10</span>
-                  <div style={{ display: 'flex', alignItems: 'center', marginTop: '2px' }}>
-                    <ChirpCrystalIcon size={14} color="white" />
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      marginLeft: '4px',
-                      color: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'white' : '#fca5a5',
-                    }}>950</span>
-                  </div>
-                </button>
-              </div>
+              <button
+                onClick={() => rollForFrame(1)}
+                disabled={!FREE_PULLS && getCurrentCrystalBalance() < 100}
+                aria-label="Open 1 capsule"
+                style={{
+                  width: 'clamp(96px, 22vw, 132px)',
+                  height: 'clamp(44px, 8vw, 60px)',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '14px',
+                  cursor: FREE_PULLS || getCurrentCrystalBalance() >= 100 ? 'pointer' : 'not-allowed',
+                }}
+              />
+              <button
+                onClick={() => rollForFrame(10)}
+                disabled={!FREE_PULLS && getCurrentCrystalBalance() < 950}
+                aria-label="Open 10 capsules"
+                style={{
+                  width: 'clamp(96px, 22vw, 132px)',
+                  height: 'clamp(44px, 8vw, 60px)',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '14px',
+                  cursor: FREE_PULLS || getCurrentCrystalBalance() >= 950 ? 'pointer' : 'not-allowed',
+                }}
+              />
             </div>
           )}
 
@@ -868,7 +805,7 @@ export default function Gacha() {
                 }}
                 onEnded={() => setIsRolling(false)}
               >
-                <source src="/public/assets/gacha-opening-animation.mp4" type="video/mp4" />
+                <source src="/assets/gacha-opening-animation.mp4" type="video/mp4" />
               </video>
               <div
                 style={{
