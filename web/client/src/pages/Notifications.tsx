@@ -284,7 +284,7 @@ export default function Notifications() {
         ) : (
           <div className="mx-auto max-w-[400px] rounded-[20px] bg-chirp-lavender px-6 py-10 text-center">
             <Bell
-              className="mx-auto h-16 w-16 text-chirp-bright"
+              className="mx-auto block h-16 w-16 text-chirp-bright"
               strokeWidth={1.75}
               aria-hidden
             />

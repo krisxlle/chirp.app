@@ -626,7 +626,15 @@ export default function Notifications() {
               marginRight: 'auto',
             }}
           >
-            <BellIcon size={64} color={CHIRP_BRIGHT} />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%',
+              }}
+            >
+              <BellIcon size={64} color={CHIRP_BRIGHT} />
+            </div>
             <h3
               style={{
                 fontSize: '18px',
